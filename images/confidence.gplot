@@ -1,0 +1,22 @@
+############################
+# Display the ASSP Bayesian/HMM confidence.distribution
+
+set terminal png transparent size <SIZE> crop
+#set xdata confidence
+#set timefmt "%Y-%m-%d_%H:%M:%S"
+set xlabel "confidence"
+set ytics nomirror
+set title '<L1>'
+set grid xtics ytics
+
+set ylabel message count
+
+plot \
+  "< awk '/<BH>/{print $1, $4}' <IN>"\
+     using 1:2 ls l1 axes x1y1 title '<BH>' with points,\
+  "< awk '/<BS>/{print $1, $4}' <IN>"\
+     using 1:2 ls l0 axes x1y1 title '<BS>' with points,\
+  "< awk '/<HH>/{print $1, $4}' <IN>"\
+     using 1:2 ls l2 axes x1y1 title '<HH>' with points,\
+  "< awk '/<HS>/{print $1, $4}' <IN>"\
+     using 1:2 ls l5 axes x1y1 title '<HS>' with points,\

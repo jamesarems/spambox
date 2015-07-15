@@ -1,0 +1,48 @@
+The standards define port 25 to be plaintext.  The server can
+offer "STARTTLS" and if the client uses that verb, the connection
+is converted to TLS/SSL.  This port is intended for MTA-to-MTA and
+for older local clients.
+Port 465 used to be defined as TLS/SSL from the start, but this is
+now deprecated.  You should avoid using 465 if you don\'t need it; it
+is there if you have older clients that only know about this port and
+can\'t be reconfigured.
+Port 587 is defined also as plaintext with a STARTTLS possibility.
+Port 587 is often configured to require client AUTH.  You probably
+want this port for your local clients, but 25 is ok too.
+Ports 25 and 587 are more-or-less equivalent.  At some sites they
+are exactly equivalent.  If the server offers them, both can support
+AUTH and both can support STARTTLS.  The difference is only in that
+port 587 is intended to require use of AUTH, wheras on 25 AUTH is
+optional.
+
+
+
+Simple Workflow
+
+* Inbound
+Internet -> ASSP -> Mailserver -> User
+
+* Outbound
+User -> ASSP -> Mailserver -> Internet
+
+
+Advanced Workflow 
+- recommended for installations with considerable number of users 
+- necessary for MS Exchange & similar workgroup server
+
+* Inbound
+Internet -> ASSP -> SMTP Relay Server -> Mailserver -> User
+
+* Outbound
+User -> Mailserver -> ASSP -> SMTP Relay Server -> Internet
+
+inbound traffic coming from the Internet is proxied by ASSP
+toward the additional local SMTP Relay Server which in turn routes the emails to the
+internal mailserver; this also has an advantage; if you have more than
+a single "internal" mailserver (e.g. different mailservers for different
+domains) such a setup will take care of routing the incoming emails
+to the correct mailserver;
+outbound traffic is routed by the mailserver(s)
+toward the ASSP relay port (which may even be port 25 as long as the
+ASSP box has a second address ) and ASSP then proxies such emails
+to the SMTP Relay Server for outbound delivery

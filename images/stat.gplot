@@ -1,0 +1,17 @@
+############################
+# Display the ASSP statistics.
+
+set terminal png transparent size <SIZE> crop
+set xdata time
+set timefmt "%Y-%m-%d_%H:%M:%S"
+set xlabel " "
+set ytics nomirror
+set title '<L1>'
+set grid xtics ytics
+
+set ylabel count in the shown time periode
+set y2label count total
+
+plot \
+  "< awk '/<L1>/{print $1, $4}' <IN>"\
+     using 1:2 ls l0fill axes x1y2 title '<L2>' with steps lw 2,\

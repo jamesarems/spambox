@@ -1,0 +1,39 @@
+a { color: #666666; font-weight: bold; }
+
+a:hover { color: #000000; }
+
+body, p, td {
+	margin: 2px 2px 2px 2px;
+	color: #666666;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	/* Annoying IE fix */
+	font-size: 95%!important;
+	font-size: 90%;
+}
+
+.content {
+	
+	border-color: #e6e6e6;
+	background-color: #ffffff;
+	font-size: .8em;
+}
+
+#contents {
+	border: 1px solid #cccccc;
+	font-family: 'Courier New',Courier,monospace;
+	font-size: 10pt;
+	margin: 0px 0px 2px 0px;
+}
+ 
+.negative { color: #ff0000; }
+
+.note {
+	border: solid 1px #66cc66;
+	padding: 5px;
+	margin: 3px;
+	background-color: #ffffff;
+	color: #333333;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+.positive { color: #008000; }

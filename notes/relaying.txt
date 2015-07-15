@@ -1,0 +1,27 @@
+The "Local Domains" are the  domain names that your mail
+system considers local. 
+A MX record will usually point to ASSP for this domains.
+Messages to "Local Domains" are also called "Incoming".
+Messages to domains not in "Local Domains" are also called "Outgoing".
+
+Messages from "Local Domains" are called "local" if they
+- arrive at the relayPort
+- or come from IP\'s in"Accept All Mail" ( acceptAllMail ) 
+- or are authenticated
+
+Otherwise they are called "external" or "remote".
+ 
+That a mail claims to be from one of your local domains does not
+allow it to be relayed -this is easily spoofed and not useful as a
+security measure.
+
+If your clients dialup or are dynamically assigned from an untrusted
+pool, then the only reliable way to allow relaying is through
+AUTHENTICATED smtp, and your mail handler must support this type of
+authentication, and you must enable it in your clients. 
+ASSP recognizes authenticated connections and allows them to relay.
+
+Not all ISPs will allow their customers to connect to your SMTP
+port. Many block connections to port 25 (except to their own mail
+server) to prevent spam. 
+ASSP therefore provides a "Second SMTP Listen Port" ( listenPort2 ). 

@@ -1,0 +1,7 @@
+Warning - 
+Our anti-spam and anti-virus system has detected a virus or phishing
+attack within an email sent to you.  Should you feel that this was 
+in error, or have questions please feel free to contact support and
+supply them with a copy of this email.
+
+The following are details from the email:

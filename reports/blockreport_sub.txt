@@ -1,0 +1,44 @@
+# This file will be used to generate the subject in text format of every Block Report
+# lines starting with a  #  are comments
+#
+# Every line in this text, will result in one line in the report.
+# Do not use any HTML tags in this file!
+#
+# The following case sensitive literals will be replaced:
+#
+# REPORTDAYS   - with the number of days for which the report is generated
+# ASSPNAME     - with the ASSP-hostname config: 'myName'
+# EMAILADDRESS - with the emailaddress for which the report is generated
+# NUMBER       - the number of found blocked emails
+#
+# You can define different text for ALL, USERS (no Admins), ADMINS, EMAILADDRESSES, DOMAINS using
+# the following XML like style:
+#
+# <ALL>
+# text for all
+# </ALL>
+# 
+# <USERS>
+# text for the users
+# </USERS>
+# 
+# <ADMINS>
+# text for the admins
+# </ADMINS>
+#
+# <email-address>
+# text for the email-adress
+# </ADMINS>
+#
+# <domain-name>
+# text for the domain-name
+# </domain-name>
+#
+# The section marks <...> must begin in front of a line without space(s).
+#
+# The resulting text will contain the text in the sections in the following order:
+# <ALL> + <USERS> or <ADMINS> + <email-address> or <domain-name>
+ 
+<ALL>
+ASSP-Block-Report
+</ALL>

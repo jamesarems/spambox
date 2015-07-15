@@ -1,0 +1,1082 @@
+# Network Setup  #
+listenPort: SMTP Listen Port --  The port number on which ASSP will listen for incoming SMTP connections (normally 25). You can specify both an IP address and port number to limit connections to a specific interface.Examples: 25, 127.0.0.1:25, 127.0.0.1:25|127.0.0.2:25  default: 25  
+smtpDestination: SMTP Destination --  The IP address! and port number of your primary SMTP. If multiple servers are listed and the first listed MTA does not respond, each additional MTA will be tried. If only a port number is entered, or the dynamic keyword INBOUND is used with a port number, then the connection will be established to the local IP address on which the connection was received. This is useful when you have several IP addresses with different domains or profiles in your MTA. If INBOUND:PORT is used, ReportingReplies (Analyze,Help,etc and CopyMail will go to 127.0.0.1:PORT. If your needs are different, use  (Copy Spam )Examples:127.0.0.1:125, [::1]:125, 127.0.0.1:125|127.0.0.5:125 default: 125  
+enableSSL: Enable SSL support --  For SSL to be enabled, check this box and enter the paths to your SSL Certificate and SSL Key files, below.
+  NOTE: Changing this requires a restart of ASSP.   
+listenPortSSL: SMTP Secure Listen Port --  The port number on which ASSP will listen for incoming secure SMTP connections (normally 465). You can specify both an IP address and port number to limit connections to a specific interface. 
+Examples: 465, 127.0.0.1:465, 127.0.0.1:465|127.0.0.2:465    
+SSLCertFile: SSL Certificate File (PEM format) --  Full path to the file containing the server's SSL certificate, for example : /usr/local/etc/ssl/certs/assp-cert.pem.   
+SSLKeyFile: SSL Key File (PEM format) --  Full path to the file containing the server's SSL key, for example: /usr/local/etc/ssl/certs/assp-key.pem.   
+listenPort2: Second SMTP Listen Port --  A secondary port number on which ASSP can accept SMTP connections. This is useful as a dedicated port for VPN clients or for those who cannot directly send mail to a mail server outside of their ISP's network because the ISP is blocking port 25. You may also specify an IP address to limit connections to a specific interface.Examples: 587, 127.0.0.1:587, 192.168.0.100:587   
+smtpAuthServer: Second SMTP Destination --  The IP address! and port number to connect to when mail is received on the second SMTP listen port. If the field is blank, the primary SMTP destination will be used. The purpose of this setting is to allow remote users to make authenticated connections and transmit their email without encountering SPF failures.Examples:127.0.0.1:687, [::1]:687  
+EnforceAuth: Force SMTP AUTH on Second SMTP Listen Port --  Force clients connecting to the second listen port to authenticate before transferring mail. To use this setting, both  (Second SMTP Destination) must be configured.  
+enableINET6: Enable IPv6 support --  For IPv6 to be enabled, check this box. NOTE: Changing this requires a restart of ASSP.  
+smtpDestinationRT: SMTP Destination Routing Table <a href="http://www.magicvillage.de/~Fritz_Borgstedt/assp/0002DF8F-8000001C/S06665A73?WasRead=1" target=wiki><img height=12 width=12 src="get?file=images/info.png" alt="Routing Table" /></a> --  If INBOUND is used in the SMTP Destination field, the rules specified here are used to route the inbound IP address to a different outbound IP address. You must specify a port number with the outbound IP address. This feature works by assigning as many IP's to  ASSP as you have different receiving Mailservers. This can be avoided by using the advanced flow we recommend: 
+  Example:141.120.110.1=>141.120.110.129:25|141.120.110.2=>141.120.110.130:125|141.120.110.3=>141.120.110.130:125
+
+  
+# SMTP Session Limits  #
+MaxErrors: Maximum Errors Per Session --  The maximum number of SMTP session errors encountered before the
+connection is dropped. Scoring is done with . default: 5  
+maxSMTPSessions: Maximum Sessions --  The maximum number of simultaneous SMTP sessions. This can prevent server overloading and DoS attacks. 64 simultaneous sessions are typically enough. No entry or zero means no limit. default: 64  
+maxSMTPipSessions: Maximum Sessions Per IP Address --  The maximum number of SMTP sessions allowed per IP address. Use this setting to prevent server overloading and DoS attacks. 5 sessions are typically enough. If left blank or set to 0 there is no limit imposed by ASSP. . default: 5 
+npSize: External Messages NoProcessing Size --  This limit ensures that only messages smaller than this limit are processed by ASSP. Most spam
+isn't bigger than a few k. ASSP will treat incoming messages larger than this SIZE (in bytes) as 'No Processing' mail. Empty or 0 disables the feature. default: 256000  
+npSizeLocal: Local Messages NoProcessing Size --  ASSP will treat local (outgoing) messages larger than  as 'No Processing' mail. default: 1 
+HeaderMaxLength: Maximum Header Size --  The maximum allowed header length, in bytes. At each mail hop header information is added by the mail server. A large mail header can indicate a mail loop. If the value is blank or 0 the header size will not be checked. default: 50000  
+maxRealSize: Max Real Size of Local Message --  If the value of (number of [rcpt to] * [message size]) exceeds  in bytes the transmission of the local message will be canceled. No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.  
+maxRealSizeExternal: Max Real Size of External Message --  If the value of (number of [rcpt to] * [message size]) exceeds  in bytes the transmission of the external message will be canceled. No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.  
+maxRealSizeError: Max Real Size Error Message --  SMTP error message to reject . default: 552 message exceeds MAXREALSIZE byte (size * rcpt)  
+smtpIdleTimeout: SMTP Idle Timeout --  The number of seconds a session is allowed to be idle before being forcibly disconnected. The default is 180 seconds. No limit is imposed by ASSP if the field is left blank or set to 0. If you have not defined an IdleTimeout on your MTA, this value should not be set to 0, because then a connection will never be timed out! Scoring is done with toValencePB. default: 180 
+CheckEarlyTalker: Check for Misbehaving SMTP session --   
+smtpNOOPIdleTimeout: SMTP Idle Timeout after NOOP --  The number of seconds a session is allowed to be idle after a "NOOP" command is received, before being forcibly disconnected. The default is 0 seconds. No limit is imposed by ASSP if the field is left blank or set to 0.
+  This should prevent hackers to hold and block connections by sending "NOOP" commands short before the "" is reached.   
+smtpNOOPIdleTimeoutCount: SMTP Idle Timeout after NOOP Count --  The number of counts a session is allowed send "NOOP" commands following on each other, before being forcibly disconnected. The default is 0. No limit is imposed by ASSP if the field is left blank or set to 0.
+  This in cooperation with "   
+# Testmode / SPAM Control  #
+allTestMode: All Testmode ON --  Turn all of the individual testmodes on - regardless of the individual mode settings.  
+attachTestMode: Bad Attachment Test Mode --  ->   
+baysTestMode: Bayesian Test Mode --  ->  default: 1  
+blTestMode: BlackDomain Test Mode --  ->   
+bombheaderTestMode: Bomb Header Regex Test Mode --  ->   
+bombTestMode: Bomb Regex Test Mode --  ->   
+blackTestMode: Black Regex Test Mode --  ->   
+fhTestMode: Forged Helo Test Mode --  ->   
+flsTestMode: Forged Local Domain Test Mode --  ->   
+hlTestMode: Helo Blacklist Test Mode --  ->   
+ihTestMode: Invalid Helo Test Mode --  ->   
+vhTestMode: Not Valid Helo Test Mode --  ->   
+msTestMode: Message Scoring Test Mode --  ->   
+mxaTestMode: Missing MX Record Test Mode --  -> DoDomainCheck  
+pbTestMode: Penalty Box Test Mode --  ->   
+ptrTestMode: Reversed Lookup Test Mode --  -> DoReversed  
+rblTestMode: DNSBL Test Mode --  ->   
+scriptTestMode: Script Regex Test Mode --  ->   
+sbTestMode: SenderBase Test Mode --  ->   
+spfTestMode: SPF Test Mode --  ->   
+srsTestMode: SRS Test Mode --  ->   
+uriblTestMode: URIBL Test Mode --  ->   
+spamSubject: Prepend Spam Subject  --  Setting a filter to testmode will tell ASSP not to reject the mail but rather build up the whitelist and spam and notspam collections. This can go on for some time without disturbing normal operation. After this very important phase TestMode can be used to tag the message: if TestMode and the message is spam Spam Subject gets prepended to the subject of the email. For example: [SPAM]   
+spamTag: Prepend Spam Tag --  ASSP uses many methods. The method which caught the spam  will be prepended to the subject of the email. For example: [DNSBL]   
+SpamError: Spam Error --  SMTP error message to reject spam. The literal LOCALDOMAIN will be replaced by the recipient domain. For example:554 5.7.1 Mail appears to be unsolicited -- send error reports to postmaster@LOCALDOMAIN. default: 554 5.7.1 Mail appears to be unsolicited -- send error reports to postmaster@LOCALDOMAIN  
+send250OK: Send 250 OK  --  Set this checkbox if you want ASSP to reply with '250 OK' instead of SMTP error code '554 5.7.1'.  
+AddIntendedForHeader: Add Envelope-Recipient Header --  Adds a line to the email header: "X-Assp-Intended-For: user@domain" .   
+AddIntendedForHeaderNP: Add Envelope-Recipient Header for Noprocessing --  Adds a line to the email header of noprocessing mails: "X-Assp-Intended-For: user@domain" .  
+NoExternalSpamProb: Block Outgoing Spam-Prob header --  Check this box if you don't want your X-Assp-Spam-Prob header on external mail
+ Note this means mail from local users to local users will also be missing the header. default: 1 
+AddSpamHeader: Add Spam Header --  Adds a line to the email header "X-Assp-Spam: YES" if the message is spam. default: 1 
+AddCustomHeader: Add Custom Header --  Adds a line to the email header if the message is spam. For example:  default: X-Spam-Status:yes  
+AddLevelHeader: Add Graphical Level Header --  Adds a line to the email header "X-Assp-Spam-Level:**** " showing the totalscore represented by stars. default: 1 
+AddSpamReasonHeader: Add Spam Reason Header --  Adds a line to the email header "X-Assp-Spam-Reason: " explaining why the message is spam. default: 1 
+# Copy Spam/Ham #
+sendAllSpam: Copy Spam and Send to this Address --  If this is set ASSP will deliver a copy of spam emails to this address. For example: postmaster@example.com. The literal USERNAME (case sensitive) is replaced by the user part of the recipient, the literal DOMAIN (case sensitive) is replaced by the domain part of the recipient.
+ For example: USERNAME@Spam.DOMAIN, USERNAME+Spam@DOMAIN, catchallspamthis@DOMAIN   
+ccSpamInDomain: Copy Spam and Send to this Address per Domain* --  ASSP will deliver an additional copy of spam emails of a domain to this address - if matched. For example: catchallspam@example.com|allspam@example.com.  
+sendAllDestination: Copy Spam SMTP Destination --  Port to connect to when  Spam messages are copied. If blank they go to the main . eg "10.0.1.3:1025".   
+ccSpamFilter: Copy Spam to these Recipients Only* --  Restricts Copy Spam to these recipients. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). Wildcards are supported (fribo*@example.com).  
+ccSpamAlways: Copy Spam to these Recipients always* --  Copy Spam to these recipients regardless of collection mode. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com).   
+ccSpamNeverRe: Do Not Copy Spam Regular Expression* --  Never Copy Spam regardless of collection mode. Put anything here to identify messages which should not be copied.  
+ccMaxScore: Do Not Copy Messages Above This MessageTotal score --  Messages whose score exceeds this threshold will not be copied.  For example: 75  
+ccMaxBytes: Restrict Copy Spam to MaxBytes  --  CCMail will cut off Spam mails, thereby reducing the load considerably (recommended). default: 1 
+spamSubjectCC: Prepend Spam Subject to Copied Spam --  If set  gets prepended to the subject of the copied message.   
+spamTagCC: Prepend Spam Tag to Copied Spam --  The check which caused the spam detection will be prepended to the subject of the message. For example: [DNSBL] default: 1 
+sendAllHamDestination: Copy HAM SMTP Destination --  Port to connect to when  Ham messages are copied. If blank they go to . eg "10.0.1.3:1025"  
+sendHamInbound: Copy Incoming Ham and Send to this Address --  If you put an address in this box  ASSP will forward a copy of notspam messages from outside to this address. The literal USERNAME is replaced by the user part of the recipient, the literal DOMAIN is replaced by the domain part of the recipient. For example: archiv@example.com, USERNAME@mybackup.domain, catchallforthis@DOMAIN  
+sendHamOutbound: Copy Outgoing Ham and Send to this Address --  If you put an address in this box ASSP will forward a copy of outgoing notspam messages to this address.  
+ccHamFilter: Copy Ham Filter* --  Copy Not-Spam to these addresses only. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). Wildcards are supported (fribo*@example.com).  
+ccnHamFilter: Do Not Copy Ham Filter* --  Do Not Copy Ham to these addresses. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). Wildcards are supported (fribo*@example.com).
+  
+# SPAM Lover/Hater #
+spamSubjectSL: Suppress SpamSubject to SpamLover-Messages --  If set   gets NOT prepended to the subject of the SpamLover-Message.  
+spamTagSL: Suppress spamTags to SpamLover-Messages --  If set, spamTags gets NOT prepended to the subject of the SpamLover-Message. default: 1 
+spamLovers: All SpamLover* --   are lists of criteria that when matched will allow a SMTP session through ASSP's filter process, regardless of what blocking functions match and would otherwise cause the message to be rejected. However, there is an exception to this when there are multiple recipients that do not all match the criteria of the spam Lovers match. In this exception the message will be processed normally and will be subjected to all blocking criteria.
+ This can be specified per filter or for all messages. Messages to SpamLovers are processed and filtered by ASSP, but get tagged with  will suppress this. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com). Default: postmaster|abuse. default: postmaster|abuse  
+SpamLoversRe: Regular Expression to Identify  SpamLover* --  If a message matches this regular expression it will be considered a SpamLover message.  
+baysSpamLovers: Bayesian SpamLover* --    
+baysSpamLoversRe: Regular Expression to Identify Bayesian SpamLover* --  If a message matches this regular expression it will be considered a Bayesian SpamLover message. For example: passwor|news   
+baysSpamLoversRed: Do not store Bayesian SpamLover in SpamDB --  Mail to Bayesian SpamLover will not be stored in Spam/Notspam folder.  
+blSpamLovers: Blacklisted Domains SpamLover* --   
+bombSpamLovers: Bomb SpamLover* --    
+hlSpamLovers: HELO Blacklisted SpamLover* --    
+hiSpamLovers: Valid/Invalid Helo* --    
+atSpamLovers: Bad Attachment & Virusscan SpamLover* --   
+spfSpamLovers: SPF Failures SpamLover* --    
+rblSpamLovers: DNSBL Failures SpamLover* --   
+uriblSpamLovers: URIBL Failures SpamLover* --   
+srsSpamLovers: Not SRS Signed Bounces SpamLover * --   
+delaySpamLovers: No Delaying SpamLover* --    
+isSpamLovers: Invalid Sender SpamLover* --   
+mxaSpamLovers: Missing MX SpamLover* --    
+ptrSpamLovers: Invalid/Missing PTR SpamLover* --    
+pbSpamLovers: PenaltyBox Blocking SpamLover* --    
+sbSpamLovers: Country Blocking SpamLover* --    
+spamHaters: All SpamHaters* --  SpamHaters are used to override SpamLovers / Testmodes / Tagmodes.
+ If a recipient is set as as SpamHater, all spam-messages are blocked, no tagging only will work.
+ Example: If you have set your entire domain as a SpamLover(s), but there are still some addresses you still wish to block spam for. The message will only be blocked if all recipients are SpamHaters. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com).For example: *fribo@example.com|jhanna|@example.org  
+baysSpamHaters: Bayesian SpamHater* --   
+rblSpamHaters: DNSBL Failures SpamHater* --   
+hlSpamHaters: HELO Blacklisted SpamHater* --   
+pbSpamHaters: PenaltyBox Blocking SpamHater* --    
+# No Processing #
+noProcessingIPs: No Processing IPs* --  Mail from any of these IP's will pass through without processing. 
+ For example: 127.0.0.1|172.16.   
+noProcessing: No Processing Addresses* --  Mail solely to or from any of these addresses are proxied without processing. Like a more efficient version of SpamLovers and redlist combined. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com).   
+noProcessingFrom: No Processing Addresses From* --  Mail solely from any of these addresses are proxied without processing. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com).  
+noProcessingDomains: No Processing Domains* --  Domains from which you want to receive all mail and  proxy without processing. Your ISP, domain registration, mail list servers, stock broker, or other key business partners might be good candidates. Note this matches the end of the address, so if you don't want to match subdomains then include the @. Note that buy.com would also match spambuy.com but .buy.com won't match buy.com. For example: sourceforge.net|@google.com|.buy.com default: sourceforge.net  
+npRe: Regular Expression to Identify No Processing Mail* --  If a message matches this Perl regular expression ASSP will treat the message as a 'No Processing' mail. For example: 169\.254\.122\.|172\.16\.|\[autoreply\].   
+processOnlyAddresses: Process Only These Addresses* --  Mail solely to or from any of these addresses will be processed by ASSP. All others will be proxied without processing. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com). Note that if an address matches both the NoProcessing and the OnlyTheseProcessing lists, the NoProcessing rules take precedence.  
+poTestMode: Enable Process Only Addresses --    
+# Whitelisting/Redlisting #
+whiteListedIPs: Whitelisted IPs* --  They  contribute to the Whitelist and to Notspam. For example: 127.0.0.1|172.16.    
+whiteRe: Regular Expression to Identify Non-Spam*  --  If an incoming email matches this Perl regular expression it will be considered non-spam.For example: Secret Ham Password|307\D{0,3}730\D{0,3}4[12]\d\dFor help writing regular expressions click .IMPORTANT: The body is scanned in a later stage  AFTER all sender related checks are performed. So a white regular expression here might not prevent the message from being blocked by eg. invalid PTR. Set the sender related checks to score only if you want to make sure that the white regular expression will be seen. Some things you might include here are your office phone number or street address, spam rarely includes these details.  .   
+whiteListedDomains: Whitelisted Domains and Addresses* --  Domains and addresses from which you want to receive all mail. Your ISP, domain registration, mail list servers, stock broker, or other key business partners might be good candidates. Note this matches the end of the address, so if you don't want to match subdomains then include the @. Note that example.com would also match spamexample.com but .example.com won't match example.com. Wildcards are supported. For example: sourceforge.net|group*@google.com|.example.com default: sourceforge.net  
+wildcardUser: Wildcard User for White Domain  --  If you add this user via email-interface(eg: *@example.com), the whole domain will be whitelisted. For example: '*' default: *  
+WhitelistOnly: Reject All But Whitelisted Mail --  Check this if you don't want Bayesian filtering and want to reject all mail from anyone not whitelisted.  
+NoAutoWhite: Only Email-Interface Addition to Whitelist. --  Check this box to  allow additions to the whitelist by  only.  
+NotGreedyWhitelist: Only the envelope-sender is added/compared to the whitelist --  Normal operation includes addresses in the FROM, SENDER, REPLY-TO, ERRORS-TO, or LIST-* header fields.This allows nearly all list email to be whitelisted. Check this option to disable this. Will not do anything if you add/remove whitelist entries via email-interface   
+WhitelistLocalOnly: Only local or authenticated users contribute to the whitelist. --  Normal operation allows all local, authenticated, or whitelisted users to contribute to the whitelist.Check this box to not allow whitelisted users to add to the whitelist.   
+WhitelistLocalFromOnly: Only users with a local domain in mailfrom contribute to the whitelist. --  Check this box to prevent sender with non-local domains ( not in ) from contributing to the whitelist. (for example: redirected messages). default: 1 
+WhitelistAuth: Whitelist authenticated users. --   
+UpdateWhitelist: Save Whitelist --  Save a copy of the white list every this many seconds. Empty or Zero will prevent any saving.Note: the current timeout must expire before the new setting is loaded, or you can restart. default: 3600 
+redRe: Regular Expression to Identify Redlisted Mail* --  If an email matches this Perl regular expression it will be 
+considered redlisted.
+The Redlist serves two purposes:
+1) the Redlist is a list of addresses that cannot contribute to the 
+whitelist, and which are not considered local, even if their mail is 
+from a local computer. For example, if someone goes on a vacation and 
+turns on their autoresponder, put them on the redlist until 
+they return. Then as they reply to every spam they receive they won't 
+corrupt your non-spam collection or whitelist: \[autoreply\]
+2) Redlisted addresses will not be added to the Whitelist when your 
+local user sends mail to that address, thereby preventing accidental 
+pollution of the Whitelist by, say, inadvertent replies by your 
+users to e-mails from the spammer.
+Redlisted messages will not be stored in the 
+SPAM/NOTSPAM-collection if  is set. 
+As all fields marked by * this field accepts 
+a list separated by | or a specified file 'file:files/redre.txt'. default: file:files/redre.txt 
+ValidateRWL: Enable Realtime Whitelist Validation --  RWL: Real-time white list. These are lists of IP addresses that have
+ somehow been verified to be from a known good host. Senders that pass RWL validation will pass IP-based filters. This requires an installed  module in PERL.  
+RWLwhitelisting: Whitelist all RWL Validated Addresses --  If set, the message will pass also Bayesian Filter and URIBL.  
+RWLServiceProvider: RWL Service Providers* --  Domain Names of RWLs to use separated by "|".Examples are:
+ list.dnswl.org|cml.anti-spam.org.cn|iadb.isipp.com|hul.habeas.com  default: list.dnswl.org|cml.anti-spam.org.cn|query.bondedsender.org  
+RWLmaxreplies: Maximum Replies --  A reply is affirmative or negative reply from a RWL. The RWL module will wait for this number of replies (negative or positive) from the RWLs listed under Service Provider for up to the Maximum Time below. This number should be equal to or less than the number of RWL Service Providers listed to allow for randomly unavailable RWLs. default: 3  
+RWLminhits: Minimum Hits --  A hit is an affirmative response from a RWL. The RWL module will check all of the RWLs listed under Service Provider, and flag the email with a RWL pass flag if equal to or more than this number of RWLs return a postive whitelisted response. default: 1 
+RWLmaxtime: Maximum Time --  This sets the maximum time to spend on each message performing RWL checks default: 5 
+noRWL: Don't Validate RWL for these IPs* --  Enter IP addresses that you don't want to be RWL validated, separated by pipes (|). For example: 127.0.0.1|192.168. default:  127.0.0.|192.168.|10.  
+AddRWLHeader: Add X-Assp-Received-RWL Header --  Add X-Assp-Received-RWL header to header of all emails processed by RWL. default: 1  
+RWLCacheExp: RWL Cache Expiration Time --  IP's in cache will be removed after this interval in hours. 0 will disable the cache.   default: 72 
+# Relaying  #
+acceptAllMail: Accept All Mail* --  Relaying is allowed for these IPs. They  contribute also to the whitelist. This can take either a directly entered list of IP's separated by pipes or a file 'file:files/acceptall.txt'.For example: 127.0.0.1|172.16.   
+localDomains: Local Domains* --  Check local domains against these addresses. As in every field marked by '*' separate addresses with | or use file 'file:files/localdomains.txt'. Wildcards are supported. For example: *example.com|*.example.com|example.org 
+ The "Local Domains" are the  domain names that your mail
+  system considers local. A MX record will usually point to ASSP for this domains.  Messages to "Local Domains" are also called "Incoming".
+  Messages to domains not in "Local Domains" are also called "Outgoing".
+  Messages from "Local Domains" are called "local" provided they come from IP's in  "Accept 		All Mail" (  ) or are authenticated,  otherwise they are called "external" or "remote".
+  That a mail claims to be from one of your local domains does not
+  allow it to be relayed -- this is easily spoofed and not useful as a
+  security measure.
+ 
+  If your clients dialup or are dynamically assigned from an untrusted
+  pool, then the only reliable way to allow relaying is through
+  AUTHENTICATED smtp, and your mail handler must support this type of
+  authentication, and you must enable it in your clients. ASSP
+  recognizes authenticated connections and allows them to relay.
+ 
+  Not all ISPs will allow their customers to connect to your SMTP
+  port. Many block connections to port 25 (except to their own mail
+  server) to prevent spam. ASSP therefore provides a "Second SMTP Listen Port" (  ).  
+ Use the syntax: *mydomain.com=>smtp.mydomain.com|other.com=>mx.other.com:port to verify the recipient addresses with the SMTP-VRFY  (if VRFY is not supported 'MAIL FROM:' and 'RCPT TO:' will be used)  command on other SMTP servers. The entry behind => must be the hostname:port or ip-address:port of the MTA which is used to verify 'RCPT TO' addresses with a VRFY command! If :port is not defined, port :25 will be used. You have to enable the SMTP 'VRFY' command on your MTA - the 'EXPN' command should be enabled! This requires an installed  module in PERL. 
+ If you have configured LDAP and enabled  and ASSP finds a VRFY entry for a domain, LDAP search will be done first and if this fails, the VRFY will be used. So VRFY could be used for LDAP backup/fallback/failover!
+ If you have configured  ) if the VRFY is successful.
+ It is recommended to configure . default: putYourDomains.com|here.org  
+DoLocalSenderDomain: Do Local Domain Check for Local Sender --  If activated, each local sender address must have a valid Local Domain in .  
+DoLocalSenderAddress: Do Local Address Check for Local Sender --  If activated, each local sender must have a valid Local Address.  
+LocalSender2NULL: Move Local Connection with wrong Sender Address to NULL --  If set, ASSP will move all Local connections where the sender failed  to a NULL-connection. The sender will receive "250 OK". default: 1 
+nolocalDomains: Skip Local Domain Check --  Do not check relaying based on  has been filled. default: 1  
+ldLDAP: Do LDAP Lookup for Local Domains --  Check local domains against an LDAP database.Note: Checking this requires filling in LDAP DomainFilter in The LDAP section.This requires an installed  module in Perl.  
+ispip: ISP/Secondary MX Servers* --  Enter any addresses that are your ISP or backup MX servers, separated by pipes (|). These addresses will (necessarily) bypass Griplist, IP Limiting, Delaying, PenaltyBox, SPF, DNSBL and SRS checks unless the IP can be determined by  (ISP Connecting IP). For example: 145.145.145.145|145.145.145.146.   
+contentOnlyRe: Regular Expression to Identify Forwarded Messages* --  Put anything here to identify messages which should bypass PB, Sender Validation, Griplist, IP Limiting, Delaying, SPF, DNSBL and SRS checks. For example:  email addresses of people who are forwarding from other accounts to their mailbox on your server.   
+ispHostnames: Regular Expression to Identify ISP/Secondary Hostnames* --  Hostname(s) to lookup IP(s) connecting to the ISP/Secondary server.If found, the connecting IP is used to perform IP checks on routed messages. This makes it possible to do DNSBL and Helo checks, even if ASSP is behind another server .For example: mx1.yourisp.com or mx1.yourisp.net|mx2.yoursecondary.com. This hostnames are found in the 'Received:' header, like  'Received: from ...123.123.123.123... by mx1.yourisp.com'. Leave this blank to disable the feature.   
+send250OKISP: Send 250 OK To ISP/Secondary MX Servers --  Set this checkbox if you want ASSP to reply to IP's in  with '250 OK' instead of SMTP error code '554 5.7.1'. Recommended=On default: 1 
+ispgripvalue: ISP/Secondary MX Grip Value --  It is recommended  to set it to 0.5 (Completely GReyIP) for ISP and Secondary MX servers. If left blank the Griplist X value is used (percentage of spam messages in relation to total). Note: value should be greater than 0 and less than 1, where 0 = never spam and 1 = always spam default: 0.5 
+BounceSenders: Bounce Senders* --  Envelope sender addresses treated as bounce origins. Null sender (\) is always included.
+ Accepts specific addresses (postmaster@example.com), usernames (mailer-daemon), or entire domains (@bounces.domain.com)Separate entries with pipes: |. For example: postmaster|mailer-daemon default: postmaster|mailer-daemon 
+PopB4SMTPFile: Pop Before SMTP DB File --  Enter the DB database filename of your POP before SMTP implementation with records stored for dotted-quad IP addresses.For example: /etc/mail/popip.db  
+PopB4SMTPMerak: Pop Before SMTP Merak Style --  If set Merak 7.5.2 is supported.  
+relayHost: Relay Host --  Your isp's mail relayhost (smarthost). For example: mail.isp.com:25f you run Exchange/Notes and you want assp to update the nonspam database and the whitelist, then enter your isp's smtp relay host here. Blank means no relayhost. Only required if clients don't deliver through SMTP.  
+relayPort: Relay Port --  Tell your mail server to connect to this port as its smarthost/relayhost. For example: 225 Note that you'll want to keep the  protected from external access by your firewall.You can supply an interface:port to limit connections.  
+NoRelaying: No Relaying Error --  SMTP error message to deny relaying. default: 530 Relaying not allowed  
+defaultLocalHost: Default Local Host --  If you want to be able to send mail to local users without a domain name then put the default local domain here. Blank disables this feature. For example: example.com  
+localDomainsFile: Local Domains File --  Like Local Domains, but OBSOLETE! Please use ->   
+# Recipients #
+sendAllPostmaster: Catchall Address for Messages to Postmaster --  ASSP will deliver messages addressed to all postmasters of your local domains to this address. For example: postmaster@example.com   
+sendAllPostmasterNP: Skip Spam Checks for Postmaster Catchall --   
+sendAllAbuse: Catchall Address for Messages to Abuse --  ASSP will deliver messages to all abuse addresses of your local domains to this address. For example: abuse@example.com  
+sendAllAbuseNP: Skip Spam Checks for Abuse Catchall --    
+DoRFC822: Validate Local Address to Conform with RFC5322  --  If activated, each local address is checked to conform with the email format defined in RFC5322 .This requires an installed  module in PERL. default: 1  
+LocalAddresses_Flat: Lookup Local Addresses from Here* --  This is the list of local addresses. You can list specific addresses (user@example.com), addresses at any local domain (user), or entire domains (@example.com).  Wildcards are supported (fribo*@example.com). Separate entries with a pipe (|).For example: fribo@example.com|jhanna|@example.org . As in all fields marked with * you may use a plain ASCII file 'file:files/localuser.txt'.   
+LocalAddresses_Flat_Domains: Use Entries without '@' as Domains --  Entries in  without leading '@' are domains, 'example.com' means an entire domain.  
+RejectTheseLocalAddresses: Bounce These Local Addresses* --  If ANY recipient is on bounce list, message will not be delivered. Used for disabled legitimate accounts, where a user may have left the company. You can list specific addresses (user@example.com), addresses at any local domain (user), or entire domains (@example.com).  Wildcards are supported (fribo*@example.com).   
+DoVRFY: Verify Recipients with SMTP-VRFY --  If activated and the format 'Domain=>MTA' is encountered in  recipient addresses will be verified with SMTP-VRFY (if VRFY is not supported 'MAIL FROM:' and 'RCPT TO:' will be used). default: 1 
+VRFYQueryTimeOut: SMTP VRFY-Query Timeout --  The number of seconds ASSP will wait for an answer of the MTA that is queryed with the VRFY command to verify a recipient address. See description of  to run this feature default: 5 
+DoLDAP: Do LDAP lookup for valid local addresses  --  Check local addresses against an LDAP database before accepting the message.Note: Checking this requires filling in the other LDAP parameters like LDAPHost.This requires an installed  module in PERL.  
+CatchAll: Catchall per Domain* --  ASSP will send to this addresses/domain if no valid user is found in  or LDAP. For example: catchall@domain1.com|catchall@domain2.com  
+CatchallallISP2NULL: Move ISP Connection with wrong Recipient Address to NULL --  If set, ASSP will move all ISP connections with wrong recipient addresses to a NULL-connection. The ISP will receive "250 OK" until the mail has passed, but the mail will not be sent to your MTA. This is done after  is checked.  
+CatchAllAll: Catchall for All Domains --  ASSP will send to this address if no valid user is found  in  or LDAP and no match is found in Catchall per Domain. For example: catchall@example.com  
+NullAddresses: NULL Connection Addresses* --  ASSP will dump a message silently when encountering such an address. Accepts specific addresses (null@example.com), user parts (nobody) or entire domains (@example.com).  
+InternalAddresses: Accept Mail from Local Domains only* --  These local addresses accept mail only from local  domains ( .  
+SepChar: Separation Character for Subaddressing --  RFC 3598 describes subaddressing with a Separation Character. A star ('*') is not allowed as Separation Character. Everything between Separation Character and @ is ignored (including Separation Character). For Example = '+' will allow user+subaddress@example.com. default: +  
+EnableBangPath: Support Bang Path --  If set, ASSP will support addresses like domainx!user@domainy and will convert them to user@domainx .  
+NoValidRecipient: No-Valid-Local-User Reply --  SMTP reply for invalid Users. Default: '550 5.1.1 User unknown: EMAILADDRESS'  The literal EMAILADDRESS (case sensitive) is replaced by the fully qualified SMTP recipient (e.g., thisuser@example.com). default: 550 5.1.1 User unknown: EMAILADDRESS  
+# Validate Helo #
+useHeloBlacklist: Use the Helo Blacklist --  Use the list of blacklisted-helo hosts built by rebuildspamdb. Scoring is done with . default: 3 
+DoIPinHelo: Do Score Suspicious Helos --  Score servers with IP number in Helo and check for mismatch with sending IP. Scoring is done with  default: 3 
+ForceFakedLocalHelo: Enforce Check of Forged Helos Before Delaying --  If set, ASSP will  check Forged Helos before DELAYING (). default: 1 
+DoFakedLocalHelo: Block Forged Helos --  Block remote servers that claim to come from our Local Domain/Local IP's/Local Host. Scoring with . default: 1 
+DoFakedUseLocalDomain: Use Local Domain List for Blocking Forged Helos --  If set, . default: 1 
+DoFakedWL: Do Not Block Whitelisted Forged Helo's --  Disable "Block Forged Helo's" for whitelisted addresses (not recommended).  
+DoFakedNP: Do Not Block Noprocessing Forged Helo's --  Disable "Block Forged Helo's" for addresses identified as noprocessing (not recommended).  
+myServerRe: Local Domains,IP's and Hostnames* --  Local Domains, IP's and Hostnames are often use to fake (forge) the Helo. Include all IP addresses and hostnames for your server  here, localhost is already included. Include Local Domains of your choice here, if you deactivated the automatic use of the  list.  For example: 11.22.33.44|mx.example.com|example.org   
+noHelo: Don't Validate HELO for these IP's* --  Enter IP addresses that you don't want to be HELO validated.
+   For example: 127.0.0.1|192.168.  
+heloBlacklistIgnore: Don't block these HELO's* --  HELO / EHLO greetings on this list will be excluded from the HELO checks. For example: host123.isp.com|host456.*.com   
+ForceValidateHelo: Enforce Early Helo Checks --  If set, ASSP will do  before DELAYING.  
+DoValidFormatHelo: Validate Format of HELO --  If activated, the HELO is checked against the expression below. If the Regular Expression matches, the HELO is ok. Scoring is done with . default: 3 
+validFormatHeloRe: Regular Expression to Validate Format of HELO* --  Validate Format HELO will check incoming HELOs according to rfc1123. For example: ^(([a-z\d][a-z\d-]*)?[a-z\d]\.)+[a-z]{2,6}$ default: ^(([a-z\d][a-z\d-]*)?[a-z\d]\.)+[a-z]{2,6}$  
+DoInvalidFormatHelo: Invalidate Format of HELO --  If activated, the HELO is checked against the expression below. If the Regular Expression matches, the HELO is not ok. Scoring is done with . default: 1 
+invalidFormatHeloRe: Regular Expression to Invalidate Format of HELO* --  Invalidate Format HELO will check incoming HELOs for this. 
+ For example:  ^\d+\.\d+\.\d+\.\d+$|^[^\.]+\.?$ or file:files/invalidhelo.txt default: file:files/invalidhelo.txt 
+DoHeloWL: Do Valid/Invalid/Black Helo for Whitelisted --  Do valid/invalid Helo for whitelisted addresses. default: 1  
+DoHeloNP: Do Valid/Invalid/Black Helo for Noprocessing --  Do valid/invalid Helo for noprocessing addresses.
+  
+   default: 1  
+# Validate Sender #
+DoBlackDomain: Do Blacklisted Addresses/Domains --   Scoring is done with . default: 1 
+DoBlackDomainWL: Do Blacklisting Addresses/Domains for White --  Do blacklisting addresses & domains in messages which are marked whitelisted by . default: 1 
+DoBlackDomainNP: Do Blacklisting Addresses/Domains for NoProcessing --  Do blacklisting addresses & domains in messages which are marked noprocessing by . default: 1 
+blackListedDomains: Blacklisted Addresses/Domains* --  Addresses  and Domains from which you always want to reject mail, they only send you spam. Note this matches the end of the address, so if you don't want to match subdomains then include the @. Note that example.com would also match spamexample.com but .example.com won't match example.com. abc@example.com will match abc@example.com but won't match bbc@example.com. Wildcards are supported. For example: cc|info|biz|seller@bayer.com|sell*@basf.com default: cc|info|biz  
+DoMsgID: Do Check Message IDs --  Score messages with missing/suspicious/invalid Message-ID. Scoring is done with  for suspicious Message-IDs. default: 3 
+noMsgID: Don't Validate Message-IDs for these IPs* --  Enter IP addresses that you don't want to be Message-ID validated, separated by pipes (|). For example: 127.0.0.1|192.168. default:  127.0.0.|192.168.|10.  
+validMsgIDRe: Regular Expression to Check Format of Message-ID --  Check Message IDs will check incoming messages for not supicious Message-IDs. If the RegEx match, the Message-ID is not suspicious.For example: ^.{1,80}@.{1,64}\..{1,64}$   
+DoNoValidLocalSender: Check External Sender with Local Address   --  If activated, each external sender with a domain in . default: 1 
+ForceNoValidLocalSender: Enforce Early Checking of External Sender with Local Address  --  If set, ASSP will do  before DELAYING.  
+DoNoSpoofing: Block Local Address from External Sender  --  If activated, each external sender address built with a domain in  is used for scoring. default: 3  
+noSpoofingCheckIP: Don't do Spoofing Check for these IP's*  --  Enter IP's that you don't want to be checked for spoofing. For example:145.145.145.145|145.146.  
+noSpoofingCheckDomain: Don't do Spoofing Check for these Addresses/Domains*  --   Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). Wildcards are supported (fribo*@example.com).  
+DoRFC822Sender: Validate Sender Address to conform with RFC5322 --  Sender must be a valid address to conform with RFC5322.  
+DoPTRCheck: Reversed Lookup --  If activated, each sender IP is checked for a PTR record. This requires an installed .  
+DoPTRCheckWL: Do Reversed Lookup for Whitelisted --  Do reversed lookup for whitelisted addresses.   
+DoPTRCheckNP: Do Reversed Lookup for Noprocessing --  Do reversed lookup for noprocessing addresses.   
+DoPTRCheckInvalid: Reversed Lookup FQDN Validation --  If activated - and Reversed Lookup is activated -, the PTR-FQDN record is checked against the Regex. Scoring is done with  default: 1 
+invalidPTRRe: Regular Expression to Invalidate Format of PTR* --  Validate Format PTR will check PTR records for this. 
+  For example:  ^\d+\.\d+\.\d+\.\d+$|^[^\.]+\.?$ or file:files/invalidptr.txt default: file:files/invalidptr.txt 
+validPTRRe: Regular Expression to Validate Format of PTR* --  Validate Format PTR will check PTR records for this. If found, the PTR will be considered valid
+  For example:  'static' or file:files/validptr.txt default: file:files/validptr.txt 
+PTRCacheExp: Reversed Lookup Cache Refresh Interval --  IP's in cache will be removed after this interval in hours. 0 will disable the cache.   default: 72 
+DoMXACheck: Validate MX or A Record --  If activated, each sender address is checked for a valid MX or A record. Scoring is done with .  
+MXACacheExp: Validate Domain MX Cache Refresh Interval --  IP's in cache will be removed after this interval in hours. 0 will disable the cache.   default: 72 
+DoNoFrom: Check For Existing From Header  --  Scoring is done with fromValencePB. default: 3 
+DoNoFromWL: Do DoNoFrom for Whitelisted --  Check for existing From Header for whitelisted addresses. default: 1 
+DoNoFromNP: Do DoNoFrom for NoProcessing --  Check for existing From Header for noprocessing addresses. default: 1 
+SenderInvalidError: Sender Validation Error --  SMTP error message to reject invalid senders. The literal REASON is replaced by (missing MX, missing PTR, invalid Helo, invalid user) depending on the check. For example:554 5.7.1 Mail appears to be unsolicited : REASON -- send error reports to postmaster@example.com.
+  
+   default: 554 5.7.1 REASON .  
+# IP Blocking #
+DoDropList: Do also Deny Connections from these IP's --  If activated, the IP is checked against the Droplist in addition to ''. The droplist is downloaded if a new one is available and contains the Spamhaus DROP List. See "http://www.spamhaus.org/drop/drop.lasso".  
+DropList: Drop also Connections from these IP's* --  Automatically downloaded (http://www.spamhaus.org/drop/drop.lasso) list of IP's which should be blocked right away. This list could be used in addition to ! default: file:files/droplist.txt 
+DoDenySMTP: Do Deny Connections from these IP's --  If activated, the IP is checked against  (Deny Connections from these IP&#39;s). default: 1 
+denySMTPConnectionsFrom: Deny Connections from these IP's* --  Manually maintained list of IP's which should be blocked. IP's in , penalty-whitebox will pass. For example: 145.145.145.145|145.146.   
+DoDenySMTPstrict: Do Deny Connections from these IP's Strictly --  If activated, the IP is checked against  (Deny Connections from these IP's Strictly). default: 1 
+denySMTPConnectionsFromAlways: Deny Connections from these IP's Strictly* --  Manually maintained list of IP's which should strictly be blocked after address verification and before body and header is downloaded. Contrary to , penalty-whitebox will not pass. For example file:files/denyalways.txt   
+DoCheckFrequencyIP: Check Frequency - Maximum Connections Per IP --  Scoring is done with .  
+maxSMTPipConnects: Maximum Frequency of Connections Per IP  --  The maximum number of SMTP connections an IP Address can make during the , PB-whitebox are excluded from SMTP session limiting, whitelisted and noprocessing addresses are honored. default: 10  
+maxSMTPipDuration: Maximum Frequency of Connections Per IP Duration --  The window (in seconds) during which the  (IP Frequency) (see above for more details) will be scrutinized for each IP. The default is 90 seconds. default: 90 
+maxSMTPipExpiration: Expiration of Maximum Frequency --  The number of seconds that must pass before an IP address blocked by the  (IP Address Frequency) setting is allowed to connect again. The default is 3600 (seconds) . default: 3600 
+DoNumberDomainIP: Check Number of IP's Per Domain --  Scoring is done with .   
+maxSMTPdomainIP: Limit Number of IP's  Per Domain --  The number of IP(subnet) switches a domain may have during the , PB-whitebox are excluded, whitelisted and noprocessing addresses are honored. default: 10  
+maxSMTPdomainIPExpiration: Expiration of Limit Number --  The number of seconds that must pass before a domain blocked by the  (Limit Subnet IP's Per Domain) setting (see above for more details) is allowed to connect again. The default is 1800 (seconds). default: 1800  
+maxSMTPdomainIPWL: Do Not Limit Different IP's For These Domains* --  This prevents specific domains from limiting. For example: yahoo.com|hotmail.*.com|gmail.com
+  
+   default: gmx.de|t-online.de|yahoo.com|hotmail.com|gmail.com  
+# SenderBase  #
+DoOrgWhiting: Do Organization Whiting --  If activated, each sending IP address has it's assigned organization
+looked up . This requires an installed . default: 1  
+whiteSenderBase: Regular Expression to Identify Organizations in SenderBase**  --  If the organization in the  IP description matches this Perl regular expression the message will be considered non-spam. For example file:files/whiteorg.txt default: file:files/whiteorg.txt 
+DoOrgBlocking: Do Organization Blocking --  If activated, each sending IP address has it's assigned organization
+looked up . This requires an installed . default: 2 
+blackSenderBase: Regular Expression to Identify Black Organizations in SenderBase**  --  If the organization-field in the   
+DoCountryBlocking: Do Country Blocking --  If activated, each sending IP address has it's assigned country
+looked up and compared to . default: 2  
+CountryCodeBlockedRe: Blocked Countries** --  Messages from IP's based in these countries will be blocked if .   
+DoSenderBase: Do Suspicious Country Scoring --  If activated, each sending IP address has it's assigned country
+looked up and compared to . default: 3  
+CountryCodeRe: Suspicious Countries** --  Messages from IP's based in these countries will increase the MessageScore. For example: UA|GR|HU|SA|IN|IE|PT|MD|PE|CZ|TW|BR|CL|ID|PH. Messages from these countries will increase the total MessageScore using .   
+NoCountryCodeRe: Ignore Countries* --  Messages from IP's based in these countries will be ignored. For example: US default: US 
+MyCountryCodeRe: Home Countries** --  Put here your own country code(s) (for example: US). Messages from IP's based in these countries will decrease the total MessageScore using .   
+SBCacheExp: Country Cache Refresh Interval --  IP's in cache will be removed after this interval in hours. 0 will disable the cache.  
+  
+   default: 72 
+# PenaltyBox  #
+DoPenalty: PenaltyBox - IP Profiles --  The PenaltyBox is a  temporary position of low esteem awarded for a perceived misdeed. It scores IP's based on some events (. default: 2 
+DoPenaltyMessage: Message Scoring --  If this feature is selected, the total score for all checks during a message is used to determine if the email should be considered Spam. If the combined score is greater than . default: 1 
+PenaltyMessageTag: Low MessageLimit --  MessageMode will not block messages whose score exceeds this threshold during the message but will tag them.  For example: 40 default: 40 
+PenaltyMessageBlock: High MessageLimit --  MessageMode will block messages whose score exceeds this threshold during the message.  For example: 50 default: 50 
+AddScoringHeader: Add IP/Message Scoring Header --  Adds a line to the email header "X-Assp-XXX-Score: ", where XXX may be IP, Message or both. default: 1 
+pbdb: PenaltyBox Database --  The directory/file with the penaltybox database files. For removal of entries from PenaltyBlackBox use .
+ For removal of entries from WhiteBox  use  default: pb/pbdb 
+noPB: Don't do BlackBox for these IP's*  --  Enter IP's that you don't want to be profiled. These IP's will also be automatically removed from PB-BlackBox. For example:145.145.145.145|145.146.   
+noPBwhite: Don't do WhiteBox for these IP's*  --  Enter IP's that you don't want to be NOT profiled. These IP's will also be automatically removed from PB-WhiteBox.   
+WhiteExpiration: Expiration Time for WhiteBox Entries --  The WhiteBox is always activated. The WhiteBox is similar to the  Whitelist  - but it is not a whitelist: content-related checks like Bayesian, URIBL, Bomb  will be done, IP-related checks will be skipped. WhiteBox entries will expire after this specified number of days. For example: 30 default: 30  
+spamtrapaddresses: PenaltyBox Trap Addresses*  --  Mail to any of these addresses will be blocked and the scoring value is added. Whitelist will be ignored. Nothing will be stored in the Spam Collection. These addresses are not checked for validity. Entries are separated by '|' where '*' can be used as a match anything wildcard. Entries that start with '@' indicate that all addresses with that domain should match. Entries without '@' indicate the user part of email addresses with any domain. Regexp are supported
+Valid entries are:
+john.doe@example.tld|jane.doe|@example.tld|*.department@example.tld default: put|your@penaltytrap.com|addresses|@example.org  
+PenaltyTrapReply: PenaltyTrap Reply --  SMTP reply for invalid Users. Default: '550 5.1.1 User unknown: EMAILADDRESS'  The literal EMAILADDRESS (case sensitive) is replaced by the fully qualified SMTP recipient (e.g., thisuser@example.com). Make this empty if you do want to be polite. default: 550 5.1.1 User unknown: EMAILADDRESS 
+DoPenaltyMakeTraps: Do Heavy Used Invalid Addresses as PenaltyBox Trap Addresses --  If set to 'record addresses', the frequency of Invalid Addresses is stored, no other action taken. if set to 'make traps', addresses in heavy use will act like a PenaltyBox Trap Address, see Invalid Addresses Limit below default: 2  
+PenaltyMakeTraps: Invalid Addresses Limit --  Minimum number of times an address must appear before it will be used as Trap. For example 5. default: 5 
+noPenaltyMakeTraps: Exceptionlist for Traps* --  Addresses which should not be used for traps. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  Wildcards are supported (fribo*@example.com).  
+PBTrapCacheExp: Invalid Addresses Refresh Interval --  Addresses will be removed after this interval in hours. For example 3.  default: 72 
+PenaltyUseNetblocks: Use IP Netblocks --  Perform the IP address checks of the sending host based on the /24 subnet  rather than on the specific IP. default: 1 
+PenaltyError: Penalty Reply --  If set SMTP reply for Penalty Deny. eg: '554 5.7.1 Error, send your mail to postmaster@LOCALDOMAIN to ensure delivery'. The literal LOCALDOMAIN will be replaced by the recipient domain. For example:554 5.7.1 Mail appears to be unsolicited -- send error reports to postmaster@LOCALDOMAIN.   
+PenaltyDuration: Penalty Interval --  IP's will be kept in the BlackBox if their score exceeds the Penalty Limit during this interval (minutes). default: 60  
+PenaltyLimit: Penalty Limit --  PB will block IP's whose score exceeds this threshold during the Penalty Interval. Successful ASSP checks will increase the internal score per IP. For example: 50 default: 50 
+PenaltyExpiration: Expiration Time --  Penalties will expire after this number of minutes. If set to Zero the Penalty BlackBox will be deleted and started from scratch. default: 360  
+CleanPBInterval: Clean Up PB Databases --  Delete outdated entries from blackbox and whitebox databases every this many hours.
+  Note: the current timeout must expire before the new setting is loaded, or you can restart.
+  Defaults to 3 hours. default: 3  
+DoPenaltyExtreme: PenaltyBox Extreme IP Profiling --  If set PBextreme will block IP's whose score meet or exceed Extreme Scoring Threshold.  blocks after the header is done, based on the IP's score from previous and current SMTP session  
+ForcePBExtreme: Enforce Early PenaltyBox Extreme IP Profiling --  If set, ASSP will do  before DELAYING.  
+PenaltyExtreme: Extreme Scoring Threshold --  PBextreme will use this to determine candidates for special treatment. For example: 150. default: 150 
+ExtremeWL: Penalize Whitelisted --  Enable extreme penalties for whitelisted addresses.  
+ExtremeNP: Penalize NonProcessing --  Enable extreme penalties for addresses on the  list.  
+ExtremeExpiration: Expiration Time for Extreme Penalties --  Extreme penalties will expire after this number of days. For example: 7 default: 7  
+DoExtremeExport: Do Export Penalty BlackBox Extreme --   
+DoExtremeExportAppend: Append Export File --  Do not overwrite the export file but append to it.   
+exportInterval: Export BlackBox Extreme File Interval --   Exported Penalty Black Box Extreme File every this hours.
+  Defaults to 6 hours. default: 6 
+exportExtremeBlack: Exported BlackBox Extreme File  --  IP's in Penalty BlackBox which surpassed the extreme level will be regularly stored into this file. May be used for setting the firewall or similar applications. default: file:files/exportedextreme.txt 
+DoNotPenalizeRed: Do Not Score IP's in Redlisted Messages --  IP's matching Red Regex or Redlist will not collect scoring values from PenaltyBox.   
+DoNotPenalizeNull: Do Not Score IP's From Bounce/Null-Senders --  IP's matching  (Bounce Senders) will not be profiled.   
+backsctrValencePB: Backscatter Detection Score --  message scoring in . default: 10 
+baValencePB: Bad Attachment --  For Message & IP scoring in . default: 20  
+baysValencePB: Bayesian --  For Message & IP scoring in . default: 45  
+bccValencePB: Blocked Country Code Score --  For Message & IP scoring in . default: 25  
+blValencePB: Blacklisted Domain Score --  For Message & IP scoring in  default: 20  
+blackValencePB: Black Expression Match Score --  For Message & IP scoring in . default: 20 
+bombSuspiciousValencePB: Matching Suspicious Expression Score --  message scoring in  default: 10 
+bombValencePB: Bomb Expression Matching Score --  For Message & IP scoring in  default: 20  
+scriptValencePB: Script Expression Matching Score --  For Message & IP scoring in  default: 20 
+erValencePB: Empty Recipients Score --  For IP scoring  in Recpient Section. default: 5  
+etValencePB: Early Talker Scoring --  IP scoring for  clients who talk before server's greeting is sent. default: 25 
+fhValencePB: Forged HELO Scoring --  For Message & IP scoring in . default: 150  
+fiphValencePB: Suspicious HELO Score --  For Message & IP scoring in . The score will be applied if one of two conditions are met: HELO contains IP, IP number in Helo. The score will be doubled if both conditions are met. default: 5 
+flValencePB: Invalid Local Sender Score --  For Message & IP scoring in . default: 20  
+gripValencePB: GRIP value --  message scoring with  values) default: 25 
+hlValencePB: Blacklisted HELO Score --  For Message & IP scoring in . default: 20  
+iaValencePB: Internal Only Address Violation Score --  For Message & IP scoring in . default: 25 
+idomValencePB: Number of IP's Per Domain Violation Score --  For IP scoring in . default: 40 
+ifreqValencePB: IP Frequency Violation Score --  For IP scoring  in . default: 40 
+ihValencePB: Invalid HELO Score --  For Message & IP scoring in . default: 10  
+iplValencePB: IP Maximum Parallel Sessions Violation Score, default=5 --  For IP scoring in . default: 5 
+irValencePB: Invalid Recipient Score --  For Message & IP scoring Recpient Section. default: 5 
+meValencePB: Max Errors Exceeded Score --  IP scoring in . default: 10  
+midmValencePB: Missing Message-ID Score --  For Message & IP scoring in . default: 5  
+midsValencePB: Suspicious Message-ID Score --  For Message & IP scoring in . default: 5 
+msValencePB: Message Scoring Limit Exceeded --  For IP scoring  with  default: 10  
+mxValencePB: Missing MX Score --  For Message & IP scoring in . default: 10 
+mxaValencePB: Missing MX and A Record Score
+ --  For Message & IP scoring in . default: 15  
+nofromValencePB: No From Score --  For Message & IP scoring in . default: 50 
+okValencePB: <span class="positive">Message OK</span> --   default: -25 
+pbValencePB: Bad IP History, TotalScore larger than PenaltyLimit
+ --  message scoring  in PenaltyBox (  ) default: 10  
+pbeValencePB: Extreme Bad IP History, TotalScore larger than PenaltyExtreme --  message scoring  in PenaltyBox (  ) default: 15  
+ptiValencePB: Invalid PTR Record Score
+ --  For Message & IP scoring in  default: 10 
+ptmValencePB: Missing PTR Record Score
+ --  For Message & IP scoring in  default: 5 
+rblValencePB: DNSBL Failed Score
+ --  For Message & IP scoring in  default: 45  
+rblnValencePB: DNSBL Neutral Score
+ --  For Message & IP scoring in  default: 25 
+rlValencePB: Failed Relay Attempt Score
+ --  For IP scoring  in Relaying Section. default: 10  
+saValencePB: Spam Collect Address Score
+ --  For IP scoring with  default: 25 
+sbfccValencePB: Foreign Country Code Score
+ --  message scoring in  default: 10 
+sbhccValencePB: <span class="positive">Home Country Code Score</span> --   default: -10 
+sborgValencePB: Blocked Organizations Score
+ --  For Message & IP scoring in  default: 25 
+sbnValencePB: No Organization and No CountryCode
+ --  For Message & IP scoring in DoOrgBlocking/DoCountryBlocking default: 10 
+sworgValencePB: White Organizations Score
+ --   default: -25 
+sbsccValencePB: Suspicious Country Code Score
+ --  message scoring in  default: 10  
+spfnValencePB: SPF Neutral Score
+ --  For Message & IP scoring with  default: 5 
+spfsValencePB: SPF Softfailed Score
+ --  For Message & IP scoring with  default: 5 
+spfnonValencePB: SPF None Score
+ --  For Message & IP scoring with   
+spfuValencePB: SPF Unknown Score
+ --  For Message & IP scoring  in   
+spfeValencePB: SPF Error Score
+ --  For Message & IP scoring in  default: 5 
+spfValencePB: SPF Failed Score
+ --  For Message & IP scoring in  default: 10 
+stValencePB: Penalty Trap Address Score --  For IP scoring  in with  default: 50 
+vsValencePB: Virus Suspicious Score
+ --  message scoring in  default: 25 
+vdValencePB: Virus Detected Score
+ --  Message & IP scoring in  default: 50  
+uriblnValencePB: URIBL Neutral Score
+ --  Message & IP scoring in  default: 20  
+uriblValencePB: URIBL Failed Score
+ --  For Message & IP scoring in 
+   default: 25 
+# Delaying/Greylisting  #
+EnableDelaying: Enable Delaying/Greylisting --  Enable Greylisting as described at .
+   Greylisting involves sending a temporary 451 SMTP error code to the sending server when a message is received, along with sending this error code ASSP creates a Triplet and stores this. On the second delivery attempt if the Embargo Time set by the ASSP admin for the Triplet has been surpassed the message will be accepted and a Tuplet will be created and not delayed again for an Expiry Time set by the ASSP admin. default: 1 
+DelayGripvalue: Do Greylisting/Delaying above this Gripvalue --  This can be used to restrict delaying to IPs with a higher Griplistvalue. The Griplistvalue is assigned to an IP-block between  0 and 1, where 0 = never spam and 1 = always spam. For examle 0.1. You may set it higher to 0.3 if you want to delay only IPs with a higher probality to send Spam. default: 0.1 
+DelayWL: Whitelisted Greylisting --  Enable Greylisting for whitelisted users.  
+DelayNP: NoProcessing Greylisting --  Enable Greylisting for noprocessing users.  
+DelaySL: SpamLovers Greylisting --  Enable Greylisting for SpamLovers.  
+DelaySSL: SSL Greylisting --  Enable Greylisting for SSL Connections. default: 1 
+DelaySPF: SPF Pass Greylisting --  Enable Greylisting for SPF=pass results. default: 1 
+DelayAddHeader: Add X-Assp-Delayed Header --  Add X-Assp-Delayed header to header of all delayed emails. default: 1 
+DelayEmbargoTime: Embargo Time --  Enter the number of minutes for which delivery, related with new 'triplet' (IP address of the sending
+  host + mail from + rcpt to), is refused with a temporary failure. Default is 5 minutes. default: 5  
+DelayWaitTime: Wait Time --  Enter the number of hours to wait for delivery attempts related with recognised 'triplet'; delivery is accepted 
+  immediately and the 'tuplet' (IP address of the sending host + sender's domain) is safelisted. Default is 28 hours. default: 28  
+DelayExpiryTime: Expiry Time --  Enter the number of days for which whitelisted 'tuplet' is considered valid. Default is 36 days. default: 36  
+DelayUseNetblocks: Use IP Netblocks --  Perform the IP address checks of the sending host based on the /24 subnet it is at rather than the specific IP. 
+  This feature may be useful for legitimate mail systems that shuffle messages among SMTP clients between retransmissions. default: 1 
+DelayNormalizeVERPs: Normalize VERP Addresses --  Some mailing lists (such as Ezmlm) try to track bounces to individual mails, rather than just individual recipients, which creates a variation on the VERP method where each email has it's own unique envelope sender. Since the automatic whitelisting (called savelisting to make a difference to the standard whitelisting) that is built into Greylisting depends on the envelope addresses for subsequent emails being the same, the greylisting filter will attempt to normalize the unique sender addresses, when this option is checked. default: 1 
+DelayMD5: Use MD5 for DelayDB --  Message-Digest algorithm 5 is a cryptographic hash function and adds some level of security to the delay database. Must be set to off if you want to list the database with DelayShowDB/DelayShowDBwhite. default: 1  
+DelayShowDB: Show Delay/Greylisting Database --  The directory/file with the delay database file. If you change  in section Filepath you must change it here too. default: file:delaydb 
+DelayShowDBwhite: Show Delay/Greylisting Save Database --  The directory/file with the save delay database file. If you change  in section Filepath you must change it here too. default: file:delaydb.white 
+DelayExpireOnSpam: Expire Spamming Safelisted Tuplets --  If a safelisted 'tuplet' is ever associated with spam, viri, failed rbl, spf etc, it is deleted from the safelist. 
+  This renews the temporary embargo for subsequent mail involving the tuplet. default: 1 
+CleanDelayDBInterval: Clean Up Delaying Database --  Delete outdated entries from triplets and safelisted tuplets databases every this many seconds.
+  Note: the current timeout must expire before the new setting is loaded, or you can restart.
+  Defaults to 3 hours. default: 10800  
+noDelay: Don't Delay these IPs* --  Enter IP addresses that you don't want to be delayed, separated by pipes (|). There are misbehaving MTAs that will not be able to get a legitimate email through a Greylisting server because they do not try again later. For example 'file:files/nodelay.txt.txt').
+  For example:  145.145.145.145|145.146. default: file:files/nodelay.txt 
+DelayError: Reply Code to Refuse Delayed Messages --  SMTP reply code to refuse delayed messages. Default: 451 4.7.1 Please try again later
+  
+  
+   default: 451 4.7.1 Please try again later  
+# SPF/SRS  #
+ValidateSPF: Enable SPF Validation --  Enable Sender Policy Framework Validation as described at .
+  This requires an installed . default: 3 
+SPFWL: Whitelisted SPF Validation --  Enable Sender Policy Framework Validation for whitelisted users also.  
+SPFNP: noProcessing SPF Validation --  Enable Sender Policy Framework Validation for nonprocessed messages also.  
+AddSPFHeader: Add Received-SPF Header --  Add Received-SPF header to header of all emails processed by SPF. default: 1  
+SPFError: SPF Failed Reply --  SMTP reply for SPF failed messages. Default: '554 5.7.1 failed SPF: SPFRESULT'
+  The literal SPFRESULT (case sensitive) is replaced by the actual result. default: 554 5.7.1 failed SPF: SPFRESULT  
+noSPFRe: Regular Expression to Skip SPF Processing* --  Put anything here to identify these messages in mailfrom or header  
+SPFlocalRecord: Fallback/Override SPF Record --  Used in Fallback/Override DomainsThe default is v=spf1 a/24 mx/24 ptr -all default: v=spf1 a/24 mx/24 ptr -all 
+strictSPFRe: Strict SPF Processing Regular Expression* --  Softfail/Neutral/None will be failed for these sending addresses. Put anything here to identify the addresses. For example: '@gmail.com|@msn.com|@live.com|@ebay.com|@ebay.nl|@bbt.com|@paypal.com|@einsundeins.de|@microsoft.com|rr.com|veritate.com' default: @gmail.com|@msn.com|@live.com|@ebay.com|@ebay.nl|@bbt.com|@paypal.com|@einsundeins.de|@microsoft.com|rr.com|veritate.com  
+blockstrictSPFRe: Regular Expression to Block SPF Processing Regular Expression* --  All failed messages will be blocked for these sending addresses. Put anything here to identify the addresses. default: @ebay.com|@paypal.com 
+SPFsoftfail: Fail SPF Softfail Validations --  Intentionally fail SPF softfail status responses. The possible results of a query are:
+pass:The client IP address is an authorized mailer for the sender. The mail should be accepted subject to local policy regarding the sender.
+fail:The client IP address is not an authorized mailer, and the sender wants you to reject the transaction for fear of forgery.
+softfail:The client IP address is not an authorized mailer, but the sender prefers that you accept the transaction because it isn't absolutely sure all its users are mailing through approved servers. The softfail status is often used during initial deployment of SPF records by a domain.
+neutral:The sender makes no assertion about the status of the client IP.
+none:There is no SPF record for this domain.
+permerror&temperror:The DNS lookup encountered an error during processing.
+unknown:The domain has a configuration error in the published data or defines a mechanism that this library does not understand.  
+SPFneutral: Fail SPF Neutral Validations --  Intentionally fail SPF neutral status responses  
+SPFqueryerror: Fail SPF Error Responses --  Intentionally fail SPF 'error' status responses  
+SPFnone: Fail SPF None  Responses --  Intentionally fail SPF 'none'  status responses  
+SPFunknown: Fail SPF Unknown  Responses --  Intentionally fail SPF 'unknown'  status responses  
+SPFCacheExp: SPF Cache Refresh Interval --  SPF records in cache will be removed after this interval in hours. 0 will disable the cache.   default: 72 
+DebugSPF: Enable SPF Debug output to ASSP Logfile --  Enables verbose debugging of SPF queries within the Mail::SPF::Query module.
+ 
+ 
+   
+EnableSRS: Enable Sender Rewriting Scheme --  Enable Sender Rewriting Scheme as described at .
+  This requires an installed  module in PERL.
+  You should use SRS if your message handling system forwards email for domains with published spf records.
+  Note that you have to setup the outgoing path (Relay Host and Port) to let ASSP see and rewrite your outgoing traffic. Testmode is set with .  
+SRSAliasDomain: Alias Domain --  SPF requires the SMTP client IP to match the envelope sender (return-path). When a message is forwarded through
+  an intermediate server, that intermediate server may need to rewrite the return-path to remain SPF compliant.
+  For example: example.com default: example.com  
+SRSSecretKey: Secret Key --  A key for the cryptographic algorithms -- Must be at least 5 characters long.   
+SRSTimestampMaxAge: Maximum Timestamp Age --  Enter the maximum number of days for which a timestamp is considered valid. Default is 21 days. default: 21 
+SRSHashLength: Hash Length --  The number of bytes of base64 encoded data to use for the cryptographic hash.
+  More is better, but makes for longer addresses which might exceed the 64 character length suggested by RFC5321.
+  This defaults to 4, which gives 4 x 6 = 24 bits of cryptographic information, which means that a spammer will have 
+  to make 2^24 attempts to guarantee forging an SRS address. default: 4 
+SRSValidateBounce: Enable Bounce Recipient Validation --  Bounce messages that fail reverse SRS validation (but not a valid SMTP probe)
+  will receive a 554 5.7.5 [Bounce address not SRS signed] SMTP error code. default: 1 
+SRSno: Don't Rewrite These Addresses* --  Don't rewrite addresses when messages come from/to these addresses. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). For example: fribo@example.com|jhanna|@example.org  
+noSRS: Don't Validate Bounces From these IPs* --  Enter IP addresses that you don't want to validate bounces from, separated by pipes (|).
+  For example:  145.145.145.145|145.146.
+  
+    
+# DNSBL  #
+ValidateRBL: Enable DNS Blacklist Validation  --  This requires an installed . default: 1 
+ForceRBLCache: Early DNSBL Cache Blocking --  If set, ASSP will use cached DNSBL hits to block messages before other tests.  
+noRBL: Don't do DNSBL for these IPs* --  Enter IP addresses that you don't want to be DNSBL validated, separated by pipes (|). For example:  145.145.145.145|145.146.  
+RBLWL: Whitelisted DNSBL Validation --  Enable DNSBL for whitelisted messages  
+RBLNP: NoProcessing DNSBL Validation --  Enable DNSBL for noprocessing messages  
+AddRBLHeader: Add X-Assp-Received-DNSBL Header --  Add X-Assp-Received-DNSBL header to messages with positive reply from DNSBL. default: 1 
+RBLError: DNSBL Failed Reply --  SMTP reply for DNSBL failed messages. Default: '554 5.7.1 DNS Blacklisted in RBLLISTED'
+  The literal RBLLISTED (case sensitive) is replaced by the actual serviceprovider(s). default: 554 5.7.1 DNS Blacklisted in RBLLISTED  
+RBLServiceProvider: RBL Service Providers* <a href="http://stats.dnsbl.com/" target=wiki><img height=12 width=12 src="get?file=images/info.png" alt="DNSBL Statistics" /></a> --  Names of DNSBLs to use separated by "|". Defaults are: zen.spamhaus.org=>1|bl.spamcop.net=>1|psbl.surriel.com=>2|ix.dnsbl.manitu.net=>2|l2.apews.org=>3|combined.njabl.org=>1|safe.dnsbl.sorbs.net=>1|dnsbl-1.uceprotect.net=>2|dnsbl-2.uceprotect.net=>2|dnsbl-3.uceprotect.net=>2.
+DNSBL providers can get a "weight" like bl.spamcop.net=>1.
+The value of the weight is a divisor of 25. 
+If the sum of weights surpasses . default: zen.spamhaus.org=>1|bl.spamcop.net=>1|psbl.surriel.com=>2|ix.dnsbl.manitu.net=>2|l2.apews.org=>3|combined.njabl.org=>1|safe.dnsbl.sorbs.net=>1|dnsbl-1.uceprotect.net=>2|dnsbl-2.uceprotect.net=>2|dnsbl-3.uceprotect.net=>2  
+RBLmaxreplies: Maximum Replies --  A reply is affirmative or negative reply from a DNSBL.
+  The DNSBL module will wait for this number of replies (negative or positive) from the DNSBLs listed under Service Provider for up to the Maximum Time(RBLmaxtime).
+  This number should be equal to or less than the number of DNSBL Service Providers listed to allow for randomly unavailable DNSBLs.
+
+ default: 9  
+RBLmaxhits: Maximum Hits --  A hit is an affirmative response from a DNSBL.
+  The DNSBL module will check all of the DNSBLs listed under Service Provider. If the number of hits is greater or equal Maximum Hits, the email is flagged Failed. If the number of hits is greater 0 and less Maximum Hits, the email is flagged Neutral default: 2 
+RBLmaxweight: Maximum Weight --  A weight is a number  representing the trust we put into a DNSBL.
+  The DNSBL module will check all of the DNSBLs listed under Service Provider. If the total of weights is greater or equal Maximum Weight, the email is flagged Failed. f the total of weights is greater 0 and less Maximum Weight, the email is flagged Neutral default: 50 
+RBLmaxtime: Maximum Time --  This sets the maximum time in seconds to spend on each message performing DNSBL checks. Default is 10. default: 10  
+RBLsocktime: Socket Timeout --  This sets the DNSBL socket read timeout in seconds. default: 1 
+RBLCacheExp: DNSBL Expiration Time --  IP's in cache will be removed after this interval in hours. 0 will disable the cache. 
+  
+   default: 24 
+# URIBL #
+ValidateURIBL: Enable URI Blocklist Validation <a href="http://www.uribl.com/about.shtml" target=wiki><img src="get?file=images/info.png" alt="about" /></a> --  Enable URI Blocklist. Messages that fail URIBL validation will receive . default: 1 
+URIBLWL: Do URI Blocklist Validation for Whitelisted --   
+URIBLNP: Do URI Blocklist Validation for NoProcessing --   
+URIBLLocal: Do URI Blocklist Validation for Local Mails --   
+URIBLISP: Do URI Blocklist Validation for ISP/Secondary --  default: 1 
+URIBLServiceProvider: URIBL Service Providers* --  Domain Names of URIBLs to use. Default is: multi.surbl.org|black.uribl.com default: multi.surbl.org|black.uribl.com  
+URIBLCCTLDS: URIBL Country Code TLDs* --  List of  domain of the uri. default: file:files/URIBLCCTLDS.txt 
+URIBLmaxuris: Maximum URIs --  More than this number of URIs in the body will increase spam probability. Enter 0 to disable feature.  
+URIBLmaxdomains: Maximum Unique Domain URIs --  More than this number of unique domain URIs in the body will increase spam probability. Enter 0 to disable feature.  
+URIBLNoObfuscated: Disallow Obfuscated URIs <a href="http://www.pc-help.org/obscure.htm" target="ASSPHELP"><img src="get?file=images/info.png" alt="obscure" /></a> --  When enabled, messages with obfuscated URIs of types [integer/octal/hex IP,
+other things!] in the body will get increased spam probability. default: 1 
+URIBLmaxreplies: Maximum Replies --  A reply is affirmative or negative reply from a URIBL.
+   The URIBL module will wait for this number of replies (negative or positive) from the URIBLs listed under URIBLServiceProvider
+   for up to the Maximum Time below. This number should be equal to or less than the number of URIBL Service Providers
+   listed to allow for randomly unavailable URIBLs. default: 2  
+URIBLmaxhits: Maximum Hits --  A hit is an affirmative response from a URIBL.
+   The URIBL module will check all of the URIBLs listed under .
+   If the number of hits is greater or equal Maximum Hits, the email is flagged failed. If the number of hits is greater 0 and less Maximum Hits, the email is flagged neutral. default: 1 
+URIBLmaxtime: Maximum Time --  This sets the maximum time in seconds to spend on each message performing URIBL checks. default: 10 
+URIBLsocktime: Socket Timeout --  This sets the URIBL socket read timeout in seconds. default: 1 
+URIBLwhitelist: Whitelisted URIBL Domains* --  This prevents specific domains from being checked by URIBL module. For example: doubleclick.net or file:files/URIBLwhitelist.txt. Domains already listed in  and whitelistedDomains will be honored. default: doubleclick.net  
+noURIBL: Don't Check Messages from these Addresses* --  Don't validate URIBL when messages come from these addresses. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). For example: fribo@example.com|jhanna|@example.org  
+AddURIBLHeader: Add X-Assp-Received-URIBL Header --  Add X-Assp-Received-URIBL header to messages with positive reply from URIBL. default: 1 
+URIBLCacheExp: URIBL Cache Expiration Time --  Domains in cache will be removed after this interval in hours. Empty or 0 will disable the cache.   default: 24 
+URIBLError: Reply Code to Refuse Failed URIBL Message --  SMTP reply code to refuse failed URIBL message. The literal URIBLNAME (case sensitive) is replaced by the names of URIBL(s) with negative response.
+ default: 554 5.7.1 Blacklisted by URIBLNAME Contact the postmaster of this domain for resolution.  
+# Attachment Blocking #
+DoBlockExes: External Attachment Blocking  --  Note:Attachment blocking will be done inside .  
+BlockExes: External Attachment Blocking Level  --  Set the level of Attachment Blocking to 1-3 for attachments that should be blocked, set level to 4  for attachments that should be allowed. Choose 0 for no attachment blocking.   
+BlockWLExes: Whitelisted and Local Attachment Blocking --  Set the level of Attachment Blocking to 0-4 for whitelisted and local senders. Choose 0 for no attachment blocking.   
+BlockNPExes: NoProcessing Attachment Blocking --  Set the level of Attachment Blocking to 0-4 for noprocessing messages. Choose 0 for no attachment blocking.   
+BadAttachL1: Level 1 rejected File Extensions --  This regular expression is used to identify Level 1 attachments that should be blocked.
+  Separate entries with a pipe |. The dot . is assumed to precede these, so don't include it. For example: ad[ep]|asx|ba[st]|chm|cmd|com|cpl|crt|dbx|exe|hlp|ht[ab]|in[fs]|isp|js|jse|lnk|md[abez]|mht|ms[cipt]|nch|pcd|pif|prf|reg|sc[frt]|sh[bs]|vb|vb[es]|wms|ws[cfh] default: exe|scr|pif|vb[es]|js|jse|ws[fh]|sh[sb]|lnk|bat|cmd|com|ht[ab]  
+BadAttachL2: Level 2 rejected File Extensions --  This regular expression is used to identify Level 2 attachments that should be blocked.
+  Level 2 already includes all rejected extensions from Level 1.  For example: (ad[ep]|asx|ba[st]|chm|cmd|com|cpl|crt|dbx|exe|hlp|ht[ab]|in[fs]|isp|js|jse|lnk|md[abez]|mht|ms[cipt]|nch|pcd|pif|prf|reg|sc[frt]|sh[bs]|vb|vb[es]|wms|ws[cfh]).zip  
+BadAttachL3: Level 3 rejected File Extensions --  This regular expression is used to identify Level 3 attachments that should be blocked.
+  Level 3 includes Level 2 and Level 1. For example: zip|url  
+GoodAttach: Level 4 Allowed File Extensions --  This regular expression is used to identify  attachments that should be allowed. All others are blocked. Separate entries with a pipe |. The dot . is assumed to precede these, so don't include it. For example: ai|asc|bhx|dat|doc|docx|eps|gif|htm|html|ics|jpg|jpeg|hqx|od[tsp]|pdf|ppt|rar|rpt|rtf|snp|txt|xls|zip   
+AttachmentError: Reply Code to Refuse Rejected Attachments --  The literal FILENAME (case sensitive) will be replaced with the name of the blocked attachment! default: 550 5.7.1 These attachments are not allowed -- Compress before mailing.  
+BlockUuencoded: Refuse Uuencoded Mails --  default: 1 
+UuencodedError: Reply to Refuse Uuencoded Mails --  For example: 554 5.7.1 This mail is uuencoded and will be blocked
+  default: 554 5.7.1 This message is uuencoded and will be blocked.   
+# ClamAV and FileScan  #
+noScan: Do Not Scan Messages from/to these 
+Addresses* --  Accepts 
+specific addresses (user@example.com), user parts (user) or entire 
+domains (@example.com).  
+ScanWL: Scan Whitelisted Senders --  default: 1 
+ScanNP: Scan NoProcessing Messages --    
+ScanLocal: Scan Local Senders --   
+ScanCC: Scan Copied Spam Mails --   
+AvError: Reply Code to Refuse Infected 
+Messages --  Reply code to refuse infected messages. The string $infection is 
+replaced with the name of the detected virus.
+  For example: 554 5.7.1 Mail appears infected with INFECTION -- 
+disinfect and resend. default: 554 5.7.1 Mail appears infected with 
+INFECTION.  
+EmailVirusReportsTo: Send Virus Report To This 
+Address --  If set an email containing the Message ID, Remote IP, Message 
+Subject, Sender email address, Recipient email address, and the virus 
+detected will be sent to this address. For example: 
+admin@example.com  
+EmailVirusReportsHeader: Add Full Header To Virus Report To Mail 
+Address Above --  If set the full message 
+headers will also be added to Virus Reports.   
+EmailVirusReportsToRCPT: Send Virus Report To 
+Recipient --  If set the intended 
+recipient of the message will be sent a copy of the Virus Report. 
+<input type="button" value=" Edit virusreport.txt file" 
+onclick="javascript:popFileEditor('reports/virusreport.txt',2);" 
+/>   
+UseAvClamd: Use ClamAV --  If activated, the message is checked by ClamAV, this requires an installed
+  File::Scan::ClamAV Perl module and a running Clamd . The viruses will
+  be stored in a special folder if the  is set to 
+'quarantine' and the
+  filepath to the .   
+AvClamdPort: Port or file socket for 
+ClamAV --  A socket specified in the clamav.conf file - LocalSocket. For 
+example /var/run/clamav/clamd.sock. If the socket has been setup as a 
+TCP/IP socket (see the TCPSocket option in the clamav.conf file), 
+then specify the TCP socket. For example: 3310 default: /var/run/clamav/clamd.sock  
+ClamAVBytes: ClamAV Bytes --  The number of bytes per message that will be scanned for virus and 
+attachment blocking. Values of 100000 or larger are not 
+recommended. default: 60000  
+ClamAVtimeout: ClamAV Timeout --  ClamAV will timeout after this many seconds. default: 10 
+seconds. default: 10  
+NoScanRe: Skip ClamAV Regular 
+Expression* --  Put anything here to identify messages which should not be checked 
+for viruses.  
+SuspiciousVirus: No-Blocking Virus Scan Scoring Regex** --  If a ClamAV or FileScan result matches this expression it will be scored with the suspicious virus score () and the message will not be blocked.
+ It is possible to weight such results. To do this, write for example: myreason=>0.75
+ The resulting score is the factor of  and the weight (in this case 0.75). Weight is 1 if it is not defined.  
+DoFileScan: Use File System Virus 
+Scanner --  If activated, the message is written to a file inside the 
+''. After that ASSP 
+will call '' to detect if the temporary file is infected 
+or not. The temporary created file(s) will be removed.
+  The viruses will be stored in a special folder if the  
+is set to 'quarantine' and the filepath to the  is set.  
+FileScanDir: File Scan 
+Directory --  Define the full path to the directory where the messages are 
+temporary stored for the file system virus scanner. This could be any 
+directory inside your file system. The running ASSP process must have 
+full permission to this directory and the files inside! default: ./virusscan 
+FileScanCMD: File Scan Command --  ASSP will call this system command and expects a returned string 
+from this command. This returned string is checked against 
+'' to detect if the message is 
+OK or not! If the file does not exists after the command call, the 
+message is consider infected. ASSP expects, that the file scan is 
+finished when the command returns!
+   The literal 'FILENAME' will be replaced by the full qualified 
+file name of the temporary file.
+
+   The literal 'FILESCANDIR' will be replaced with the value of 
+FileScanDir.
+   All outputs of this command to STDERR are automatic redirected to 
+STDOUT.
+   FileScan will not run, if  is not specified.
+   If you have your online/autoprotect file scanner configured to 
+delete infected files inside the '', define 'NORUN' in 
+this field! In this case  are ignored. If 
+there is a need to wait some time for the autoprotect scanner, write 
+'NORUN-dddd', where dddd are the milliseconds to wait!
+   Depending on your operating system it may possible that you have to 
+quote (' or ") the command, if it contains whitespaces. The replaced 
+file name will be quoted by ASSP if needed.  
+FileScanBad: RegEx to Detect 'BAD' in Returned 
+String* --  Put anything here to identify bad messages by the string returned 
+from the . If this regular expression matches, the message 
+is considered infected.  
+FileScanGood: RegEx to Detect 'GOOD' in Returned 
+String* --  Put anything here to identify good messages by the string returned 
+from the . If this regular expression matches and 
+'' does not, the message is considered not infected.  
+FileScanRespRe: FileScan Reponds 
+Regex --  A regular expression that will be used over the text returned from 
+the . The result of this regex is used as virus name 
+($infection) in . For example: infected by (.+)
+  <input 
+type="button" value="Notes" 
+onclick="javascript:popFileEditor('notes/viruscheck.txt',3);" 
+/>  
+# Regex Filters / Spambomb  #
+DoBlackRe: Use Black Regular Expression to Identify Spam Strictly --  Each incoming message is checked  against the BlackRe to Identify Spams. Whitelist and NoProcessing are not honored. Scoring is done with .   
+blackRe: BlackRe - Regular Expression to Identify Spam Strictly**  --  If an incoming email matches this regular expression it will be strictly considered spam. Whitelist will be ignored. For example: "file:files/blackre.txt" default: file:files/blackre.txt 
+bombReWL: Do Bomb/Script Regular Expressions Checks for Whitelisted --   
+bombReNP: Do Bomb/Script Regular Expressions Checks for NoProcessing --   
+bombReLocal: Do Bomb/Script Regular Expressions Checks for Local Messages --   
+bombReISPIP: Do Bomb/Script Regular Expressions Checks for ISPIP --  default: 1 
+DoBombHeaderRe: Use BombHeader Regular Expressions on Header Part --  If activated, each message-header is checked  against . default: 1 
+bombSenderRe: Envelope Blocking Regular Expression ** --  Part of : expression to identify sender (mailfrom,ip,helo). For example: file:files/bombsenderre.txt default: emailserver3.com  
+bombHeaderRe: Regular Expression to Identify Spam in Header Part** --  Part of  is enabled. default: \d\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d\d\d\d\s+\d\d:\d\d(:\d\d)?\s+[+\-]\d\d[6-9]\d  
+bombSubjectRe: Regular Expression to Identify
+ Spam in Subject** --  Part of   is enabled.   
+bombCharSets: Regular Expression to Identify Foreign Charsets**  --  Part of  is enabled. For example: BIG5|CHINESEBIG|GB2312|KS_C_5601|KOI8-R|EUC-KR|ISO-2022-JP|ISO-2022-KR|ISO-2022-CN|CP1251.  
+DoBombRe: Use Bomb Regular Expressions --  If activated, each message is checked  against BombRaw and BombData Regular Expressions. Scoring is done with .
+ default: 1 
+bombRe: BombRaw Regular Expression for Header and Data Part** --  Header and Data will be checked against this Regular Expression if  is enabled.  For example:IMG [^&gt;]*src=['&quot;]cid|&lt;BODY[^&gt;]*&gt;(&lt;[^&gt;]+&gt;|\n|\r)*&lt;IMG[^&gt;]+&gt;(&lt;[^&gt;]+&gt;|\n|\r)*&lt;/BODY&gt; default: file:files/bombre.txt 
+bombDataRe: BombData Regular Expression for Data Part** --  Data part will be checked against the Regular Expression if  is enabled. For example:IMG [^&gt;]*src=['&quot;]cid|&lt;BODY[^&gt;]*&gt;(&lt;[^&gt;]+&gt;|\n|\r)*&lt;IMG[^&gt;]+&gt;(&lt;[^&gt;]+&gt;|\n|\r)*&lt;/BODY&gt; default: file:files/bombre.txt  
+bombSuspiciousRe: Regular Expression to Identify Suspicious Words** --  Sender, Header and Data will be checked for scoring only. Put here anything which might be suspicious.  will be used to increase the score. For example:unsubscribe  
+noBombScript: Don't Check Messages from these Addresses* --  Don't detect spam bombs or scripts in messages from these addresses. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).   
+DoTestRe: Do Test Regular Expression --  If activated, each message is checked  against the Test Regular
+  Expression below. This provides a way to test regex strings on live mail.  
+testRe: Test Regular Expression* --   
+bombError: Spam Bomb Error --  SMTP error message to reject spam bombs. For example: 554 5.7.1 Delivery not authorized, message refused -- send report to mailto:postmaster@mydomain.tld or call +12.34.56.78.90 default: 554 5.7.1 Delivery not authorized, message refused -- .  
+bombErrorReason: Add Reason --  Add matching expression to Spam Bomb Error default: 1 
+DoScriptRe: Use Regular Expression to Identify Mobile Scripts --  Each message is checked  against the Expression to Identify Mobile Scripts. Scoring is done with .   
+scriptRe: Regular Expression to Identify Mobile Scripts** --  Spam emails may contain mobile scripting code, eg activex and java. You can use this feature to block those messages.
+  Leave this blank to disable the feature. For example: \&lt;applet|\&lt;embed|\&lt;iframe|\&lt;object|\&lt;script|onmouseover|javascript:  
+scriptError: Script Error --  SMTP error message to reject scripts. For example: 554 5.7.1 Your email appears to be spam -- send an error report to mailto:postmaster@mydomain.tld or call +12.34.56.78.90
+   default: 554 5.7.1 Your email contains html scripting code -- please resend as plain text.  
+# Bayesian Options  #
+DoBayesian: Bayesian Check  --  If activated, the message is checked  based on Bayesian factors in Spamdb. This needs a fully functional  collection with the help of DSNBL ,URIBL and spamaddresses.
+0=disabled - do nothing
+1=block - reject the message (if not addressed to spamlover)
+2=monitor - pretend its running (with logging), but don't actually block messages
+3=score - don't block outright, add  score value in baysValencePB
+ 
+ default: 3  
+BayesMaxProcessTime: Bayesian Check Timeout  --  The Bayesian Checks are the most memory and CPU consuming tasks that ASSP is doing on a message. If such tasks running to long on one message, other messages could run in to SMTPIdleTimeout. Define here the maximum time in seconds that ASSP should spend on Bayesian Checks for one message. Default is 60. default: 60 
+noBayesian: Skip Bayesian Check* --  Mail from/to any of these addresses are ignored by Bayesian check, mails will not be stored in spam/notspam collection. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). Wildcards are supported (user*@example.com)  
+baysTestModeUserAddresses: Bayesian Testmode User Addresses* --  These users are in testmode ( mark subject only ) for bayesian spam, even with testmode off  
+baysTestModeOverwrite: MessageScore will overwrite testmode if limit is reached  --  default: 1 
+AddSpamProbHeader: Add Bayes Probability Header --  Adds a line to the email header "X-Assp-Spam-Prob: 0.0123" Probability ranges from 0 to +1 where > 0.6 = spam.
+  
+    
+# Backscatter Detection #
+DoBackSctr: Do DNS-Backscatter Detection --  If activated, the IP-address of each message recieved for null sender,bounced or postmaster will be checked against the list below.
+   DNS  module in Perl.
+   For more information about backscatter detection please read .   
+BackDNSCacheExp: Backscatter-DNS Cache Refresh Interval --  IP's in cache will be removed after this interval in hours. 0 will disable the cache.  default: 100 
+BackSctrServiceProvider: ServiceProvider for Backscatterer Detection* --  ServiceProvider for DNS check on Backscatterer. Possible value is ips.backscatterer.org. default: ips.backscatterer.org 
+Back250OKISP: Send 250 OK to ISP if Backscatter Detection failes --  If Backscatter check fails for a bounced mail that is coming from an ISPIP, ASSP will send "250 OK" to the ISP, but will discard the mail, if the check is configured to block!   
+BackWL: Do Backscatter Detection checks for Whitelisted mail --  Tagging will be always done, if not excluded by address or domain!   
+BackNP: Do Backscatter Detection checks for No Processing mail --  Tagging will be always done, if not excluded by address or domain!   
+noBackSctrAddresses: Do not any Backscatter detection for these addresses *  --  Mail to and from any of these addresses will not be tagged and checked by any backscatter option. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  
+noBackSctrIP: Exclude these IP's from any Backscatter detection* --  Enter IP's that you want to exclude from Backscatter check, separated by pipes (|). 
+    
+# Block Reporting #
+EmailBlockReport: Request Block Report --  Any mail sent by local/authenticated users to this username will be interpreted as a request to get a report about blocked emails. Do not put the full address here, just the user part. For example: asspblock Leading digits/numbers in the mail subject will be interpreted as "report request for the last number of days". If the number of days is not specified in the mail subject, a default of 5 days will be used to build the report. Users defined in ReportDays.
+ *@domain=>recipient@any-domain - will send a report for every blocked user in this domain to recipient@any-domain
+  
+  
+   default: asspblock 
+EmailBlockReportDomain: Request Blocked Email Domain --  Set this to the domain to which the users can send a request to receive blocked messages. For example: @assp.local. default: @assp.local 
+EmailBlockReply: Reply to Block-Report Request --  default: 1 
+QueueUserBlockReports: Queue User Block Report Requests --  How to process block report requests for users (not , EmailAdminReportsTo).
+  'run instantly' - the request will be processed instantly (not stored).
+  'store and run once at midnight' - the request will be stored/queued, runs at , and will be removed from queue after that
+
+ 'store and run scheduled' - the request will be stored/queued, runs permanently scheduled at  until it will be removed from queue - a '+' in the subject is not needed
+  'run delayed' - the request will be stored and  processed during the next minutes
+  To add a request to queue the user has to send an email to . Leading digits/numbers in the mail subject will be interpreted as "report request for the last number of days". If the number of days is not specified in the mail subject, a default of 5 days will be used to build the report.
+  If 'run instantly','run delayed' or 'store and run once at midnight' is selected, but a user wants to schedule a permanent request, a leading '+' before the digits in subject is required.
+  To remove a request from queue the user has to send an email to  with a leading '-' in the subject.
+   default: 3  
+QueueSchedule: Runtime for Queued Requests --  Runtime hour for reports in . Set a number between 0 and 23. 0 means midnight and is default  
+BlockRepForwHost: Forward The Blockreportrequest to other ASSP --  If you are using more than one ASSP (backup MX), define the IP:relayPort of the other ASSP here (separate multiple entries by "|"). The Blockreportrequest will be forwarded to this ASSP and the user will get a blockreport from every ASSP. The perl module  is required to use this feature.  
+EmailBlockTo: Send Copy of Block-Reports TO --  Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com  
+BlockReportFile: File for Blockreportrequest --  A file with BlockReport requests. ASSP will generate a block report for every line in this file (file:files/blockreportlist.txt - file: is required if defined!) every day at midnight for the last day. The perl modules  are required to use this feature. A report will be only created, if there is at least one blocked email found! The syntax is: 
+ QueryAddress=>ReportRecipient=>ReportDays  -  there are many possible combinations of this three parameters. For example:
+ user@domain and user@domain=>user@domain - will send a report for this user to this user
+ *@domain (better use) *@domain=>* - will send a report for every blocked user in this domain to this user
+ user@domain=>recipient@any-domain - will send a report for user@domain to recipient@any-domain
+ *@domain=>recipient@any-domain - will send a report for every blocked user in this domain to recipient@any-domain
+ A third parameter is possible to set, which defines the number of days for which the report should be created. The default (if empty or not defined) is one day. This value is used to calculate the 'next run date'. For example:
+ *@domain=>recipient@any-domain=>2 - creates a report for two days.
+ *@domain=>*=>14 - creates a report for 14 days.
+ user@domain=>=>3 or user@domain=>*=>3 - creates a report for three days. The second parameter is here empty or *!   
+BlockReportSchedule: Runtime BlockReportFile --  Runtime hour for reports in . Set a number between 0 and 23. 0 means midnight and is default.  
+BlockReportNow: Generate a BlockReport from BlockReportFile Now --  If selected, ASSP will generate a block report from   
+BlockReportFormat: The format of the Report Email --  Block reports will be sent as multipart/alternative MIME messages. They normaly contains two parts, a plain text part and a html part. Select "text only" or "html only" if you want to skip any of this parts.
+  To make it possible to detect a resent email, ASSP will add a header line "X-Assp-Resend-Blocked: " to each email! default: 1 
+BlockReportFilter: Regular Expression to Skip Log Records* --  Put anything here to identify messages which should not be reported. For example:  \[Virus\]|\[BlackDomain\] default: \[Virus\]|\[BlackDomain\] 
+inclResendLink: Include a Resend-Link for every resendable email --  Block reports will be sent as multipart/alternative MIME messages. They contains two parts, a plain text part and a html part. If a blocked email is stored in any folder, it is possible to include a link for each email in to the report. Define here what you want ASSP to do. Default is "in both". default: 3 
+BlockResendLink: Which Link Should be included --  If HTML is enabled in , two links (one on the left and one on the right site) will be included in the report email by default. Depending on the used email clients it could be possible, that one of the two links will not work for you. Try out what link is working and disable the other one, if you want.  
+BlockResendLinkLeft: User which get the Left link only*  --  List of users and domains that will get the left link only. The setting for  will be ignored for this entries!  
+BlockResendLinkRight: User which get the right link only*  --  List of users and domains that will get the right link only. The setting for  will be ignored for this entries!  
+DelResendSpam: Delete Mails in Spam Folder --  If selected, an user request to resend a blocked email will delete the file in the  folder. default: 1 
+autoAddResendToWhite: Automatic add Resend Senders to Whitelist --  If a resend request is made by any of the selected users, the original sender of the resent mail will be added to whitelist.
+  
+    
+# Email Interface  #
+EmailInterfaceOk: Enable Email Interface --  Checked means that you want ASSP to intercept and parse mail to the following usernames at any localdomains. The domain '@assp.local' is automatically a local domain and can be used for the email-interface. default: 1 
+EmailAdminReportsTo: Admin Mail Address --  If set internal warnings/infos  will be sent to this address. For example: admin@domain.com   
+EmailReportDestination: Email Interface Reports Destination --  Port to connect to when  Email Interface reports are send. If blank they go to the main . eg "10.0.1.3:1025", etc.  
+EmailHelp: Help Address --  Any mail sent by local/authenticated users to this username will be interpreted as a request for help. Do not put the full address here, just the user part. For example: assphelp. The user would then send to assphelp@assp.local.
+   default: assphelp 
+EmailAdmins: Authorized Addresses*  --  Mail from any of these addresses can add/remove to/from redlist, spamlovers, noprocessing. May request an  for a list of users. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com)  
+EmailSenderOK: Accept Emails (Reports) from these external addresses* --  Allow these external domains/addresses to report to the email
+interface (NOT RECOMMENDED). The reply address for the reports must be set to a local one.  By default, ASSP only accepts reports from local or authenticated users. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com)   
+EmailSenderNotOK: Not Authorized Addresses*  --  Mail from any of these addresses are not accepted from Email Interface. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com)  
+EmailSpam: Report Spam Address --  Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a spam report. Multiple attachments get truncated to . Do not put the full address here, just the user part.
+   For example: asspspam . Use a fake domain like @assp.local when you send the email- so the full address would be then asspspam@assp.local. You can sent multiple emails as attachments. Each attached email-file must have the extension defined in " module in PERL is needed.
+   default: asspspam  
+EmailHam: Report Ham (Not-Spam) Address --  Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a false-positive report. Multiple attachments get truncated to . Do not put the full address here, just the user part.
+   For example: asspnotspam . Use a fake domain like @assp.local when you send the email - so the full address would be then asspnotspam@assp.local. You can sent multiple emails as attachments. Each attached email-file must have the extension defined in " module in PERL is needed.
+   default: asspnotspam  
+EmailErrorsReply: Reply to Spam/Not-Spam Reports --  default: 1 
+EmailErrorsTo: Send Copy of Spam/Ham-Reports TO --  Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com  
+EmailErrorsModifyWhite: Combined Spam/Ham Report and Whitelist Check --  If set to 'modify whitelist' Ham Reports will add addresses to the Whitelist, Spam Reports will remove addresses from the Whitelist. If set to 'show whitelist' Spam Reports will show if addresses are whitelisted. default: 1 
+EmailWhitelistAdd: Add to Whitelist Address --  Any mail sent by local/authenticated users to this username will be interpreted as a request to add addresses to the whitelist. Do not put the full address here, just the user part. For example: asspwhite
+   default: asspwhite  
+EmailWhitelistRemove: Remove from Whitelist Address --  Any mail sent by local/authenticated users to this username will be interpreted as a request to remove addresses from the whitelist. Do not put the full address here, just the user part. For example: asspnotwhite
+   default: asspnotwhite  
+EmailWhitelistReply: Reply to Add to/Remove from Whitelist --  default: 1 
+EmailWhiteRemovalToRed: Add  Whitelist Removals To Redlist  --  Addresses which are removed from Whitelist via  will automatically be added to the Redlist. The address can only be added again to the Whitelist after it is removed from the Redlist.  
+EmailWhitelistTo: Send Copy of Whitelist-Reports TO --  Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com   
+EmailRedlistAdd: Add to Redlist Address --  Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the redlist. Only the users defined in  are able to define a list of email addresses in the mail body.  Do not put the full address here, just the user part. For example: asspred.
+   default: asspred  
+EmailRedlistRemove: Remove from Redlist Addresses --  Any mail sent by local/authenticated users to this username will be interpreted as a request to remove the sender address from the redlist. Only the users defined in  are able to define a list of email addresses in the mail body. 
+  Do not put the full address here, just the user part. For example: asspnotred
+   default: asspnotred  
+EmailRedlistReply: Reply to Add to/Remove from Redlist --  default: 1 
+EmailRedlistTo: Send Copy of Redlist-Reports TO --  Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com  
+EmailSpamLoverAdd: Add to SpamLover Addresses --  Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to  with "file:..." for example "file:files/spamlovers.txt" !
+   default: asspspamlover 
+EmailSpamLoverRemove: Remove from SpamLover Addresses --  Any mail sent by local/authenticated users to this username will be interpreted as a request to remove the sender address from  are able to define a list of email addresses in the mail body. 
+  Do not put the full address here, just the user part. For example: asspnotspamlover
+   default: asspnotspamlover 
+EmailSpamLoverReply: Reply to Add to/Remove from SpamLovers --  default: 1 
+EmailSpamLoverTo: Send Copy of Spamlover-Change-Reports TO --  Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com  
+EmailNoProcessingAdd: Add to NoProcessing Addresses --  Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the  with "file:..." for example "file:files/noprocessing.txt" !
+   default: asspof 
+EmailNoProcessingRemove: Remove from noProcessing Addresses --  Any mail sent by local/authenticated users to this username will be interpreted as a request to remove the sender address from  .
+  Do not put the full address here, just the user part. Only the users defined in  with "file:..." for example "file:files/noprocessing.txt" !
+   default: asspon 
+EmailNoProcessingReply: Reply to Add to/Remove from SpamLovers --  default: 1 
+EmailNoProcessingTo: Send Copy of NoProcessing-Change-Reports TO --  Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com  
+EmailAnalyze: Request Analyze Report --  Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a request for analyzing the mail. Do not put the full address here, just the user part. For example: asspanalyze  default: asspanalyze 
+EmailAnalyzeReply: Reply to Analyze Request --  default: 1  
+EmailAnalyzeTo: Send Copy of Analyze-Reports --  A copy of the Analyze-Report will be sent to this address. For example: admin@domain.com   
+DoAdditionalAnalyze: Spam and Ham Reports will trigger an additional Analyze Report  --  Additional Analyze Report will be generated for Spam and Ham Reports. Setting the TO Address accordingly and choosing EmailAnalyzeTo will send the Analyze Report to the admin only.  
+EmailFrom: From Address for Reports --  Email sent from ASSP acknowledging your submissions will be sent from this address. default: <postmaster@yourdomain.com>  
+EmailAllowEqualSign: Allow '=' in Addresses --  Allow '=' in addresses to be whitelisted or redlisted.  
+NoHaiku: Legacy: Don't reply to messages to the Email Interface --  Check this option to suppress all email reports
+  
+    
+# File Paths #
+base: Directory Base --  All paths are relative to this folder.
+  Note: Display only. default: . 
+spamlog: Spam Collection --  The folder to save the collection of spam emails. This directory will be used in building the . For example: spam default: spam 
+notspamlog: Not-spam Collection --  The folder to save the collection of not-spam emails. This directory will be used in building the . For example: notspam default: notspam 
+incomingOkMail: OK Mail --  The folder to save non-spam (message ok). These are messages which are considered as HAM, but are not stored in the standard HAM folder because of our policy to use only confirmed HAM messages (whitelisted or local) for SpamDB. If you want to keep copies of ok mail then put in a directory name. This directory will not be used in building the . Default: okmail default: okmail 
+discarded: Discarded Spam --  The folder to save  default: discarded 
+viruslog: Attachment/Virus Collection --  The folder to save rejected attachments and virii. Leave this blank to not save these files (default). If you want to keep copies of rejected content then put in a directory name. Note: you must create the directory. This directory will not be used in building the . For example: quarantine default: quarantine  
+correctedspam: False-negative Collection --  Spam that got through -- counts double. This directory will be used in building the . For example: errors/spam default: errors/spam 
+correctednotspam: False-positive Collection --  Good mail that was listed as spam, count 4x. This directory will be used in building the . For example: errors/notspam default: errors/notspam 
+resendmail: try to resend this files --  ASSP will try to resend the files in this directory to the original recipient. The files must have the "" extension and must have the SMTP-format. ASSP will try to send every  file up to ten times (with 5 minutes delay). If the resend failes ten times, the file will be renamed to *.err, on success the file will be deleted!
+For example:  module in PERL. default: resendmail 
+maillogExt: Extension for Mail Files --  Enter the file extension (include the period) you want appended to the mail files in the mail collections. For Example: .eml default: .eml 
+spamdb: Spam Bayesian Database File --  The output file from rebuildspamdb.pl.  default: spamdb 
+whitelistdb: E<!--get rid of google autofill-->mail Whitelist Database File --  The file with the whitelist.
+  Write "mysql" to use a MySQL table instead of a local file, in this case you need to edit the MySQL parameters starting with . default: whitelist  
+redlistdb: E<!--get rid of google autofill-->mail Redlist Database File --  The file with the redlist.
+  Write "mysql" to use a MySQL table instead of a local file, in this case you need to edit MySQL parameters starting with . default: redlist  
+ldaplistdb: LDAP Database --  The file with the LDAP-cache database, see also . default: ldaplist 
+delaydb: Delaying Database --  The file with the delay database.Write "mysql" to use a MySQL table instead of a local file, in this case you need to edit the MySQL parameters starting with . default: delaydb 
+myhost: MySQL hostname or IP --  You need <a
+  href="http://search.cpan.org/~lds/Tie-DBI-1.02/lib/Tie/RDBM.pm"
+  rel="external">Tie::RDBM to use MySQL instead of local files.
+  This way you can share  between servers if "mysql" is written into their file-path.  
+mydb: MySQL database name --  This database must exist before starting ASSP,
+  necessary tables will be created automatically into this database  
+myuser: MySQL username --  This user must have CREATE privilege on the configured database in order for tables to be created automatically   
+mypassword: MySQL password --    
+logfile: ASSP Logfile --  Blank if you don't want a log file. Change it to maillog.log if you don't want auto rollover.
+  NOTE: Changing this field requires restarting ASSP before changes take effect. default: logs/maillog.txt 
+pidfile: PID File --  Blank to skip writing a pid file. *nix users need pid files.
+  Leave it blank in Windows. You have to restart the service before you get a pid file in the new location. default: pid 
+# Collecting #
+spamaddresses: Spam Collect Addresses*  --  Mail to any of these addresses are always spam and will contribute to the spam-collection unless from someone on the whitelist. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). These addresses are not verified. Scoring is done using .   
+sendAllCollect: Catchall Address for Collect Addresses --  ASSP will readdress messages addressed to Collect Addresses to this address.
+  For example: collect@example.com  
+DoNotBlockCollect: Use Collect Addresses To Test Your Environment --  If set ASSP will block messages from  after other checks are performed. That may help to test and control activated filters.  
+UseTrapToCollect: Use Penalty Trap Addresses To Collect --  If set ASSP will use  to collect spams.  
+noCollecting: Do Not Collect Messages from/to these Addresses* --  Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).  
+UseSubjectsAsMaillogNames: Use Subject as Maillog Names --  You can turn this on to help you to identify mail in your spam and non-spam collections. This will prevent ASSP from controlling the number of files in your collections(  ). If your collections grow  over 1000 items run move2num.pl and turn this off. Leaving this setting turned off is HIGHLY recommended. The spam and 
+non-spam collections are only intended for use by ASSP to build the 
+bayesian database and NOT AS A MAIL ARCHIVE.  See the  and 
+other options in the Copy Spam & Ham section for mail archiving options.  
+DoNotCollectRedRe: Do Not Collect RedRe Matching Mails --  Mails matching  will not be stored in the collection folders. default: 1 
+DoNotCollectRedList: Do Not Collect Redlisted Mails --  Mails matching  Redlist will not be stored in the collection folders.  
+KeepWhitelistedSpam: Do Not Delete Whitelisted Spams --  Mails matching  Whitelist will not be deleted from the Spam folder.  
+DoNotCollectBounces: Do Not Collect Bounced Mails --  Mails matching  will not be collected. default: 1  
+NoMaillog: Don't Collect Mail --  Check this if you're using Whitelist-Only and don't care to save mail to build the Bayesian database.  
+MaxFiles: Max Files --  If you're not using subjects as file names, this is the maximum
+  number of files to keep in each collection (spam and nonspam)
+  It's actually less than this -- files get a random number between 1 and . default: 14000  
+FilesDistribution: Files Distribution --  This defines how file names are chosen in each collection. If set to 1, names are uniformly distributed. If set between 0.01 and 0.99, names distribution is exponential -- files get lower numbers more frequently. This prevents from corpus being refreshed too quickly, especially when  is set to a low value.
+ Default: 0.5, Default: 1 default: 1  
+MaxBytes: Max Bytes --  How many bytes of the message will ASSP look at? Mails stored in the collecting folders will be truncated to this size. The average of Ham messages is 8K, the average of Spam messages is 4K. Usually the spam folder (  ), so setting this value to 8000 will  produce more wordpairs per Ham Message. When both folders are close to the maxfiles limit, reduce it to 4000. default: 8000  
+StoreCompleteMail: Store the Complete Mail --  If set, ASSP will look at , but if possible it will store the complete mail up to the number of bytes configured. This could be usefull for example, if you want to resend blocked messages. Be carefull using this option, your disk could be filled up very fast! default: 1  
+MaxBytesReports: Error Max Bytes --  How many bytes of an error report message will ASSP look at. For example: 10000. default: 10000  
+baysNonSpamLog: OK Mail --  Where to store non spam (message ok) messages. These are messages which are considered as HAM, but should not stored in the standard HAM folder because of our policy to use only confirmed HAM messages (whitelisted or local) for SpamDB. Set  accordingly if you choose 'okmail folder'. Default: okmail folder default: 4 
+NonSpamLog: Non Spam --  Where to store whitelisted/local  non spam messages. Default: notspam. default: 2 
+npAttachLog: NoProcessing rejected Attachments --  Where to store noprocessing rejected mail+attachments. Default: no collection  
+wlAttachLog: Whitelisted rejected Attachments --  Where to store whitelisted rejected mail+attachments. Default: no collection  
+extAttachLog: External rejected Attachments --  Where to store external rejected mail+attachments. Default: no collection  
+SpamVirusLog: Virus Infected --  Where to store virus infected messages. Default: no collection  
+spamBombLog: Spam Bombs -> DoBombRe, DoBombHeaderRe --  Where to store spam bombs. Default: discard folder and  default: 7  
+BlackReLog: Black Regular Expressions -> DoBlackRe --  Where to store spam bombs. Default: spam folder (  default: 3 
+DoNotCollectBombs: Do not collect Spam Bombs detected during scoring modus --  default: 1 
+scriptLog: Scripts - DoScriptRe --  Where to store scripted messages. Default: spam folder (  default: 3 
+blDomainLog: Blacklisted Domains - DoBlackDomain --  Where to store blacklisted domain messages. Default: spam folder (  default: 3 
+spamHeloLog: Blacklisted Helos - useHeloBlacklist --  Where to store spam helo messages. Default: discard folder (  default: 7  
+forgedHeloLog: Forged Helos - DoFakedLocalHelo --  Where to store forged helo messages. Default: no collection  
+invalidHeloLog: Invalid Helos - DoInvalidFormatHelo, DoValidFormatHelo --  Where to store invalid helo messages. Default: discard folder (  default: 7  
+spamBucketLog: Spam Collect Addresses --  Where to store emails addressed to Spam Collect Addresses. Default: spam folder (  ) default: 1 
+baysSpamLog: Bayesian Spams - DoBayesian --  Where to store Bayesian spam messages. Default: discard folder (  default: 7  
+SPFFailLog: SPF Failures - ValidateSPF --  Where to store SPF Failure spam messages. Default: spam folder (  default: 3  
+RBLFailLog: DNSBL Failures - ValidateRBL --  Where to store DNSBL Failure spam messages. Default: spam folder (  default: 3 
+URIBLFailLog: URIBL Failures - ValidateURIBL --  Where to store URIBL Failure spam messages. Default: spam folder (  default: 3  
+SRSFailLog: SRS Failures - EnableSRS --  Where to store SRS Failure (not signed bounces) spam messages. Default: spam folder (  default: 3 
+spamPTRLog: Missing/Invalid Pointer - DoPTRCheck --  Where to store Missing/Invalid Pointer rejected messages. Default: spam folder (  default: 3 
+spamMXALog: Missing MX/A Record - DoMXACheck --  Where to store Missing MX record rejected messages. Default: spam folder (  default: 3 
+spamISLog: Invalid Local Sender - DoNoValidLocalSender --  Where to store messages from a local domain with an unknown userpart. Default: no collection  
+spamSBLog: Blocked Country - DoCountryBlocking, DoOrgBlocking --  Where to store messages from a blocked country. Default: spam folder (  default: 3 
+spamMSLog: Message Limit Blocks - DoPenaltyMessage --  Where to store Message Scoring Limit rejected messages. Default: spam folder (  default: 3 
+spamPBLog: PenaltyBox Blocks - DoPenalty --  Where to store PB rejected messages. Default: spam folder (  default: 3  
+BackLog: Backscatter check failed --  Where to store DNS-Backscatter rejected messages. Default: no collection  
+freqNonSpam: Non Spam Collection Frequency --  Store every n'th non spam message. If you set the value to 10 then every 10th message is logged. These frequency settings are for ASSP users with a mature installation who experience heavy mail or spam volumes. Enter a larger value if the non spam corpus is being refreshed too quickly. Default Value = 1, log every message. default: 1 
+freqSpam: Spam Collection Frequency --  Store every n'th spam message. The same as for non spam but helps prevent spam corpuses being skewed by flooding. It is recommended that this be set depending on spam volume. Default value = 1, log every message. default: 1 
+# Logging #
+Notify: Notification Email To --  Email address(es) to which you want ASSP to send a notification email, if a matching log entry (  ) is found. Separate multiple entries by "|".   
+NotifyRe: Do Notify, if log entry matches* --  Regular Expression to identify loglines for which a notification message should be send.
+  usefull entries are:
+  adminupdate: - for config changes
+  admininfo: - for admin informations
+  option list file: - for option file reload
+  error: - for any error
+  restart - to detect a ASSP restart
+  Admin connection - for GUI logon   
+NoNotifyRe: Do NOT Notify, if log entry matches* --  Regular Expression to identify loglines for which no notification message should be send.  
+noLog: Don't Log these IPs* --  Enter IP addresses that you don't want to be logged, separated by pipes (|).
+  This can be IP address of the SMTP service monitoring agent. For example: 145.145.145.145|145.146.  
+noLogRe: Regular Expression to Identify NoLog-Messages* --  Put anything here to identify log messages that you don't want to be shown. For example: max errors|collect   
+allLogRe: Regular Expression to Identify Messages from/to Problematic Addresses * --  Put anything here to identify mails from/to addresses you want to look at for problem solving. Mails identified will also be set to .  
+fileLogging: File name logging --  Show file names of collected spam/notspam in log default: 1 
+subjectLogging: Subject logging --  Show subject of mail in log default: 1 
+subjectStart: Subject Start Delimiter --  Start delimiter of subject in log default: [ 
+subjectEnd: Subject End Delimiter --  End delimiter of subject in log default: ] 
+regexLogging: Regex Match logging --  Show matching regex in log, note that all lists (like eg. noprocessing-list) are used as regex. default: 1 
+ipmatchLogging: IP Matches Logging --  Enables logging of IP addresses matches in the maillog. Will show a comment instead of the range if there is text after the IP ranges (and before any numbersign)  eg. 182.82.10.0/24 AOL  
+slmatchLogging: Logging Address Matches --  Enables logging of address matches in the maillog.  
+AddRegexHeader: Add  RegEx Match Header --   
+uniqeIDLogging: Unique ID logging --  Add unique string to log default: 1 
+uniqueIDPrefix: Prepend Unique ID logging --  Prepend ID. For example: m1-   
+tagLogging: Spam Tag Logging --  Add spam tag to log. default: 1 
+ExceptionLogging: Module Call Timeout Exception Logging --    
+replyLogging: SMTP Status Code Reply Logging --  default: 1  
+expandedLogging: Logging Records include IP & MailFrom --  default: 1 
+sysLog: SYSLOG Centralized Logging --  Enables logging to UNIX Syslog. Needs Sys::Syslog for local (UNIX/LINUX) logging or Net::Syslog for Windows or Network logging.  
+sysLogPort: Syslog Port (UDP) --  Port for Syslog logging with Net::Syslog. default: 514 
+SysLogFac: Syslog Facility --  Syslog Facility. Valid are kern, user, mail, daemon, auth, syslog, lpr, news, uucp, cron, authpriv, ftp, local0, local1, local2, local3, local4, local5, local6 default: mail  
+sysLogIp: Syslog IP --  IP Address of your Syslog Daemon for Syslog logging with Net::Syslog. default: 127.0.0.1 
+asspLog: ASSP local logging --  ASSP manages local logging. The logs  inside the directory where ASSP is installed. default: 1 
+LogRollDays: Roll the Logfile How Often? --  ASSP closes and renames the log file after this number of days. default: 1 
+LogNameMMDD: No Year in LogName --  The standard name for the  is YY-MM-DD.maillog.txt, use this option to set it to MM-DD.maillog.txt  
+silent: Silent Mode --  Checked means don't print log messages to the console.  overrides this.  
+DEBUG: Debug Mode --  Checked sends debugging info to a .dbg file.
+  Leave this unchecked unless there is a program error you are trying to track down.  
+DebugInterval: Roll the Debugfile How Often? --  ASSP closes and renames the debug file after this number of seconds. default: 600 
+Win32Debug: Win32 OutputDebugString --  Make Win32 OutputDebugString available. Needs Win32::API::OutputDebugString  
+ConTimeOutDebug: Connection Timeout Debug Mode --  Select to debug SMTP connections that are running into timeout!  
+IgnoreMIMEErrors: Ignore MIME Errors --  Errors, based on wrong email MIME contents, will not be written to log! default: 1 
+ConnectionLog: Connections Logging --   
+SessionLog: Session Limit Logging --  default: 1  
+denySMTPLog: Enables Logging for 'Deny SMTP Connections From' --  default: 1 
+RWLLog: Enable RWL logging --  default: 1 
+LDAPLog: Enable LDAP logging --  default: 1  
+SSLLog: Enable SSL logging --  default: 1 
+VRFYLog: Enable VRFY logging --  default: 1  
+ValidateUserLog: Enable User Validation logging --  default: 1  
+PenaltyLog: Enable PenaltyBox logging --  default: 1  
+PenaltyExtremeLog: Enable PenaltyBox Extreme logging --  default: 1  
+MessageLog: Enable Message Scoring logging --  default: 1  
+BacksctrLog: Enable DNS-Backscatter detection logging --  default: 1 
+ValidateSenderLog: Enable Validate Sender Logging --  default: 1  
+SenderBaseLog: Enable SenderBase Logging --  default: 1  
+DelayLog: Enable Greylisting/Delaying logging --  default: 1  
+AttachmentLog: Enable Attachment logging --  default: 1  
+SPFLog: Enable SPF logging --  default: 1  
+RBLLog: Enable DNSBL logging --  default: 1 
+URIBLLog: Enable URIBL logging --  default: 1 
+ScanLog: Enable Virus Check logging --  default: 1 
+BayesianLog: Enable Bayesian Logging --  Enables verbose logging of  Bayesian checks in the maillog. default: 1 
+MaintenanceLog: Enable Maintenance logging --  default: 1  
+ReportLog: Enable Report logging --  default: 2 
+ExtraLog: Enable Extra logging --  Additional logging for various purposes default: 1 
+Showmaxreplies: Show All Possible Hits  --  Show all hits instead of stopping at maxhits (RBL,URIBL,RWL).  
+RegExLength: RegEx Length in Log --  Defines how many bytes of a matching Regular Expression will be shown in the log
+  Some matching Regular Expressions are too long for one line. Default: 32 default: 32 
+sendNoopInfo: Send NOOP Info --  Checked means you want ASSP to send a "NOOP Connection from $ip" message to your SMTP server.
+  
+  
+    
+# LDAP Setup  #
+LDAPHost: LDAP Host(s) --  Enter the DNS-name(s) or IP address(es) of the server(s) that run(s) the  database. Second entry is backup. For example: localhost. Separate entries with pipes: LDAP-1.domain.com|LDAP-2.domain.com default: localhost 
+LDAPtimeout: LDAP Query Timeout --  Timeout when connecting to the remote server. The default is 15 seconds. default: 15 
+LDAPLogin: LDAP Login --  Most LDAP servers require a login and password before they allow queries.Enter the DN specification for a user with sufficient permissions here.For example: cn=Administrator,cn=Users,DC=yourcompany,DC=com   
+LDAPPassword: LDAP Password --  Enter the password for the specified LDAP login here.   
+LDAPVersion: LDAP Version --  Enter the version for the specified LDAP here. default: 3 
+LDAPRoot: LDAP Root container --  The LDAP lookup will use this container and all sub-containers to match the query.The literal DOMAIN is replaced by the domain part of SMTP recipient (eg. domain.com) during the search.For example: DC=yourcompany,DC=com.If you use DOMAIN here, you must check "LDAP failures return false" below or non local domains will be treated as local  
+ldLDAPFilter: LDAP Filter for Local Domains --  This filter is used to query the LDAP database. This strongly depends on the LDAP structure.The filter must return an entry if the domain must be relayed.The literal DOMAIN (case sensitive) will be replaced by the domain name during the search.  
+LDAPFilter: LDAP Filter for Local Addresses --  This filter is used to query the LDAP database. This strongly depends on the LDAP structure.The filter must return an entry if the recipient address matches with that of any user.The literal EMAILADDRESS is replaced by the fully qualified SMTP recipient (eg. user@example.com) during the search.The literal USERNAME (case sensitive) is replaced by the user part of SMTP recipient (eg. user) during the search.The literal DOMAIN (case sensitive) is replaced by the domain part of SMTP recipient (eg. domain.com) during the search.For example: (proxyaddresses=smtp:EMAILADDRESS)  
+LDAPcrossCheckInterval: Clean Up local LDAP Database --  Delete outdated entries from the LDAP cache. Crosscheck LDAP cache to LDAP server and delete not existing entries.
+  Note: the current timeout must expire before the new setting is loaded, or you can restart.
+  Defaults to 24 hours. Is only used, if  is defined in the filepath section. default: 24 
+LDAPShowDB: Show local LDAP Database --  The directory/file with the LDAP cache database file. If you change  in section Filepath you must change it here too. default: file:ldaplistdb 
+MaxLDAPlistDays: Max LDAP cache Days --  This is the number of days an address will be kept on the local LDAP cache without any email to this address. default: 90  
+LDAPFail: LDAP failures return false --  If checked when an error occurs in LDAP lookups the test fails.  
+# DNS Setup #
+UseLocalDNS: Use System Default DNS ( --  Use system default DNS Name Servers. default: 1  
+DNSResponseLog: Show DNS Name Servers Response Time in Log --   
+DNSServers: DNS Name Servers --  DNS Name Servers IP's to use for DNSBL, RWL, URIBL, PTR, SPF2 lookups. ASSP will check regularly for timeouts and will move not responding servers to the end of the list - making it inactive. To get the most out of this put here as many nameservers as you want, mixing local, public & open and set ). default: 208.67.222.222|208.67.220.220  
+DNStimeout: DNS Query Timeout --  Global DNS Query Timeout for DNSBL, RWL, URIBL, PTR, SPF, MX and A record lookups. The default is 5 seconds. default: 5  
+DNSretry: DNS Query Retry --  Global DNS Query Retry. Set the number of times to try the query. The default is 1. default: 1 
+DNSretrans: DNS Query Retrans --  Global DNS Query Retransmission Interval. Set the retransmission interval. The default is 3.
+   default: 3 
+# Server Setup #
+AsAService: Run ASSP as a Windows Service --  In Windows NT/2000/XP/2003 ASSP can be installed as a service. This setting tells ASSP that this has been done -- it does not install the Windows service for you. Installing ASSP as a service requires several steps which are detailed in the   
+AsADaemon: Run ASSP as a Daemon --  In Linux/BSD/Unix/OSX fork and close file handles. Similar to the command "perl assp.pl &amp;", but better.
+    
+runAsUser: Run as UID --  The *nix user name to assume after startup (*nix only).Examples: assp, nobody
+    
+runAsGroup: Run as GID --  The *nix group to assume after startup (*nix only).Examples: assp, nobody
+    
+ChangeRoot: Change Root --  The new root directory to which ASSP should chroot (*nix only). If blank, no chroot jail will be used. Note: if you use this feature, be sure to copy or link the etc/protocols file in your chroot jail.
+    
+setFilePermOnStart: Set ASSP File Permission on Startup --  If set, ASSP sets the permission of all ASSP- files and directories at startup to full (0777)!  
+AutoRestart: Automatic Restart after Exception --  If ASSP detects a main exception and it runs not as service or daemon, it will try to restart it self automatically!  
+AutoRestartCmd: OS-shell command for AutoRestart --  The OS level shell-command that is used to autorestart ASSP, if it runs not as a service or daemon! A possible value for your system is:Leave this field blank, if ASSP runs inside an external loop (inside the OS like assp.sh or assp.cmd).  
+RestartEvery: Restart Timeout --  ASSP will automatically terminate and restart after this many seconds. Use this setting to periodically reload configuration data, combat potential memory leaks, or perform shutdown/startup processes. This will only work properly if ASSP runs as a Windows service or in a script that restarts it after it stops.  
+myName: My Name --  ASSP will identify itself by this name in the email "Received:" header and in the helo when sending report-replies. Usually the fully qualified domain name of the host.Examples: assp.example.com default: ASSP.nospam  
+myHelo: My Helo --  How ASSP will identify itself when connecting to the target MTA. 
+transparent - the Helo of the sender will be used
+ will be used
+use FQDN - fully qualified domain name of the host assp is running on default: 1 
+asspCfg: assp.cfg --  This is the current assp.cfg file. default: file:assp.cfg 
+AutoReloadCfg: Automatic Reload ConfigFile --  If selected and the assp.cfg file is changed externaly, ASSP will reload the configuration from the file automatically.  
+asspCfgVersion: assp.cfg version --  This is the current assp.cfg version.   
+proxyserver: Proxy Server --  The Proxy Server to use when uploading global statistics and downloading the greylist.Examples: 192.168.0.1:8080, 192.168.0.1  
+OutgoingBufSizeNew: Size of TCP/IP Buffer --  If ASSP talks to the internet over a modem change this to 4096. The default is 1024000. default: 1024000  
+webAdminPort: Web Admin Port --  The port on which ASSP will listen for http connections to the web administration interface. If you change this, after you click Apply you must change the URL on your browser to reconnect. You may also supply an IP address to limit connections to a specific interface.Examples: 55555, 192.168.0.5:12345 default: 55555 
+webAdminPassword: Web Admin Password --  The password for the web administration interface (minimum of 5 characters, max 8 characters will be used). default: nospam4me  
+allowAdminConnectionsFrom: Only Allow Admin Connections From* --  An optional list of IP addresses from which you will accept web admin connections. Blank means accept connections from any IP address. Examples:
+  127.0.0.1|172.16.  
+webStatPort: Raw Statistics Port --  The port on which ASSP will listen for http connections to the statistics interface. You may also supply an IP address to limit connections to a specific interface.Examples: 55553, 192.168.0.5:12345 default: 55553 
+allowStatConnectionsFrom: Only Allow Raw Statistics Connections From* --  An optional list of IP addresses from which you will accept raw statistical connections. Blank means accept connections from any IP address. Examples:
+127.0.0.1|172.16. default: 127.0.0.1  
+CleanCacheEvery: Cache Cleaning Interval --  This period (in hours) determines how frequently ASSP does cache-housekeeping. default: 2  
+SaveStatsEvery: Statistics Save Interval --  This period (in minutes) determines how frequently ASSP statistics are written to a local file.   
+totalizeSpamStats: Upload Consolidated Spam Statistics --  ASSP will upload its statistics to be consolidated with the global ASSP totals. Please do not disable it unless you have a good reason to do so. No private information is being disclosed by this upload. default: 1 
+OrderedTieHashTableSize: Ordered-Tie Hash Table Size --  The number of entries allowed in the hash tables used by ASSP and rebuildspamdb.pl. Larger numbers require more more RAM but result in fewer disk hits. The default value is 10000. Adjust down to use less RAM. default: 5000 
+EnableHTTPCompression: Enable HTTP Compression in GUI --  Enable HTTP Compression for faster web administration interface loading. The perl module  is required to use this feature.   
+hideAlphaIndex: Hide the Alpha Index Menu Panel in GUI --  Removes the alphanumeric index panel on the left side in the GUI, but the index is accessable by clicking on "sorted".   
+IndexSlideSpeed: Sliding Speed of the Alpha Index Menu Panel in GUI --  Adjust the sliding speed of the Alpha Index Menu Panel in GUI to your needs. default: 10 
+EnableFloatingMenu: Enable Floating Menu Panel in GUI --  Allow the menu panel on the web administration interface to float (floating Div code taken from ). default: 1  
+EnableInternalNamesInDesc: Show Internal Names in the GUI --  Show the internal names in the web interface. The internal names are used in the configuration file (assp.cfg), in the application code, and in the menu bar on the left side of the GUI. default: 1 
+MaillogTailJump: Jump to the End of the Maillog --  Causes the browser window to jump to the bottom of the maillog instead of sitting at the top of the display.   
+MaillogTailBytes: Maillog Tail Bytes --  The number of bytes that will be shown when the end of the maillog is viewed. The default value is 10000. default: 10000 
+MaillogTailWrapColumn: Maillog Tail Wrap Column --  Force maillog lines to wrap at this column if there are too many characters in a line. The default is 80. Enter 0 to disable wrapping. default: 80 
+ALARMtimeout: Module Call Timeout --  Global Timeout for calling other modules. The default is 10 seconds. default: 10  
+UseLocalTime: Use Local Time --  Use local time and timezone offset rather than UTC time in the mail headers.
+   default: 1 
+# Rebuild Options #
+RebuildNotify: Notification Email To --  Email address(es) to which you want ASSP to send a notification email after the rebuild task is finished. The file rebuildrun.txt is included in this notification. Separate multiple entries by "|".   
+griplist: GReyIPlist Database --  The file with the current GRey-IP-List  database -- make this blank if you don't use it. default: griplist 
+noGriplist: Don't Upload/Download Griplist --  Check this to disable the Griplist upload/down when rebuildspamdb runs. The Griplist contains IPs and their value between 0 and 1, lower is less spammy, higher is more spammy. This value is called the grip value.  
+DoFullGripDownload: Full Griplist Download Period --  The Global Griplist is downloaded once in full, then only deltas are downloaded each day subsequently.  This option forces a new full download after this many days.  Leave it blank to not force new full downloads. Recommended: 30 days. default: 30 
+MaxWhitelistDays: Max Whitelist Days --  This is the number of days an address will be kept on the whitelist without any email to/from this address. default: 999 
+MaxCorrectedDays: Max Corrected Days --  This is the number of days a report will be kept in the  folders. default: 1000 
+
+        
