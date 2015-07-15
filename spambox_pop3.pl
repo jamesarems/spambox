@@ -1,5 +1,5 @@
 #!/usr/local/bin/perl
-# $Id: assp_pop3.pl,v 1.14 2014/12/06 08:00:00 TE Exp $
+# $Id: spambox_pop3.pl,v 1.14 2014/12/06 08:00:00 TE Exp $
 #
 # perl pop3 collector for assp
 # (c) Thomas Eckardt 2010 under the terms of the GPL
@@ -22,7 +22,7 @@ use re 'eval';
 
 STDOUT->autoflush;
 STDERR->autoflush;
-our $VERSION = $1 if('$Id: assp_pop3.pl,v 1.14 2014/12/06 08:00:00 TE Exp $' =~ /,v ([\d.]+) /);
+our $VERSION = $1 if('$Id: spambox_pop3.pl,v 1.14 2014/12/06 08:00:00 TE Exp $' =~ /,v ([\d.]+) /);
 
 ##############################################################################
 # set the next values to 1 if you want to test your POP3 collection externaly
@@ -33,17 +33,17 @@ our $debug = 0;
 
 our %Config;
 
-our $base = $ARGV[0] or die "error: missing parameter for base directory - usage: perl assp_pop3.pl base-directory [-nofork -debug] or perl assp_pop3.pl -v\n";
+our $base = $ARGV[0] or die "error: missing parameter for base directory - usage: perl spambox_pop3.pl base-directory [-nofork -debug] or perl spambox_pop3.pl -v\n";
 if (lc $base eq '-v') {
-    print "assp_pop3.pl version $VERSION\n";
+    print "spambox_pop3.pl version $VERSION\n";
     exit;
 }
--d $base or die "error: unable to find base-directory $base - usage: perl assp_pop3.pl base-directory [-nofork -debug] or perl assp_pop3.pl -v\n";
+-d $base or die "error: unable to find base-directory $base - usage: perl spambox_pop3.pl base-directory [-nofork -debug] or perl spambox_pop3.pl -v\n";
 
 $preventFORK = 1 if (lc $ARGV[1] =~ /nofork/i || lc $ARGV[2] =~ /nofork/i);
 $debug = 1 if (lc $ARGV[1] =~ /debug/i || lc $ARGV[2] =~ /debug/i);
 
-print "assp_pop3.pl version $VERSION starting\n";
+print "spambox_pop3.pl version $VERSION starting\n";
 $base =~ s/\\/\//g;
 &loadconfig();
 our $asspCfgVersion = $Config{asspCfgVersion};

@@ -3350,7 +3350,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   'Syslog Facility. Valid are kern, user, mail, daemon, auth, syslog, lpr, news, uucp, cron, authpriv, ftp, local0, local1, local2, local3, local4, local5, local6',undef,undef,'msg006700','msg006701'],
 ['sysLogIp','Syslog IP',40,\&textinput,'','^(' . $HostRe .'|)$','ConfigChangeSysLog',
   'IP Address or hostname of your Network Syslog Daemon for Syslog logging.',undef,undef,'msg006710','msg006711'],
-['asspLog','ASSP local logging',0,\&checkbox,'1','(.*)',undef,'ASSP manages local logging. The logs (logfile) are stored inside the directory where ASSP is installed.',undef,undef,'msg006720','msg006721'],
+['spamboxLog','ASSP local logging',0,\&checkbox,'1','(.*)',undef,'ASSP manages local logging. The logs (logfile) are stored inside the directory where ASSP is installed.',undef,undef,'msg006720','msg006721'],
 ['LogRollDays','Roll the Logfile How Often?',5,\&textinput,'1','([1-9]\d*)','ConfigChangeLogRollDays',
   'ASSP closes and renames the log file after this number of days. Leave this at the default value 1, if you use BlockReporting.',undef,undef,'msg006730','msg006731'],
 ['LogNameDate','LogName Date Format',30,\&textinput,'YY-MM-DD','^((?:YY(?:YY)?-)?MM-DD)$',undef,'The standard name for the logfile is YY-MM-DD.maillog.txt, use this option to set it to your needs.<br />
@@ -4369,7 +4369,7 @@ The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries.
   For example: &lt;TO:NAME@mydomain.com&gt;  or  &lt;TO:NAME@subdomain.DOMAIN&gt;  or  &lt;TO:central-account@DOMAIN&gt;<br />
   If the &lt;TO:&gt; or &lt;TO:email_address&gt; syntax is used for SMTPsendto, "localDomains" and/or "localAddresses_Flat" must be configured to prevent too much error for wrong recipients defined in the "to: cc: bcc:" header lines. The POP3collector will not do any LDAP or VRFY query!<br />
   If you want assp to detect SPAM, use the listenPort or listenPort2 as SMTP-server.<br />
-  To use this feature, you have to install the perl script "assp_pop3.pl" in the assp- base directory.',undef,undef,'msg009070','msg009071'],
+  To use this feature, you have to install the perl script "spambox_pop3.pl" in the assp- base directory.',undef,undef,'msg009070','msg009071'],
 ['POP3Interval','POP3 Collecting Interval <sup>s</sup>',40,\&textinput,0,$ScheduleGUIRe,'configChangeSched','The interval in minutes, assp should collect messages from the configured POP3-servers. A value of zero disables this feature.',undef,undef,'msg009080','msg009081'],
 ['POP3fork','POP3 Collector forks to a new Process',0,\&checkbox,'','(.*)',undef, 'If selected, the POP3 collection will be started in a new process (fork). This prevents the MaintThread from waiting until the POP3 collection has finished. Do not select this option, if you are testing the POP3 collection - to get all output from the collector! It is recommended to set this option after you\'ve verified that the POP3 collector is running well.',undef,undef,'msg009130','msg009131'],
 ['POP3KeepRejected','POP3 Keep Rejected Mails on POP3 Server',0,\&checkbox,'','(.*)',undef, 'If selected, any collected POP3 mail that fails to be sent via SMTP (because of being SPAM - in case rejected by the SMTP server) will be kept on the POP3 server.',undef,undef,'msg009140','msg009141'],
@@ -6398,7 +6398,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
 
  $WorkerName = 'startup';
  $logfile = $Config{logfile};     # set the log parms to preenable logging
- $asspLog = $Config{asspLog};
+ $spamboxLog = $Config{spamboxLog};
  $WorkerLogging = $Config{WorkerLogging};
  $sysLog = $Config{sysLog};
  $SysLogFac = $Config{SysLogFac};
@@ -7279,7 +7279,7 @@ EOT
         }
     }
 
-    if ( $main::asspLog ) { &rb_uploadgriplist(); }
+    if ( $main::spamboxLog ) { &rb_uploadgriplist(); }
 
     if ($TrashlistObj !~ /orderedtie/o && (open my $HASH, '>', "$main::base/trashlist.db") ) {
         binmode $HASH;
@@ -12836,7 +12836,7 @@ if ($CanUseTieRDBM) {
   mlog(0,"info: command queue released");
   $allowPOP3 = 1;
   mlog(0,"info: POP3 collection is now allowed")
-     if ($POP3Interval && -e "$base/assp_pop3.pl" && $POP3ConfigFile =~ /^ *file: *(?:.+)/io);
+     if ($POP3Interval && -e "$base/spambox_pop3.pl" && $POP3ConfigFile =~ /^ *file: *(?:.+)/io);
   &mlogWrite();
   if($pidfile) {open($PIDH,'>',"$base/$pidfile"); $PIDH->autoflush; print $PIDH $$;}
   nixUsers();
@@ -15145,7 +15145,7 @@ sub mlogWrite {
        if ($line !~ /\*\*\*assp\&is\%alive\$\$\$/o) {
            print $line unless ($silent);
            w32dbg($line) if ($CanUseWin32Debug);
-           if ($logfile && $asspLog && fileno($LOG)) {
+           if ($logfile && $spamboxLog && fileno($LOG)) {
                my $skipPrint;
                my $ll = substr($logline,length($LogDateFormat));
                $ll =~ s/^.*?\[Worker_\d+\]\s*//o;
@@ -15176,7 +15176,7 @@ sub mlogWrite {
                print $LOG $logline if (! $skipPrint);
            }
            print $LOGBR $logline if ($logfile &&
-                                     $asspLog &&
+                                     $spamboxLog &&
                                      fileno($LOGBR) &&
                                      $ExtraBlockReportLog &&
                                      $logline =~ /\[\s*spam\sfound\s*\]/io);
@@ -15264,7 +15264,7 @@ sub mlog {
 
         # roll log every $LogRollDays days, at midnight
         my $t=int((time + TimeZoneDiff())/($LogRollDays*24*3600));
-        if($logfile && $mlogLastT && $t != $mlogLastT && $logfile ne 'maillog.log' && $asspLog) {
+        if($logfile && $mlogLastT && $t != $mlogLastT && $logfile ne 'maillog.log' && $spamboxLog) {
 
             # roll the log
             my $mm = &timestring(time - 7200,'d',$LogNameDate);
@@ -16587,13 +16587,13 @@ sub isOk2Relay {
 sub POP3Collect {
     return 0 unless $allowPOP3;
     return 0 unless $POP3Interval;
-    return 0 unless -e "$base/assp_pop3.pl";
+    return 0 unless -e "$base/spambox_pop3.pl";
 
     return 0 if $POP3ConfigFile !~ /^ *file: *.+/io;
     d('POP3 - collect');
 
     my $perl = $perl;
-    my $cmd = "\"$perl\" \"$base/assp_pop3.pl\" \"$base\" 2>&1";
+    my $cmd = "\"$perl\" \"$base/spambox_pop3.pl\" \"$base\" 2>&1";
     $cmd =~ s/\//\\/go if $^O eq "MSWin32";
     my $out = qx($cmd);
 
