@@ -46,8 +46,8 @@ $debug = 1 if (lc $ARGV[1] =~ /debug/i || lc $ARGV[2] =~ /debug/i);
 print "spambox_pop3.pl version $VERSION starting\n";
 $base =~ s/\\/\//g;
 &loadconfig();
-our $asspCfgVersion = $Config{asspCfgVersion};
-$asspCfgVersion =~ s/^(\d+\.\d+\.\d+).*/$1/;
+our $spamboxCfgVersion = $Config{spamboxCfgVersion};
+$spamboxCfgVersion =~ s/^(\d+\.\d+\.\d+).*/$1/;
 
 $debug = $debug || $Config{debug} || $Config{POP3debug};
 print "POP3: using debug mode\n" if $debug;
@@ -104,7 +104,7 @@ if ($Config{adminusersdbpass} && $Config{adminusersdbpass} =~ /^(?:[a-fA-F0-9]{2
 # if POP3SSL is set 1 - POP3S will be done
 #
 
-if (! $preventFORK && ($asspCfgVersion =~ /^1/ or $Config{POP3fork})) {  # assp V1 will report what to do and fork and exit
+if (! $preventFORK && ($spamboxCfgVersion =~ /^1/ or $Config{POP3fork})) {  # assp V1 will report what to do and fork and exit
     foreach my $accnt (keys %accounts) {                                 # V2 will fork if configured
         $accnt =~ s/\<\d+\>\:/:/;
         print "POP3: will collect messages for user $accnt to <$accounts{$accnt}->{'SMTPsendto'}> from host $accounts{$accnt}->{'POP3server'}\n" if $Config{MaintenanceLog};
@@ -226,7 +226,7 @@ foreach my $accnt (keys %accounts)
             $time=~s/... (...) +(\d+) (........) (....)/$2 $1 $4 $3/;
             my $helo = $accounts{$accnt}->{'POP3server'};
             $helo =~ s/:\d+$//o;
-            unshift @$msg, &headerWrap("Received: from $POP3Host ([$POP3serverip] helo=$helo) by $Config{myName} with *POP3$popPOP3ISA* ($asspCfgVersion); $time $tz\r\n");
+            unshift @$msg, &headerWrap("Received: from $POP3Host ([$POP3serverip] helo=$helo) by $Config{myName} with *POP3$popPOP3ISA* ($spamboxCfgVersion); $time $tz\r\n");
             if (my $smtp = Net::SMTP->new($accounts{$accnt}->{'SMTPserver'},
                                           Hello => $accounts{$accnt}->{'SMTPHelo'},
                                           Timeout => 120,
@@ -298,7 +298,7 @@ print "POP3: collected $count messages\n" if $Config{MaintenanceLog};
 exit 0;
 
 sub loadconfig {
-    open( my $confFile, '<', "$base/assp.cfg" ) || die "error: cannot open \"$base/assp.cfg\": $!";
+    open( my $confFile, '<', "$base/spambox.cfg" ) || die "error: cannot open \"$base/spambox.cfg\": $!";
     while (<$confFile>) {
         s/\r|\n//go;
         my ($k,$v) = split(/:=/,$_,2);
@@ -318,16 +318,16 @@ sub tzStr {
 
 sub getPOPcfg {
     my $cfgParm = $Config{POP3ConfigFile};
-    die "error: no configuration for POP3ConfigFile found in $base/assp.cfg\n" unless $cfgParm;
+    die "error: no configuration for POP3ConfigFile found in $base/spambox.cfg\n" unless $cfgParm;
     my ($file) = $cfgParm =~ /^ *file: *(.+)/i;
     open my $CFG, "<$base/$file" or die "error: unable to open POP3cfg file - $base/$file - $!\n";
     binmode($CFG);
     my $popcfg = join('',<$CFG>);
     close $CFG;
-    if ($asspCfgVersion !~ /^1/ && $popcfg =~ /^(?:[a-zA-Z0-9]{2}){10,}$/o) {
+    if ($spamboxCfgVersion !~ /^1/ && $popcfg =~ /^(?:[a-zA-Z0-9]{2}){10,}$/o) {
         my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
         $popcfg = $enc->DECRYPT($popcfg) if $popcfg =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o;
-        die "error: unable to decrypt the configuration file $base/assp.cfg\n" unless $popcfg;
+        die "error: unable to decrypt the configuration file $base/spambox.cfg\n" unless $popcfg;
     }
     my @POPCFG = split("\n", $popcfg);
     my %comCFG;

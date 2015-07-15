@@ -8,7 +8,7 @@
 #    this script in to the assp directory
 # 3. be sure there is no syslog daemon running on the system - or use an other port (1514 instead of 514)
 # 4. run the script - if started on the local assp system the script will try to find the SysLogPort
-#    in assp.cfg
+#    in spambox.cfg
 #    if started on a remote system, define the listenport as first parameter - like
 #    perl assp-monitor.pl 1514 or the default port 514 will be used
 ###############################################################################################################################
@@ -57,8 +57,8 @@
      $base = $ARGV[0] if $ARGV[0];
  }
  
- $cfg = 'assp.cfg';
- $cfg = "$base/assp.cfg" if $base;
+ $cfg = 'spambox.cfg';
+ $cfg = "$base/spambox.cfg" if $base;
 
  if (!$port && open F, "<$cfg") {
      my $dummy;
@@ -105,7 +105,7 @@
 
  print "\nassp-monitor.pl is listening for UDP-connections on port $port\n\n";
  print "found syslog configuration in $cfg:\nIP     : $sysLogIp\nPort   : $port\nsysLog : $sysLog\n\n" if $sl;
- print "monitoring assp.pl at PID $pid for an over two minutes keep alive\n";
+ print "monitoring spambox.pl at PID $pid for an over two minutes keep alive\n";
  print "will use the command <$killcmd> to kill assp\n" if $killcmd;
  print "will use the command <$startcmd> to start assp\n" if $startcmd;
  print "expected hardbeat time is $hangtime seconds\n";
@@ -123,7 +123,7 @@
 
 # listen on udp-port - format the message to looks like assp log output
 # print the message to screen - do this until process is killed or socket is died
-# monitor assp.pl for keep alive
+# monitor spambox.pl for keep alive
  while (1) {
   my @canread;
   if ($IOEngine == 0) {

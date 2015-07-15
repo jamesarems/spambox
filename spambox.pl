@@ -425,7 +425,7 @@ our %neverShareCFG = (
     'forceLDAPcrossCheck' => 1,
     'myName' => 1,
     'asspCfg' => 1,
-    'asspCfgVersion' => 1,
+    'spamboxCfgVersion' => 1,
     'NumComWorkers' => 1,
     'ReservedOutboundWorkers' => 1,
     'RebuildSchedule' => 1,
@@ -3690,9 +3690,9 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
 
 ['HideIPandHelo','Hide IP and/or Helo',40,\&textinput,'','(.*)',undef,'Replace any of these information ( ip=127.0.0.1 helo=anyhost.local ) in our received header for outgoing mails. Use the syntax ip=127.0.0.1 and/or helo=anyhost.local .',undef,undef,'msg009830','msg009831'],
 ['myGreeting','Override the Server SMTP Greeting',80,\&textinput,'','(.*)',undef,'Send this SMTP greeting (eg. 220 MYNAME is ready - using ASSP VERSION) instead of your MTA\'s SMTP greeting to the client. If not defined (default), the MTA\'s greeting will be sent to the client. The literal MYNAME will be replaced with myName and the literal VERSION will be replaced by the full version string of assp. If the starting \'220 \' is not defined, assp will add it to the greeting.',undef,undef,'msg010260','msg010261'],
-['asspCfg','assp.cfg*',40,\&textnoinput,'file:assp.cfg','(.*)','configUpdateASSPCfg','For internal use only - it is assp.cfg file. Do not change this value.',undef,undef,'msg007570','msg007571'],
-['AutoReloadCfg','Automatic Reload ConfigFile',0,\&checkbox,'','(.*)','configChangeAutoReloadCfg','If selected and the assp.cfg file is changed externally, ASSP will reload the configuration from the file automatically.',undef,undef,'msg007580','msg007581'],
-['asspCfgVersion','assp.cfg version',40,\&textnoinput,'','(.*)',undef,'ASSP will identify the assp.cfg file. Do not change this.',undef,undef,'msg007590','msg007591'],
+['asspCfg','spambox.cfg*',40,\&textnoinput,'file:spambox.cfg','(.*)','configUpdateASSPCfg','For internal use only - it is spambox.cfg file. Do not change this value.',undef,undef,'msg007570','msg007571'],
+['AutoReloadCfg','Automatic Reload ConfigFile',0,\&checkbox,'','(.*)','configChangeAutoReloadCfg','If selected and the spambox.cfg file is changed externally, ASSP will reload the configuration from the file automatically.',undef,undef,'msg007580','msg007581'],
+['spamboxCfgVersion','spambox.cfg version',40,\&textnoinput,'','(.*)',undef,'ASSP will identify the spambox.cfg file. Do not change this.',undef,undef,'msg007590','msg007591'],
 ['ConfigChangeSchedule','Schedule Configuration Changes*',40,\&textinput,'','(file:.+|)','configChangeConfigSched',
  'Use this option to schedule configuration changes. You must use the file option like \'file:files/configchangeschedule.txt\' to define schedules - an empty value disables this feature.<br />
  Define one schedule per line - comments are not allowed in a schedule definition line!<br />
@@ -3777,7 +3777,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
 ['RememberGUIPos','Remember the last GUI position',0,\&checkbox,1,'(.*)',undef,
   'If selected, the GUI will remember the last topic of the main menu, that had the focus, was changed, that were jumped to or that were clicked on.',undef,undef,'msg009340','msg009341'],
 ['EnableInternalNamesInDesc','Show Internal Names in the GUI',0,\&checkbox,1,'(.*)',undef,
-  'Show the internal names in the web interface. The internal names are used in the configuration file (assp.cfg), in the application code, and in the menu bar on the left side of the GUI.',undef,undef,'msg007740','msg007741'],
+  'Show the internal names in the web interface. The internal names are used in the configuration file (spambox.cfg), in the application code, and in the menu bar on the left side of the GUI.',undef,undef,'msg007740','msg007741'],
 ['MaillogTailJump','Jump to the End of the Maillog',0,\&checkbox,'','(.*)',undef,
   'Causes the browser window to jump to the bottom of the maillog instead of sitting at the top of the display.',undef,undef,'msg007750','msg007751'],
 ['MaillogTailBytes','Maillog Tail Bytes',10,\&textinput,10000,'(\d+)',undef,
@@ -5203,7 +5203,7 @@ sub checkConfigFile {
     my $cfg = (<$f>);
     close $f;
     return unless (open($f,'<',$file));
-    if ($cfg =~ /\nasspCfgVersion:=((\d+)\..+?(?:\((\d{5})(?:\.\d{1,2})?\))?)\n/os) {
+    if ($cfg =~ /\nspamboxCfgVersion:=((\d+)\..+?(?:\((\d{5})(?:\.\d{1,2})?\))?)\n/os) {
         if ($2 < 2 or $3 < 12119) {  # the minimum build for this check is V2 12119
             $$h = $f;
             print "checking config in $file - is an upgrade from $1  [OK]\n";
@@ -5262,9 +5262,9 @@ if($ARGV[0]) {
 } else {
  # the last one is the one used if all else fails
  $base = cwd();
- unless (-e "$base/assp.cfg" || -e "$base/assp.cfg.tmp") {
+ unless (-e "$base/spambox.cfg" || -e "$base/spambox.cfg.tmp") {
    foreach ('.','/usr/local/assp','/home/assp','/etc/assp','/usr/assp','/applications/assp','/assp','.') {
-    if (-e "$_/assp.cfg" || -e "$base/assp.cfg.tmp") {
+    if (-e "$_/spambox.cfg" || -e "$base/spambox.cfg.tmp") {
       $base=$_;
       last ;
     }
@@ -5323,7 +5323,7 @@ sub import {
     filter_add( sub {
             my $caller = 'ASSP_DEF_VARS';
             my ($status, $no_seen, $data, $defConfVar, $check, $VERSION);
-            $VERSION = $main::MAINVERSION || $main::Config{asspCfgVersion} || $main::asspCfgVersion;
+            $VERSION = $main::MAINVERSION || $main::Config{spamboxCfgVersion} || $main::spamboxCfgVersion;
             my $V=997;
             $V=pack("B*",substr(unpack("B*",join('',map{chr($_)}0x00...0xff)),$V,256));
             $check = delete $main::Config{plcheck};
@@ -5480,17 +5480,17 @@ $dftCaFile =~ s/\\/\//go;
  
  # load configuration file
  my $CFG;
- if (! $^C && ! checkConfigFile(\$CFG,"$base/assp.cfg") && -e "$base/assp.cfg.tmp") {
-     unlink("$base/assp.cfg");
-     rename ("$base/assp.cfg.tmp","$base/assp.cfg") and
-     writeExceptionLog("warning: file $base/assp.cfg seems to be missing or corrupt - used $base/assp.cfg.tmp instead!");
-     checkConfigFile(\$CFG,"$base/assp.cfg");
+ if (! $^C && ! checkConfigFile(\$CFG,"$base/spambox.cfg") && -e "$base/spambox.cfg.tmp") {
+     unlink("$base/spambox.cfg");
+     rename ("$base/spambox.cfg.tmp","$base/spambox.cfg") and
+     writeExceptionLog("warning: file $base/spambox.cfg seems to be missing or corrupt - used $base/spambox.cfg.tmp instead!");
+     checkConfigFile(\$CFG,"$base/spambox.cfg");
  }
  if (! $^C && ! $CFG ) {
-     writeExceptionLog("warning: unable to open $base/assp.cfg for reading - will try to use backup config files!");
-     ( checkConfigFile(\$CFG,"$base/assp.cfg.bak") and writeExceptionLog("warning: $base/assp.cfg.bak was used!")) or
-     ( checkConfigFile(\$CFG,"$base/assp.cfg.bak.bak") and writeExceptionLog("warning: $base/assp.cfg.bak.bak was used!")) or
-     ( checkConfigFile(\$CFG,"$base/assp.cfg.bak.bak.bak") and writeExceptionLog("warning: $base/assp.cfg.bak.bak.bak was used!")) or
+     writeExceptionLog("warning: unable to open $base/spambox.cfg for reading - will try to use backup config files!");
+     ( checkConfigFile(\$CFG,"$base/spambox.cfg.bak") and writeExceptionLog("warning: $base/spambox.cfg.bak was used!")) or
+     ( checkConfigFile(\$CFG,"$base/spambox.cfg.bak.bak") and writeExceptionLog("warning: $base/spambox.cfg.bak.bak was used!")) or
+     ( checkConfigFile(\$CFG,"$base/spambox.cfg.bak.bak.bak") and writeExceptionLog("warning: $base/spambox.cfg.bak.bak.bak was used!")) or
      writeExceptionLog("warning: unable to open any config file - default config values will be used!");
  }
  if ($CFG) {
@@ -6424,7 +6424,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
 
  mlog(0,"info: an ASSP restart will be done using the AutoRestartCmd") if $MaintenanceLog;
  PrintConfigSettings() if ! SaveConfigSettings();
- chmod 0666, "$base/assp.cfg";
+ chmod 0666, "$base/spambox.cfg";
 
 # Notes on general operation & program structure
 # I'm using IO::Poll or IO::Select, so don't make any changes that block for long
@@ -12249,7 +12249,7 @@ EOT
   my $m = &getTimeDiff($nextdetectHourJob-$nextNoop);
   mlog(0,"info: hourly scheduler is starting in $m") if $MaintenanceLog >=2;
 
-  chmod 0755, "$base/assp.cfg";
+  chmod 0755, "$base/spambox.cfg";
 
   my $liccount = 0;
   -d "$base/license" or mkdir "$base/license",0755;
@@ -49581,37 +49581,37 @@ sub SaveConfig {
  print $SC "ConfigSavedOK:=1\n";
  close $SC;
 
- if (open($SC, '<', "$base/assp.cfg")) {
+ if (open($SC, '<', "$base/spambox.cfg")) {
      my $current = (<$SC>);
      close $SC;
      if ($current eq $content) {
-         mlog(0,"info: no configuration changes detected - nothing to save - file $base/assp.cfg is unchanged");
+         mlog(0,"info: no configuration changes detected - nothing to save - file $base/spambox.cfg is unchanged");
          return;
      }
  } else {
-     mlog(0,"warning: unable to read the current config in $base/assp.cfg");
+     mlog(0,"warning: unable to read the current config in $base/spambox.cfg");
  }
 
- unlink("$base/assp.cfg.bak.bak.bak") or mlog(0,"error: unable to delete file $base/assp.cfg.bak.bak.bak - $!");
- rename("$base/assp.cfg.bak.bak","$base/assp.cfg.bak.bak.bak") or mlog(0,"error: unable to rename file $base/assp.cfg.bak.bak to $base/assp.cfg.bak.bak.bak - $!");
- rename("$base/assp.cfg.bak","$base/assp.cfg.bak.bak") or mlog(0,"error: unable to rename file $base/assp.cfg.bak to $base/assp.cfg.bak.bak - $!");
- $FileUpdate{"$base/assp.cfgasspCfg"} = 0;
+ unlink("$base/spambox.cfg.bak.bak.bak") or mlog(0,"error: unable to delete file $base/spambox.cfg.bak.bak.bak - $!");
+ rename("$base/spambox.cfg.bak.bak","$base/spambox.cfg.bak.bak.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg.bak.bak to $base/spambox.cfg.bak.bak.bak - $!");
+ rename("$base/spambox.cfg.bak","$base/spambox.cfg.bak.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg.bak to $base/spambox.cfg.bak.bak - $!");
+ $FileUpdate{"$base/spambox.cfgasspCfg"} = 0;
 
- open($SC,'>',"$base/assp.cfg.tmp");
+ open($SC,'>',"$base/spambox.cfg.tmp");
  print $SC $content;
  close $SC;
- mlog(0,"info: saved config to $base/assp.cfg.tmp - which is now renamed to $base/assp.cfg");
+ mlog(0,"info: saved config to $base/spambox.cfg.tmp - which is now renamed to $base/spambox.cfg");
  
- rename("$base/assp.cfg","$base/assp.cfg.bak") or mlog(0,"error: unable to rename file $base/assp.cfg to $base/assp.cfg.bak - $!");
- rename("$base/assp.cfg.tmp","$base/assp.cfg") or mlog(0,"error: unable to rename file $base/assp.cfg.tmp to $base/assp.cfg - $!");
- $asspCFGTime = $FileUpdate{"$base/assp.cfgasspCfg"} = ftime("$base/assp.cfg");
+ rename("$base/spambox.cfg","$base/spambox.cfg.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg to $base/spambox.cfg.bak - $!");
+ rename("$base/spambox.cfg.tmp","$base/spambox.cfg") or mlog(0,"error: unable to rename file $base/spambox.cfg.tmp to $base/spambox.cfg - $!");
+ $asspCFGTime = $FileUpdate{"$base/spambox.cfgasspCfg"} = ftime("$base/spambox.cfg");
  mlog( 0, "finished saving config" ,1);
 }
 
 sub threadCheckConfig {
     my $CFG;
     my $ok = 1;
-    open($CFG,'<',"$base/assp.cfg") or (mlog(0,"warning: can't read $base/assp.cfg") && return);
+    open($CFG,'<',"$base/spambox.cfg") or (mlog(0,"warning: can't read $base/spambox.cfg") && return);
     my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
     while (<$CFG>) {
         s/\r|\n//go;
@@ -49627,11 +49627,11 @@ sub threadCheckConfig {
             $ok = 0;
         }
         if ($v ne $Config{$k}) {
-            mlog(0,"error: the value of config variable '$k' -> ('$v') in assp.cfg differs from the config hash ('$Config{$k}') in this thread");
+            mlog(0,"error: the value of config variable '$k' -> ('$v') in spambox.cfg differs from the config hash ('$Config{$k}') in this thread");
             $ok = 0;
         }
         if ($v ne $$k) {
-            mlog(0,"error: the value of config variable '$k' -> ('$v') in assp.cfg differs from the config variable ('$$k') in this thread");
+            mlog(0,"error: the value of config variable '$k' -> ('$v') in spambox.cfg differs from the config variable ('$$k') in this thread");
             $ok = 0;
         }
     }
@@ -50342,24 +50342,24 @@ sub PrintConfigSettings {
     }
     close $F;
 
-    open( $F, '>',"$base/assp.cfg.defaults" );
+    open( $F, '>',"$base/spambox.cfg.defaults" );
     for my $idx (0...$#ConfigArray) {
         my $c = $ConfigArray[$idx];
         next if $c->[0] eq "0";
         print $F "$c->[0]:=$c->[4]\n";
     }
     close $F;
-    chmod 0664, "$base/assp.cfg.defaults";
+    chmod 0664, "$base/spambox.cfg.defaults";
 
 }
 
 sub SaveConfigSettings {
-    return 0 if $Config{asspCfgVersion} eq $MAINVERSION;
-    my $bak = $Config{asspCfgVersion};
+    return 0 if $Config{spamboxCfgVersion} eq $MAINVERSION;
+    my $bak = $Config{spamboxCfgVersion};
     $bak =~ s/^([\d\.]+)\(([\d\.]+)\)/$1.$2/o;
-    copy("$base/assp.cfg","$base/assp_$bak.cfg.bak") or
-        mlog(0,"error: unable to backup '$base/assp.cfg' to '$base/assp_$bak.cfg.bak' after version change from '$Config{asspCfgVersion}' to '$MAINVERSION'");
-    $asspCfgVersion = $Config{asspCfgVersion} = $MAINVERSION;
+    copy("$base/spambox.cfg","$base/assp_$bak.cfg.bak") or
+        mlog(0,"error: unable to backup '$base/spambox.cfg' to '$base/assp_$bak.cfg.bak' after version change from '$Config{spamboxCfgVersion}' to '$MAINVERSION'");
+    $spamboxCfgVersion = $Config{spamboxCfgVersion} = $MAINVERSION;
     SaveConfigSettingsForce();
     return 1;
 }
@@ -50465,7 +50465,7 @@ sub fixV1ConfigSettings {
 }
 
 # This function is called on startup to clean up some settings
-# Primarily these are settings that might be absent from assp.cfg
+# Primarily these are settings that might be absent from spambox.cfg
 # or settings that are not needed anymore after an upgrade (fixV1ConfigSettings)
 sub fixConfigSettings {
     $Config{base}=$base;
@@ -50474,7 +50474,7 @@ sub fixConfigSettings {
 
     $Config{webAdminPassword}=crypt($Config{webAdminPassword},"45") if substr($Config{webAdminPassword}, 0, 2) ne "45";
 
-    &fixV1ConfigSettings() if substr($Config{asspCfgVersion},0,1) < 2 ;
+    &fixV1ConfigSettings() if substr($Config{spamboxCfgVersion},0,1) < 2 ;
 
     $Config{redRe}="file:files/redre.txt" if $Config{redRe}=~/file:redre.txt/io;
     $Config{noDelay}="file:files/nodelay.txt" if $Config{noDelay}=~/file:nodelay.txt/io;
@@ -50656,8 +50656,8 @@ sub fixConfigSettings {
 # -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
     foreach (keys %Config) {${$_}=$Config{$_};}
 
-    # set the date/time for assp.cfg
-    $asspCFGTime = $FileUpdate{"$base/assp.cfgasspCfg"} = ftime("$base/assp.cfg");
+    # set the date/time for spambox.cfg
+    $asspCFGTime = $FileUpdate{"$base/spambox.cfgasspCfg"} = ftime("$base/spambox.cfg");
 
     my ($logdir, $logdirfile) = $logfile =~ /^(.*[\/\\])?(.*?)$/o;
     $blogfile = "$logdir" . "b$logdirfile";
@@ -55142,13 +55142,13 @@ sub configUpdateCCD {
 
 sub configUpdateASSPCfg {
     my ($name, $old, $new, $init)=@_;
-    if (fileUpdated("assp.cfg",$name)){
+    if (fileUpdated("spambox.cfg",$name)){
         if ($WorkerNumber == 0) {
-            mlog(0,"AdminUpdate: assp.cfg was externally changed - reload the configuration");
+            mlog(0,"AdminUpdate: spambox.cfg was externally changed - reload the configuration");
             &reloadConfigFile();
             $ConfigChanged = 0;
         }
-        $asspCFGTime = $FileUpdate{"$base/assp.cfg$name"} = ftime("$base/assp.cfg");
+        $asspCFGTime = $FileUpdate{"$base/spambox.cfg$name"} = ftime("$base/spambox.cfg");
     }
     return;
 }
@@ -55159,7 +55159,7 @@ sub configChangeAutoReloadCfg {
     mlog(0,"AdminUpdate: $name changed from '$old' to '$new'") unless $init || $new eq $old;
     return '' if($init or $old eq $new);
     if ($new) {
-        $asspCFGTime = $FileUpdate{"$base/assp.cfgasspCfg"} = ftime("$base/assp.cfg");
+        $asspCFGTime = $FileUpdate{"$base/spambox.cfgasspCfg"} = ftime("$base/spambox.cfg");
     }
     $Config{AutoReloadCfg} = $AutoReloadCfg = $new;
     return '';
@@ -57298,7 +57298,7 @@ sub reloadConfigFile {
     my %newConfig = ();
     mlog(0,"reloading config");
     my $RCF;
-    open($RCF,'<',"$base/assp.cfg");
+    open($RCF,'<',"$base/spambox.cfg");
     while (<$RCF>) {
         s/\r|\n//go;
         s/^$UTFBOMRE//o;
@@ -61037,8 +61037,8 @@ sub ThreadMaintMain {
           if($f->[0] ne 'asspCfg' || ($f->[0] eq 'asspCfg' && $AutoReloadCfg)) {
               if ($Config{$f->[0]}=~/^ *file: *(.+)/io && fileUpdated($1,$f->[0])) {
                 my $fl = $1;
-                if ($f->[0] eq 'asspCfg' && $asspCFGTime > $FileUpdate{"$base/assp.cfgasspCfg"}) {
-                    $FileUpdate{"$base/assp.cfgasspCfg"} = $asspCFGTime;
+                if ($f->[0] eq 'asspCfg' && $asspCFGTime > $FileUpdate{"$base/spambox.cfgasspCfg"}) {
+                    $FileUpdate{"$base/spambox.cfgasspCfg"} = $asspCFGTime;
                     next;
                 }
                 $ConfigChanged = $f->[0] eq 'asspCfg' ? 2 : 1;
