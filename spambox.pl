@@ -351,7 +351,7 @@ our $WorkerScanConLimit = 1;             # (number >= 0) connection count limit 
 our $fakeAUTHsuccess = 0;                # (0/1/2) fake a 235 reply for AUTH success - move the connection to NULL - collect the mail in spam - used for honeypots - 2=with damping
 our $fakeAUTHsuccessSendFake = 0;        # (0/1) send the faked mails from the honeypot - make the spammers believe of success - attention: moves assp in to something like an open relay for these mails
 
-our $protectASSP = 1;                    # (0/1) rmtree will only remove files and folders in base/t[e]mp...
+our $protectSPAMBOX = 1;                    # (0/1) rmtree will only remove files and folders in base/t[e]mp...
 
 our $enableBRtoggleButton = 1;           # (0/1) show the "toggle view" button in HTML BlockReports
 # *********************************************************************************************************************************************
@@ -1563,7 +1563,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['noGriplistDownload','Don\'t auto-download the Griplist file',0,\&checkbox,'','(.*)',undef,
  'Set this checkbox, if you don\'t use the Griplist. You have to disable also noGriplistUpload to download the Griplist.',undef,undef,'msg000240','msg000241'],
 
-['StoreASSPHeader','Store Assp-Header into Spam Collection',0,\&checkbox,'','(.*)',undef,
+['StoreSPAMBOXHeader','Store Assp-Header into Spam Collection',0,\&checkbox,'','(.*)',undef,
  'Add "X-Assp-" to the collected spam-mails.',undef,undef,'msg008770','msg008771'],
 ['AddIntendedForHeader','Add Envelope-Recipient Header',0,\&checkbox,1,'(.*)',undef,
  'Adds two lines to the email header: "X-Assp-Intended-For: user@domain" and "X-Assp-Envelope-From: user@domain".',undef,undef,'msg000250','msg000251'],
@@ -28529,7 +28529,7 @@ sub SenderBaseMyIP {
     return eval {
             my $results;
             my $how = $enableWhois & 1;  # 0 = SB only, 1 = whois only, 2 = SB first, 3 = whois first
-            eval {$results = ASSP::Senderbase::Query->new(
+            eval {$results = SPAMBOX::Senderbase::Query->new(
                 Address   => $ip,
                 Timeout   => ($DNStimeout * ($DNSretry + 1)) || 10,
                 useWhoIs => $how
@@ -28538,7 +28538,7 @@ sub SenderBaseMyIP {
             die $@ if ! $how && $@;      # die if error and only one thing to do
             if ($how) {
                 $how = $enableWhois == 2 ? 1 : 0;  # do whois or SB
-                $results = ASSP::Senderbase::Query->new(
+                $results = SPAMBOX::Senderbase::Query->new(
                     Address   => $ip,
                     Timeout   => ($DNStimeout * ($DNSretry + 1)) || 10,
                     useWhoIs => $how
@@ -28591,7 +28591,7 @@ sub SenderBaseOK {
         eval {
             my $how = $enableWhois & 1;  # 0 = SB only, 1 = whois only, 2 = SB first, 3 = whois first
             mlog($fh,"info: SenderBase - query using ".($how ? 'Whois' : 'SenderBase')) if $SenderBaseLog > 1;
-            eval {$results = ASSP::Senderbase::Query->new(
+            eval {$results = SPAMBOX::Senderbase::Query->new(
                 Address   => $ip,
                 Timeout   => ($DNStimeout * ($DNSretry + 1)) || 10,
                 useWhoIs => $how
@@ -28601,7 +28601,7 @@ sub SenderBaseOK {
             if ($how && ! (ref($results) && $results->{ip_country})) {
                 $how = $enableWhois == 2 ? 1 : 0;  # do whois or SB
                 mlog($fh,"info: SenderBase - query using ".($how ? 'Whois' : 'SenderBase')) if $SenderBaseLog > 1;
-                $results = ASSP::Senderbase::Query->new(
+                $results = SPAMBOX::Senderbase::Query->new(
                     Address   => $ip,
                     Timeout   => ($DNStimeout * ($DNSretry + 1)) || 10,
                     useWhoIs => $how
@@ -40330,7 +40330,7 @@ sub Maillog {
                 $FH->binmode;
                 $Con{$fh}->{maillogfh} = $FH;
                 $Con{$fh}->{mailloglength} = 0;
-                if ($StoreASSPHeader) {
+                if ($StoreSPAMBOXHeader) {
                     my $myheader = $Con{$fh}->{myheader};
                     $myheader = "X-Assp-Version: $version$modversion on $myName\r\n" . $myheader
                         if $myheader !~ /X-Assp-Version:.+? on \Q$myName\E/;
@@ -63613,7 +63613,7 @@ sub rmTree {
     return 0 unless $dir;
     $dir =~ s/[\/\\]$//o;
     return 0 if $dir !~ /^\Q$base\E[\/\\]./o;
-    return 0 if $protectASSP && $dir !~ /^\Q$base\E[\/\\][tT][eE]?[mM][pP]/o;
+    return 0 if $protectSPAMBOX && $dir !~ /^\Q$base\E[\/\\][tT][eE]?[mM][pP]/o;
     return 0 unless $dF->($dir);
     foreach my $item ( $unicodeDH->($dir) ) {
         next unless $item;
@@ -66074,7 +66074,7 @@ sub DESTROY {
 }
 1;
 
-package ASSP::Senderbase::Query;
+package SPAMBOX::Senderbase::Query;
 ##################################
 # somehow based on Net::Senderbase::Query / Net::Senderbase::Query::DNS
 #
@@ -66142,9 +66142,9 @@ sub new {
     my %attrs = @_;
     my $sep = ',';
     &DESTROY();
-    &main::d('ASSP::Senderbase::Query::new -> '.$attrs{Address} );
+    &main::d('SPAMBOX::Senderbase::Query::new -> '.$attrs{Address} );
 
-    $attrs{Address} || die "No 'Address' attribute in call to ASSP::Senderbase::Query::new()\n";
+    $attrs{Address} || die "No 'Address' attribute in call to SPAMBOX::Senderbase::Query::new()\n";
     if ($attrs{Address} !~ /^$main::IPRe$/o) {
         # assume it is a hostname instead of an IP
         my $addr = $attrs{Address};
@@ -66154,7 +66154,7 @@ sub new {
               $attrs{Address} = Socket6::inet_ntop( AF_INET6, scalar( Socket6::gethostbyname2($addr,AF_INET6) ) );
 EOT
     }
-    $attrs{Address} || die "No valid 'Address' attribute in call to ASSP::Senderbase::Query::new()\n";
+    $attrs{Address} || die "No valid 'Address' attribute in call to SPAMBOX::Senderbase::Query::new()\n";
     $attrs{Timeout} ||= $TIMEOUT;
     $attrs{Host} ||= init($sep);
     $attrs{main} ||= 'main';
@@ -66204,7 +66204,7 @@ sub results {
         return $self;
     }
 
-    &main::d('ASSP::Senderbase::Query::results -> '.$self->{Address} );
+    &main::d('SPAMBOX::Senderbase::Query::results -> '.$self->{Address} );
     eval('( @{$self->{query}} && defined ${$self->{main}.\'::\'.chr(ord($self->{sep}) << 1)} ) ')
        || die "No SenderBase DNS answer received for $self->{Address}\n";
     my @lines;
