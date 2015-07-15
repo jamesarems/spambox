@@ -42,10 +42,10 @@
 # Thank you to all, who donated to the assp project!
 #
 # the latest released version is available at:
-# http://downloads.sourceforge.net/projects/assp/files/ASSP%20V2%20multithreading/autoupdate/assp.pl.gz
+# http://downloads.sourceforge.net/projects/assp/files/ASSP%20V2%20multithreading/autoupdate/spambox.pl.gz
 #
 # the latest development version is available at:
-# http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/assp.pl.gz
+# http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/spambox.pl.gz
 
 ## no critic qw(BuiltinFunctions::ProhibitStringyEval)
 
@@ -205,13 +205,13 @@ disableUnicode();
 if ($subversion % 2) {
 # stable published version download
     $versionURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/version.txt';
-    $NewAsspURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/assp.pl.gz';
+    $NewAsspURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/spambox.pl.gz';
     $ChangeLogURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/changelog.txt';
     $maxAge = 365 * 24 * 3600;
 } else {
 # stable development (beta) version download
     $versionURL = 'http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/version.txt';
-    $NewAsspURL = 'http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/assp.pl.gz';
+    $NewAsspURL = 'http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/spambox.pl.gz';
     $ChangeLogURL = 'http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/changelog.txt';
     $maxAge = 90 * 24 * 3600;
 }
@@ -651,7 +651,7 @@ BEGIN { if($] ge '5.012000') {
 my $charscripts = sub {
     my %s;
     my $list = do "unicore/To/Sc.pl";
-    die "assp.pl: failed to find unicore/To/Sc.pl in @INC\n" unless $list;
+    die "spambox.pl: failed to find unicore/To/Sc.pl in @INC\n" unless $list;
     for (split /^/m, $list) {
         my ($start, $end, $value) = / ^ (.+?) \t (.*?) \t (.+?)
                                         \s* ( \# .* )?  # Optional comment
@@ -672,7 +672,7 @@ my $openunicode = sub {
 	    last if open($$rfh,'<',$f);
 	    undef $f;
 	}
-	die "assp.pl: failed to find ",
+	die "spambox.pl: failed to find ",
               File::Spec->catfile(@path), " in @INC"
 	    unless defined $f;
     }
@@ -3571,7 +3571,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 ['send250OK','Send 250 OK',0,\&checkbox,'','(.*)',undef,
  'Set this checkbox if you want ASSP to reply with \'250 OK\' instead of SMTP error code \'554 5.7.1\'. This will turn ASSP in some form of tarpit. ',undef,undef,'msg007430','msg007431'],
 ['AsADaemon','Run ASSP as a Daemon','0:No|1:Yes - externally controlled|2:Yes - run AutoRestartCmd on restart and wait|3:Yes - run AutoRestartCmd on restart and exit',\&listbox,'0','(.*)',undef,'In Linux/BSD/Unix/OSX fork and close file handles. <br />
- Similar to the command "perl assp.pl &amp;", but better.<br />
+ Similar to the command "perl spambox.pl &amp;", but better.<br />
  If "externally controlled" is selected, ASSP simply ends and you have to restart assp from your daemon or watchdog script<br />
  If "run AutoRestartCmd on restart and wait" is selected, assp starts the OS command defined in AutoRestartCmd - assp will <b>NOT !</b> automatically terminate - the started command has to terminate/kill and to (re)start assp - like "service assp restart"!<br />
  If "run AutoRestartCmd on restart and exit" is selected, assp starts the OS command defined in AutoRestartCmd and terminates immediately!<br />
@@ -3586,9 +3586,9 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 ['checkFilePermOnStart','Check ASSP File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, ASSP checks the permission of all ASSP- files and directories at startup - all files must be writable for the running job - the minimum permission is 0600 - without any function on windows systems!',undef,undef,'msg007490','msg007491'],
 ['AutoRestart','Automatic Restart after Exception',0,\&checkbox,'','(.*)',undef,'If ASSP detects a main exception and it runs not as service or daemon, it will try to restart it self automatically!  If running as daemon on nix/MAC , ASSP uses the action defined in AsADaemon to restart.',undef,undef,'msg007500','msg007501'],
 ['AutoRestartAfterCodeChange','Automatic Restart ASSP on new or changed Script',20,\&textinput,'','^(|immed|[1-9]|1[0-9]|2[0-3])$',undef,'If selected, ASSP will restart it self, if it detects a new or changed running script. An automatic restart will not be done, if ASSP is not running as a service on windows or as daemon on linux/MAC, and AutoRestartCmd is not configured. If running as daemon on linux/MAC ( AsADaemon ) ASSP simply ends - you have to restart assp from your daemon script. Leave this field empty to disable the feature. Possible values are \'immed and 1...23\' . If set to \'immed\', assp will restart within some seconds after a detected code change. If set to \'1...23\' the restart will be scheduled to that hour. A restart at 00:00 is not supported.',undef,undef,'msg007510','msg007511'],
-['AutoUpdateASSP','Auto Update the Running Script (assp.pl)','0:no auto update|1:download only|2:download and install',\&listbox,'0','(.*)','ConfigChangeAutoUpdate',
+['AutoUpdateASSP','Auto Update the Running Script (spambox.pl)','0:no auto update|1:download only|2:download and install',\&listbox,'0','(.*)','ConfigChangeAutoUpdate',
  'No action will be done if \'no auto update\' is selected. You\'ll get a hint in the GUI (top) and a log line will be written, if a new version is availabe at the download location.<br />
-  If \'download only\' is selected and a new assp version is available, this new version will be downloaded to the directory ' . $base . '/download (assp.pl) and the syntax will be checked. The still running script will be saved version numbered to the download directory.<br />
+  If \'download only\' is selected and a new assp version is available, this new version will be downloaded to the directory ' . $base . '/download (spambox.pl) and the syntax will be checked. The still running script will be saved version numbered to the download directory.<br />
   If \'download and install\' is selected, in addition the still running script will be replaced by the new version.<br />
   Configure ( AutoRestartAfterCodeChange ), if you want the new version to become the active running script.<br />
   If this value is changed to \'download and install\', the autoupdate procedure will be scheduled immediately.<br />
@@ -3926,7 +3926,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 ['RebuildNotify','Notification Email To',80,\&textinput,'','(.*)',undef,
   'Email address(es) to which you want ASSP to send a notification email after the rebuild task is finished. The file rebuildrun.txt is included in this notification. Separate multiple entries by "|".',undef,undef,'msg008110','msg008111'],
 ['RebuildTestMode','Run the Rebuild in Test Mode',0,\&checkbox,'','(.*)',undef,'If selected, all rebuildspamdb tasks will not populate the spamdb and hmmdb - and no data will be sent to the griplist-Server.',undef,undef,'msg009720','msg009721'],
-['forceRebuildDowngrade','Keep rebuildspamdb.pm compatible to assp.pl',0,\&checkbox,'1','(.*)',undef,'Keep rebuildspamdb.pm compatible to assp.pl in case of an assp.pl version downgrade.',undef,undef,'msg009840','msg009841'],
+['forceRebuildDowngrade','Keep rebuildspamdb.pm compatible to spambox.pl',0,\&checkbox,'1','(.*)',undef,'Keep rebuildspamdb.pm compatible to spambox.pl in case of an spambox.pl version downgrade.',undef,undef,'msg009840','msg009841'],
 ['RunRebuildNow','Run RebuildSpamdb now',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow',
   'If selected, RebuildSpamdb will be started immediately.<br />' . "<input type=button value=\"Apply Changes and Run Rebuild SpamDB Now (if checked)\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['ASSPconfig'].theButtonRefresh.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />" .
   '<hr /><div class="menuLevel1">Last Result Of Rebuildspamdb</div><input type="button" value="Last Run Rebuildspamdb" onclick="javascript:popFileEditor(\'rebuildrun.txt\',5);" />
@@ -4266,7 +4266,7 @@ The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries.
 .1.20.16 - next LDAP-cross-Check<br />
 .1.20.17 - next RebuildSpamDB<br />
 .1.20.18 - next ResendMail<br />
-.1.20.19 - next ASSPFileDownload (assp.pl)<br />
+.1.20.19 - next ASSPFileDownload (spambox.pl)<br />
 .1.20.20 - next Version File Download (version.txt)<br />
 .1.20.21 - next BackDNS File Download<br />
 .1.20.22 - next Code Change Check<br />
@@ -4445,7 +4445,7 @@ if(lc $_[0] eq '-u') {
 } elsif( lc $_[0] eq '-i') {
     unless($p=$_[1]) {
         $p=$assp;
-        $p=~s/\w+\.pl/assp.pl/o;
+        $p=~s/\w+\.pl/spambox.pl/o;
     }
     if($p2=$_[2]) {
         $p2=~s/[\\\/]$//o;
@@ -4734,7 +4734,7 @@ sub checkVersionAge {
     if ($versionAge > $maxAge) {
         my $age = getTimeDiff(int($versionAge/(3600*24))*3600*24, 0);
         my $text = ($subversion % 2) ? 'version' : 'development-version';
-        mlog(0,"error: this $text of assp.pl is outdated ($age old) - please upgrade assp.pl");
+        mlog(0,"error: this $text of spambox.pl is outdated ($age old) - please upgrade spambox.pl");
         return 0;
     }
     return 1;
@@ -5275,13 +5275,13 @@ if($ARGV[0]) {
 if ( !-e "$base/images/noIcon.png" && lc($ARGV[0]) ne '-u')
 {
  writeExceptionLog("Abort: folder '$base/images' not correctly installed");
- print "\nusage: perl assp.pl [baseDir|-u|] [-i|ddddd|] [--configParm:=configValue --configParm:=configValue ...|]\n";
+ print "\nusage: perl spambox.pl [baseDir|-u|] [-i|ddddd|] [--configParm:=configValue --configParm:=configValue ...|]\n";
  print "baseDir must be defined if any other parameter is used\n";
  die "\n\nAbort: folder '$base/images' not correctly installed\n\n";
 }
 
 if ($ARGV[0] =~ /(?:\/|-{1,2})(?:\?|help|usage)/oi) {
- print "\nusage: perl assp.pl [baseDir|-u|] [-i|ddddd|] [--configParm:=configValue --configParm:=configValue ...|]\n";
+ print "\nusage: perl spambox.pl [baseDir|-u|] [-i|ddddd|] [--configParm:=configValue --configParm:=configValue ...|]\n";
  print "baseDir must be defined if any other parameter is used\n";
  print "-u - uninstalls the service on windows - no other parm is allowed\n";
  print "-i - installs an assp service on windows\n";
@@ -39391,7 +39391,7 @@ sub downloadASSPVersion {
     checkVersionAge();
     &UpdateDownloadURLs();
     if (! $NewAsspURL ) {
-        mlog(0,"warning: autoupdate: no download URL found for assp.pl - skip update for 24 hours");
+        mlog(0,"warning: autoupdate: no download URL found for spambox.pl - skip update for 24 hours");
         $NextASSPFileDownload = time + 3600 * 24;
         $NextVersionFileDownload = time + 3600 * 24;
         return 0;
@@ -39406,13 +39406,13 @@ sub downloadASSPVersion {
     $assp =~ s/\\/\//go;
     $assp =~ s/\/\//\//go;
     $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
-    if (-e "$base/download/assp.pl" && ! -w "$base/download/assp.pl") {
-        mlog(0,"warning: autoupdate: unable to write to $base/download/assp.pl - skip update - please check the file permission");
+    if (-e "$base/download/spambox.pl" && ! -w "$base/download/spambox.pl") {
+        mlog(0,"warning: autoupdate: unable to write to $base/download/spambox.pl - skip update - please check the file permission");
         $NextASSPFileDownload = time + 3600;
         return 0;
     }
-    if (-e "$base/download/assp.pl.gz" && ! -w "$base/download/assp.pl.gz") {
-        mlog(0,"warning: autoupdate: unable to write to $base/download/assp.pl.gz - skip update - please check the file permission");
+    if (-e "$base/download/spambox.pl.gz" && ! -w "$base/download/spambox.pl.gz") {
+        mlog(0,"warning: autoupdate: unable to write to $base/download/spambox.pl.gz - skip update - please check the file permission");
         $NextASSPFileDownload = time + 3600;
         return 0;
     }
@@ -39422,8 +39422,8 @@ sub downloadASSPVersion {
         return 0;
     }
     -d "$base/download" or mkdir "$base/download", 0755;
-    if (! -e "$base/download/assp.pl" && ! copy("$assp","$base/download/assp.pl")) {
-        mlog(0,"warning: autoupdate: unable to copy current script '$assp' to '$base/download/assp.pl' - skip update - $!");
+    if (! -e "$base/download/spambox.pl" && ! copy("$assp","$base/download/spambox.pl")) {
+        mlog(0,"warning: autoupdate: unable to copy current script '$assp' to '$base/download/spambox.pl' - skip update - $!");
         $NextASSPFileDownload = time + 3600;
         return 0;
     }
@@ -39433,17 +39433,17 @@ sub downloadASSPVersion {
     }
     my $ret;
     $NextASSPFileDownload = 0;
-    mlog(0,"Info: autoupdate: performing assp.pl.gz download to $base/download/assp.pl.gz") if $MaintenanceLog;
+    mlog(0,"Info: autoupdate: performing spambox.pl.gz download to $base/download/spambox.pl.gz") if $MaintenanceLog;
     $ret = downloadHTTP("$NewAsspURL",
-                 "$base/download/assp.pl.gz",
+                 "$base/download/spambox.pl.gz",
                  \$NextASSPFileDownload,
-                 "assp.pl.gz",16,12,4,4);
+                 "spambox.pl.gz",16,12,4,4);
     return 0 unless $ret;
-    mlog(0,"Info: autoupdate: new assp.pl.gz downloaded to $base/download/assp.pl.gz") if $MaintenanceLog;
-    if (unzipgz("$base/download/assp.pl.gz", "$base/download/assp.pl")) {
-        mlog(0,"info: autoupdate: new assp version '$base/download/assp.pl' available - version $availversion") if $MaintenanceLog;
+    mlog(0,"Info: autoupdate: new spambox.pl.gz downloaded to $base/download/spambox.pl.gz") if $MaintenanceLog;
+    if (unzipgz("$base/download/spambox.pl.gz", "$base/download/spambox.pl")) {
+        mlog(0,"info: autoupdate: new assp version '$base/download/spambox.pl' available - version $availversion") if $MaintenanceLog;
     } else {
-        mlog(0,"warning: autoupdate: unable to unzip '$base/download/assp.pl.gz' to '$base/download/assp.pl' - skip update");
+        mlog(0,"warning: autoupdate: unable to unzip '$base/download/spambox.pl.gz' to '$base/download/spambox.pl' - skip update");
         return 0;
     }
     mlog(0,"Info: saving current script '$assp' to 'assp_$version$modversion.pl'") if $MaintenanceLog;
@@ -39453,15 +39453,15 @@ sub downloadASSPVersion {
     }
     my $cmd;
     if ($^O eq "MSWin32") {
-        $cmd = '"' . $perl . '"' . " -c \"$base/download/assp.pl\" \"$base\" 2>&1";
+        $cmd = '"' . $perl . '"' . " -c \"$base/download/spambox.pl\" \"$base\" 2>&1";
     } else {
-        $cmd = '\'' . $perl . '\'' . " -c \'$base/download/assp.pl\' \'$base\' 2>&1";
+        $cmd = '\'' . $perl . '\'' . " -c \'$base/download/spambox.pl\' \'$base\' 2>&1";
     }
     my $res = qx($cmd);
     if ($res =~ /syntax\s+OK/igo) {
-        mlog(0,"info: autoupdate: syntax check for '$base/download/assp.pl' returned OK");
+        mlog(0,"info: autoupdate: syntax check for '$base/download/spambox.pl' returned OK");
     } else {
-        mlog(0,"warning: autoupdate: syntax error in '$base/download/assp.pl' - skip assp.pl update - syntax error is: $res");
+        mlog(0,"warning: autoupdate: syntax error in '$base/download/spambox.pl' - skip spambox.pl update - syntax error is: $res");
         return 0;
     }
     if ($res =~ /assp\s+(.+)?is starting/io) {
@@ -39475,12 +39475,12 @@ sub downloadASSPVersion {
         $upd = 1 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
         $upd ||= ($stv lt $avv);
         if (! $upd) {
-            mlog(0,"warning: autoupdate: version of downloaded '$base/download/assp.pl' ($avv) is less or equal to the running version of assp ($stv) - skip assp.pl update");
+            mlog(0,"warning: autoupdate: version of downloaded '$base/download/spambox.pl' ($avv) is less or equal to the running version of assp ($stv) - skip spambox.pl update");
             return 0;
         }
     }
     return 0 if $AutoUpdateASSP == 1;
-    if (copy("$base/download/assp.pl", "$assp")) {
+    if (copy("$base/download/spambox.pl", "$assp")) {
         mlog(0,"info: autoupdate: new version assp installed - '$assp' - version $availversion");
     } else {
         mlog(0,"warning: autoupdate: unable to replace current script '$assp' - skip update - $!");
@@ -54182,9 +54182,9 @@ sub ConfigChangeAutoUpdate {
         open(my $F ,'>>',"$base/version.txt");
         close $F;
         mlog(0,"info: changed file time of file $base/version.txt") if $MaintenanceLog >= 2;
-        unlink "$base/download/assp.pl.gz.old";
-        move("$base/download/assp.pl.gz","$base/download/assp.pl.gz.old");
-        mlog(0,"info: moved file $base/download/assp.pl.gz to $base/download/assp.pl.gz.old") if $MaintenanceLog >= 2;
+        unlink "$base/download/spambox.pl.gz.old";
+        move("$base/download/spambox.pl.gz","$base/download/spambox.pl.gz.old");
+        mlog(0,"info: moved file $base/download/spambox.pl.gz to $base/download/spambox.pl.gz.old") if $MaintenanceLog >= 2;
         $NextASSPFileDownload = -1;
         $NextVersionFileDownload = -1;
     }
@@ -54207,8 +54207,8 @@ sub ConfigDEBUG {my ($name, $old, $new, $init)=@_;
     return '';
 }
 
-#Content-Type: application/octet-stream; name="assp.pl"
-#Content-Disposition: attachment; filename="assp.pl"
+#Content-Type: application/octet-stream; name="spambox.pl"
+#Content-Disposition: attachment; filename="spambox.pl"
 # Good Attachment Settings, Checks and Update.
 sub updateUserAttach {my ($name, $old, $new, $init)=@_;
     mlog(0,"AdminUpdate: user based attachments updated from '$old' to '$new'") unless $init || $new eq $old;
