@@ -5315,13 +5315,13 @@ if ($printVars) {
 
 if (open my $ADV,'>' , "$base/SPAMBOX_DEF_VARS.pm") {    # write the module to disk
 print $ADV <<'EOT';
-package ASSP_DEF_VARS;
+package SPAMBOX_DEF_VARS;
 
 use Filter::Util::Call;
 
 sub import {
     filter_add( sub {
-            my $caller = 'ASSP_DEF_VARS';
+            my $caller = 'SPAMBOX_DEF_VARS';
             my ($status, $no_seen, $data, $defConfVar, $check, $VERSION);
             $VERSION = $main::MAINVERSION || $main::Config{spamboxCfgVersion} || $main::spamboxCfgVersion;
             my $V=997;
@@ -5649,7 +5649,7 @@ if (! $Config{globalClientName}) {
     delete $ConfigAdd{globalUploadURL};
 }
 
-use ASSP_DEF_VARS;
+use SPAMBOX_DEF_VARS;
 OURVARS
 #use AsspSelfLoader;
 
@@ -8800,7 +8800,7 @@ return 1;
 
 #__DATA__
 
-no ASSP_DEF_VARS;
+no SPAMBOX_DEF_VARS;
 
 sub validateModule {
     my $module = shift;
@@ -39954,19 +39954,19 @@ sub ResetStats {
 
  my $RSf;
  my $tosave = 0;
- if (open( $RSf,'<',"$base/asspstats.sav")) {
+ if (open( $RSf,'<',"$base/spamboxstats.sav")) {
      (%OldStats)=split(/\001/o,<$RSf>);
      close $RSf;
- } elsif (-e "$base/asspstats.sav") {
-     mlog(0,"error: unable to open file $base/asspstats.sav for reading - $!");
+ } elsif (-e "$base/spamboxstats.sav") {
+     mlog(0,"error: unable to open file $base/spamboxstats.sav for reading - $!");
  } else {
      $tosave = 1;
  }
- if (open($RSf,'<',"$base/asspscorestats.sav")) {
+ if (open($RSf,'<',"$base/spamboxscorestats.sav")) {
      (%OldScoreStats)=split(/\001/o,<$RSf>);
      close $RSf;
- } elsif (-e "$base/asspscorestats.sav") {
-     mlog(0,"error: unable to open file $base/asspscorestats.sav for reading - $!");
+ } elsif (-e "$base/spamboxscorestats.sav") {
+     mlog(0,"error: unable to open file $base/spamboxscorestats.sav for reading - $!");
  } else {
      $tosave = 1;
  }
@@ -40039,16 +40039,16 @@ sub SaveStats {
      delete $AllStats{$_};
  }
  lock(%Stats) if (is_shared(%Stats));
- mlog(0,"info: saving Stats in file asspstats.sav") if $MaintenanceLog;
+ mlog(0,"info: saving Stats in file spamboxstats.sav") if $MaintenanceLog;
  $Stats{smtpConcurrentSessions}=$smtpConcurrentSessions;
  ScheduleMapSet('SaveStatsEvery') if $WorkerName ne 'Shutdown';;
  &StatAllStats();
  my $SS;
- if (open($SS,'>',"$base/asspstats.sav")) {
+ if (open($SS,'>',"$base/spamboxstats.sav")) {
      print $SS join("\001",%AllStats);
      close $SS;
  } else {
-     mlog(0,"warning: unable to save STATS to $base/asspstats.sav - $!");
+     mlog(0,"warning: unable to save STATS to $base/spamboxstats.sav - $!");
  }
 
  my $time = timestring('','','YYYY-MM-DD_hh:mm:ss');
@@ -40063,12 +40063,12 @@ sub SaveStats {
      close $SS;
  }
 
- mlog(0,"info: saving ScoreStats in file asspscorestats.sav") if $MaintenanceLog;
- if (open($SS,'>',"$base/asspscorestats.sav")) {
+ mlog(0,"info: saving ScoreStats in file spamboxscorestats.sav") if $MaintenanceLog;
+ if (open($SS,'>',"$base/spamboxscorestats.sav")) {
      print $SS join("\001",%AllScoreStats);
      close $SS;
  } else {
-     mlog(0,"warning: unable to save scoring STATS to $base/asspscorestats.sav - $!");
+     mlog(0,"warning: unable to save scoring STATS to $base/spamboxscorestats.sav - $!");
  }
 
  if ($enableGraphStats && open($SS, '>>', "$base/logs/scoreGraphStats-$fext.txt")) {
@@ -42082,10 +42082,10 @@ sub ResetAllStats {
      %OldScoreStats = ();
      %AllScoreStats = ();
      $AllStats{starttime} = time;
-     unlink("$base/asspstats.sav.bak");
-     unlink("$base/asspscorestats.sav.bak");
-     rename("$base/asspstats.sav","$base/asspstats-".timestring('','','YYYY-MM-DD-hh-mm-ss').'.sav');
-     rename("$base/asspscorestats.sav","$base/asspscorestats-".timestring('','','YYYY-MM-DD-hh-mm-ss').'.sav');
+     unlink("$base/spamboxstats.sav.bak");
+     unlink("$base/spamboxscorestats.sav.bak");
+     rename("$base/spamboxstats.sav","$base/spamboxstats-".timestring('','','YYYY-MM-DD-hh-mm-ss').'.sav');
+     rename("$base/spamboxscorestats.sav","$base/spamboxscorestats-".timestring('','','YYYY-MM-DD-hh-mm-ss').'.sav');
      ResetStats();
 }
 

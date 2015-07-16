@@ -15,19 +15,19 @@ package main; sub ResetStats {
 
  my $RSf;
  my $tosave = 0;
- if (open( $RSf,'<',"$base/asspstats.sav")) {
+ if (open( $RSf,'<',"$base/spamboxstats.sav")) {
      (%OldStats)=split(/\001/o,<$RSf>);
      close $RSf;
- } elsif (-e "$base/asspstats.sav") {
-     mlog(0,"error: unable to open file $base/asspstats.sav for reading - $!");
+ } elsif (-e "$base/spamboxstats.sav") {
+     mlog(0,"error: unable to open file $base/spamboxstats.sav for reading - $!");
  } else {
      $tosave = 1;
  }
- if (open($RSf,'<',"$base/asspscorestats.sav")) {
+ if (open($RSf,'<',"$base/spamboxscorestats.sav")) {
      (%OldScoreStats)=split(/\001/o,<$RSf>);
      close $RSf;
- } elsif (-e "$base/asspscorestats.sav") {
-     mlog(0,"error: unable to open file $base/asspscorestats.sav for reading - $!");
+ } elsif (-e "$base/spamboxscorestats.sav") {
+     mlog(0,"error: unable to open file $base/spamboxscorestats.sav for reading - $!");
  } else {
      $tosave = 1;
  }

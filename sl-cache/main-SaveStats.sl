@@ -7,16 +7,16 @@ package main; sub SaveStats {
      delete $AllStats{$_};
  }
  lock(%Stats) if (is_shared(%Stats));
- mlog(0,"info: saving Stats in file asspstats.sav") if $MaintenanceLog;
+ mlog(0,"info: saving Stats in file spamboxstats.sav") if $MaintenanceLog;
  $Stats{smtpConcurrentSessions}=$smtpConcurrentSessions;
  ScheduleMapSet('SaveStatsEvery') if $WorkerName ne 'Shutdown';;
  &StatAllStats();
  my $SS;
- if (open($SS,'>',"$base/asspstats.sav")) {
+ if (open($SS,'>',"$base/spamboxstats.sav")) {
      print $SS join("\001",%AllStats);
      close $SS;
  } else {
-     mlog(0,"warning: unable to save STATS to $base/asspstats.sav - $!");
+     mlog(0,"warning: unable to save STATS to $base/spamboxstats.sav - $!");
  }
 
  my $time = timestring('','','YYYY-MM-DD_hh:mm:ss');
@@ -31,12 +31,12 @@ package main; sub SaveStats {
      close $SS;
  }
 
- mlog(0,"info: saving ScoreStats in file asspscorestats.sav") if $MaintenanceLog;
- if (open($SS,'>',"$base/asspscorestats.sav")) {
+ mlog(0,"info: saving ScoreStats in file spamboxscorestats.sav") if $MaintenanceLog;
+ if (open($SS,'>',"$base/spamboxscorestats.sav")) {
      print $SS join("\001",%AllScoreStats);
      close $SS;
  } else {
-     mlog(0,"warning: unable to save scoring STATS to $base/asspscorestats.sav - $!");
+     mlog(0,"warning: unable to save scoring STATS to $base/spamboxscorestats.sav - $!");
  }
 
  if ($enableGraphStats && open($SS, '>>', "$base/logs/scoreGraphStats-$fext.txt")) {

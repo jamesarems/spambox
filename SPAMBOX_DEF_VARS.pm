@@ -1,10 +1,10 @@
-package ASSP_DEF_VARS;
+package SPAMBOX_DEF_VARS;
 
 use Filter::Util::Call;
 
 sub import {
     filter_add( sub {
-            my $caller = 'ASSP_DEF_VARS';
+            my $caller = 'SPAMBOX_DEF_VARS';
             my ($status, $no_seen, $data, $defConfVar, $check, $VERSION);
             $VERSION = $main::MAINVERSION || $main::Config{spamboxCfgVersion} || $main::spamboxCfgVersion;
             my $V=997;
