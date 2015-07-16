@@ -16,7 +16,7 @@ package main; sub importDB {
    my $sth;
    my $k;
    my $v;
-   my $f = 0;  # used by the statements in assp_db_import.cfg
+   my $f = 0;  # used by the statements in spambox_db_import.cfg
    my ($dn,$ve,$dp,$ap,$is,$id,$se,$mr,$es);
    my $sql_sm;
    my @dbcfg;
@@ -32,8 +32,8 @@ package main; sub importDB {
 
    return if (!(-e $importrpl || -e $importadd) && $importrpl ne 'cache');
    mlog_i(0,"database import started for table $mysqlTable");
-   if ($DBusedDriver ne 'BerkeleyDB' && !-e "$base/assp_db_import.cfg"){
-     mlog_i(0,"ERROR: unable to find file $base/assp_db_import.cfg - cancel import");
+   if ($DBusedDriver ne 'BerkeleyDB' && !-e "$base/spambox_db_import.cfg"){
+     mlog_i(0,"ERROR: unable to find file $base/spambox_db_import.cfg - cancel import");
      return;
    }
 
@@ -162,8 +162,8 @@ package main; sub importDB {
            return;
        }
 
-# find the right SQL statements in config file "assp_db_import.cfg"
-       open($IMP, '<',"$base/assp_db_import.cfg");
+# find the right SQL statements in config file "spambox_db_import.cfg"
+       open($IMP, '<',"$base/spambox_db_import.cfg");
        @dbcfg=<$IMP>;
        close $IMP;
        my %stm = ();
@@ -187,9 +187,9 @@ package main; sub importDB {
            $stm{lc($dn).$ve."es"}=$es;
        }
        if ($di_version && $di_modversion) {
-           mlog_i(0,"Info: version $di_version($di_modversion) of file $base/assp_db_import.cfg is used for the import");
+           mlog_i(0,"Info: version $di_version($di_modversion) of file $base/spambox_db_import.cfg is used for the import");
        } else {
-           mlog_i(0,"Warning: no valid version information found in file $base/assp_db_import.cfg");
+           mlog_i(0,"Warning: no valid version information found in file $base/spambox_db_import.cfg");
        }
 
 # find the statements
@@ -285,11 +285,11 @@ package main; sub importDB {
        print $DBG "error in is - $is - $@\n" if $DBG && $@;
        $sql=$sql_sm;
        my $max = 10;
-       $sqlmaxlen = int($mr * $recfac) || $max;  # 2000 tested for mysql - absolute limit is ~5000 - so we are save (defined in assp_db_import.cfg)
+       $sqlmaxlen = int($mr * $recfac) || $max;  # 2000 tested for mysql - absolute limit is ~5000 - so we are save (defined in spambox_db_import.cfg)
        my $sqllen = int($sqlmaxlen/$max)*$max || $max;
        $imp_start_time = time;
        $last_step_time = $imp_start_time;
-# build the INSERT statement from the statements in assp_db_import.cfg and the values in $k,$v
+# build the INSERT statement from the statements in spambox_db_import.cfg and the values in $k,$v
 # do this until all record have been inserted or $DBI::err
        my $old_sec_left;
        my $sec_left;

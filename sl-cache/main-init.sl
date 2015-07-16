@@ -158,22 +158,22 @@ package main; sub init {
   if (open($tmpSPAMBOXout, ">", "$base/aaaa_tmp.pl")) {
       binmode $tmpSPAMBOXout;
       close $tmpSPAMBOXout;
-      my $assp = $assp;
-      $assp =~ s/\\/\//og;
-      $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
-      $asspCodeMD5 = eval {getMD5File($assp);};
-      copy("$assp","$base/aaaa_tmp.pl");
-      if (-e ($assp.'.run')) {
-          unlink($assp.'.run') or mlog(0,"error: unable to remove old saved running script '$assp.run' - $!");
+      my $spambox = $spambox;
+      $spambox =~ s/\\/\//og;
+      $spambox = $base.'/'.$spambox if ($spambox !~ /\Q$base\E/io);
+      $spamboxCodeMD5 = eval {getMD5File($spambox);};
+      copy("$spambox","$base/aaaa_tmp.pl");
+      if (-e ($spambox.'.run')) {
+          unlink($spambox.'.run') or mlog(0,"error: unable to remove old saved running script '$spambox.run' - $!");
       }
-      copy("$assp",$assp.'.run') or mlog(0,"error: unable to save current running script to file '$assp.run'");
+      copy("$spambox",$spambox.'.run') or mlog(0,"error: unable to save current running script to file '$spambox.run'");
       unless (rename("$base/aaaa_tmp.pl","$base/aaaa_tmpx.pl") && unlink("$base/aaaa_tmpx.pl")) {
         mlog(0,'************************************************************');
         mlog(0,"error: this process is unable to rename and/or delete files in directory $base");
         mlog(0,"error: $!");
         mlog(0,'error: check permission and disable all online virusscanners for this directory');
         mlog(0,'error: remove manually the files aaaa_tmp.pl and aaaa_tmpx.pl from this directory');
-        mlog(0,'error: restart assp');
+        mlog(0,'error: restart spambox');
         mlog(0,'************************************************************');
         $StartError = 1;
             print "\t\t\t\t[ERROR]";
@@ -186,7 +186,7 @@ package main; sub init {
       mlog(0,"error: $!");
       mlog(0,'error: check permission and disable all online virusscanners for this directory');
       mlog(0,'error: remove manually the files aaaa_tmp.pl and aaaa_tmpx.pl from this directory');
-      mlog(0,'error: restart assp');
+      mlog(0,'error: restart spambox');
       mlog(0,'************************************************************');
       $StartError = 1;
       print "\t\t\t\t[ERROR]";
@@ -255,7 +255,7 @@ package main; sub init {
 
   $ver = IO::Socket->VERSION;
   if ($ver lt '1.30') {
-      *{'IO::Socket::blocking'} = *{'main::assp_socket_blocking'};   # MSWIN32 fix for nonblocking Sockets
+      *{'IO::Socket::blocking'} = *{'main::spambox_socket_blocking'};   # MSWIN32 fix for nonblocking Sockets
       mlog(0,"IO::Socket version $ver is too less - recommended is at least 1.30_01 - hook ->blocking to internal procedure");
   }
   print '.';
@@ -336,10 +336,10 @@ package main; sub init {
     $ver=eval('Net::SMTP->VERSION'); $VerNetSMTP=$ver; $ver=" version $ver" if $ver;
     mlog(0,"Net::SMTP module$ver installed and available");
     *{'Net::SMTP::DESTROY'} = \&Net::SMTP::DESTROY_SSLNS;
-    *{'Net::SMTP::starttls'} = \&Net::SMTP::assp_starttls;
+    *{'Net::SMTP::starttls'} = \&Net::SMTP::spambox_starttls;
     if ($VerNetSMTP >= '3.00') {
         @Net::SMTP::ISA = map {$_ eq 'IO::Socket::INET6' ? 'IO::Socket::INET' : $_;} @Net::SMTP::ISA;
-        mlog(0,"warning: the module Net::SMTP version $VerNetSMTP wants to load the perl module IO::Socket::IP - please install this module or run the latest $base/assp.mod/install/mod_inst.pl")
+        mlog(0,"warning: the module Net::SMTP version $VerNetSMTP wants to load the perl module IO::Socket::IP - please install this module or run the latest $base/spambox.mod/install/mod_inst.pl")
            unless (grep(/IO\:\:Socket\:\:IP/o,@Net::SMTP::ISA));
     }
     $installed = 'enabled';
@@ -576,7 +576,7 @@ package main; sub init {
         $installed = 'enabled';
         if ( $^O eq 'MSWin32' ) {
             mlog(0,"Win32::Unicode module$ver installed - can write unicode filenames to OS");
-            *{'Win32::Unicode::File::flush'} = *{'main::assp_flush'} unless defined *{'Win32::Unicode::File::flush'};
+            *{'Win32::Unicode::File::flush'} = *{'main::spambox_flush'} unless defined *{'Win32::Unicode::File::flush'};
         }
     } else {
         disableUnicode();
@@ -800,8 +800,8 @@ EOT
     $installed = 'enabled';
     $org_Email_MIME_parts_multipart = *{'Email::MIME::parts_multipart'};
     *{'Email::MIME::parts_multipart'} = *{'main::parts_multipart'};
-    *{'Email::MIME::ContentType::_extract_ct_attribute_value'} = *{'assp_extract_ct_attribute_value'};
-    *{'Email::MIME::ContentType::_parse_attributes'} = *{'assp_parse_attributes'};
+    *{'Email::MIME::ContentType::_extract_ct_attribute_value'} = *{'spambox_extract_ct_attribute_value'};
+    *{'Email::MIME::ContentType::_parse_attributes'} = *{'spambox_parse_attributes'};
   } elsif (!$AvailEMM) {
     $installed = $useEmailMIME ? 'is not installed' : 'is disabled in config';
     mlog(0,"Email::MIME module $installed - MIME charset decoding and conversion interface and attachment detection not available");
@@ -886,7 +886,7 @@ EOT
     $numcpus ||= 'an undected number of';
     mlog(0,"Sys::CpuAffinity module$ver installed - setting CPU Affinty is available - this system has $numcpus CPU\'s");
     eval{@currentCpuAffinity = Sys::CpuAffinity::getAffinity($$)};
-    mlog(0,"The Cpu Affinity of assp is currently '@currentCpuAffinity'");
+    mlog(0,"The Cpu Affinity of spambox is currently '@currentCpuAffinity'");
     $installed = 'enabled';
   } elsif (!$AvailSysCpuAffinity)  {
     $installed = $useSysCpuAffinity ? 'is not installed' : 'is disabled in config';
@@ -1094,14 +1094,14 @@ EOT
 
   my $liccount = 0;
   -d "$base/license" or mkdir "$base/license",0755;
-  if (-r "$base/license/assp.license") {
+  if (-r "$base/license/spambox.license") {
       local $/ = undef;
-      open(my $F, '<',"$base/license/assp.license");binmode($F);$T[0] = <$F>;close $F;
+      open(my $F, '<',"$base/license/spambox.license");binmode($F);$T[0] = <$F>;close $F;
       if (eval{$T[0] && $L->($T[0])}) {
           $liccount++;
       } else {
           @T = ();
-          mlog(0,"warning: license file '$base/license/assp.license' is not valid - use internal license");
+          mlog(0,"warning: license file '$base/license/spambox.license' is not valid - use internal license");
       }
   }
   unless ($T[0] && eval{$L->($T[0])}) {
@@ -1131,7 +1131,7 @@ EOT2
   }
   if ($liccount) {
       for ( Glob("$base/license/*.license") ) {
-          next if /\/assp.license$/oi;
+          next if /\/spambox.license$/oi;
           local $/ = undef;
           open(my $F, '<',"$_");binmode($F);my $f = <$F>;close $F;
           unless (eval{$f && $L->($f)}) {
@@ -1571,7 +1571,7 @@ if ($CanUseTieRDBM) {
   mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb});
 
   if ($mysqlSlaveMode) {
-      mlog(0,"assp is running in mysqlSlaveMode - no maintenance will be done for database tables!");
+      mlog(0,"spambox is running in mysqlSlaveMode - no maintenance will be done for database tables!");
   }
   &mlogWrite();
 

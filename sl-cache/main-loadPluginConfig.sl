@@ -19,11 +19,11 @@ package main; sub loadPluginConfig {
   my @pllist = readdir($DIR);
   close $DIR;
   foreach my $pl (@pllist) {
-    if ($pl =~ /^(assp_(?:wordstem|fc|svg)\.pm)$/io) {
+    if ($pl =~ /^(spambox_(?:wordstem|fc|svg)\.pm)$/io) {
         mlog(0,"warning: $1 is not a Plugin - please move it from '$base/Plugins/$1' to '$base/lib/$1' !");
         next;
     }
-    next if ($pl !~ /^(assp_.+)\.pm$/io);
+    next if ($pl !~ /^(spambox_.+)\.pm$/io);
     $pl = $1;
     mlog(0,"Info: try loading plugin $pl");
     $cmd = "unless (eval{$pl->VERSION;}) {use $pl;}";

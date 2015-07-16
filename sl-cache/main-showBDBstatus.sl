@@ -14,7 +14,7 @@ package main; sub showBDBstatus {
         }
         mlog(0,"BDB statistic for BerkeleDB hash $_ on $dbo");
         my $statref;
-        if ("$$dbo" =~ /assp::/io) {
+        if ("$$dbo" =~ /spambox::/io) {
             eval (<<'EOT');
                  $statref = ${$dbo}->{hashobj}->db_stat();
 EOT

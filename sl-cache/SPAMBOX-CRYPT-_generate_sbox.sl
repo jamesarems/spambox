@@ -1,14 +1,14 @@
 #line 1 "sub SPAMBOX::CRYPT::_generate_sbox"
 package SPAMBOX::CRYPT; sub _generate_sbox {
 	my $self = shift;
-	my $passphrase = shift;
-	if (ref ($passphrase)) {
-		@{$self->{SBOX}} = @$passphrase;
+	my $pspamboxhrase = shift;
+	if (ref ($pspamboxhrase)) {
+		@{$self->{SBOX}} = @$pspamboxhrase;
 	} else {
 		my ($i, $x, $y, $random, @tmp) = 0;
 		my @temp = (0..15);
-		for ($i=0; $i <= (length $passphrase); $i+=4)
-		    { $random = $random ^ (unpack 'L', pack 'a4', substr ($passphrase, $i, $i+4)) };
+		for ($i=0; $i <= (length $pspamboxhrase); $i+=4)
+		    { $random = $random ^ (unpack 'L', pack 'a4', substr ($pspamboxhrase, $i, $i+4)) };
 		srand $random;
 		for ($i=0; $i < 8; $i++) {
             @tmp = @temp;

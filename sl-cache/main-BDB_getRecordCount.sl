@@ -8,7 +8,7 @@ package main; sub BDB_getRecordCount {
     $dbo = $hash . 'Obj' unless defined ${$dbo};   # temp hashes
     return 0 unless defined ${$dbo};
     my $statref;
-    if ("$$dbo" =~ /assp::/io) {
+    if ("$$dbo" =~ /spambox::/io) {
         eval (<<'EOT');
              $statref = ${$dbo}->{hashobj}->db_stat();
 EOT

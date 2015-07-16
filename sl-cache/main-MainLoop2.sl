@@ -6,7 +6,7 @@ package main; sub MainLoop2 {
   $isRunMainLoop2 = 1;
   my $hourend = time % 1800;
   mlog(0,'') if (( time - $lastMlog ) > 110 || $hourend < 15);
-  mlog(0,'***assp&is%alive$$$') if ((time - $lastmlogWrite) > 120);
+  mlog(0,'***spambox&is%alive$$$') if ((time - $lastmlogWrite) > 120);
   my @canread;
   my $wait;
   my $time=Time::HiRes::time();
@@ -67,12 +67,12 @@ package main; sub MainLoop2 {
     if($RestartEvery && $itime >= $endtime) {
 # time to quit -- after endtime and we're bored.
         &downSPAMBOX("restarting");
-        _assp_try_restart;
+        _spambox_try_restart;
     }
 
     if ($doShutdown > 0 && $itime >= $doShutdown) {
       &downSPAMBOX("restarting");
-      _assp_try_restart;
+      _spambox_try_restart;
     }
   }
   $isRunMainLoop2 = 0;

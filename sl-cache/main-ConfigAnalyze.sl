@@ -92,7 +92,7 @@ package main; sub ConfigAnalyze {
         $hasheader = 1;
     }
     $fm .= "removed all local X-SPAMBOX- header lines for analysis<br />\n"
-        if ($mail =~ s/x-assp-[^()]+?:\s*$HeaderValueRe//gios);
+        if ($mail =~ s/x-spambox-[^()]+?:\s*$HeaderValueRe//gios);
     my $mystatus;
     my $foundReceived = 0;
     my @t;

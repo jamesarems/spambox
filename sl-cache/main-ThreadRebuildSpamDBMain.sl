@@ -83,7 +83,7 @@ package main; sub ThreadRebuildSpamDBMain {
                 $ThreadIdleTime{$Iam} -= Time::HiRes::time() - $t;
                 d('schedule waiting');
                 return;
-            },{processprefix => "$perl $assp"});
+            },{processprefix => "$perl $spambox"});
         $cron->add_entry("* * * * * 0-59/5");
         $StartRebuild = 0;
         my $nextRebuild;

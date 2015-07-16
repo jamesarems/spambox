@@ -108,7 +108,7 @@ eval (<<'EOT');
             } else {
                 $ConfigChanged = 1;
             }
-            mlog(0,"error: BerkeleyDB for hash $hash ($base/$bdbf.bdb) needs to be recovered - recovery will be done at next start - try to restart assp now");
+            mlog(0,"error: BerkeleyDB for hash $hash ($base/$bdbf.bdb) needs to be recovered - recovery will be done at next start - try to restart spambox now");
             mlogWrite() if $WorkerNumber == 0;
             $doShutdown = time + 15;
             die "BDB for $hash needs recovery\n";

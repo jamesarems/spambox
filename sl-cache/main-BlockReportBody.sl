@@ -120,7 +120,7 @@ package main; sub BlockReportBody {
                 /^(RSBM)_(.+?)\Q$maillogExt\E\Q$EmailBlockReportDomain\E\s*$/i )
             {
                 my $rfile = $2;
-                mlog(0,"warning: the recipient address '$this->{rcpt}' was changed to lower case - this is a wrong behavior - assp will be possibly unable to find the requested file on nix systems") if $1 eq 'rsbm' && $ReportLog >= 2;
+                mlog(0,"warning: the recipient address '$this->{rcpt}' was changed to lower case - this is a wrong behavior - spambox will be possibly unable to find the requested file on nix systems") if $1 eq 'rsbm' && $ReportLog >= 2;
                 $rfile =~ s/x([0-9a-fA-F]{2})X/pack('C',hex($1))/geoi;
                 $rfile = "$base/$rfile$maillogExt";
                 $resendfile{$rfile} = $rsbm_special;

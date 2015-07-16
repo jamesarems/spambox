@@ -1,5 +1,5 @@
-#line 1 "sub main::_assp_try_restart"
-package main; sub _assp_try_restart {
+#line 1 "sub main::_spambox_try_restart"
+package main; sub _spambox_try_restart {
     if($AsAService) {
         exec('cmd.exe /C net stop SPAMBOXSMTP & net start SPAMBOXSMTP');
     } elsif ($AsADaemon == 1) {

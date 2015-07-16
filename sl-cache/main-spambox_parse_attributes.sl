@@ -1,5 +1,5 @@
-#line 1 "sub main::assp_parse_attributes"
-package main; sub assp_parse_attributes {
+#line 1 "sub main::spambox_parse_attributes"
+package main; sub spambox_parse_attributes {
     local $_ = shift;
     my $attribs = {};
     my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
@@ -17,7 +17,7 @@ package main; sub assp_parse_attributes {
           return $attribs;
         }
         my $attribute = $boundaryX = lc $1;
-        my $value = assp_extract_ct_attribute_value();
+        my $value = spambox_extract_ct_attribute_value();
         $attribs->{$attribute} = $value;
     }
     return $attribs;

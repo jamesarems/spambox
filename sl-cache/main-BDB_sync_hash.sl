@@ -8,7 +8,7 @@ package main; sub BDB_sync_hash {
     $dbo = $hash . 'Obj' unless defined ${$dbo};   # temp hashes
     return 0 unless defined ${$dbo};
     my $res;
-    if ("$$dbo" =~ /assp::/io) {
+    if ("$$dbo" =~ /spambox::/io) {
         eval{
              my $lock;
              $lock = ${$dbo}->{hashobj}->cds_lock() if $main::lockBDB && ${$dbo}->{hashobj}->cds_enabled();

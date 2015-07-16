@@ -118,7 +118,7 @@ package main; sub resend_mail {
       $hostCFGname = 'smtpDestination';
       if ($EmailReportDestination &&
           $islocal &&
-          (($EmailFrom && $EmailFrom =~ /^\Q$mailfrom\E$/i) || lc $mailfrom eq 'assp <>')
+          (($EmailFrom && $EmailFrom =~ /^\Q$mailfrom\E$/i) || lc $mailfrom eq 'spambox <>')
          )
       {
           mlog(0,"*x*(re)send - $file - using EmailReportDestination for local mail - From: $mailfrom - To: $to")
@@ -246,7 +246,7 @@ package main; sub resend_mail {
                   $AVa = 1;
                   mlog(0,"*x*warning: unable to delete $file - $!") unless ($unlink->($file));
 
-                  if ( $autoAddResendToWhite > 1 && $islocal && $mailfrom && lc $mailfrom ne 'assp <>' && !&localmail($mailfrom)) {
+                  if ( $autoAddResendToWhite > 1 && $islocal && $mailfrom && lc $mailfrom ne 'spambox <>' && !&localmail($mailfrom)) {
                       &Whitelist($mailfrom,$to,'add');
                       mlog( 0, "info: whitelist addition on resend via GUI or copied file: $mailfrom" )
                         if $ReportLog || $MaintenanceLog;

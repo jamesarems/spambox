@@ -189,7 +189,7 @@ package main; sub fixConfigSettings {
     foreach (keys %Config) {${$_}=$Config{$_};}
 
     # set the date/time for spambox.cfg
-    $asspCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
+    $spamboxCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
 
     my ($logdir, $logdirfile) = $logfile =~ /^(.*[\/\\])?(.*?)$/o;
     $blogfile = "$logdir" . "b$logdirfile";

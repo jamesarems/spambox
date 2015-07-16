@@ -45,15 +45,15 @@ package main; sub ThreadMaintMain {
             $file = "$base/$file";
             $FileUpdate{"$file".'localBackDNSFile'} = ftime($file);
         }
-        my $assp = $assp;
-        $assp =~ s/\\/\//go;
-        $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
-        if (-e $assp) {
-            $FileUpdate{"$assp".'asspCode'} = ftime($assp);
-            mlog(0,"info: watching the running script '$assp' for changes")
+        my $spambox = $spambox;
+        $spambox =~ s/\\/\//go;
+        $spambox = $base.'/'.$spambox if ($spambox !~ /\Q$base\E/io);
+        if (-e $spambox) {
+            $FileUpdate{"$spambox".'spamboxCode'} = ftime($spambox);
+            mlog(0,"info: watching the running script '$spambox' for changes")
               if ($AutoRestartAfterCodeChange && ($AsAService || $AsADaemon || $AutoRestartCmd));
         } elsif ($AutoRestartAfterCodeChange) {
-            mlog(0,"warning: unable to find running script '$assp' for 'AutoRestartAfterCodeChange'")
+            mlog(0,"warning: unable to find running script '$spambox' for 'AutoRestartAfterCodeChange'")
               if ($AsAService || $AsADaemon || $AutoRestartCmd);
         }
     }
@@ -70,17 +70,17 @@ package main; sub ThreadMaintMain {
         threads->yield();
     }
     if (! $isRunTask && $doShutdown < 0) {
-        mlog(0,"info: assp has finished all running tasks after a scheduled restart was requested - initialize automatic restart for SPAMBOX in 15 seconds");
+        mlog(0,"info: spambox has finished all running tasks after a scheduled restart was requested - initialize automatic restart for SPAMBOX in 15 seconds");
         $doShutdown = time + 15;
-        mlog(0,"info: damping is now switched off until assp is down") if $DoDamping;
+        mlog(0,"info: damping is now switched off until spambox is down") if $DoDamping;
         return;
     }
 
     &ThreadMaintMain2($Iam);
 
-    my $lassp = $assp;
-    $lassp =~ s/\\/\//go;
-    $lassp = $base.'/'.$lassp if ($lassp !~ /\Q$base\E/io);
+    my $lspambox = $spambox;
+    $lspambox =~ s/\\/\//go;
+    $lspambox = $base.'/'.$lspambox if ($lspambox !~ /\Q$base\E/io);
     if ((lc $AutoRestartAfterCodeChange eq 'immed' ||
         ( $AutoRestartAfterCodeChange && $codeChanged && $hour == $AutoRestartAfterCodeChange)) &&
         ($AsAService || $AsADaemon || $AutoRestartCmd) &&
@@ -88,29 +88,29 @@ package main; sub ThreadMaintMain {
         ! $doShutdown &&
         ! $allIdle &&
         $NextCodeChangeCheck < time &&
-        -e "$lassp" &&
-        fileUpdated($lassp,'asspCode')
+        -e "$lspambox" &&
+        fileUpdated($lspambox,'spamboxCode')
        )
     {
-        $FileUpdate{"$lassp".'asspCode'} = ftime($lassp);
-        mlog(0,"info: new '$lassp' script detected - performing syntax check on new script");
+        $FileUpdate{"$lspambox".'spamboxCode'} = ftime($lspambox);
+        mlog(0,"info: new '$lspambox' script detected - performing syntax check on new script");
         my $cmd;
         if ($^O eq "MSWin32") {
-            $cmd = '"' . $perl . '"' . " -c \"$lassp\" 2>&1";
+            $cmd = '"' . $perl . '"' . " -c \"$lspambox\" 2>&1";
         } else {
-            $cmd = '\'' . $perl . '\'' . " -c \'$lassp\' 2>&1";
+            $cmd = '\'' . $perl . '\'' . " -c \'$lspambox\' 2>&1";
         }
         my $res = qx($cmd);
         if ($res =~ /syntax\s+OK/ios) {
             if ($res !~ /SPAMBOX\s+\Q$MajorVersion\E/ios) {
-                mlog(0,"error: autoupdate: the version of '$lassp' is not an SPAMBOX major version $MajorVersion - restoring current running script $MAINVERSION!");
-                copy($lassp.'.run',"$lassp") && ($FileUpdate{"$lassp".'asspCode'} = ftime($lassp));
+                mlog(0,"error: autoupdate: the version of '$lspambox' is not an SPAMBOX major version $MajorVersion - restoring current running script $MAINVERSION!");
+                copy($lspambox.'.run',"$lspambox") && ($FileUpdate{"$lspambox".'spamboxCode'} = ftime($lspambox));
             } else {
-                mlog(0,"info: new '$lassp' script detected - syntax check returned OK - requesting automatic restart for SPAMBOX in 15 seconds");
+                mlog(0,"info: new '$lspambox' script detected - syntax check returned OK - requesting automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = -1;
             }
         } else {
-            mlog(0,"error: new '$lassp' script detected - syntax error in new script - skipping automatic restart - syntax error is: $res");
+            mlog(0,"error: new '$lspambox' script detected - syntax error in new script - skipping automatic restart - syntax error is: $res");
         }
         $NextCodeChangeCheck = time + 60;
         $codeChanged = '';
@@ -150,7 +150,7 @@ package main; sub ThreadMaintMain {
             $ucmd = ">ppm update --install  or  " . $ucmd if ($^O eq 'MSWin32');
             if (scalar keys %AvailPerlModules) {
                 print $F "\n\n";
-                print $F "To update the modules in this list, stop all perl processes (also assp!), start a commandline and type $ucmd\n";
+                print $F "To update the modules in this list, stop all perl processes (also spambox!), start a commandline and type $ucmd\n";
                 mlog(0,"warning: some Perl modules are not installed and need manual action $ucmd");
             } else {
                 print $F "All installed Perl modules are uptodate.\n";
@@ -166,10 +166,10 @@ package main; sub ThreadMaintMain {
             ($AsAService || $AsADaemon || $AutoRestartCmd))
         {
             if ($isRunTask) {
-                mlog(0,"info: assp has updated still loaded modules - schedule automatic restart for SPAMBOX after still running task are finished");
+                mlog(0,"info: spambox has updated still loaded modules - schedule automatic restart for SPAMBOX after still running task are finished");
                 $doShutdown = -1;
             } else {
-                mlog(0,"info: assp has updated still loaded modules - initialize automatic restart for SPAMBOX in 15 seconds");
+                mlog(0,"info: spambox has updated still loaded modules - initialize automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = time + 15;
             }
         }
@@ -320,8 +320,8 @@ package main; sub ThreadMaintMain {
           if($f->[0] ne 'spamboxCfg' || ($f->[0] eq 'spamboxCfg' && $AutoReloadCfg)) {
               if ($Config{$f->[0]}=~/^ *file: *(.+)/io && fileUpdated($1,$f->[0])) {
                 my $fl = $1;
-                if ($f->[0] eq 'spamboxCfg' && $asspCFGTime > $FileUpdate{"$base/spambox.cfgspamboxCfg"}) {
-                    $FileUpdate{"$base/spambox.cfgspamboxCfg"} = $asspCFGTime;
+                if ($f->[0] eq 'spamboxCfg' && $spamboxCFGTime > $FileUpdate{"$base/spambox.cfgspamboxCfg"}) {
+                    $FileUpdate{"$base/spambox.cfgspamboxCfg"} = $spamboxCFGTime;
                     next;
                 }
                 $ConfigChanged = $f->[0] eq 'spamboxCfg' ? 2 : 1;

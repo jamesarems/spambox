@@ -24,7 +24,7 @@ package main; sub clean {
         my (@sender,@receipt,$sub);
         while (/($HeaderNameRe):($HeaderValueRe)/igos) {
             my($head,$val) = ($1,$2);
-            next if $head =~ /^(?:x-assp|(?:DKIM|DomainKey)-Signature)|X-Original-Authentication-Results/oi;
+            next if $head =~ /^(?:x-spambox|(?:DKIM|DomainKey)-Signature)|X-Original-Authentication-Results/oi;
             if ($head =~ /^(to|cc|bcc)$/io) {
                 push @receipt, $1 while ($val =~ /($EmailAdrRe\@$EmailDomainRe)/gio);
             }

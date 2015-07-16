@@ -16,10 +16,10 @@ package main; sub downloadSPAMBOXVersion {
         $NextVersionFileDownload = time + 3600 * 24;
         return 0;
     }
-    my $assp = $assp;
-    $assp =~ s/\\/\//go;
-    $assp =~ s/\/\//\//go;
-    $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
+    my $spambox = $spambox;
+    $spambox =~ s/\\/\//go;
+    $spambox =~ s/\/\//\//go;
+    $spambox = $base.'/'.$spambox if ($spambox !~ /\Q$base\E/io);
     if (-e "$base/download/spambox.pl" && ! -w "$base/download/spambox.pl") {
         mlog(0,"warning: autoupdate: unable to write to $base/download/spambox.pl - skip update - please check the file permission");
         $NextSPAMBOXFileDownload = time + 3600;
@@ -30,14 +30,14 @@ package main; sub downloadSPAMBOXVersion {
         $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
-    if (! -w "$assp") {
-        mlog(0,"warning: autoupdate: unable to write to $assp - skip update - please check the file permission");
+    if (! -w "$spambox") {
+        mlog(0,"warning: autoupdate: unable to write to $spambox - skip update - please check the file permission");
         $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
     -d "$base/download" or mkdir "$base/download", 0755;
-    if (! -e "$base/download/spambox.pl" && ! copy("$assp","$base/download/spambox.pl")) {
-        mlog(0,"warning: autoupdate: unable to copy current script '$assp' to '$base/download/spambox.pl' - skip update - $!");
+    if (! -e "$base/download/spambox.pl" && ! copy("$spambox","$base/download/spambox.pl")) {
+        mlog(0,"warning: autoupdate: unable to copy current script '$spambox' to '$base/download/spambox.pl' - skip update - $!");
         $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
@@ -55,14 +55,14 @@ package main; sub downloadSPAMBOXVersion {
     return 0 unless $ret;
     mlog(0,"Info: autoupdate: new spambox.pl.gz downloaded to $base/download/spambox.pl.gz") if $MaintenanceLog;
     if (unzipgz("$base/download/spambox.pl.gz", "$base/download/spambox.pl")) {
-        mlog(0,"info: autoupdate: new assp version '$base/download/spambox.pl' available - version $availversion") if $MaintenanceLog;
+        mlog(0,"info: autoupdate: new spambox version '$base/download/spambox.pl' available - version $availversion") if $MaintenanceLog;
     } else {
         mlog(0,"warning: autoupdate: unable to unzip '$base/download/spambox.pl.gz' to '$base/download/spambox.pl' - skip update");
         return 0;
     }
-    mlog(0,"Info: saving current script '$assp' to 'assp_$version$modversion.pl'") if $MaintenanceLog;
-    if (! copy("$assp","$base/download/assp_$version$modversion.pl")) {
-        mlog(0,"warning: autoupdate: unable to save current script '$assp' to '$base/download/assp_$version$modversion.pl' - skip update - $!");
+    mlog(0,"Info: saving current script '$spambox' to 'spambox_$version$modversion.pl'") if $MaintenanceLog;
+    if (! copy("$spambox","$base/download/spambox_$version$modversion.pl")) {
+        mlog(0,"warning: autoupdate: unable to save current script '$spambox' to '$base/download/spambox_$version$modversion.pl' - skip update - $!");
         return 0;
     }
     my $cmd;
@@ -78,7 +78,7 @@ package main; sub downloadSPAMBOXVersion {
         mlog(0,"warning: autoupdate: syntax error in '$base/download/spambox.pl' - skip spambox.pl update - syntax error is: $res");
         return 0;
     }
-    if ($res =~ /assp\s+(.+)?is starting/io) {
+    if ($res =~ /spambox\s+(.+)?is starting/io) {
         my $avv = $1;
         $avv =~ s/RC/\./gio;
         $avv =~ s/\s|\(|\)//gio;
@@ -89,15 +89,15 @@ package main; sub downloadSPAMBOXVersion {
         $upd = 1 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
         $upd ||= ($stv lt $avv);
         if (! $upd) {
-            mlog(0,"warning: autoupdate: version of downloaded '$base/download/spambox.pl' ($avv) is less or equal to the running version of assp ($stv) - skip spambox.pl update");
+            mlog(0,"warning: autoupdate: version of downloaded '$base/download/spambox.pl' ($avv) is less or equal to the running version of spambox ($stv) - skip spambox.pl update");
             return 0;
         }
     }
     return 0 if $AutoUpdateSPAMBOX == 1;
-    if (copy("$base/download/spambox.pl", "$assp")) {
-        mlog(0,"info: autoupdate: new version assp installed - '$assp' - version $availversion");
+    if (copy("$base/download/spambox.pl", "$spambox")) {
+        mlog(0,"info: autoupdate: new version spambox installed - '$spambox' - version $availversion");
     } else {
-        mlog(0,"warning: autoupdate: unable to replace current script '$assp' - skip update - $!");
+        mlog(0,"warning: autoupdate: unable to replace current script '$spambox' - skip update - $!");
         return 0;
     }
     return 1 if (lc $AutoRestartAfterCodeChange eq 'immed' &&

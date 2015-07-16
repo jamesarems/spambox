@@ -20,7 +20,7 @@ $lngmsghint{'msg500016'} = '# main form buttom hint 6';
 $lngmsg{'msg500016'} = 'Hyphenated ranges can be used (182.82.10.0-182.82.10.255).';
 
 $lngmsghint{'msg500017'} = '# main form buttom hint 7';
-$lngmsg{'msg500017'} = 'For defining any full filepaths, always use slashes ("/") not backslashes. For example: c:/assp/certs/server-key.pem !<br /><br />';
+$lngmsg{'msg500017'} = 'For defining any full filepaths, always use slashes ("/") not backslashes. For example: c:/spambox/certs/server-key.pem !<br /><br />';
 
 $lngmsghint{'msg500018'} = '# main form buttom hint 8';
 $lngmsg{'msg500018'} = <<EOT;
@@ -34,7 +34,7 @@ For all "<span class="positive">bomb*</span>" regular expressions and "<span cla
 use this regex (+ = only)(- = never) for: N = noprocessing , W = whitelisted , L = local , I = ISP mails . So the line ~Heuristics|Email~=>50:>N-W-LI could be read as: take the regex with a weight of 50, never scan noprocessing mails, never scan whitelisted mails, scan local mails and mails from ISP's (and all others). The line ~Heuristics|Email~=>3.2:>N-W+I could be read as: take the regex with a weight of 3.2 as factor, never scan noprocessing mails, scan only whitelisted mails even if they are received from an ISP .<br />
 If the third parameter is not set or any of the N,W,L,I is not set, the default configuration for the option will be used unless a default option string is defined anywhere in a single line in the file in the form !!!NWLI!!! (with + or - is possible).<br />
 <span class="negative">If any parameter that allowes the usage of weighted regular expressions is set to "block", but the sum of the resulting weighted penalty value is less than the corresponding "Penalty Box Valence Value" (because of lower weights) - only scoring will be done!</span><br />
-If the regular expression optimization is used - ("perl module Regexp::Optimizer" installed and enabled) - and you want to disable the optimization for a special regular expression (file based), set one line (eg. the first one) to a value of '<span class="positive">assp-do-not-optimize-regex</span>' or '<span class="positive">a-d-n-o-r</span>' (without the quotes)! To disable the optimization for a specific line/regex, put &lt;&lt;&lt; in front and &gt;&gt;&gt; at the end of the line/regex. To weight such line/regex write for example: <span class="positive">&lt;&lt;&lt;</span>Phishing\\.<span class="positive">&gt;&gt;&gt;</span>=>1.45=>N- or ~<span class="positive">&lt;&lt;&lt;</span>Heuristics|Email<span class="positive">&gt;&gt;&gt;</span>~=>50  or  ~<span class="positive">&lt;&lt;&lt;</span>(Email|HTML|Sanesecurity)\\.(Phishing|Spear|(Spam|Scam)[a-z0-9]?)\\.<span class="positive">&gt;&gt;&gt;</span>~=>4.6 .<br /><br />
+If the regular expression optimization is used - ("perl module Regexp::Optimizer" installed and enabled) - and you want to disable the optimization for a special regular expression (file based), set one line (eg. the first one) to a value of '<span class="positive">spambox-do-not-optimize-regex</span>' or '<span class="positive">a-d-n-o-r</span>' (without the quotes)! To disable the optimization for a specific line/regex, put &lt;&lt;&lt; in front and &gt;&gt;&gt; at the end of the line/regex. To weight such line/regex write for example: <span class="positive">&lt;&lt;&lt;</span>Phishing\\.<span class="positive">&gt;&gt;&gt;</span>=>1.45=>N- or ~<span class="positive">&lt;&lt;&lt;</span>Heuristics|Email<span class="positive">&gt;&gt;&gt;</span>~=>50  or  ~<span class="positive">&lt;&lt;&lt;</span>(Email|HTML|Sanesecurity)\\.(Phishing|Spear|(Spam|Scam)[a-z0-9]?)\\.<span class="positive">&gt;&gt;&gt;</span>~=>4.6 .<br /><br />
 The literal 'SESSIONID' will be replaced by the unique message logging ID in every SMTP error reply.<br />
 The literal 'NOTSPAMTAG' will be replaced by a random calculated TAG using <a href="./NotSpamTag">NotSpamTag</a>, in every SMTP permanent (5xx) error reply.<br />
 The literal 'MYNAME' will be replaced by the configuration value defined in 'myName' in every SMTP error reply.<br /><br />
@@ -44,7 +44,7 @@ EOT
 
 $lngmsghint{'msg500019'} = '# main form buttom hint 9';
 $lngmsg{'msg500019'} = <<EOT;
-<br /><br />'kill -HUP $mypid' will load settings from disk. 'kill -NUM07 $mypid' will suspend or resume assp.  'kill -USR2 $mypid' will save settings to disk.
+<br /><br />'kill -HUP $mypid' will load settings from disk. 'kill -NUM07 $mypid' will suspend or resume spambox.  'kill -USR2 $mypid' will save settings to disk.
 EOT
 
 $lngmsghint{'msg500020'} = '# manage users form hint';
@@ -167,7 +167,7 @@ EOT
 
 $lngmsg{'msg500081'} = 'File should have one entry per line; anything on a line following a number sign ( #) is ignored (a comment). Whitespace at the beginning or end of the line is ignored.';
 $lngmsg{'msg500082'} = 'First line specifies text that appears in the subject of report message. The remaining lines are the report message body.';
-$lngmsg{'msg500083'} = 'Put here comments to your assp installation.';
+$lngmsg{'msg500083'} = 'Put here comments to your spambox installation.';
 $lngmsg{'msg500084'} = 'For removal of entries from BlackBox (PBBlack) use <a onmousedown="showDisp(\'$ConfigPos{noPB}\')" target="main" href="./#noPB">noPB</a>.
 For removal of entries from WhiteBox (PBWhite)  use <a onmousedown="showDisp(\'$ConfigPos{noPBwhite}\')" target="main" href="./#noPBwhite">noPBwhite</a>. For  whitelisting IP\'s use <a onmousedown="showDisp(\'$ConfigPos{whiteListedIPs}\')" target="main" href="./#whiteListedIPs">Whitelisted IP\'s</a> or <a onmousedown="showDisp(\'$ConfigPos{noProcessingIPs}\')" target="main" href="./#noProcessingIPs">No Processing IP\'s</a>. For blacklisting use <a onmousedown="showDisp(\'$ConfigPos{denySMTPConnectionsFrom}\')" target="main" href="./#denySMTPConnectionsFrom">Deny SMTP Connections From these IP\'s</a> and <a onmousedown="showDisp(\'$ConfigPos{denySMTPConnectionsFromAlways}\')" target="main" href="./#denySMTPConnectionsFromAlways">Deny SMTP Connections From these IP\'s Strictly</a>.';
 

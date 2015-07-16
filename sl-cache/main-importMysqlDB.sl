@@ -4,8 +4,8 @@ package main; sub importMysqlDB {
   return unless $DBisUsed;
   if (!$CanUseTieRDBM && !$CanUseBerkeleyDB) {
     mlog(0,"error: can not $action - database support is not available");
-    mlog(0,"Please check the configuration and restart assp!");
-    mlog(0,"You have to restart assp, if you changed any database relevant configuration parameters!!!");
+    mlog(0,"Please check the configuration and restart spambox!");
+    mlog(0,"You have to restart spambox, if you changed any database relevant configuration parameters!!!");
     return;
   }
   &checkDBCon();

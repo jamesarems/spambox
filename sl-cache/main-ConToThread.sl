@@ -24,7 +24,7 @@ package main; sub ConToThread {
                 if ($exceptCount > 3) {
                     mlog(0,"error: $WorkerName is unable to transfer connection to any worker within $wt seconds - restart SPAMBOX!");
                     &downSPAMBOX("restarting");
-                    _assp_try_restart;
+                    _spambox_try_restart;
                 }
                 $loop = 1;
             } else {

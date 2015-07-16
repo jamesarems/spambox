@@ -8,7 +8,7 @@ package main; sub WorkerStatus {
      if (exists $ConfigAdd{'NumComWorkers'}) {
          for (my $i = $NumComWorkers+1; $i<=$ConfigAdd{'NumComWorkers'}; $i++) {
              $status{$i}{lastloop} = 0;
-             $status{$i}{lastaction} = 'NumComWorkers increased - assp restart required';
+             $status{$i}{lastaction} = 'NumComWorkers increased - spambox restart required';
          }
      }
      $status{10000}{lastloop} = int(time - $WorkerLastAct{10000});

@@ -72,15 +72,15 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
 
 my $currStat = &StatusSPAMBOX();
 $currStat = ($currStat =~ /not healthy/io)
-   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   ? '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
+   : '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $lFoptions = "<option value=\"default\">default</option>";
  my @DIR = Glob("$base/language/*");
  while (@DIR) {
      $_ = shift @DIR;
      my $sel = '';
-     next if /[\/\\]assp\.lng$/oi;
+     next if /[\/\\]spambox\.lng$/oi;
      next if /[\/\\]readme\.txt$/oi;
      next if /[\/\\]default_en_msg_[^\/\\]+$/oi;
      s/\Q$base\E\/language\///oi;
@@ -93,7 +93,7 @@ $currStat = ($currStat =~ /not healthy/io)
  $lFoptions
  </select></span>
 
-    &nbsp;<input type=\"button\" value=\"edit\" onclick=\"javascript:popFileEditor('language/'+(document.forms['SPAMBOXconfig'].languageFile.value=='default' || document.forms['SPAMBOXconfig'].languageFile.value=='' ? 'assp.lng' : document.forms['SPAMBOXconfig'].languageFile.value),1);
+    &nbsp;<input type=\"button\" value=\"edit\" onclick=\"javascript:popFileEditor('language/'+(document.forms['SPAMBOXconfig'].languageFile.value=='default' || document.forms['SPAMBOXconfig'].languageFile.value=='' ? 'spambox.lng' : document.forms['SPAMBOXconfig'].languageFile.value),1);
     \" /><br />
     &nbsp;<input type=\"button\" value=\"readme\" onclick=\"javascript:popFileEditor('language/readme.txt',1);\" />
     </div><hr />

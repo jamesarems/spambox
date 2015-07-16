@@ -66,8 +66,8 @@ $headerHTTP
         To stop accepting remote support connections click OFF<br /><br />
         NOTICE: the remote support remains active, if you close this windows in active state! To stop the remote support
         open this windows again and click OFF.<br /><br />
-        The remote support will only work, if assp is connected to the Internet (directly or NAT). Tell the support stuff
-        the public IP address or hostname (eg. the MX) and the SMTP port, assp is listening to. The support stuff will also need
+        The remote support will only work, if spambox is connected to the Internet (directly or NAT). Tell the support stuff
+        the public IP address or hostname (eg. the MX) and the SMTP port, spambox is listening to. The support stuff will also need
         login data to access the GUI and the information if SSL is required (or not) to access the GUI.<br /><br />
         Keep in mind, that nobody else than root will be able to login to the GUI, if you are still logged on using the root account!<br /><br />
         SPAMBOX will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.<br /><br />

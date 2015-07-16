@@ -4,7 +4,7 @@ package main; sub MainLoop {
   my $entrytime = Time::HiRes::time();
   my $hourend = time % 1800;
   mlog(0,'') if (( time - $lastMlog ) > 110 || $hourend < 15);
-  mlog(0,'***assp&is%alive$$$') if (! $DisableSyslogKeepAlive && (time - $lastmlogWrite) > 120);
+  mlog(0,'***spambox&is%alive$$$') if (! $DisableSyslogKeepAlive && (time - $lastmlogWrite) > 120);
   &ThreadMonitorMainLoop('MainLoop start');
   &ConDone();
   my @canread;
@@ -170,14 +170,14 @@ package main; sub MainLoop {
             $ThreadIdleTime{$WorkerNumber} += 0.5;
         }
         &downSPAMBOX("restarting");
-        _assp_try_restart;
+        _spambox_try_restart;
   }
 
   &ThreadMonitorMainLoop('Mainloop after restart check');
 
   if ($doShutdown > 0 && $itime >= $doShutdown) {
     &downSPAMBOX("restarting");
-    _assp_try_restart;
+    _spambox_try_restart;
   }
   &ConDone();
 

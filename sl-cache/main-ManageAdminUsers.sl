@@ -290,7 +290,7 @@ EOT
     while (@DIR) {
         $_ = shift @DIR;
         my $sel = '';
-        next if /[\/\\]assp\.lng$/o;
+        next if /[\/\\]spambox\.lng$/o;
         next if /[\/\\]default_en_msg_[^\/\\]+$/o;
         s/\Q$base\E\/language\///o;
         $sel = "selected=\"selected\"" if $_ eq $languageFile;
@@ -438,13 +438,13 @@ EOT
     $ManageActionsDesc{top10stats} = 'Top 10 Stats';
     $ManageActionsDesc{resetcurrentstats} = 'Reset Stats since last Start';
     $ManageActionsDesc{resetallstats} = 'Reset ALL Stats';
-    $ManageActionsDesc{statusassp} = 'Worker/DB/Regex Status';
+    $ManageActionsDesc{statusspambox} = 'Worker/DB/Regex Status';
     $ManageActionsDesc{edit} = 'Edit any Files, Lists, Caches';
     $ManageActionsDesc{shutdown_list} = 'SMTP Connections';
     $ManageActionsDesc{shutdown} = 'Shutdown/Restart';
     $ManageActionsDesc{suspendresume} = 'Suspend/Resume';
     $ManageActionsDesc{shutdown_frame} = 'Shutdown/Restart Screen';
-    $ManageActionsDesc{donations} = 'Donations';
+    $ManageActionsDesc{github} = 'GitHUB';
     $ManageActionsDesc{pwd} = 'Change own local Password';
     $ManageActionsDesc{reload} = 'Load Config';
     $ManageActionsDesc{quit} = 'Terminate Now!';
@@ -456,7 +456,7 @@ EOT
     $ManageActionsDesc{ipaction} = 'take actions on IP addresses from MaillogTail';
     $ManageActionsDesc{statgraph} = 'show graphical statistics';
     $ManageActionsDesc{confgraph} = 'show confidence distribution';
-    $ManageActionsDesc{fc} = 'assp file commander';
+    $ManageActionsDesc{fc} = 'spambox file commander';
     $ManageActionsDesc{remotesupport} = 'Remote Support';
 
     my %webRequests = %webRequests;

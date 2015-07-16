@@ -27,7 +27,7 @@ package main; sub mlogWrite {
            } or print "con encoding error: $@";
        }
        push @tosyslog,substr($line,length($LogDateFormat)) if ($sysLog && ($CanUseSyslog || ($sysLogPort && $sysLogIp)));
-       if ($line !~ /\*\*\*assp\&is\%alive\$\$\$/o) {
+       if ($line !~ /\*\*\*spambox\&is\%alive\$\$\$/o) {
            print $line unless ($silent);
            w32dbg($line) if ($CanUseWin32Debug);
            if ($logfile && $spamboxLog && fileno($LOG)) {
@@ -66,7 +66,7 @@ package main; sub mlogWrite {
                                      $ExtraBlockReportLog &&
                                      $logline =~ /\[\s*spam\sfound\s*\]/io);
        }
-       if ($logline !~ /page:\/maillog|\*\*\*assp\&is\%alive\$\$\$/o) {
+       if ($logline !~ /page:\/maillog|\*\*\*spambox\&is\%alive\$\$\$/o) {
            shift @RealTimeLog if (@RealTimeLog > 33);
            push @RealTimeLog, $logline;
            $lastmlogWrite = time;

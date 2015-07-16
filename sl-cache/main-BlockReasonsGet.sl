@@ -434,7 +434,7 @@ WHITCHWORKER
                 }
                 if ( $inclResendLink == 2 or $inclResendLink == 3 ) {
                     $line =~
-s/($gooddays)($timeformat)/<span class="date"><a href="$prot:\/\/$host:$webAdminPort\/edit?file=$filename&note=m&showlogout=1" target="_blank" title="open this mail in the assp fileeditor">$1$2<\/a><\/span>/ if $is_admin;
+s/($gooddays)($timeformat)/<span class="date"><a href="$prot:\/\/$host:$webAdminPort\/edit?file=$filename&note=m&showlogout=1" target="_blank" title="open this mail in the spambox fileeditor">$1$2<\/a><\/span>/ if $is_admin;
                     $line =~
 s/(\[OIP: )?($IPRe)(\])?/my($p1,$e,$p2)=($1,$2,$3);($e!~$IPprivate)?"<span name=\"tohid\" class=\"ip\"><a href=\"$prot:\/\/$host:$webAdminPort\/ipaction?ip=$e\&showlogout=1\" target=\"_blank\" title=\"take an action via web on ip $e\">$p1$e$p2<\/a><\/span>":"<span name=\"tohid\">$p1$e$p2<\/span>";/goe if $is_admin;
                     $line =~

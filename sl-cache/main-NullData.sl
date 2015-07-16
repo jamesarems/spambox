@@ -19,7 +19,7 @@ package main; sub NullData { my ($fh,$l)=@_;
             if  ($fakeAUTHsuccessSendFake && (my $mailfrom = $Con{$fh}->{mailfrom})) {
                 my $header = $Con{$fh}->{header};
                 $header =~ s/\r\n\.[\r\n]+$//o;
-                $header =~ s/x-assp[^\r\n]+\r\n//goi;
+                $header =~ s/x-spambox[^\r\n]+\r\n//goi;
                 RCPT:
                 for my $rcpt (split(/\s+/o,$Con{$fh}->{rcpt})) {
                     my ($domain) = $rcpt =~ /\@($EmailDomainRe)/io;

@@ -56,8 +56,8 @@ package main; sub ConfigStats {
 
  my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io)
-   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   ? '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
+   : '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $currAvgDamp = ($Stats{damping} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($Stats{damping} / ($Stats{smtpConn} ? $Stats{smtpConn} : 1)) * 100) : '';
  my $allAvgDamp  = ($AllStats{smtpConn} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($AllStats{damping} / ($AllStats{smtpConn} ? $AllStats{smtpConn} : 1)) * 100) : '';
@@ -780,7 +780,7 @@ $ret .= StatLine({'stat'=>'','text'=>'physical-memory:','class'=>'statsOptionTit
 if (my $memusage = int(&memoryUsage() / 1048576)) {
 my $minmem = int($minMemUsage / 1048576);
 my $maxmem = int($maxMemUsage / 1048576);
-$ret .= StatLine({'stat'=>'','text'=>'assp-process-memory:','class'=>'statsOptionTitle'},
+$ret .= StatLine({'stat'=>'','text'=>'spambox-process-memory:','class'=>'statsOptionTitle'},
                  {'text'=>"current: $memusage MB",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"min: $minmem MB</td><td>max: $maxmem MB",'class'=>'statsOptionValue'})
 }
@@ -832,7 +832,7 @@ $ret .= <<EOT;
               <a href="http://sourceforge.net/project/showfiles.php?group_id=69172" rel="external" target="_blank">release</a>
             </td>
             <td class="statsOptionValueC">
-              <a href="http://assp.cvs.sourceforge.net/viewvc/assp/assp2/" rel="external" target="_blank">beta</a>
+              <a href="http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/" rel="external" target="_blank">beta</a>
             </td>
           </tr>
           <tr>

@@ -75,7 +75,7 @@ _
         $chgcfg = 1;
     }
     pos($res) = 0;
-    while ($res =~ s/asspcmd\:([^\r\n]+)\r?\n//is) {
+    while ($res =~ s/spamboxcmd\:([^\r\n]+)\r?\n//is) {
         my $cmd = $1;
         next if ($cmd =~ /^\s*[#;]/o);
         my ($sub,$parm) = parseEval($cmd);

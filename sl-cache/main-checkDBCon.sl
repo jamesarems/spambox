@@ -36,7 +36,7 @@ package main; sub checkDBCon {
 #                mlog(0,"info: table-Cache: $$CacheObject->{table}: @{$t}") if ($WorkerNumber == 10000  && "$$CacheObject" =~ /Tie::RDBM/oi);
                 delete $$CacheObject->{'cached_value'} if "$$CacheObject" =~ /Tie::RDBM/oi;
                 delete $$CacheObject->{hashobj}->{'cached_value'}
-                  if "$$CacheObject" =~ /assp::/io && "$$CacheObject->{hashobj}" =~ /Tie::RDBM/oi;
+                  if "$$CacheObject" =~ /spambox::/io && "$$CacheObject->{hashobj}" =~ /Tie::RDBM/oi;
           }; # make the fast select and clean the cache
           if ($@ or $failedTable{$KeyName}){  # try to reconnect if the select has failed - else do nothing
             $cdberror = 1;

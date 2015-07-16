@@ -1,5 +1,5 @@
-#line 1 "sub Net::SMTP::assp_starttls"
-package Net::SMTP; sub assp_starttls {
+#line 1 "sub Net::SMTP::spambox_starttls"
+package Net::SMTP; sub spambox_starttls {
 	my $me = shift;
     return unless $me;
     return 1 if ${*$me}{'net_smtp_ssl'};

@@ -103,7 +103,7 @@ package main; sub webRequest {
 Content-type: text/html
 
 
-<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>please enable cookies for this URL in your browser or disable httpRequireCookies in the assp configuration</h1>
+<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>please enable cookies for this URL in your browser or disable httpRequireCookies in the spambox configuration</h1>
 </body></html>\n";
         return 1;
     }
@@ -139,7 +139,7 @@ Content-type: text/html
         $WebIP{$SessionID}->{user} = $user;
       } else {
         delete $WebIP{$SessionID};
-        my $how = ($page!~/logout/io) ? 'Unauthorized request!' : '<br />You are logged out from assp.<br /><br />Please close the browser session!';
+        my $how = ($page!~/logout/io) ? 'Unauthorized request!' : '<br />You are logged out from spambox.<br /><br />Please close the browser session!';
         print $tempfh "HTTP/1.1 401 Unauthorized
 Set-Cookie: session-id=\"$cookie\";Max-Age=900;Version=\"1\";Discard;
 WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (SPAMBOX) Configuration\"
@@ -266,7 +266,7 @@ Content-type: text/html
             $lastRenderedUser = $user;
         }
 
-        if ($page!~/shutdown_frame|shutdown_list|favicon.ico|get|statusassp/io){
+        if ($page!~/shutdown_frame|shutdown_list|favicon.ico|get|statusspambox/io){
 
             # only count requests for pages without meta refresh tag
             # dont count requests for favicon.ico file
@@ -292,7 +292,7 @@ Content-type: text/html
             mlog(0,"admin connection from user $user on host $sessInfo");
 
             $Stats{admConn}++;
-        } elsif ($SessionLog > 1 && $page=~/shutdown_frame|shutdown_list|statusassp/io) {
+        } elsif ($SessionLog > 1 && $page=~/shutdown_frame|shutdown_list|statusspambox/io) {
             my $sessInfo = "$ip:$port; page:$page;";
             $sessInfo .= " session-ID:$SessionID;";
             $sessInfo .= ($mobile ? " mobile device;" : '');
@@ -362,6 +362,6 @@ Content-type: text/html
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>Unauthorized</h1>
 </body></html>\n";
     }
-    return 1 if (lc $page ne '/shutdown_list' && $page ne '/statusassp');
+    return 1 if (lc $page ne '/shutdown_list' && $page ne '/statusspambox');
     return 0;
 }

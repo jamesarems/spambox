@@ -29,7 +29,7 @@ package main; sub checkOptionList {
             }
             $value =~ s/^$UTF8BOMRE//o;
             
-            if ($value =~ /\s*#\s*assp-no-sync/ios) {
+            if ($value =~ /\s*#\s*spambox-no-sync/ios) {
                 $FileNoSync{$fil} = 1 if $WorkerNumber == 0;
             } else {
                 delete $FileNoSync{$fil} if $WorkerNumber == 0;
@@ -63,7 +63,7 @@ package main; sub checkOptionList {
                 }
                 $inc =~ s/^$UTF8BOMRE//o;
                 $inc = "\n$inc\n";
-                if ($inc =~ /\s*#\s*assp-no-sync/ios) {
+                if ($inc =~ /\s*#\s*spambox-no-sync/ios) {
                     $FileNoSync{"$base/$ifile"} = 1 if $WorkerNumber == 0;
                 } else {
                     delete $FileNoSync{"$base/$ifile"} if $WorkerNumber == 0;

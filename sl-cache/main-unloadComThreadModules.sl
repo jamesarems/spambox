@@ -79,7 +79,7 @@ package main; sub unloadComThreadModules {
     unloadSub 'ConfigStatsXml';
     unloadSub 'ConToThread';
     unloadSub 'debugWrite';
-    unloadSub 'Donations';
+    unloadSub 'GitHUB';
     unloadSub 'downSPAMBOX';
     unloadSub 'downloadSPAMBOXVersion';
     unloadSub 'downloadBackDNS';

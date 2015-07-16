@@ -6,7 +6,7 @@ package main; sub resetFH {
    my $con = "$sockIP:$sockPort";
    delete $failedFH{$fh};
    if ($sockPort < 1024 && $switchedUser) {
-       mlog(0,"error: got at least 10 accept errors at listener $con - assp is unable to renew the listener, because we are not running as root - assp will skip processing this listener for 130 seconds from now");
+       mlog(0,"error: got at least 10 accept errors at listener $con - spambox is unable to renew the listener, because we are not running as root - spambox will skip processing this listener for 130 seconds from now");
        unpoll($fh,$writable);
        unpoll($fh,$readable);
        $repollFH{$fh} = time + 10;
@@ -36,7 +36,7 @@ package main; sub resetFH {
       } else {
           mlog(0,"error: renewing listening for SMTP relay connections on port @$lsnRelayI - after too many errors");
           &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsnRelayI");
-          _assp_try_restart;
+          _spambox_try_restart;
       }
       return;
    }
@@ -62,7 +62,7 @@ package main; sub resetFH {
       } else {
           mlog(0,"error: renewing listening for additional SMTP connections on port @$lsn2I - after too many errors");
           &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsn2I");
-          _assp_try_restart;
+          _spambox_try_restart;
       }
       return;
    }
@@ -88,7 +88,7 @@ package main; sub resetFH {
       } else {
           mlog(0,"error: renewing listening for secure SMTP connections on port @$lsnSSLI - after too many errors");
           &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsnSSLI");
-          _assp_try_restart;
+          _spambox_try_restart;
       }
       return;
    }
@@ -118,7 +118,7 @@ package main; sub resetFH {
               } else {
                   mlog(0,"error: renewing proxy on port @$dummy forwarded to $to$allow - after too many errors");
                   &downSPAMBOX("try restarting SPAMBOX: failed to renew proxy on port @$dummy forwarded to $to$allow");
-                  _assp_try_restart;
+                  _spambox_try_restart;
               }
               last;
           }
@@ -155,6 +155,6 @@ package main; sub resetFH {
    } else {
        mlog(0,"error: renewing listening for SMTP connections on port @$lsnI - after too many errors");
        &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsnI");
-       _assp_try_restart;
+       _spambox_try_restart;
    }
 }

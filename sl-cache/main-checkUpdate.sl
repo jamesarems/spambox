@@ -45,7 +45,7 @@ package main; sub checkUpdate {
                         return $ret;
                     }
                     if (exists $ModulesUsed{$name}) {
-                        $ret = "<span class=\"positive\"><b>*** Updated $info - assp restart is required to activate this change!</b></span><br />";
+                        $ret = "<span class=\"positive\"><b>*** Updated $info - spambox restart is required to activate this change!</b></span><br />";
                         ${$name}=$Config{$name} = $old;
                         $ConfigAdd{$name} = $new;
                         return $ret;

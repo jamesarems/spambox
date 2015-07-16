@@ -92,7 +92,7 @@ package main; sub ConfigMaillog {
 <head>
   <meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />
   <title>$currentPage SPAMBOX ($myName) Host: $localhostname @ $localhostip</title>
-  <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
+  <link rel=\"stylesheet\" href=\"get?file=images/spambox.css\" type=\"text/css\" />
   <link rel=\"shortcut icon\" href=\"get?file=images/favicon.ico\" />
 $autoJS
 </head>
@@ -163,7 +163,7 @@ $autoJS
            $hfile =~ s/([^ ]+) +/<span style="white-space:nowrap;">$1<\/span> /go;
          }
          $text .= $hfile . $text2;
-         push(@rary,'<div id="ll' . $matches .'" class="assplogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $text . "\n</div>");
+         push(@rary,'<div id="ll' . $matches .'" class="spamboxlogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $text . "\n</div>");
          $matches++;
          next;
      } elsif (! $filesonly) {
@@ -219,7 +219,7 @@ $autoJS
          next;
      }
     }
-    push(@rary,'<div id="ll' . $matches .'" class="assplogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $_ . "\n</div>");
+    push(@rary,'<div id="ll' . $matches .'" class="spamboxlogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $_ . "\n</div>");
     $matches++;
    }
    $s = join('',@rary);
@@ -493,7 +493,7 @@ LOOP
           $hfile =~ s/([^ ]+)( +)?/<span style="white-space:nowrap;">$1<\/span>$2/go;
         }
         $text = $sp . $text .$hfile . $text2;
-        my $out = '<div%%20%%id="ll' . $matches .'"%%20%%class="assplogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $text . "\n</div>";
+        my $out = '<div%%20%%id="ll' . $matches .'"%%20%%class="spamboxlogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $text . "\n</div>";
         $out =~ s/\%\%20\%\%/ /go;
         push(@rary,$pretag . $out . $posttag);
         $matches++;
@@ -550,7 +550,7 @@ LOOP
     if ($filesonly) {
         next;
     }
-    my $out =  '<div id="ll' . $matches .'" class="assplogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $_ . "\n</div>";
+    my $out =  '<div id="ll' . $matches .'" class="spamboxlogline'. ($currWrap + ($matches % 2 && $colorLines)) .'">' . $_ . "\n</div>";
     push(@rary, $pretag . $out . $posttag);
     $matches++;
    }
@@ -626,10 +626,10 @@ var MlEndPos;
 var intend = document.getElementById('dummy').offsetWidth;
 document.getElementById('dummy').style.display='none';
 
-document.write("<style id=\\"aloli0\\" type=\\"text/css\\">\\n.assplogline0\\n {\\nwhite-space:nowrap;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#FFFFFF;\\n}\\n</style>\\n");
-document.write("<style id=\\"aloli1\\" type=\\"text/css\\">\\n.assplogline1\\n {\\nwhite-space:nowrap;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#F0F0F0;\\n}\\n</style>\\n");
-document.write("<style id=\\"aloli2\\" type=\\"text/css\\">\\n.assplogline2\\n {\\nwhite-space:normal;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#FFFFFF;\\n}\\n</style>\\n");
-document.write("<style id=\\"aloli3\\" type=\\"text/css\\">\\n.assplogline3\\n {\\nwhite-space:normal;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#F0F0F0;\\n}\\n</style>\\n");
+document.write("<style id=\\"aloli0\\" type=\\"text/css\\">\\n.spamboxlogline0\\n {\\nwhite-space:nowrap;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#FFFFFF;\\n}\\n</style>\\n");
+document.write("<style id=\\"aloli1\\" type=\\"text/css\\">\\n.spamboxlogline1\\n {\\nwhite-space:nowrap;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#F0F0F0;\\n}\\n</style>\\n");
+document.write("<style id=\\"aloli2\\" type=\\"text/css\\">\\n.spamboxlogline2\\n {\\nwhite-space:normal;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#FFFFFF;\\n}\\n</style>\\n");
+document.write("<style id=\\"aloli3\\" type=\\"text/css\\">\\n.spamboxlogline3\\n {\\nwhite-space:normal;\\n padding-left:" + intend + "px;\\n text-indent:-" + intend + "px;\\n background-color:#F0F0F0;\\n}\\n</style>\\n");
 
 function changeSpan(change) {
   var iswrap = document.MTform.wrap[1].checked ? 2 : 0;
@@ -638,15 +638,15 @@ function changeSpan(change) {
   for(i=0; i < $matches; i++) {
     if (change == 0 || change == 1) {
       if (change == 0) {
-          document.getElementById('ll' + i).className = 'assplogline' + iswrap;
+          document.getElementById('ll' + i).className = 'spamboxlogline' + iswrap;
       } else {
-          document.getElementById('ll' + i).className = 'assplogline' + ((i % 2) + iswrap);
+          document.getElementById('ll' + i).className = 'spamboxlogline' + ((i % 2) + iswrap);
       }
     } else {
       if (iscolor == 0) {
-          document.getElementById('ll' + i).className = 'assplogline' + dowrap;
+          document.getElementById('ll' + i).className = 'spamboxlogline' + dowrap;
       } else {
-          document.getElementById('ll' + i).className = 'assplogline' + ((i % 2) + dowrap);
+          document.getElementById('ll' + i).className = 'spamboxlogline' + ((i % 2) + dowrap);
       }
     }
   }

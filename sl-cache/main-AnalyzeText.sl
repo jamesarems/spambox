@@ -13,7 +13,7 @@ package main; sub AnalyzeText {
     my $res = &ConfigAnalyze();
     my $sub = $qs{sub};
     my $style;
-    my $fil = "$base/images/assp.css";
+    my $fil = "$base/images/spambox.css";
     if($open->(my $GF,'<',$fil)) {
         $GF->binmode;
         $GF->read($style,[$stat->($fil)]->[7]);

@@ -9,7 +9,7 @@ package main; sub HMMcleanUp {
     return "!the! !geeting! !used! !was! helo $2" if $line =~ /^(helo\s+|ehlo\s+)(.+)$/io; # expand to fit in to 6 words (including the leading 'connected IP: ...'
     return $line if $line =~ /^(?:data|starttls)$/io;
     return if $line =~ /^mime-version:/io;
-    return if $line =~ /^x-assp[^():]+?:/io;
+    return if $line =~ /^x-spambox[^():]+?:/io;
     $line =~ s/by\s?\Q$myName\E.+//io;
     $line =~ s/\Q$myName\E with e?smtp.+//io;
     $line =~ s/helo=/helo= /ogi;

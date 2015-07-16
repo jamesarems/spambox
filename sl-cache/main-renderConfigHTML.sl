@@ -32,11 +32,11 @@ package main; sub renderConfigHTML {
   $NavMenu .= '
   <a href="top10stats" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Top 10 Stats</a><br />' if $DoT10Stat;
   $NavMenu .= '
-  <a href="statusassp?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Worker/DB/Regex Status</a><br />
+  <a href="statusspambox?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Worker/DB/Regex Status</a><br />
   <a href="shutdown_list?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="this monitor will slow down SPAMBOX dramaticly - use it careful" /> SMTP Connections </a>
   <a href="shutdown_list?nocache='.time.'&forceRefresh=1" target="_blank" onmouseover="showhint(\''.$ConnHint.'\', this, event, \'500px\', \'1\');return false;"><img height=12 width=12 src="' . $wikiinfo . '" /></a><br />
   <a href="shutdown"><img src="' . $noIcon . '" alt="noicon" /> Shutdown/Restart</a><br />
-  <a href="donations"><img src="' . $noIcon . '" alt="noicon" /> Donations</a><br /></div>';
+  <a href="github"><img src="' . $noIcon . '" alt="noicon" /> GitHUB</a><br /></div>';
  $JavaScript = "
 <script type=\"text/javascript\">
 <!--
@@ -244,7 +244,7 @@ function gotoAnchor(aname)
 {
 //    window.location.href = \"#\" + aname;       //
     var currloc = window.location.href.split('#')[0];
-    var re = /\\/(maillog|lists|recprepl|infostats|shutdown|analyze|donations)/;
+    var re = /\\/(maillog|lists|recprepl|infostats|shutdown|analyze|github)/;
     if (re.test(currloc))
     {
         window.location.href = window.location.protocol + '//' + window.location.host + '/#' + aname;
@@ -928,7 +928,7 @@ Cache-control: no-cache
   <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
   <META HTTP-EQUIV=\"Expires\" CONTENT=\"-1\">
   <title>Config SPAMBOX ($myName) Host: $localhostname @ $localhostip</title>
-  <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
+  <link rel=\"stylesheet\" href=\"get?file=images/spambox.css\" type=\"text/css\" />
   <link rel=\"shortcut icon\" href=\"get?file=images/favicon.ico\" />
 $JavaScript
 </head>
@@ -1013,9 +1013,9 @@ foreach (sort keys %Config1) {
   $headers .= '<table id="TopMenu" class="contentFoot" style="margin:0; text-align:left;" CELLSPACING=0 CELLPADDING=4 WIDTH="100%">
   <tr><td rowspan="3" align="left">';
   if (-e "$base/images/logo.gif") {
-      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"SPAMBOX\" /></a>";
+      $headers .= "<a href=\"http://spambox.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"SPAMBOX\" /></a>";
   } else {
-      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"SPAMBOX\" /></a>";
+      $headers .= "<a href=\"http://spambox.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"SPAMBOX\" /></a>";
   }
   $headers .= "</td><td rowspan=\"3\" align=\"left\" onmouseover=\"showhint(detectedBrowser,this, event, '450px', '')\">SPAMBOX version $version$modversion<br />";
 
@@ -1044,12 +1044,12 @@ foreach (sort keys %Config1) {
                        :
   '</td>';
  $headers .= '
-  <td><a href="statusassp?nocache='.time.'" target="_blank">Worker/DB/Regex Status</a></td>
+  <td><a href="statusspambox?nocache='.time.'" target="_blank">Worker/DB/Regex Status</a></td>
   </tr><tr>
   <td><a href="shutdown_list?nocache='.time.'" target="_blank">SMTP Connections </a>
   <a href="shutdown_list?nocache='.time.'&forceRefresh=1" target="_blank" onmouseover="showhint(\''.$ConnHint.'\', this, event, \'500px\', \'1\');return false;"><img height=12 width=12 src="' . $wikiinfo . '" /></a></td>
   <td><a href="shutdown">Shutdown/Restart</a></td>
-  <td><a href="donations">Donations</a>'.($codename?'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>'.$codename.'</b>':'').'</td>
+  <td><a href="github">GitHUB</a>'.($codename?'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>'.$codename.'</b>':'').'</td>
   </tr>
   </table>
 ';
@@ -1084,7 +1084,7 @@ foreach (sort keys %Config1) {
   <input type=\"button\" value=\"Apply\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;
 ";
  $headers .= "
-  <a href=\"./fc\" target=\"_blank\" onmouseover=\"showhint('start the assp file commander', this, event, '200px', '');return false;\"><img height=19 width=19 src=\"get?file=images/fc_main.png\" /></a>"
+  <a href=\"./fc\" target=\"_blank\" onmouseover=\"showhint('start the spambox file commander', this, event, '200px', '');return false;\"><img height=19 width=19 src=\"get?file=images/fc_main.png\" /></a>"
     if ($CanUseSPAMBOX_FC && &canUserDo($WebIP{$ActWebSess}->{user},'action','fc'));
  $headers .= "
 </div>
@@ -1228,15 +1228,8 @@ $headers .= "</div>
     $footers = "
 <div class=\"contentFoot\">
 <a href=\"remotesupport\" target=\"_blank\">Remote Support</a> |
-<a href=\"donations\">donations</a> |
-<a href=\"http://assp.cvs.sourceforge.net\" rel=\"external\" target=\"_blank\">development</a> |
-<a href=\"http://assp.sourceforge.net/cgi-bin/assp_stats\" rel=\"external\" target=\"_blank\">global stats</a> |
-<a href=\"http://sourceforge.net/p/assp/wiki/SPAMBOX_Documentation\" rel=\"external\" target=\"_blank\">docs</a> |
- <a href=\"http://sourceforge.net/mail/?group_id=69172\" rel=\"external\" target=\"_blank\">email lists</a> |
+<a href=\"github\">github</a> |
 
- <a href=\"http://sourceforge.net/p/assp/forum/\" rel=\"external\" target=\"_blank\">community forums</a> |
-
- <a href=\"http://sourceforge.net/p/assp/wiki/\" rel=\"external\" target=\"_blank\">wiki</a> |
  <a id=\"printLink\" href=\"javascript:void(processPrint());\">Print Config/Screen</a>
 </div>";
 if ($mobile) {
@@ -1264,7 +1257,7 @@ if ($mobile) {
 
     $kudos = '
 <div class="kudos">
- <a href="http://assp.cvs.sourceforge.net" rel="external" target="_blank">
+ <a href="http://spambox.cvs.sourceforge.net" rel="external" target="_blank">
  <img src="get?file=images/village.gif" alt="Development" height="31" width="31" /></a>
  <a href="http://sourceforge.net" rel="external" target="_blank">
  <img src="get?file=images/sourceforge-logo.gif" alt="SourceForge" height="31" width="88" /></a>

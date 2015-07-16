@@ -66,7 +66,7 @@ Content-type: text/html
 <!--
 var mydom = window.location.host;
 var myprot = '$prot';
-alert('Switched to ' + myprot + '//' + mydom + '/' + ' - Please wait some seconds to let assp finish change the configuration. It is recommended to restart SPAMBOX!');
+alert('Switched to ' + myprot + '//' + mydom + '/' + ' - Please wait some seconds to let spambox finish change the configuration. It is recommended to restart SPAMBOX!');
 window.location.href = myprot + '//' + mydom + '/$bl';
 // -->
 </script>

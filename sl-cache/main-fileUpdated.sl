@@ -10,7 +10,7 @@ package main; sub fileUpdated {
     return 1 unless $FileUpdate{"$fil$configname"};
     my ($old, $new) = ($FileUpdate{"$fil$configname"} , ftime($fil));
     $old = $FileUpdate{"$fil$configname"} = $new if (abs($old - $new) == 3600);  # DST hack
-    if ($configname eq 'asspCode' && $old != $new && $asspCodeMD5 eq eval{getMD5File($fil);}) {
+    if ($configname eq 'spamboxCode' && $old != $new && $spamboxCodeMD5 eq eval{getMD5File($fil);}) {
         $FileUpdate{"$fil$configname"} = $new;
         return 0;
     }

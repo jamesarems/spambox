@@ -5,7 +5,7 @@ package main; sub configChangeAutoReloadCfg {
     mlog(0,"AdminUpdate: $name changed from '$old' to '$new'") unless $init || $new eq $old;
     return '' if($init or $old eq $new);
     if ($new) {
-        $asspCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
+        $spamboxCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
     }
     $Config{AutoReloadCfg} = $AutoReloadCfg = $new;
     return '';

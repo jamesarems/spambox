@@ -5,7 +5,7 @@ package main; sub configChangeCpuAffinity {
     $new ||= (unpack("A1",${'X'})-3);
     if ($CanUseSysCpuAffinity) {
         if ($new ne $old) {
-            $Config{asspCpuAffinity} = $asspCpuAffinity = $new unless $WorkerNumber;
+            $Config{spamboxCpuAffinity} = $spamboxCpuAffinity = $new unless $WorkerNumber;
             my @oldcpus = eval{Sys::CpuAffinity::getAffinity($$);};
             my @newcpus = split(/[ ,]+/o,$new);
             my $success = eval{Sys::CpuAffinity::setAffinity($$, ($new == (unpack("A1",${'X'})-3)) ? $new : \@newcpus );};
@@ -16,17 +16,17 @@ package main; sub configChangeCpuAffinity {
                 my $num = scalar(@newcpus);
                 return '' if $num > 3;
                 if ($num > 2) {
-                    mlog(0,"info: assp uses $num CPU's - at least 4 CPU's are recommended") if $WorkerName eq 'init';
-                    return "info: assp uses $num CPU's - at least 4 CPU's are recommended";
+                    mlog(0,"info: spambox uses $num CPU's - at least 4 CPU's are recommended") if $WorkerName eq 'init';
+                    return "info: spambox uses $num CPU's - at least 4 CPU's are recommended";
                 } elsif ($num > 1) {
-                    mlog(0,"warning: assp uses $num CPU's - at least 4 CPU's are recommended") if $WorkerName eq 'init';
-                    return "warning: assp uses $num CPU's - at least 4 CPU's are recommended";
+                    mlog(0,"warning: spambox uses $num CPU's - at least 4 CPU's are recommended") if $WorkerName eq 'init';
+                    return "warning: spambox uses $num CPU's - at least 4 CPU's are recommended";
                 } else {
-                    mlog(0,"ERROR: assp uses only $num CPU's - THIS WILL NOT WORK - at least 4 CPU's are recommended") unless $WorkerNumber;
-                    return "<span class=\"negative\">ERROR: assp uses only $num CPU's - THIS WILL NOT WORK - at least 4 CPU's are recommended!</span>";
+                    mlog(0,"ERROR: spambox uses only $num CPU's - THIS WILL NOT WORK - at least 4 CPU's are recommended") unless $WorkerNumber;
+                    return "<span class=\"negative\">ERROR: spambox uses only $num CPU's - THIS WILL NOT WORK - at least 4 CPU's are recommended!</span>";
                 }
             } else {
-                $Config{asspCpuAffinity} = $asspCpuAffinity = $old;
+                $Config{spamboxCpuAffinity} = $spamboxCpuAffinity = $old;
                 return "<span class=\"negative\">failed to set CPU Affinity to '@newcpus' in worker $WorkerName! - $@</span>";
             }
         } else {

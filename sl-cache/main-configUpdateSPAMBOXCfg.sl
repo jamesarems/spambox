@@ -7,7 +7,7 @@ package main; sub configUpdateSPAMBOXCfg {
             &reloadConfigFile();
             $ConfigChanged = 0;
         }
-        $asspCFGTime = $FileUpdate{"$base/spambox.cfg$name"} = ftime("$base/spambox.cfg");
+        $spamboxCFGTime = $FileUpdate{"$base/spambox.cfg$name"} = ftime("$base/spambox.cfg");
     }
     return;
 }

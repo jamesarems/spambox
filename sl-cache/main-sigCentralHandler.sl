@@ -31,7 +31,7 @@ package main; sub sigCentralHandler {
     if ($sig =~ /abrt|break|quit|kill|term|int/io) {
       if ($WorkerNumber == 0) {
         &downSPAMBOX("restarting on signal $sig");
-        _assp_try_restart;
+        _spambox_try_restart;
       } else {
         $doShutdown = time + 15;
         threads->yield();

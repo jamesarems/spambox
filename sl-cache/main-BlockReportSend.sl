@@ -9,7 +9,7 @@ package main; sub BlockReportSend {
     $mailfrom = $EmailFrom if ( lc $mailfrom eq lc $EmailAdminReportsTo );
 
     if (! $CanUseNetSMTP) {
-        mlog(0,"error: Perl module Net::SMTP is not installed or disabled in configuration - assp is unable to send the BlockReport");
+        mlog(0,"error: Perl module Net::SMTP is not installed or disabled in configuration - spambox is unable to send the BlockReport");
         return;
     }
     
@@ -27,7 +27,7 @@ package main; sub BlockReportSend {
             $local = 0;
         }
     }
-    my $brmsgid = 'assp_bl_'.time.'_'.rand(1000).'@'.$myName;
+    my $brmsgid = 'spambox_bl_'.time.'_'.rand(1000).'@'.$myName;
 
     my $smtp;
     my $SMTPMOD;

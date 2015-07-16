@@ -6,8 +6,8 @@ package main; sub localdomains {
     my $hat; $hat = $1 if $h =~ /(\@[^@]*)/o;
     $h = $1 if $h =~ /\@([^@]*)/o;
 
-    return 1 if $h eq "assp.local";
-    return 1 if $h eq "assp-nospam.org";
+    return 1 if $h eq "spambox.local";
+    return 1 if $h eq "spambox-nospam.org";
 
     my ($EBRD) = $EmailBlockReportDomain =~ /^\@*([^@]*)$/o;
     return 1 if ($EBRD && lc($h) eq lc($EBRD));

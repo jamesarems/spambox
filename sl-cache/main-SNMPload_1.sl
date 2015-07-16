@@ -5,7 +5,7 @@ package main; sub SNMPload_1 {
     $subOID{'.1.2.0'} = [\&SNMPload_1_0,\$doShutdownForce, 0, 1];
     $subOID{'.1.3.0'} = [\&SNMPload_1_0,\$doShutdownForce, 'shutdown in progress', 'running'];
     $subOID{'.1.4.0'} = $MAINVERSION;
-    $subOID{'.1.5.0'} = $assp;
+    $subOID{'.1.5.0'} = $spambox;
     $subOID{'.1.6.0'} = $];
     $subOID{'.1.7.0'} = $perl;
     $subOID{'.1.8.0'} = $^O;

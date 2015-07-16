@@ -3,7 +3,7 @@ package main; sub downloadGripConf {
     d('downloadGripConf-start');
     my $ret;
     my $file = "$base/griplist.conf";
-    $ret = downloadHTTP("http://downloads.sourceforge.net/project/assp/griplist/griplist.conf",
+    $ret = downloadHTTP("http://downloads.sourceforge.net/project/spambox/griplist/griplist.conf",
                  $file,
                  0,
                  "griplist.conf",5,9,2,1);

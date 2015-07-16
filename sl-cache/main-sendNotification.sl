@@ -58,13 +58,13 @@ package main; sub sendNotification {
     $text .= "\r\n";           # end header
     my $sendbody;
     foreach (split(/\r?\n/o,$body)) {
-        $sendbody .= ( $_ ? assp_encode_Q(e8($_)) : '') . "\r\n";
+        $sendbody .= ( $_ ? spambox_encode_Q(e8($_)) : '') . "\r\n";
     }
     my $f;
     if ($file && $open->($f,"<",$file)) {
         while (<$f>) {
              s/\r?\n$//o;
-             $sendbody .= ( $_ ? assp_encode_Q(e8($_)) : '') . "\r\n";
+             $sendbody .= ( $_ ? spambox_encode_Q(e8($_)) : '') . "\r\n";
         }
         $f->close;
     }

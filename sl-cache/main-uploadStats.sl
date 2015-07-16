@@ -8,14 +8,14 @@ package main; sub uploadStats {
         $peeraddress = $user . $proxyserver;
         $hostaddress = $proxyserver;
         $connect =
-          'POST http://assp.sourceforge.net/cgi-bin/assp_stats HTTP/1.0';
+          'POST http://spambox.sourceforge.net/cgi-bin/spambox_stats HTTP/1.0';
         $target = $proxyserver;
  } else {
         mlog( 0, 'uploading stats via direct connection' ) if $MaintenanceLog;
-        $peeraddress = 'assp.sourceforge.net:80';
-        $hostaddress = 'assp.sourceforge.net';
-        $connect     = "POST /cgi-bin/assp_stats HTTP/1.1
-Host: assp.sourceforge.net";
+        $peeraddress = 'spambox.sourceforge.net:80';
+        $hostaddress = 'spambox.sourceforge.net';
+        $connect     = "POST /cgi-bin/spambox_stats HTTP/1.1
+Host: spambox.sourceforge.net";
         $target = $hostaddress;
  }
  my $s = $CanUseIOSocketINET6

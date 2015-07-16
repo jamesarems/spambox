@@ -66,7 +66,7 @@ package main; sub getline {
        if (${'etValencePB'}[0] || ${'etValencePB'}[1] || $emergency) {
            mlog($fh, "[EarlyTalker] got '$l1' from the client before the '220 ...' server greeting was sent - rejecting connection", 1) if $SessionLog;
            if ($emergency) {
-               mlog($fh, "[EarlyTalker] All connections from IP $this->{ip} will be rejected by assp for the next 15-30 minutes.", 1);
+               mlog($fh, "[EarlyTalker] All connections from IP $this->{ip} will be rejected by spambox for the next 15-30 minutes.", 1);
                NoLoopSyswrite($fh,$err."\r\n",0);
                $EmergencyBlock{$this->{ip}} = time;
                done($fh);
@@ -1840,7 +1840,7 @@ package main; sub getline {
                 sendque($fh,"250 OK\r\n");
                 return;
             }
-            ReturnMail($fh,$this->{mailfrom},"$base/$ReportFiles{EmailSenderNotOK}",'assp-error',\"\n");
+            ReturnMail($fh,$this->{mailfrom},"$base/$ReportFiles{EmailSenderNotOK}",'spambox-error',\"\n");
         	$this->{getline} = \&NullFromToData;
         	&NullFromToData($fh,$l);
         	mlog($fh,"denied connection to email interface ($uh) because EmailSenderNotOK - moved to NULL-connection",1);

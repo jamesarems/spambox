@@ -1,5 +1,5 @@
-#line 1 "sub main::assp_extract_ct_attribute_value"
-package main; sub assp_extract_ct_attribute_value {
+#line 1 "sub main::spambox_extract_ct_attribute_value"
+package main; sub spambox_extract_ct_attribute_value {
     my $value;
     my $tspecials = quotemeta '()<>@,;:\\"/[]?=';
     my $vspecials = quotemeta '()<>@,:\\"/[]?=';

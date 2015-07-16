@@ -65,7 +65,7 @@ package main; sub BombWeight_Run {
                 $found{$weight{highnam}} = $maxlengthweight;
                 $weight{matchlength} = '';
             } else {
-                mlog(0,"warning: maxSubjectLength is defined as '$maxSubjectLength' - but assp is unable to calculate a valid weight");
+                mlog(0,"warning: maxSubjectLength is defined as '$maxSubjectLength' - but spambox is unable to calculate a valid weight");
             }
             $text[0] = substr($text[0],0,$submaxlength);
             $text[1] = substr($text[1],0,$submaxlength) if $text[1];

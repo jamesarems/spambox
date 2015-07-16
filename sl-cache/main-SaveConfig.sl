@@ -53,6 +53,6 @@ package main; sub SaveConfig {
  
  rename("$base/spambox.cfg","$base/spambox.cfg.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg to $base/spambox.cfg.bak - $!");
  rename("$base/spambox.cfg.tmp","$base/spambox.cfg") or mlog(0,"error: unable to rename file $base/spambox.cfg.tmp to $base/spambox.cfg - $!");
- $asspCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
+ $spamboxCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
  mlog( 0, "finished saving config" ,1);
 }

@@ -27,12 +27,12 @@ package main; sub ConfigChangeSNMP {my ($name, $old, $new, $init)=@_;
                 &&
                 eval{$SNMPagent = NetSNMP::agent->new(
                             # makes the agent read a my_agent_name.conf file
-                            'Name' => "assp2_$myName",
+                            'Name' => "spambox2_$myName",
                             'AgentX' => 1
                             );
                 }
                 &&
-                eval{$SNMPagent->register("assp2-$myName", $SNMPBaseOID,\&SNMPhandler);}
+                eval{$SNMPagent->register("spambox2-$myName", $SNMPBaseOID,\&SNMPhandler);}
                 && ! $@
             ) {
                 mlog(0,"AdminUpdate: $name changed from $old to $new - agentX started") unless $init;

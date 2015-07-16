@@ -45,11 +45,11 @@ package main; sub StatsGetModules {
      }
      my $url = 'http://search.cpan.org/search?query='.$_;
      $url = 'http://www.oracle.com/technology/products/berkeley-db/' if ($_ eq 'BerkeleyDB_DBEngine');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'AsspSelfLoader');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'SPAMBOX_WordStem');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/filecommander/' if ($_ eq 'SPAMBOX_FC');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'SPAMBOX_SVG');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/Plugins/' if ($_ =~ /^Plugins/o);
+     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'AsspSelfLoader');
+     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'SPAMBOX_WordStem');
+     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/filecommander/' if ($_ eq 'SPAMBOX_FC');
+     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'SPAMBOX_SVG');
+     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/Plugins/' if ($_ =~ /^Plugins/o);
      my $prov = 'CPAN';
      $prov = 'oracle' if ($_ eq 'BerkeleyDB_DBEngine');
      $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'AsspSelfLoader' or $_ eq 'SPAMBOX_WordStem' or $_ eq 'SPAMBOX_FC' or $_ eq 'SPAMBOX_SVG');

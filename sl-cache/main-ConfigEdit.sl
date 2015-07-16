@@ -321,7 +321,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
                  if (   ($EmailErrorsModifyWhite == 1 || $EmailErrorsModifyNoP == 1 || matchSL( $to, 'EmailErrorsModifyPersBlack' ))
                      && $to
                      && &localmail($to)
-                     && $from && lc $from ne 'assp <>'
+                     && $from && lc $from ne 'spambox <>'
                      && ! &localmail($from)
                     )
                  {
@@ -359,7 +359,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
                      && $to
                      && &localmail($to)
                      && $from
-                     && lc $from ne 'assp <>'
+                     && lc $from ne 'spambox <>'
                      && ! &localmail($from)
                     )
                  {
@@ -515,7 +515,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
  if ($qs{note} eq '1') {
      my $currStat = &StatusSPAMBOX();
      if ($currStat =~ /not healthy/io) {
-       $s3 = '<a href="./statusassp" target="blank" title="SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status."><b><font color=\'red\'>&bull;';
+       $s3 = '<a href="./statusspambox" target="blank" title="SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status."><b><font color=\'red\'>&bull;';
        if (scalar keys %RegexError) {
            $s3 .= '&nbsp;-&nbsp; regex error in:&nbsp;';
            foreach(keys %RegexError) {

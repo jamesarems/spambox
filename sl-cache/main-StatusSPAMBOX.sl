@@ -151,7 +151,7 @@ package main; sub StatusSPAMBOX {
  }
 </script>
 ';
-#  <meta http-equiv="refresh" content="$refresh;url=/statusassp$query" />
+#  <meta http-equiv="refresh" content="$refresh;url=/statusspambox$query" />
 
 <<EOT;
 $headerHTTP
@@ -161,7 +161,7 @@ $headerDTDTransitional
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
   $focusJS
   <title>$currentPage SPAMBOX ($myName) Worker/DB/Regex Status</title>
-  <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
+  <link rel=\"stylesheet\" href=\"get?file=images/spambox.css\" type=\"text/css\" />
 </head>
 <body onfocus="tStart();" onblur="tStop();">
 <div id="cfgdiv">

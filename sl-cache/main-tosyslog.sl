@@ -25,7 +25,7 @@ package main; sub tosyslog {
    } elsif ($CanUseSyslog) {
        $isNix = 1;
        setlogsock('unix');
-       openlog('assp', 'pid,cons', 'mail');
+       openlog('spambox', 'pid,cons', 'mail');
        while (@$m) {
            my $msg = shift @$m;
            $msg =~ s/^\s+//o;

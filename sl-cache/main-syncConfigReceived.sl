@@ -60,7 +60,7 @@ package main; sub syncConfigReceived {
         next unless $var;
         if ($line =~ /^\s*#\s*UUID\s+(.+)$/o) {
             if (SPAMBOX::UUID::equal_uuids($UUID, $1)) {
-                mlog(0,"syncCFG: error: the sending host has the same UUID like this assp installation - this is a possible license violation - ignore the sync-file");
+                mlog(0,"syncCFG: error: the sending host has the same UUID like this spambox installation - this is a possible license violation - ignore the sync-file");
                 unlink $file;
                 return;
             }
@@ -108,7 +108,7 @@ package main; sub syncConfigReceived {
         return;
     }
     if ($File && $FileNoSync{$File}) {
-        mlog(0,"syncCFG: file $File received for $var - but ignored, because the current file contains '# assp-no-sync'");
+        mlog(0,"syncCFG: file $File received for $var - but ignored, because the current file contains '# spambox-no-sync'");
     }
     if (${$var} ne $val or $FileWritten) {
         my $ovar = ${$var};

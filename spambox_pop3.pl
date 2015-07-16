@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl
 # $Id: spambox_pop3.pl,v 1.14 2014/12/06 08:00:00 TE Exp $
 #
-# perl pop3 collector for assp
+# perl pop3 collector for spambox
 # (c) Thomas Eckardt 2010 under the terms of the GPL
 #
 # This program is free software; you can redistribute it and/or modify
@@ -104,7 +104,7 @@ if ($Config{adminusersdbpass} && $Config{adminusersdbpass} =~ /^(?:[a-fA-F0-9]{2
 # if POP3SSL is set 1 - POP3S will be done
 #
 
-if (! $preventFORK && ($spamboxCfgVersion =~ /^1/ or $Config{POP3fork})) {  # assp V1 will report what to do and fork and exit
+if (! $preventFORK && ($spamboxCfgVersion =~ /^1/ or $Config{POP3fork})) {  # spambox V1 will report what to do and fork and exit
     foreach my $accnt (keys %accounts) {                                 # V2 will fork if configured
         $accnt =~ s/\<\d+\>\:/:/;
         print "POP3: will collect messages for user $accnt to <$accounts{$accnt}->{'SMTPsendto'}> from host $accounts{$accnt}->{'POP3server'}\n" if $Config{MaintenanceLog};
@@ -459,14 +459,14 @@ sub new {
 
 sub _generate_sbox {
 	my $self = shift;
-	my $passphrase = shift;
-	if (ref ($passphrase)) {
-		@{$self->{SBOX}} = @$passphrase;
+	my $pspamboxhrase = shift;
+	if (ref ($pspamboxhrase)) {
+		@{$self->{SBOX}} = @$pspamboxhrase;
 	} else {
 		my ($i, $x, $y, $random, @tmp) = 0;
 		my @temp = (0..15);
-		for ($i=0; $i <= (length $passphrase); $i+=4)
-		    { $random = $random ^ (unpack 'L', pack 'a4', substr ($passphrase, $i, $i+4)) };
+		for ($i=0; $i <= (length $pspamboxhrase); $i+=4)
+		    { $random = $random ^ (unpack 'L', pack 'a4', substr ($pspamboxhrase, $i, $i+4)) };
 		srand $random;
 		for ($i=0; $i < 8; $i++) {
             @tmp = @temp;
@@ -477,13 +477,13 @@ sub _generate_sbox {
 }
 
 sub _generate_keys {
-	my ($self, $passphrase) = @_;
-	if (ref ($passphrase)) {
-		@{$self->{KEY}} = @$passphrase;
+	my ($self, $pspamboxhrase) = @_;
+	if (ref ($pspamboxhrase)) {
+		@{$self->{KEY}} = @$pspamboxhrase;
 	} else {
 		my ($i, $random) = 0;
-		for ($i=0; $i <= (length $passphrase); $i+=4)
-		    { $random = $random ^ (unpack 'L', pack 'a4', substr ($passphrase, $i, $i+4))};
+		for ($i=0; $i <= (length $pspamboxhrase); $i+=4)
+		    { $random = $random ^ (unpack 'L', pack 'a4', substr ($pspamboxhrase, $i, $i+4))};
 		srand $random; map { $self->{KEY}[$_] = _rand (2**32) } (0..7);
 	}
 }

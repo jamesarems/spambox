@@ -15,13 +15,13 @@ package main; sub downloadVersionFile {
     $ret = downloadHTTP("$versionURL",
                  $file,
                  \$NextVersionFileDownload,
-                 "assp version check",16,12,4,4) if $file;
+                 "spambox version check",16,12,4,4) if $file;
     if ($ret) {
         &UpdateDownloadURLs();
         downloadHTTP("$ChangeLogURL",
                      "$base/docs/changelog.txt",
                      0,
-                     "assp change log",16,12,4,4);
+                     "spambox change log",16,12,4,4);
     }
     if (open my $VS ,'<' ,"$file") {
         while (<$VS>) {
@@ -40,7 +40,7 @@ package main; sub downloadVersionFile {
                 $stv =~ s/\s|\(|\)//gio;
                 $stv = 0 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
                 if ($avv gt $stv) {
-                    mlog(0,"Info: new assp version $availversion is available for download at $NewAsspURL");
+                    mlog(0,"Info: new spambox version $availversion is available for download at $NewAsspURL");
                     $ret = 1;
                 } else {
                     $ret = 0;

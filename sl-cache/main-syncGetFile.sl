@@ -5,7 +5,7 @@ package main; sub syncGetFile {
     my $ffil = $file;
     $ffil="$base/$ffil" if $ffil!~/^\Q$base\E/o;
     if ($FileNoSync{$ffil}) {
-        mlog(0,"syncCFG: '# assp-no-sync' defined - synchronization ignored for file $base/$ffil");
+        mlog(0,"syncCFG: '# spambox-no-sync' defined - synchronization ignored for file $base/$ffil");
         return;
     }
     my $body;

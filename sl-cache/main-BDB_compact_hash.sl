@@ -18,7 +18,7 @@ package main; sub BDB_compact_hash {
     $timeout ||= 1000000; # 1 second
     $hash{compact_timeout} = $timeout;
 
-    if ("$$dbo" =~ /assp::/io) {
+    if ("$$dbo" =~ /spambox::/io) {
         eval (<<'EOT');
              my $lock;
              $lock = ${$dbo}->{hashobj}->cds_lock() if $main::lockBDB && ${$dbo}->{hashobj}->cds_enabled();

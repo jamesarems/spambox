@@ -50,7 +50,7 @@ package main; sub ThreadCompileAllRE {
         'TLStoProxyListenPorts' => 'Initializing',
         'MaxAllowedDups' => 'Initializing',
         'POP3ConfigFile' => 'Initializing',
-        'asspCpuAffinity' => 'Initializing'
+        'spamboxCpuAffinity' => 'Initializing'
     );
     @PossibleOptionFiles=();
     for my $idx (0...$#ConfigArray) {
