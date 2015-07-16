@@ -1,7 +1,6 @@
 # SpambOx
 Opensource Anti spam server.
 
-We need more eye catching web gui.
 Under development.
 
 #Installation
