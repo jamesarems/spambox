@@ -112,3 +112,8 @@ Thu Jul 16 15:49:26 2015:   failed to open option list file for reading '/root/s
 Thu Jul 16 15:49:26 2015:   failed to open option list file for reading '/root/spambox/files/MaxSize.txt' (MaxSizeAdr): No such file or directory
 Thu Jul 16 15:49:26 2015:   failed to open option list file for reading '/root/spambox/files/MaxSizeExt.txt' (MaxSizeExternalAdr): No such file or directory
 Thu Jul 16 15:49:27 2015:   failed to open option list file for reading '/root/spambox/files/bombskipheadertagre.txt' (bombSkipHeaderTagRe): No such file or directory
+Thu Jul 16 15:53:07 2015:   failed to open option list file for reading '/root/spambox/files/MaxRealSize.txt' (MaxRealSizeAdr): No such file or directory
+Thu Jul 16 15:53:07 2015:   failed to open option list file for reading '/root/spambox/files/MaxRealSizeExt.txt' (MaxRealSizeExternalAdr): No such file or directory
+Thu Jul 16 15:53:07 2015:   failed to open option list file for reading '/root/spambox/files/MaxSize.txt' (MaxSizeAdr): No such file or directory
+Thu Jul 16 15:53:07 2015:   failed to open option list file for reading '/root/spambox/files/MaxSizeExt.txt' (MaxSizeExternalAdr): No such file or directory
+Thu Jul 16 15:53:08 2015:   failed to open option list file for reading '/root/spambox/files/bombskipheadertagre.txt' (bombSkipHeaderTagRe): No such file or directory

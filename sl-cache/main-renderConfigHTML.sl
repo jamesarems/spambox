@@ -601,7 +601,6 @@ function posLeft() {return typeof window.pageXOffset != \'undefined\' ? window.p
 function posTop() {return typeof window.pageYOffset != \'undefined\' ? window.pageYOffset: document.documentElement.scrollTop?
  document.documentElement.scrollTop: document.body.scrollTop? document.body.scrollTop:0;}
 
-var xxx = 0; var yyy = 0; var dist = distX = distY = 0; var stepx = '.$IndexSlideSpeed.'; var stepy = 0; var mn = \'smenu\';
 
 function disableSlide() {setObjVis(mn,\'hidden\');}
 function enableSlide() {setObjVis(mn,\'visible\');}
