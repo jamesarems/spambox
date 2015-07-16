@@ -6285,3 +6285,686 @@ Jul-16-15 15:13:50 [Worker_10000] Info: compacting all BerkeleyDB hashes on disk
 Jul-16-15 15:26:46 [Main_Thread] Admin connection from user root on host 10.254.254.51:38266; page:/; session-ID:d269ea10e86992a4e5e2f0dc12d825a4;
 Jul-16-15 15:28:54 [Worker_10000] Info: synchronizing all BerkeleyDB hashes to disk
 Jul-16-15 15:28:54 [Worker_10000] Info: compacting all BerkeleyDB hashes on disk
+Jul-16-15 15:35:26 [Worker_10000] Saving whitelist
+Jul-16-15 15:35:26 [Worker_10000] Info: start saving Whitelist
+Jul-16-15 15:35:26 [Worker_10000] Info: 0 records of Whitelist saved
+Jul-16-15 15:35:26 [Worker_10000] Saving redlist
+Jul-16-15 15:35:26 [Worker_10000] Info: start saving Redlist
+Jul-16-15 15:35:26 [Worker_10000] Info: 0 records of Redlist saved
+Jul-16-15 15:43:53 [Worker_10000] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:43:53 [Worker_10000] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:43:58 [Worker_10000] Info: synchronizing all BerkeleyDB hashes to disk
+Jul-16-15 15:43:58 [Worker_10000] Info: compacting all BerkeleyDB hashes on disk
+Jul-16-15 15:44:21 [Main_Thread] Admin connection from user root on host 10.254.254.51:38350; page:/quit; session-ID:754e8d7eea07b2af4302271a1e4854e1;
+Jul-16-15 15:44:21 [Main_Thread] Quit requested from admin interface
+Jul-16-15 15:44:21 [Main_Thread] Initializing shutdown sequence
+Jul-16-15 15:44:21 [Shutdown] Info: removing all SMTP and Proxy listeners
+Jul-16-15 15:44:21 [Worker_4] Worker_4 finished
+Jul-16-15 15:44:21 [Worker_1] Worker_1 finished
+Jul-16-15 15:44:21 [Worker_3] Worker_3 finished
+Jul-16-15 15:44:21 [Worker_2] Worker_2 finished
+Jul-16-15 15:44:21 [Shutdown] Waiting for all SMTP-Workers to be finished
+Jul-16-15 15:44:21 [Worker_5] Worker_5 finished
+Jul-16-15 15:44:22 [Shutdown] SMTP Workers finished
+Jul-16-15 15:44:22 [Shutdown] Waiting for high Workers to be finished
+Jul-16-15 15:44:22 [Worker_10000] Worker_10000 finished
+Jul-16-15 15:44:25 [Worker_10001] Worker_10001 finished
+Jul-16-15 15:44:26 [Shutdown] High workers finished work
+Jul-16-15 15:44:26 [Shutdown] Saving whitelist
+Jul-16-15 15:44:26 [Shutdown] Info: start saving Whitelist
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of Whitelist saved
+Jul-16-15 15:44:26 [Shutdown] Saving redlist
+Jul-16-15 15:44:26 [Shutdown] Info: start saving Redlist
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of Redlist saved
+Jul-16-15 15:44:26 [Shutdown] Saving delaying records
+Jul-16-15 15:44:26 [Shutdown] Info: start saving Delay
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of Delay saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving DelayWhite
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of DelayWhite saved
+Jul-16-15 15:44:26 [Shutdown] Saving ldaplist
+Jul-16-15 15:44:26 [Shutdown] Info: start saving LDAPlist
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of LDAPlist saved
+Jul-16-15 15:44:26 [Shutdown] Saving penalty records
+Jul-16-15 15:44:26 [Shutdown] Info: start saving PBBlack
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of PBBlack saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving PBWhite
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of PBWhite saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving PBTrap
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of PBTrap saved
+Jul-16-15 15:44:26 [Shutdown] Saving cache records
+Jul-16-15 15:44:26 [Shutdown] Info: start saving RBLCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of RBLCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving URIBLCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of URIBLCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving SPFCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of SPFCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving PTRCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of PTRCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving MXACache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of MXACache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving SBCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of SBCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving RWLCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of RWLCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving DKIMCache
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of DKIMCache saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving BATVTag
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of BATVTag saved
+Jul-16-15 15:44:26 [Shutdown] Info: start saving BackDNS
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of BackDNS saved
+Jul-16-15 15:44:26 [Shutdown] Saving personal Black records
+Jul-16-15 15:44:26 [Shutdown] Info: start saving PersBlack
+Jul-16-15 15:44:26 [Shutdown] Info: 0 records of PersBlack saved
+Jul-16-15 15:44:26 [Shutdown] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:44:26 [Shutdown] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:44:26 [Shutdown] Closing all databases
+Jul-16-15 15:44:26 [Shutdown] Info: removing all WEB listeners
+Jul-16-15 15:44:26 [Shutdown] Info: shutdown reason was: quit requested from admin interface
+Jul-16-15 15:44:26 [Shutdown] SPAMBOX finished work
+Jul-16-15 15:47:25 [startup] Starting in console mode
+Jul-16-15 15:47:25 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux) initializing 
+Jul-16-15 15:47:25 [startup] Info: registered encrypted POP3ConfigFile file /root/spambox/files/pop3cfg.txt
+Jul-16-15 15:47:25 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSize.txt' (MaxRealSizeAdr): No such file or directory
+Jul-16-15 15:47:25 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSizeExt.txt' (MaxRealSizeExternalAdr): No such file or directory
+Jul-16-15 15:47:25 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSize.txt' (MaxSizeAdr): No such file or directory
+Jul-16-15 15:47:25 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSizeExt.txt' (MaxSizeExternalAdr): No such file or directory
+Jul-16-15 15:47:25 [startup] ERROR: general syntax error in recipient replacement rule 
+Jul-16-15 15:47:25 [startup] Info: no valid recipient replacement rule found - 1 invalid rules skipped
+Jul-16-15 15:47:25 [startup] Info: Regex invalidFormatHeloRe: 3 weighted regular expression defined
+Jul-16-15 15:47:26 [startup] Warning: MyCountryCodeRe is currently not configured
+Jul-16-15 15:47:26 [startup] Info: MyCountryCodeRe is now set to '' - resolved by SenderBase
+Jul-16-15 15:47:26 [startup] Info: Regex SuspiciousVirus: 16 weighted regular expression defined
+Jul-16-15 15:47:26 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/bombskipheadertagre.txt' (bombSkipHeaderTagRe): No such file or directory
+Jul-16-15 15:47:26 [startup] Warning: NO MSGIDsig-secrets activated - MSGIDsig-check is now disabled  : 10 records ignored because of wrong syntax or using default values : 0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9
+Jul-16-15 15:47:26 [startup] Info: 10 BATV-secrets activated
+Jul-16-15 15:47:26 [startup] Info: switched (DNS) nameserver order from  to 8.8.8.8
+Jul-16-15 15:47:26 [startup] Info: an SPAMBOX restart will be done using the AutoRestartCmd
+Jul-16-15 15:47:26 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux)running on server: git.ipt.com (5.22.149.135)
+Jul-16-15 15:47:26 [startup] Info: unicode support is available on that system
+Jul-16-15 15:47:26 [startup] Info: this system uses little-endianess
+Jul-16-15 15:47:26 [init] Threads module 1.87 installed 
+Jul-16-15 15:47:26 [init] Threads::shared module 1.43 installed 
+Jul-16-15 15:47:26 [init] Thread::Queue module 3.05 installed 
+Jul-16-15 15:47:26 [init] IO::Poll module 0.09 installed 
+Jul-16-15 15:47:26 [init] IO::Select module 1.21 installed 
+Jul-16-15 15:47:26 [init] SPAMBOX is using IOEngine - Poll
+Jul-16-15 15:47:26 [init] Thread::State module version 0.09 installed and available
+Jul-16-15 15:47:26 [init] IO::Socket::INET6 module is not detected ( enableINET6 is not set ).
+Jul-16-15 15:47:26 [init] File::Scan::ClamAV module version 1.93 installed but not available, error: Cannot connect to unix socket '/tmp/clamd': connect: No such file or directory
+Jul-16-15 15:47:26 [init] Net::LDAP module version 0.56 installed and available
+Jul-16-15 15:47:26 [init] Net::DNS module version 0.72 installed and available
+Jul-16-15 15:47:26 [init] Net::SMTP module version 2.31 installed and available
+Jul-16-15 15:47:26 [init] Net::SMTP::SSL module version 1.02 installed and available
+Jul-16-15 15:47:26 [init] NetSNMP::agent module is disabled in config.
+Jul-16-15 15:47:26 [init] Mail::SPF::Query module version 1.999001 installed and available
+Jul-16-15 15:47:26 [init] Mail::SPF module version 2.008 installed and available
+Jul-16-15 15:47:26 [init] Compress::Zlib module version 2.061 installed - HTTP compression available
+Jul-16-15 15:47:26 [init] Digest::MD5 module version 2.52 installed - delaying can use MD5 keys for hashes
+Jul-16-15 15:47:26 [init] Digest::SHA1 module version 2.13 installed - BATV and FBMTV check available
+Jul-16-15 15:47:26 [init] File::ReadBackwards module version 1.05 installed - searching of log files enabled
+Jul-16-15 15:47:26 [init] Time::HiRes module version 1.9725 installed - CPU usage statistics available
+Jul-16-15 15:47:26 [init] Sys::Syslog module version 0.33 installed - Unix centralized logging enabled
+Jul-16-15 15:47:26 [init] Unicode::GCString module version 2013.10 installed - can detect east asian language strings as sequence of UAX #29 Grapheme Clusters to analyze Bayes and HMM
+Jul-16-15 15:47:26 [init] Unicode::Normalize module is installed and 'unicodeNormalize' is enabled - NFKC unicode normalization is globaly enabled
+Jul-16-15 15:47:26 [init] Text::Unidecode module version 0.04 installed - can transliterate unicode characters to ASCII
+Jul-16-15 15:47:26 [init] Tie::RDBM module version 0.73 installed - database usage available
+Jul-16-15 15:47:26 [init] DB_File module is disabled in config - DB_File (Berkeley V1) database usage not available
+Jul-16-15 15:47:26 [init] BerkeleyDB module version 0.51 installed - Berkeley database usage available
+Jul-16-15 15:47:26 [init] BerkeleyDB DB-version 5.3 / Berkeley DB 5.3.21: (May 11, 2012) is installed
+Jul-16-15 15:47:26 [init] BerkeleyDB maximum cache size is set to 50MB
+Jul-16-15 15:47:26 [init] Info: griplist is using basic 'orderedtie' in file /root/spambox/griplist
+Jul-16-15 15:47:26 [init] Net::CIDR::Lite module version 0.21 installed - hyphenated IP address range available
+Jul-16-15 15:47:26 [init] NetAddr::IP::Lite module version 1.50 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:47:26 [init] Net::IP module version 1.26 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:47:26 [init] LWP::Simple module version 6.00 installed - procedural LWP interface available
+Jul-16-15 15:47:26 [init] Email::MIME module version 1.926 installed - MIME charset decoding and conversion interface and attachment detection available
+Jul-16-15 15:47:26 [init] MIME::Types module version 1.38 installed - TNEF conversion may possible
+Jul-16-15 15:47:26 [init] Email::Send module version 2.199 installed - sending .eml files available
+Jul-16-15 15:47:26 [init] Convert::TNEF module is disabled in config - TNEF conversion not available
+Jul-16-15 15:47:26 [init] Mail::DKIM::Verifier module version 0.39 installed - DKIM verification is available
+Jul-16-15 15:47:26 [init] Schedule::Cron module version 1.01 installed - RebuildSpamdb Scheduler is available
+Jul-16-15 15:47:26 [init] Sys::MemInfo module version 0.91 installed - memory calculation is available
+Jul-16-15 15:47:26 [init] Sys::CpuAffinity module version 1.06 installed - setting CPU Affinty is available - this system has 2 CPU's
+Jul-16-15 15:47:26 [init] The Cpu Affinity of spambox is currently '0 1'
+Jul-16-15 15:47:26 [init] Authen::SASL module version 2.15 installed - SMTP AUTH is available
+Jul-16-15 15:47:26 [init] Regexp::Optimizer module version 0.23 installed - default Regular Expression Optimization is available
+Jul-16-15 15:47:26 [init] AsspSelfLoader module version 2.03 installed - SPAMBOX Code Load Optimization is available
+Jul-16-15 15:47:26 [init] SPAMBOX_WordStem module is not installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available
+Jul-16-15 15:47:26 [init] SPAMBOX_FC module is not installed - SPAMBOX file commander is not available
+Jul-16-15 15:47:26 [init] SPAMBOX_SVG module is not installed - SPAMBOX graphical STATS are not available
+Jul-16-15 15:47:26 [init] IO::Socket::SSL module version 1.94 installed - https and TLS/SSL is possible
+Jul-16-15 15:47:26 [init] Found valid certificate and private key file - https and TLS/SSL is available
+Jul-16-15 15:47:26 [init] Warning: There were module load errors detected - look in to file /root/spambox/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.
+Jul-16-15 15:47:26 [init] Warning: RelayOnlyLocalSender nor RelayOnlyLocalDomains is enabled!
+Jul-16-15 15:47:26 [init] Warning: DoLocalSenderAddress nor DoLocalSenderDomain is enabled!
+Jul-16-15 15:47:26 [init] Error: internal public license is not valid
+Jul-16-15 15:47:26 [init] Info: 0 licenses registered
+Jul-16-15 15:47:26 [init] Info: the DBI connection string is set to: 'DBI:mysql:database=;host='
+Jul-16-15 15:47:26 [init] Info: start loading Whitelist from /root/spambox/whitelist with approx. 128
+Jul-16-15 15:47:26 [init] Info: Whitelist loaded from /root/spambox/whitelist with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading PersBlack from /root/spambox/persblack with approx. 128
+Jul-16-15 15:47:26 [init] Info: PersBlack loaded from /root/spambox/persblack with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading Redlist from /root/spambox/redlist with approx. 128
+Jul-16-15 15:47:26 [init] Info: Redlist loaded from /root/spambox/redlist with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading Delay from /root/spambox/delaydb with approx. 128
+Jul-16-15 15:47:26 [init] Info: Delay loaded from /root/spambox/delaydb with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading DelayWhite from /root/spambox/delaydb.white with approx. 128
+Jul-16-15 15:47:26 [init] Info: DelayWhite loaded from /root/spambox/delaydb.white with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading PBWhite from /root/spambox/pb/pbdb.white.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: PBWhite loaded from /root/spambox/pb/pbdb.white.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading PBBlack from /root/spambox/pb/pbdb.black.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: PBBlack loaded from /root/spambox/pb/pbdb.black.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading RBLCache from /root/spambox/pb/pbdb.rbl.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: RBLCache loaded from /root/spambox/pb/pbdb.rbl.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading URIBLCache from /root/spambox/pb/pbdb.uribl.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: URIBLCache loaded from /root/spambox/pb/pbdb.uribl.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading PTRCache from /root/spambox/pb/pbdb.ptr.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: PTRCache loaded from /root/spambox/pb/pbdb.ptr.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading MXACache from /root/spambox/pb/pbdb.mxa.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: MXACache loaded from /root/spambox/pb/pbdb.mxa.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading RWLCache from /root/spambox/pb/pbdb.rwl.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: RWLCache loaded from /root/spambox/pb/pbdb.rwl.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading SPFCache from /root/spambox/pb/pbdb.spf.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: SPFCache loaded from /root/spambox/pb/pbdb.spf.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading SBCache from /root/spambox/pb/pbdb.sb.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: SBCache loaded from /root/spambox/pb/pbdb.sb.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading PBTrap from /root/spambox/pb/pbdb.trap.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: PBTrap loaded from /root/spambox/pb/pbdb.trap.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading DKIMCache from /root/spambox/pb/pbdb.dkim.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: DKIMCache loaded from /root/spambox/pb/pbdb.dkim.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading BATVTag from /root/spambox/pb/pbdb.batv.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: BATVTag loaded from /root/spambox/pb/pbdb.batv.db with 0 records
+Jul-16-15 15:47:26 [init] Info: start loading BackDNS from /root/spambox/pb/pbdb.back.db with approx. 128
+Jul-16-15 15:47:26 [init] Info: BackDNS loaded from /root/spambox/pb/pbdb.back.db with 0 records
+Jul-16-15 15:47:26 [init] Warning: unable to open /root/spambox/spamdb to load Spamdb
+Jul-16-15 15:47:26 [init] Warning: unable to open /root/spambox/spamdb.helo to load HeloBlack
+Jul-16-15 15:47:26 [init] Info: start loading LDAPlist from /root/spambox/ldaplist with approx. 128
+Jul-16-15 15:47:26 [init] Info: LDAPlist loaded from /root/spambox/ldaplist with 0 records
+Jul-16-15 15:47:26 [init] Starting maintenance worker thread [10000] - ThreadCycleTime is set to 3000 microseconds
+Jul-16-15 15:47:27 [Worker_10000] Info: switched (DNS) nameserver order from 8.8.8.8 to 8.8.8.8
+Jul-16-15 15:47:27 [Worker_10000] Worker_10000 started
+Jul-16-15 15:47:27 [Worker_10000] Info: start saving PersBlack
+Jul-16-15 15:47:27 [Worker_10000] Info: 0 records of PersBlack saved
+Jul-16-15 15:47:27 [Worker_10000] Info: last full Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:47:27 [Worker_10000] Info: last delta Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:47:27 [Worker_10000] Uploading stats via direct connection
+Jul-16-15 15:47:27 [init] Starting SMTP-worker-threads with ThreadCycleTime set to 3000 microseconds
+Jul-16-15 15:47:27 [init] Starting communication worker threads [1 to 5]
+Jul-16-15 15:47:27 [Worker_1] Worker_1 started
+Jul-16-15 15:47:27 [Worker_2] Worker_2 started
+Jul-16-15 15:47:28 [Worker_3] Worker_3 started
+Jul-16-15 15:47:28 [Worker_4] Worker_4 started
+Jul-16-15 15:47:28 [Worker_5] Worker_5 started
+Jul-16-15 15:47:28 [init] Starting rebuild SpamDB worker thread [10001] - ThreadCycleTime is set to 30 microseconds
+Jul-16-15 15:47:29 [Worker_10001] Worker_10001 started
+Jul-16-15 15:47:29 [Worker_10001] Info: found module /root/spambox/lib/rebuildspamdb.pm version 7.11
+Jul-16-15 15:47:30 [init] All Threads are started
+Jul-16-15 15:47:30 [init] Info: HMMdb is using 'BerkeleyDB' version 5.3 in file /root/spambox/HMMdb.bdb, because HMMusesBDB is set to ON
+Jul-16-15 15:47:30 [init] Warning: Bayesian spam database has only 0 records
+Jul-16-15 15:47:30 [init] Warning: whitelist has only 0 records: (ignore if this is a new install)
+Jul-16-15 15:47:30 [init] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:47:30 [init] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:47:30 [init] Error: couldn't create server socket on port '25' -- maybe another service is running or I'm not root (uid=0)? -- or a wrong IP address is defined? -- Address already in use
+Jul-16-15 15:47:30 [init] Listening for admin HTTPS connections on 0.0.0.0:8090
+Jul-16-15 15:47:30 [init] Listening for stat HTTPS connections on 0.0.0.0:8091
+Jul-16-15 15:47:30 [init] Current PID: 8330
+Jul-16-15 15:47:30 [init] Info: command queue released
+Jul-16-15 15:47:50 [startup] Starting in console mode
+Jul-16-15 15:47:50 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux) initializing 
+Jul-16-15 15:47:50 [startup] Info: registered encrypted POP3ConfigFile file /root/spambox/files/pop3cfg.txt
+Jul-16-15 15:47:50 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSize.txt' (MaxRealSizeAdr): No such file or directory
+Jul-16-15 15:47:50 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSizeExt.txt' (MaxRealSizeExternalAdr): No such file or directory
+Jul-16-15 15:47:50 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSize.txt' (MaxSizeAdr): No such file or directory
+Jul-16-15 15:47:50 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSizeExt.txt' (MaxSizeExternalAdr): No such file or directory
+Jul-16-15 15:47:50 [startup] ERROR: general syntax error in recipient replacement rule 
+Jul-16-15 15:47:50 [startup] Info: no valid recipient replacement rule found - 1 invalid rules skipped
+Jul-16-15 15:47:50 [startup] Info: Regex invalidFormatHeloRe: 3 weighted regular expression defined
+Jul-16-15 15:47:51 [startup] Warning: MyCountryCodeRe is currently not configured
+Jul-16-15 15:47:51 [startup] Info: MyCountryCodeRe is now set to '' - resolved by SenderBase
+Jul-16-15 15:47:51 [startup] Info: Regex SuspiciousVirus: 16 weighted regular expression defined
+Jul-16-15 15:47:51 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/bombskipheadertagre.txt' (bombSkipHeaderTagRe): No such file or directory
+Jul-16-15 15:47:51 [startup] Warning: NO MSGIDsig-secrets activated - MSGIDsig-check is now disabled  : 10 records ignored because of wrong syntax or using default values : 0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9
+Jul-16-15 15:47:51 [startup] Info: 10 BATV-secrets activated
+Jul-16-15 15:47:51 [startup] Info: switched (DNS) nameserver order from  to 8.8.8.8
+Jul-16-15 15:47:51 [startup] Info: an SPAMBOX restart will be done using the AutoRestartCmd
+Jul-16-15 15:47:52 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux)running on server: git.ipt.com (5.22.149.135)
+Jul-16-15 15:47:52 [startup] Info: unicode support is available on that system
+Jul-16-15 15:47:52 [startup] Info: this system uses little-endianess
+Jul-16-15 15:47:52 [init] Threads module 1.87 installed 
+Jul-16-15 15:47:52 [init] Threads::shared module 1.43 installed 
+Jul-16-15 15:47:52 [init] Thread::Queue module 3.05 installed 
+Jul-16-15 15:47:52 [init] IO::Poll module 0.09 installed 
+Jul-16-15 15:47:52 [init] IO::Select module 1.21 installed 
+Jul-16-15 15:47:52 [init] SPAMBOX is using IOEngine - Poll
+Jul-16-15 15:47:52 [init] Thread::State module version 0.09 installed and available
+Jul-16-15 15:47:52 [init] IO::Socket::INET6 module is not detected ( enableINET6 is not set ).
+Jul-16-15 15:47:52 [init] File::Scan::ClamAV module version 1.93 installed but not available, error: Cannot connect to unix socket '/tmp/clamd': connect: No such file or directory
+Jul-16-15 15:47:52 [init] Net::LDAP module version 0.56 installed and available
+Jul-16-15 15:47:52 [init] Net::DNS module version 0.72 installed and available
+Jul-16-15 15:47:52 [init] Net::SMTP module version 2.31 installed and available
+Jul-16-15 15:47:52 [init] Net::SMTP::SSL module version 1.02 installed and available
+Jul-16-15 15:47:52 [init] NetSNMP::agent module is disabled in config.
+Jul-16-15 15:47:52 [init] Mail::SPF::Query module version 1.999001 installed and available
+Jul-16-15 15:47:52 [init] Mail::SPF module version 2.008 installed and available
+Jul-16-15 15:47:52 [init] Compress::Zlib module version 2.061 installed - HTTP compression available
+Jul-16-15 15:47:52 [init] Digest::MD5 module version 2.52 installed - delaying can use MD5 keys for hashes
+Jul-16-15 15:47:52 [init] Digest::SHA1 module version 2.13 installed - BATV and FBMTV check available
+Jul-16-15 15:47:52 [init] File::ReadBackwards module version 1.05 installed - searching of log files enabled
+Jul-16-15 15:47:52 [init] Time::HiRes module version 1.9725 installed - CPU usage statistics available
+Jul-16-15 15:47:52 [init] Sys::Syslog module version 0.33 installed - Unix centralized logging enabled
+Jul-16-15 15:47:52 [init] Unicode::GCString module version 2013.10 installed - can detect east asian language strings as sequence of UAX #29 Grapheme Clusters to analyze Bayes and HMM
+Jul-16-15 15:47:52 [init] Unicode::Normalize module is installed and 'unicodeNormalize' is enabled - NFKC unicode normalization is globaly enabled
+Jul-16-15 15:47:52 [init] Text::Unidecode module version 0.04 installed - can transliterate unicode characters to ASCII
+Jul-16-15 15:47:52 [init] Tie::RDBM module version 0.73 installed - database usage available
+Jul-16-15 15:47:52 [init] DB_File module is disabled in config - DB_File (Berkeley V1) database usage not available
+Jul-16-15 15:47:52 [init] BerkeleyDB module version 0.51 installed - Berkeley database usage available
+Jul-16-15 15:47:52 [init] BerkeleyDB DB-version 5.3 / Berkeley DB 5.3.21: (May 11, 2012) is installed
+Jul-16-15 15:47:52 [init] BerkeleyDB maximum cache size is set to 50MB
+Jul-16-15 15:47:52 [init] Info: griplist is using basic 'orderedtie' in file /root/spambox/griplist
+Jul-16-15 15:47:52 [init] Net::CIDR::Lite module version 0.21 installed - hyphenated IP address range available
+Jul-16-15 15:47:52 [init] NetAddr::IP::Lite module version 1.50 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:47:52 [init] Net::IP module version 1.26 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:47:52 [init] LWP::Simple module version 6.00 installed - procedural LWP interface available
+Jul-16-15 15:47:52 [init] Email::MIME module version 1.926 installed - MIME charset decoding and conversion interface and attachment detection available
+Jul-16-15 15:47:52 [init] MIME::Types module version 1.38 installed - TNEF conversion may possible
+Jul-16-15 15:47:52 [init] Email::Send module version 2.199 installed - sending .eml files available
+Jul-16-15 15:47:52 [init] Convert::TNEF module is disabled in config - TNEF conversion not available
+Jul-16-15 15:47:52 [init] Mail::DKIM::Verifier module version 0.39 installed - DKIM verification is available
+Jul-16-15 15:47:52 [init] Schedule::Cron module version 1.01 installed - RebuildSpamdb Scheduler is available
+Jul-16-15 15:47:52 [init] Sys::MemInfo module version 0.91 installed - memory calculation is available
+Jul-16-15 15:47:52 [init] Sys::CpuAffinity module version 1.06 installed - setting CPU Affinty is available - this system has 2 CPU's
+Jul-16-15 15:47:52 [init] The Cpu Affinity of spambox is currently '0 1'
+Jul-16-15 15:47:52 [init] Authen::SASL module version 2.15 installed - SMTP AUTH is available
+Jul-16-15 15:47:52 [init] Regexp::Optimizer module version 0.23 installed - default Regular Expression Optimization is available
+Jul-16-15 15:47:52 [init] AsspSelfLoader module version 2.03 installed - SPAMBOX Code Load Optimization is available
+Jul-16-15 15:47:52 [init] SPAMBOX_WordStem module is not installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available
+Jul-16-15 15:47:52 [init] SPAMBOX_FC module is not installed - SPAMBOX file commander is not available
+Jul-16-15 15:47:52 [init] SPAMBOX_SVG module is not installed - SPAMBOX graphical STATS are not available
+Jul-16-15 15:47:52 [init] IO::Socket::SSL module version 1.94 installed - https and TLS/SSL is possible
+Jul-16-15 15:47:52 [init] Found valid certificate and private key file - https and TLS/SSL is available
+Jul-16-15 15:47:52 [init] Warning: There were module load errors detected - look in to file /root/spambox/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.
+Jul-16-15 15:47:52 [init] Warning: RelayOnlyLocalSender nor RelayOnlyLocalDomains is enabled!
+Jul-16-15 15:47:52 [init] Warning: DoLocalSenderAddress nor DoLocalSenderDomain is enabled!
+Jul-16-15 15:47:52 [init] Error: internal public license is not valid
+Jul-16-15 15:47:52 [init] Info: 0 licenses registered
+Jul-16-15 15:47:52 [init] Error: unclean shutdown of SPAMBOX detected
+Jul-16-15 15:47:52 [init] Saving config
+Jul-16-15 15:47:52 [init] Info: no configuration changes detected - nothing to save - file /root/spambox/spambox.cfg is unchanged
+Jul-16-15 15:47:52 [init] Info: the DBI connection string is set to: 'DBI:mysql:database=;host='
+Jul-16-15 15:47:52 [init] Info: start loading Whitelist from /root/spambox/whitelist with approx. 128
+Jul-16-15 15:47:52 [init] Info: Whitelist loaded from /root/spambox/whitelist with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading PersBlack from /root/spambox/persblack with approx. 128
+Jul-16-15 15:47:52 [init] Info: PersBlack loaded from /root/spambox/persblack with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading Redlist from /root/spambox/redlist with approx. 128
+Jul-16-15 15:47:52 [init] Info: Redlist loaded from /root/spambox/redlist with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading Delay from /root/spambox/delaydb with approx. 128
+Jul-16-15 15:47:52 [init] Info: Delay loaded from /root/spambox/delaydb with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading DelayWhite from /root/spambox/delaydb.white with approx. 128
+Jul-16-15 15:47:52 [init] Info: DelayWhite loaded from /root/spambox/delaydb.white with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading PBWhite from /root/spambox/pb/pbdb.white.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: PBWhite loaded from /root/spambox/pb/pbdb.white.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading PBBlack from /root/spambox/pb/pbdb.black.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: PBBlack loaded from /root/spambox/pb/pbdb.black.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading RBLCache from /root/spambox/pb/pbdb.rbl.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: RBLCache loaded from /root/spambox/pb/pbdb.rbl.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading URIBLCache from /root/spambox/pb/pbdb.uribl.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: URIBLCache loaded from /root/spambox/pb/pbdb.uribl.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading PTRCache from /root/spambox/pb/pbdb.ptr.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: PTRCache loaded from /root/spambox/pb/pbdb.ptr.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading MXACache from /root/spambox/pb/pbdb.mxa.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: MXACache loaded from /root/spambox/pb/pbdb.mxa.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading RWLCache from /root/spambox/pb/pbdb.rwl.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: RWLCache loaded from /root/spambox/pb/pbdb.rwl.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading SPFCache from /root/spambox/pb/pbdb.spf.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: SPFCache loaded from /root/spambox/pb/pbdb.spf.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading SBCache from /root/spambox/pb/pbdb.sb.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: SBCache loaded from /root/spambox/pb/pbdb.sb.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading PBTrap from /root/spambox/pb/pbdb.trap.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: PBTrap loaded from /root/spambox/pb/pbdb.trap.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading DKIMCache from /root/spambox/pb/pbdb.dkim.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: DKIMCache loaded from /root/spambox/pb/pbdb.dkim.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading BATVTag from /root/spambox/pb/pbdb.batv.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: BATVTag loaded from /root/spambox/pb/pbdb.batv.db with 0 records
+Jul-16-15 15:47:52 [init] Info: start loading BackDNS from /root/spambox/pb/pbdb.back.db with approx. 128
+Jul-16-15 15:47:52 [init] Info: BackDNS loaded from /root/spambox/pb/pbdb.back.db with 0 records
+Jul-16-15 15:47:52 [init] Warning: unable to open /root/spambox/spamdb to load Spamdb
+Jul-16-15 15:47:52 [init] Warning: unable to open /root/spambox/spamdb.helo to load HeloBlack
+Jul-16-15 15:47:52 [init] Info: start loading LDAPlist from /root/spambox/ldaplist with approx. 128
+Jul-16-15 15:47:52 [init] Info: LDAPlist loaded from /root/spambox/ldaplist with 0 records
+Jul-16-15 15:47:52 [init] Starting maintenance worker thread [10000] - ThreadCycleTime is set to 3000 microseconds
+Jul-16-15 15:47:52 [Worker_10000] Info: switched (DNS) nameserver order from 8.8.8.8 to 8.8.8.8
+Jul-16-15 15:47:52 [Worker_10000] Worker_10000 started
+Jul-16-15 15:47:52 [Worker_10000] Info: start saving PersBlack
+Jul-16-15 15:47:52 [Worker_10000] Info: 0 records of PersBlack saved
+Jul-16-15 15:47:52 [Worker_10000] Info: last full Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:47:52 [Worker_10000] Info: last delta Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:47:52 [Worker_10000] Uploading stats via direct connection
+Jul-16-15 15:47:52 [init] Starting SMTP-worker-threads with ThreadCycleTime set to 3000 microseconds
+Jul-16-15 15:47:52 [init] Starting communication worker threads [1 to 5]
+Jul-16-15 15:47:52 [Worker_1] Worker_1 started
+Jul-16-15 15:47:53 [Worker_2] Worker_2 started
+Jul-16-15 15:47:53 [Worker_3] Worker_3 started
+Jul-16-15 15:47:53 [Worker_4] Worker_4 started
+Jul-16-15 15:47:54 [Worker_5] Worker_5 started
+Jul-16-15 15:47:54 [init] Starting rebuild SpamDB worker thread [10001] - ThreadCycleTime is set to 30 microseconds
+Jul-16-15 15:47:54 [Worker_10001] Worker_10001 started
+Jul-16-15 15:47:54 [Worker_10001] Info: found module /root/spambox/lib/rebuildspamdb.pm version 7.11
+Jul-16-15 15:47:55 [init] All Threads are started
+Jul-16-15 15:47:55 [init] Info: HMMdb is using 'BerkeleyDB' version 5.3 in file /root/spambox/HMMdb.bdb, because HMMusesBDB is set to ON
+Jul-16-15 15:47:55 [init] Warning: Bayesian spam database has only 0 records
+Jul-16-15 15:47:55 [init] Warning: whitelist has only 0 records: (ignore if this is a new install)
+Jul-16-15 15:47:55 [init] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:47:55 [init] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:47:55 [init] Error: couldn't create server socket on port '25' -- maybe another service is running or I'm not root (uid=0)? -- or a wrong IP address is defined? -- Address already in use
+Jul-16-15 15:47:55 [init] Listening for admin HTTPS connections on 0.0.0.0:8090
+Jul-16-15 15:47:55 [init] Listening for stat HTTPS connections on 0.0.0.0:8091
+Jul-16-15 15:47:55 [init] Current PID: 8393
+Jul-16-15 15:47:55 [init] Info: command queue released
+Jul-16-15 15:47:56 [startup] Starting in console mode
+Jul-16-15 15:47:56 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux) initializing 
+Jul-16-15 15:47:56 [startup] Info: registered encrypted POP3ConfigFile file /root/spambox/files/pop3cfg.txt
+Jul-16-15 15:47:56 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSize.txt' (MaxRealSizeAdr): No such file or directory
+Jul-16-15 15:47:56 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSizeExt.txt' (MaxRealSizeExternalAdr): No such file or directory
+Jul-16-15 15:47:56 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSize.txt' (MaxSizeAdr): No such file or directory
+Jul-16-15 15:47:56 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSizeExt.txt' (MaxSizeExternalAdr): No such file or directory
+Jul-16-15 15:47:56 [startup] ERROR: general syntax error in recipient replacement rule 
+Jul-16-15 15:47:56 [startup] Info: no valid recipient replacement rule found - 1 invalid rules skipped
+Jul-16-15 15:47:56 [startup] Info: Regex invalidFormatHeloRe: 3 weighted regular expression defined
+Jul-16-15 15:47:57 [startup] Warning: MyCountryCodeRe is currently not configured
+Jul-16-15 15:47:57 [startup] Info: MyCountryCodeRe is now set to '' - resolved by SenderBase
+Jul-16-15 15:47:57 [startup] Info: Regex SuspiciousVirus: 16 weighted regular expression defined
+Jul-16-15 15:47:57 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/bombskipheadertagre.txt' (bombSkipHeaderTagRe): No such file or directory
+Jul-16-15 15:47:57 [startup] Warning: NO MSGIDsig-secrets activated - MSGIDsig-check is now disabled  : 10 records ignored because of wrong syntax or using default values : 0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9
+Jul-16-15 15:47:57 [startup] Info: 10 BATV-secrets activated
+Jul-16-15 15:47:57 [startup] Info: switched (DNS) nameserver order from  to 8.8.8.8
+Jul-16-15 15:47:57 [startup] Info: an SPAMBOX restart will be done using the AutoRestartCmd
+Jul-16-15 15:47:57 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux)running on server: git.ipt.com (5.22.149.135)
+Jul-16-15 15:47:57 [startup] Info: unicode support is available on that system
+Jul-16-15 15:47:57 [startup] Info: this system uses little-endianess
+Jul-16-15 15:47:57 [init] Threads module 1.87 installed 
+Jul-16-15 15:47:57 [init] Threads::shared module 1.43 installed 
+Jul-16-15 15:47:57 [init] Thread::Queue module 3.05 installed 
+Jul-16-15 15:47:57 [init] IO::Poll module 0.09 installed 
+Jul-16-15 15:47:57 [init] IO::Select module 1.21 installed 
+Jul-16-15 15:47:57 [init] SPAMBOX is using IOEngine - Poll
+Jul-16-15 15:47:57 [init] Thread::State module version 0.09 installed and available
+Jul-16-15 15:47:57 [init] IO::Socket::INET6 module is not detected ( enableINET6 is not set ).
+Jul-16-15 15:47:57 [init] File::Scan::ClamAV module version 1.93 installed but not available, error: Cannot connect to unix socket '/tmp/clamd': connect: No such file or directory
+Jul-16-15 15:47:57 [init] Net::LDAP module version 0.56 installed and available
+Jul-16-15 15:47:57 [init] Net::DNS module version 0.72 installed and available
+Jul-16-15 15:47:57 [init] Net::SMTP module version 2.31 installed and available
+Jul-16-15 15:47:57 [init] Net::SMTP::SSL module version 1.02 installed and available
+Jul-16-15 15:47:57 [init] NetSNMP::agent module is disabled in config.
+Jul-16-15 15:47:57 [init] Mail::SPF::Query module version 1.999001 installed and available
+Jul-16-15 15:47:57 [init] Mail::SPF module version 2.008 installed and available
+Jul-16-15 15:47:57 [init] Compress::Zlib module version 2.061 installed - HTTP compression available
+Jul-16-15 15:47:57 [init] Digest::MD5 module version 2.52 installed - delaying can use MD5 keys for hashes
+Jul-16-15 15:47:57 [init] Digest::SHA1 module version 2.13 installed - BATV and FBMTV check available
+Jul-16-15 15:47:57 [init] File::ReadBackwards module version 1.05 installed - searching of log files enabled
+Jul-16-15 15:47:57 [init] Time::HiRes module version 1.9725 installed - CPU usage statistics available
+Jul-16-15 15:47:57 [init] Sys::Syslog module version 0.33 installed - Unix centralized logging enabled
+Jul-16-15 15:47:57 [init] Unicode::GCString module version 2013.10 installed - can detect east asian language strings as sequence of UAX #29 Grapheme Clusters to analyze Bayes and HMM
+Jul-16-15 15:47:57 [init] Unicode::Normalize module is installed and 'unicodeNormalize' is enabled - NFKC unicode normalization is globaly enabled
+Jul-16-15 15:47:57 [init] Text::Unidecode module version 0.04 installed - can transliterate unicode characters to ASCII
+Jul-16-15 15:47:57 [init] Tie::RDBM module version 0.73 installed - database usage available
+Jul-16-15 15:47:57 [init] DB_File module is disabled in config - DB_File (Berkeley V1) database usage not available
+Jul-16-15 15:47:57 [init] BerkeleyDB module version 0.51 installed - Berkeley database usage available
+Jul-16-15 15:47:57 [init] BerkeleyDB DB-version 5.3 / Berkeley DB 5.3.21: (May 11, 2012) is installed
+Jul-16-15 15:47:57 [init] BerkeleyDB maximum cache size is set to 50MB
+Jul-16-15 15:47:57 [init] Info: griplist is using basic 'orderedtie' in file /root/spambox/griplist
+Jul-16-15 15:47:57 [init] Net::CIDR::Lite module version 0.21 installed - hyphenated IP address range available
+Jul-16-15 15:47:57 [init] NetAddr::IP::Lite module version 1.50 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:47:57 [init] Net::IP module version 1.26 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:47:57 [init] LWP::Simple module version 6.00 installed - procedural LWP interface available
+Jul-16-15 15:47:57 [init] Email::MIME module version 1.926 installed - MIME charset decoding and conversion interface and attachment detection available
+Jul-16-15 15:47:57 [init] MIME::Types module version 1.38 installed - TNEF conversion may possible
+Jul-16-15 15:47:57 [init] Email::Send module version 2.199 installed - sending .eml files available
+Jul-16-15 15:47:57 [init] Convert::TNEF module is disabled in config - TNEF conversion not available
+Jul-16-15 15:47:57 [init] Mail::DKIM::Verifier module version 0.39 installed - DKIM verification is available
+Jul-16-15 15:47:57 [init] Schedule::Cron module version 1.01 installed - RebuildSpamdb Scheduler is available
+Jul-16-15 15:47:57 [init] Sys::MemInfo module version 0.91 installed - memory calculation is available
+Jul-16-15 15:47:57 [init] Sys::CpuAffinity module version 1.06 installed - setting CPU Affinty is available - this system has 2 CPU's
+Jul-16-15 15:47:57 [init] The Cpu Affinity of spambox is currently '0 1'
+Jul-16-15 15:47:57 [init] Authen::SASL module version 2.15 installed - SMTP AUTH is available
+Jul-16-15 15:47:57 [init] Regexp::Optimizer module version 0.23 installed - default Regular Expression Optimization is available
+Jul-16-15 15:47:57 [init] AsspSelfLoader module version 2.03 installed - SPAMBOX Code Load Optimization is available
+Jul-16-15 15:47:57 [init] SPAMBOX_WordStem module is not installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available
+Jul-16-15 15:47:57 [init] SPAMBOX_FC module is not installed - SPAMBOX file commander is not available
+Jul-16-15 15:47:57 [init] SPAMBOX_SVG module is not installed - SPAMBOX graphical STATS are not available
+Jul-16-15 15:47:57 [init] IO::Socket::SSL module version 1.94 installed - https and TLS/SSL is possible
+Jul-16-15 15:47:57 [init] Found valid certificate and private key file - https and TLS/SSL is available
+Jul-16-15 15:47:57 [init] Warning: There were module load errors detected - look in to file /root/spambox/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.
+Jul-16-15 15:47:57 [init] Warning: RelayOnlyLocalSender nor RelayOnlyLocalDomains is enabled!
+Jul-16-15 15:47:57 [init] Warning: DoLocalSenderAddress nor DoLocalSenderDomain is enabled!
+Jul-16-15 15:47:57 [init] Error: internal public license is not valid
+Jul-16-15 15:47:57 [init] Info: 0 licenses registered
+Jul-16-15 15:47:57 [init] Error: unclean shutdown of SPAMBOX detected
+Jul-16-15 15:47:57 [init] Saving config
+Jul-16-15 15:47:57 [init] Info: no configuration changes detected - nothing to save - file /root/spambox/spambox.cfg is unchanged
+Jul-16-15 15:47:57 [init] Info: the DBI connection string is set to: 'DBI:mysql:database=;host='
+Jul-16-15 15:47:57 [init] Info: start loading Whitelist from /root/spambox/whitelist with approx. 128
+Jul-16-15 15:47:57 [init] Info: Whitelist loaded from /root/spambox/whitelist with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading PersBlack from /root/spambox/persblack with approx. 128
+Jul-16-15 15:47:57 [init] Info: PersBlack loaded from /root/spambox/persblack with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading Redlist from /root/spambox/redlist with approx. 128
+Jul-16-15 15:47:57 [init] Info: Redlist loaded from /root/spambox/redlist with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading Delay from /root/spambox/delaydb with approx. 128
+Jul-16-15 15:47:57 [init] Info: Delay loaded from /root/spambox/delaydb with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading DelayWhite from /root/spambox/delaydb.white with approx. 128
+Jul-16-15 15:47:57 [init] Info: DelayWhite loaded from /root/spambox/delaydb.white with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading PBWhite from /root/spambox/pb/pbdb.white.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: PBWhite loaded from /root/spambox/pb/pbdb.white.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading PBBlack from /root/spambox/pb/pbdb.black.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: PBBlack loaded from /root/spambox/pb/pbdb.black.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading RBLCache from /root/spambox/pb/pbdb.rbl.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: RBLCache loaded from /root/spambox/pb/pbdb.rbl.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading URIBLCache from /root/spambox/pb/pbdb.uribl.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: URIBLCache loaded from /root/spambox/pb/pbdb.uribl.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading PTRCache from /root/spambox/pb/pbdb.ptr.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: PTRCache loaded from /root/spambox/pb/pbdb.ptr.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading MXACache from /root/spambox/pb/pbdb.mxa.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: MXACache loaded from /root/spambox/pb/pbdb.mxa.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading RWLCache from /root/spambox/pb/pbdb.rwl.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: RWLCache loaded from /root/spambox/pb/pbdb.rwl.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading SPFCache from /root/spambox/pb/pbdb.spf.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: SPFCache loaded from /root/spambox/pb/pbdb.spf.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading SBCache from /root/spambox/pb/pbdb.sb.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: SBCache loaded from /root/spambox/pb/pbdb.sb.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading PBTrap from /root/spambox/pb/pbdb.trap.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: PBTrap loaded from /root/spambox/pb/pbdb.trap.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading DKIMCache from /root/spambox/pb/pbdb.dkim.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: DKIMCache loaded from /root/spambox/pb/pbdb.dkim.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading BATVTag from /root/spambox/pb/pbdb.batv.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: BATVTag loaded from /root/spambox/pb/pbdb.batv.db with 0 records
+Jul-16-15 15:47:57 [init] Info: start loading BackDNS from /root/spambox/pb/pbdb.back.db with approx. 128
+Jul-16-15 15:47:57 [init] Info: BackDNS loaded from /root/spambox/pb/pbdb.back.db with 0 records
+Jul-16-15 15:47:57 [init] Warning: unable to open /root/spambox/spamdb to load Spamdb
+Jul-16-15 15:47:57 [init] Warning: unable to open /root/spambox/spamdb.helo to load HeloBlack
+Jul-16-15 15:47:57 [init] Info: start loading LDAPlist from /root/spambox/ldaplist with approx. 128
+Jul-16-15 15:47:57 [init] Info: LDAPlist loaded from /root/spambox/ldaplist with 0 records
+Jul-16-15 15:47:57 [init] Starting maintenance worker thread [10000] - ThreadCycleTime is set to 3000 microseconds
+Jul-16-15 15:47:58 [Worker_10000] Info: switched (DNS) nameserver order from 8.8.8.8 to 8.8.8.8
+Jul-16-15 15:47:58 [Worker_10000] Worker_10000 started
+Jul-16-15 15:47:58 [Worker_10000] Info: start saving PersBlack
+Jul-16-15 15:47:58 [Worker_10000] Info: 0 records of PersBlack saved
+Jul-16-15 15:47:58 [Worker_10000] Info: last full Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:47:58 [Worker_10000] Info: last delta Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:47:58 [Worker_10000] Uploading stats via direct connection
+Jul-16-15 15:47:58 [init] Starting SMTP-worker-threads with ThreadCycleTime set to 3000 microseconds
+Jul-16-15 15:47:58 [init] Starting communication worker threads [1 to 5]
+Jul-16-15 15:47:58 [Worker_1] Worker_1 started
+Jul-16-15 15:47:58 [Worker_2] Worker_2 started
+Jul-16-15 15:47:59 [Worker_3] Worker_3 started
+Jul-16-15 15:47:59 [Worker_4] Worker_4 started
+Jul-16-15 15:47:59 [Worker_5] Worker_5 started
+Jul-16-15 15:47:59 [init] Starting rebuild SpamDB worker thread [10001] - ThreadCycleTime is set to 30 microseconds
+Jul-16-15 15:47:59 [Worker_10001] Worker_10001 started
+Jul-16-15 15:47:59 [Worker_10001] Info: found module /root/spambox/lib/rebuildspamdb.pm version 7.11
+Jul-16-15 15:48:00 [init] All Threads are started
+Jul-16-15 15:48:00 [init] Info: HMMdb is using 'BerkeleyDB' version 5.3 in file /root/spambox/HMMdb.bdb, because HMMusesBDB is set to ON
+Jul-16-15 15:48:00 [init] Warning: Bayesian spam database has only 0 records
+Jul-16-15 15:48:00 [init] Warning: whitelist has only 0 records: (ignore if this is a new install)
+Jul-16-15 15:48:00 [init] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:48:00 [init] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:48:00 [init] Error: couldn't create server socket on port '25' -- maybe another service is running or I'm not root (uid=0)? -- or a wrong IP address is defined? -- Address already in use
+Jul-16-15 15:48:00 [init] Listening for admin HTTPS connections on 0.0.0.0:8090
+Jul-16-15 15:48:00 [init] Listening for stat HTTPS connections on 0.0.0.0:8091
+Jul-16-15 15:48:00 [init] Current PID: 8456
+Jul-16-15 15:48:00 [init] Info: command queue released
+Jul-16-15 15:49:26 [startup] Starting in console mode
+Jul-16-15 15:49:26 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux) initializing 
+Jul-16-15 15:49:26 [startup] Info: registered encrypted POP3ConfigFile file /root/spambox/files/pop3cfg.txt
+Jul-16-15 15:49:26 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSize.txt' (MaxRealSizeAdr): No such file or directory
+Jul-16-15 15:49:26 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxRealSizeExt.txt' (MaxRealSizeExternalAdr): No such file or directory
+Jul-16-15 15:49:26 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSize.txt' (MaxSizeAdr): No such file or directory
+Jul-16-15 15:49:26 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/MaxSizeExt.txt' (MaxSizeExternalAdr): No such file or directory
+Jul-16-15 15:49:26 [startup] ERROR: general syntax error in recipient replacement rule 
+Jul-16-15 15:49:26 [startup] Info: no valid recipient replacement rule found - 1 invalid rules skipped
+Jul-16-15 15:49:26 [startup] Info: Regex invalidFormatHeloRe: 3 weighted regular expression defined
+Jul-16-15 15:49:26 [startup] Warning: MyCountryCodeRe is currently not configured
+Jul-16-15 15:49:26 [startup] Info: MyCountryCodeRe is now set to '' - resolved by SenderBase
+Jul-16-15 15:49:27 [startup] Info: Regex SuspiciousVirus: 16 weighted regular expression defined
+Jul-16-15 15:49:27 [startup] AdminInfo: failed to open option list file for reading '/root/spambox/files/bombskipheadertagre.txt' (bombSkipHeaderTagRe): No such file or directory
+Jul-16-15 15:49:27 [startup] Warning: NO MSGIDsig-secrets activated - MSGIDsig-check is now disabled  : 10 records ignored because of wrong syntax or using default values : 0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9
+Jul-16-15 15:49:27 [startup] Info: 10 BATV-secrets activated
+Jul-16-15 15:49:27 [startup] Info: switched (DNS) nameserver order from  to 8.8.8.8
+Jul-16-15 15:49:27 [startup] Info: an SPAMBOX restart will be done using the AutoRestartCmd
+Jul-16-15 15:49:27 [startup] SPAMBOX version 2.4.5(15162) (Perl 5.016003) (on linux)running on server: git.ipt.com (5.22.149.135)
+Jul-16-15 15:49:27 [startup] Info: unicode support is available on that system
+Jul-16-15 15:49:27 [startup] Info: this system uses little-endianess
+Jul-16-15 15:49:27 [init] Threads module 1.87 installed 
+Jul-16-15 15:49:27 [init] Threads::shared module 1.43 installed 
+Jul-16-15 15:49:27 [init] Thread::Queue module 3.05 installed 
+Jul-16-15 15:49:27 [init] IO::Poll module 0.09 installed 
+Jul-16-15 15:49:27 [init] IO::Select module 1.21 installed 
+Jul-16-15 15:49:27 [init] SPAMBOX is using IOEngine - Poll
+Jul-16-15 15:49:27 [init] Thread::State module version 0.09 installed and available
+Jul-16-15 15:49:27 [init] IO::Socket::INET6 module is not detected ( enableINET6 is not set ).
+Jul-16-15 15:49:27 [init] File::Scan::ClamAV module version 1.93 installed but not available, error: Cannot connect to unix socket '/tmp/clamd': connect: No such file or directory
+Jul-16-15 15:49:27 [init] Net::LDAP module version 0.56 installed and available
+Jul-16-15 15:49:27 [init] Net::DNS module version 0.72 installed and available
+Jul-16-15 15:49:27 [init] Net::SMTP module version 2.31 installed and available
+Jul-16-15 15:49:27 [init] Net::SMTP::SSL module version 1.02 installed and available
+Jul-16-15 15:49:27 [init] NetSNMP::agent module is disabled in config.
+Jul-16-15 15:49:27 [init] Mail::SPF::Query module version 1.999001 installed and available
+Jul-16-15 15:49:27 [init] Mail::SPF module version 2.008 installed and available
+Jul-16-15 15:49:27 [init] Compress::Zlib module version 2.061 installed - HTTP compression available
+Jul-16-15 15:49:27 [init] Digest::MD5 module version 2.52 installed - delaying can use MD5 keys for hashes
+Jul-16-15 15:49:27 [init] Digest::SHA1 module version 2.13 installed - BATV and FBMTV check available
+Jul-16-15 15:49:27 [init] File::ReadBackwards module version 1.05 installed - searching of log files enabled
+Jul-16-15 15:49:27 [init] Time::HiRes module version 1.9725 installed - CPU usage statistics available
+Jul-16-15 15:49:27 [init] Sys::Syslog module version 0.33 installed - Unix centralized logging enabled
+Jul-16-15 15:49:27 [init] Unicode::GCString module version 2013.10 installed - can detect east asian language strings as sequence of UAX #29 Grapheme Clusters to analyze Bayes and HMM
+Jul-16-15 15:49:27 [init] Unicode::Normalize module is installed and 'unicodeNormalize' is enabled - NFKC unicode normalization is globaly enabled
+Jul-16-15 15:49:27 [init] Text::Unidecode module version 0.04 installed - can transliterate unicode characters to ASCII
+Jul-16-15 15:49:27 [init] Tie::RDBM module version 0.73 installed - database usage available
+Jul-16-15 15:49:27 [init] DB_File module is disabled in config - DB_File (Berkeley V1) database usage not available
+Jul-16-15 15:49:27 [init] BerkeleyDB module version 0.51 installed - Berkeley database usage available
+Jul-16-15 15:49:27 [init] BerkeleyDB DB-version 5.3 / Berkeley DB 5.3.21: (May 11, 2012) is installed
+Jul-16-15 15:49:27 [init] BerkeleyDB maximum cache size is set to 50MB
+Jul-16-15 15:49:27 [init] Info: griplist is using basic 'orderedtie' in file /root/spambox/griplist
+Jul-16-15 15:49:27 [init] Net::CIDR::Lite module version 0.21 installed - hyphenated IP address range available
+Jul-16-15 15:49:27 [init] NetAddr::IP::Lite module version 1.50 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:49:27 [init] Net::IP module version 1.26 installed - hyphenated IP and CIDR address range calculation available
+Jul-16-15 15:49:27 [init] LWP::Simple module version 6.00 installed - procedural LWP interface available
+Jul-16-15 15:49:27 [init] Email::MIME module version 1.926 installed - MIME charset decoding and conversion interface and attachment detection available
+Jul-16-15 15:49:27 [init] MIME::Types module version 1.38 installed - TNEF conversion may possible
+Jul-16-15 15:49:27 [init] Email::Send module version 2.199 installed - sending .eml files available
+Jul-16-15 15:49:27 [init] Convert::TNEF module is disabled in config - TNEF conversion not available
+Jul-16-15 15:49:27 [init] Mail::DKIM::Verifier module version 0.39 installed - DKIM verification is available
+Jul-16-15 15:49:27 [init] Schedule::Cron module version 1.01 installed - RebuildSpamdb Scheduler is available
+Jul-16-15 15:49:27 [init] Sys::MemInfo module version 0.91 installed - memory calculation is available
+Jul-16-15 15:49:27 [init] Sys::CpuAffinity module version 1.06 installed - setting CPU Affinty is available - this system has 2 CPU's
+Jul-16-15 15:49:27 [init] The Cpu Affinity of spambox is currently '0 1'
+Jul-16-15 15:49:27 [init] Authen::SASL module version 2.15 installed - SMTP AUTH is available
+Jul-16-15 15:49:27 [init] Regexp::Optimizer module version 0.23 installed - default Regular Expression Optimization is available
+Jul-16-15 15:49:27 [init] AsspSelfLoader module version 2.03 installed - SPAMBOX Code Load Optimization is available
+Jul-16-15 15:49:27 [init] SPAMBOX_WordStem module is not installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available
+Jul-16-15 15:49:27 [init] SPAMBOX_FC module is not installed - SPAMBOX file commander is not available
+Jul-16-15 15:49:27 [init] SPAMBOX_SVG module is not installed - SPAMBOX graphical STATS are not available
+Jul-16-15 15:49:27 [init] IO::Socket::SSL module version 1.94 installed - https and TLS/SSL is possible
+Jul-16-15 15:49:27 [init] Found valid certificate and private key file - https and TLS/SSL is available
+Jul-16-15 15:49:27 [init] Warning: There were module load errors detected - look in to file /root/spambox/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.
+Jul-16-15 15:49:27 [init] Warning: RelayOnlyLocalSender nor RelayOnlyLocalDomains is enabled!
+Jul-16-15 15:49:27 [init] Warning: DoLocalSenderAddress nor DoLocalSenderDomain is enabled!
+Jul-16-15 15:49:27 [init] Error: internal public license is not valid
+Jul-16-15 15:49:27 [init] Info: 0 licenses registered
+Jul-16-15 15:49:27 [init] Error: unclean shutdown of SPAMBOX detected
+Jul-16-15 15:49:27 [init] Saving config
+Jul-16-15 15:49:27 [init] Info: no configuration changes detected - nothing to save - file /root/spambox/spambox.cfg is unchanged
+Jul-16-15 15:49:27 [init] Info: the DBI connection string is set to: 'DBI:mysql:database=;host='
+Jul-16-15 15:49:27 [init] Info: start loading Whitelist from /root/spambox/whitelist with approx. 128
+Jul-16-15 15:49:27 [init] Info: Whitelist loaded from /root/spambox/whitelist with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading PersBlack from /root/spambox/persblack with approx. 128
+Jul-16-15 15:49:27 [init] Info: PersBlack loaded from /root/spambox/persblack with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading Redlist from /root/spambox/redlist with approx. 128
+Jul-16-15 15:49:27 [init] Info: Redlist loaded from /root/spambox/redlist with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading Delay from /root/spambox/delaydb with approx. 128
+Jul-16-15 15:49:27 [init] Info: Delay loaded from /root/spambox/delaydb with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading DelayWhite from /root/spambox/delaydb.white with approx. 128
+Jul-16-15 15:49:27 [init] Info: DelayWhite loaded from /root/spambox/delaydb.white with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading PBWhite from /root/spambox/pb/pbdb.white.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: PBWhite loaded from /root/spambox/pb/pbdb.white.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading PBBlack from /root/spambox/pb/pbdb.black.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: PBBlack loaded from /root/spambox/pb/pbdb.black.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading RBLCache from /root/spambox/pb/pbdb.rbl.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: RBLCache loaded from /root/spambox/pb/pbdb.rbl.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading URIBLCache from /root/spambox/pb/pbdb.uribl.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: URIBLCache loaded from /root/spambox/pb/pbdb.uribl.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading PTRCache from /root/spambox/pb/pbdb.ptr.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: PTRCache loaded from /root/spambox/pb/pbdb.ptr.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading MXACache from /root/spambox/pb/pbdb.mxa.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: MXACache loaded from /root/spambox/pb/pbdb.mxa.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading RWLCache from /root/spambox/pb/pbdb.rwl.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: RWLCache loaded from /root/spambox/pb/pbdb.rwl.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading SPFCache from /root/spambox/pb/pbdb.spf.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: SPFCache loaded from /root/spambox/pb/pbdb.spf.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading SBCache from /root/spambox/pb/pbdb.sb.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: SBCache loaded from /root/spambox/pb/pbdb.sb.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading PBTrap from /root/spambox/pb/pbdb.trap.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: PBTrap loaded from /root/spambox/pb/pbdb.trap.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading DKIMCache from /root/spambox/pb/pbdb.dkim.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: DKIMCache loaded from /root/spambox/pb/pbdb.dkim.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading BATVTag from /root/spambox/pb/pbdb.batv.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: BATVTag loaded from /root/spambox/pb/pbdb.batv.db with 0 records
+Jul-16-15 15:49:27 [init] Info: start loading BackDNS from /root/spambox/pb/pbdb.back.db with approx. 128
+Jul-16-15 15:49:27 [init] Info: BackDNS loaded from /root/spambox/pb/pbdb.back.db with 0 records
+Jul-16-15 15:49:27 [init] Warning: unable to open /root/spambox/spamdb to load Spamdb
+Jul-16-15 15:49:27 [init] Warning: unable to open /root/spambox/spamdb.helo to load HeloBlack
+Jul-16-15 15:49:27 [init] Info: start loading LDAPlist from /root/spambox/ldaplist with approx. 128
+Jul-16-15 15:49:27 [init] Info: LDAPlist loaded from /root/spambox/ldaplist with 0 records
+Jul-16-15 15:49:27 [init] Starting maintenance worker thread [10000] - ThreadCycleTime is set to 3000 microseconds
+Jul-16-15 15:49:27 [Worker_10000] Info: switched (DNS) nameserver order from 8.8.8.8 to 8.8.8.8
+Jul-16-15 15:49:27 [Worker_10000] Worker_10000 started
+Jul-16-15 15:49:27 [Worker_10000] Info: start saving PersBlack
+Jul-16-15 15:49:27 [Worker_10000] Info: 0 records of PersBlack saved
+Jul-16-15 15:49:27 [Worker_10000] Info: last full Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:49:27 [Worker_10000] Info: last delta Griplist download was at: Jul-16-15 12:13:29
+Jul-16-15 15:49:27 [Worker_10000] Uploading stats via direct connection
+Jul-16-15 15:49:27 [init] Starting SMTP-worker-threads with ThreadCycleTime set to 3000 microseconds
+Jul-16-15 15:49:27 [init] Starting communication worker threads [1 to 5]
+Jul-16-15 15:49:28 [Worker_1] Worker_1 started
+Jul-16-15 15:49:28 [Worker_2] Worker_2 started
+Jul-16-15 15:49:28 [Worker_3] Worker_3 started
+Jul-16-15 15:49:29 [Worker_4] Worker_4 started
+Jul-16-15 15:49:29 [Worker_5] Worker_5 started
+Jul-16-15 15:49:29 [init] Starting rebuild SpamDB worker thread [10001] - ThreadCycleTime is set to 30 microseconds
+Jul-16-15 15:49:29 [Worker_10001] Worker_10001 started
+Jul-16-15 15:49:29 [Worker_10001] Info: found module /root/spambox/lib/rebuildspamdb.pm version 7.11
+Jul-16-15 15:49:30 [init] All Threads are started
+Jul-16-15 15:49:30 [init] Info: HMMdb is using 'BerkeleyDB' version 5.3 in file /root/spambox/HMMdb.bdb, because HMMusesBDB is set to ON
+Jul-16-15 15:49:30 [init] Warning: Bayesian spam database has only 0 records
+Jul-16-15 15:49:30 [init] Warning: whitelist has only 0 records: (ignore if this is a new install)
+Jul-16-15 15:49:30 [init] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:49:30 [init] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:49:30 [init] Error: couldn't create server socket on port '25' -- maybe another service is running or I'm not root (uid=0)? -- or a wrong IP address is defined? -- Address already in use
+Jul-16-15 15:49:30 [init] Listening for admin HTTPS connections on 0.0.0.0:8090
+Jul-16-15 15:49:30 [init] Listening for stat HTTPS connections on 0.0.0.0:8091
+Jul-16-15 15:49:30 [init] Current PID: 8520
+Jul-16-15 15:49:30 [init] Info: command queue released
+Jul-16-15 15:49:30 [init] Info: central signalhandler - NUM63(63) - TRAP(5) - NUM42(42) - URG(23) - STOP(19) - NUM39(39) - NUM62(62) - NUM43(43) - NUM57(57) - NUM56(56) - RTMAX(64) - NUM59(59) - VTALRM(26) - CONT(18) - NUM45(45) - NUM61(61) - NUM44(44) - NUM36(36) - NUM32(32) - BUS(7) - NUM40(40) - NUM51(51) - IOT(65) - STKFLT(16) - NUM41(41) - KILL(9) - QUIT(3) - NUM37(37) - NUM50(50) - ABRT(6) - NUM48(48) - NUM35(35) - NUM38(38) - TTOU(22) - IO(29) - TSTP(20) - PROF(27) - NUM53(53) - NUM58(58) - SEGV(11) - RTMIN(34) - POLL(67) - PIPE(13) - SYS(31) - NUM46(46) - PWR(30) - FPE(8) - NUM54(54) - XCPU(24) - TTIN(21) - NUM52(52) - NUM55(55) - XFSZ(25) - NUM33(33) - NUM49(49) - UNUSED(68) - WINCH(28) - ILL(4) - NUM47(47) - NUM60(60) - USR1(10) - USR2(12) - INT(2) - HUP(1) - TERM(15) - CHLD(17) - CLD(66) - ALRM(14) - installed
+Jul-16-15 15:49:30 [Main_Thread] MainThread started
+Jul-16-15 15:49:33 [Main_Thread] Admin connection from user root on host 10.254.254.51:38381; page:/; session-ID:d269ea10e86992a4e5e2f0dc12d825a4;
+Jul-16-15 15:49:38 [Main_Thread] Admin connection from user root on host 10.254.254.51:38391; page:/main; session-ID:8debab4e681037b80878656021fbbe0f;
+Jul-16-15 15:49:42 [Main_Thread] Admin connection from user root on host 10.254.254.51:38393; page:/main; session-ID:8debab4e681037b80878656021fbbe0f;
+Jul-16-15 15:50:31 [Worker_10000] Info: next spambox version check download in 23 hours 34 mins 
