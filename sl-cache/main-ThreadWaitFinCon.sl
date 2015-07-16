@@ -27,7 +27,7 @@ package main; sub ThreadWaitFinCon {
             return;
         } else {                  # some connection are active - try to restart
             $notallfinished = scalar(keys %ConFno);
-            &downASSP("try restarting ASSP: con in thread: $notallfinished, con concurrent: $smtpConcurrentSessions, con total: $SMTPSessionIP{Total}");
+            &downSPAMBOX("try restarting SPAMBOX: con in thread: $notallfinished, con concurrent: $smtpConcurrentSessions, con total: $SMTPSessionIP{Total}");
             _assp_try_restart;
         }
     }

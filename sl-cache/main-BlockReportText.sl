@@ -19,7 +19,7 @@ package main; sub BlockReportText {
             $section = '';
         } elsif ($section) {
             s/REPORTDAYS/$numdays/go;
-            s/ASSPNAME/$myName/go;
+            s/SPAMBOXNAME/$myName/go;
             s/EMAILADDRESS/$for/go;
             s/NUMBER/$number/go;
             $slines{$section} .= $_;

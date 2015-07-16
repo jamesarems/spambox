@@ -51,6 +51,6 @@ package main; sub ConfigChangeRelayPort {my ($name, $old, $new, $init)=@_;
         $$name = $Config{$name}=$new;
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new relay port $new (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new relay port - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new relay port - SPAMBOX-Restart required\');</script>";
     }
 }

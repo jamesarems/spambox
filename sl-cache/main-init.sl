@@ -13,18 +13,18 @@ package main; sub init {
  }
 
  if($] lt '5.012003') {
-   mlog(0, "warning: Perl version 5.012003 (5.12.3) is at least recommended to run ASSP $version $modversion - you are running Perl version $] - please upgrade Perl");
+   mlog(0, "warning: Perl version 5.012003 (5.12.3) is at least recommended to run SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl");
  }
  if($] lt '5.012000') {
-   mlog(0, "Perl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of ASSP $version $modversion - you are running Perl version $] - please upgrade Perl");
+   mlog(0, "Perl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl");
  }
  my $p;
  $p = '-professional' if ($setpro && $globalClientName && $globalClientPass);
  $Y=eval($Y);
  if ($localhostname) {
-     mlog(0,"ASSP$p version $version$modversion (Perl $]) (on $^O)running on server: $localhostname ($localhostip)");
+     mlog(0,"SPAMBOX$p version $version$modversion (Perl $]) (on $^O)running on server: $localhostname ($localhostip)");
  } else {
-     mlog(0,"ASSP$p version $version$modversion (Perl $]) (on $^O) running on server: localhost ($localhostip)") ;
+     mlog(0,"SPAMBOX$p version $version$modversion (Perl $]) (on $^O) running on server: localhost ($localhostip)") ;
  }
  if ($canUnicode) {
      mlog(0,"info: unicode support is available on that system");
@@ -148,16 +148,16 @@ package main; sub init {
        print "\t\t\t\t\t[SKIP]";
   }
   if ( $perlver > "5.999999") {
-       mlog(0,"Perl version $perlver is not supported for ASSP Version 2.x.x!");
+       mlog(0,"Perl version $perlver is not supported for SPAMBOX Version 2.x.x!");
   }
 
   print "\ncheck process permission";
 
-  my $tmpASSPout;
+  my $tmpSPAMBOXout;
   my $StartError;
-  if (open($tmpASSPout, ">", "$base/aaaa_tmp.pl")) {
-      binmode $tmpASSPout;
-      close $tmpASSPout;
+  if (open($tmpSPAMBOXout, ">", "$base/aaaa_tmp.pl")) {
+      binmode $tmpSPAMBOXout;
+      close $tmpSPAMBOXout;
       my $assp = $assp;
       $assp =~ s/\\/\//og;
       $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
@@ -230,9 +230,9 @@ package main; sub init {
   $ModuleList{'IO::Select'} = $ver.'/1.17';
 
   if ($IOEngineRun == 0) {
-      mlog(0,'ASSP is using IOEngine - Poll');
+      mlog(0,'SPAMBOX is using IOEngine - Poll');
   } else {
-      mlog(0,'ASSP is using IOEngine - select');
+      mlog(0,'SPAMBOX is using IOEngine - select');
   }
 
   if ($CanUseThreadState) {
@@ -927,21 +927,21 @@ EOT
 
   if ($CanUseAsspSelfLoader) {
     $ver=eval('AsspSelfLoader->VERSION'); $VerAsspSelfLoader=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"AsspSelfLoader module$ver installed - ASSP Code Load Optimization is available");
+    mlog(0,"AsspSelfLoader module$ver installed - SPAMBOX Code Load Optimization is available");
     $installed = 'enabled';
   } elsif (!$AvailAsspSelfLoader)  {
     $installed = $useAsspSelfLoader ? 'is not installed' : 'is disabled in config';
-    mlog(0,"AsspSelfLoader module $installed - ASSP Code Load Optimization is not available");
+    mlog(0,"AsspSelfLoader module $installed - SPAMBOX Code Load Optimization is not available");
   }
   $ModuleList{'AsspSelfLoader'} = $VerAsspSelfLoader.'/'.$requiredSelfLoaderVersion;
   $ModuleStat{'AsspSelfLoader'} = $installed;
 
-  if ($CanUseASSP_WordStem) {
-    $ver=eval('ASSP_WordStem->VERSION'); $VerASSP_WordStem=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"ASSP_WordStem module$ver installed - ASSP multi lingual word stemming engine for Bayesian and HMM checks is available");
+  if ($CanUseSPAMBOX_WordStem) {
+    $ver=eval('SPAMBOX_WordStem->VERSION'); $VerSPAMBOX_WordStem=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SPAMBOX_WordStem module$ver installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is available");
     $installed = 'enabled';
-    $requiredDBVersion{'Spamdb'} .= "_WordStem$VerASSP_WordStem";
-    $requiredDBVersion{'HMMdb'}  .= "_WordStem$VerASSP_WordStem";
+    $requiredDBVersion{'Spamdb'} .= "_WordStem$VerSPAMBOX_WordStem";
+    $requiredDBVersion{'HMMdb'}  .= "_WordStem$VerSPAMBOX_WordStem";
     # make Lingua::Stem::Snowball thread safe if it is'nt
     if (! defined *{'Lingua::Stem::Snowball::CLONE_SKIP'}) {
         *{'Lingua::Stem::Snowball::CLONE_SKIP'} = *{'main::Stem_Clone_Skip'};
@@ -949,34 +949,34 @@ EOT
     if (! defined *{'Lingua::Stem::Snowball::CLONE'}) {
         *{'Lingua::Stem::Snowball::CLONE'} = *{'main::Stem_Clone'};
     }
-  } elsif (!$AvailASSP_WordStem)  {
-    $installed = $useASSP_WordStem ? 'is not installed' : 'is disabled in config';
-    mlog(0,"ASSP_WordStem module $installed - ASSP multi lingual word stemming engine for Bayesian and HMM checks is not available");
+  } elsif (!$AvailSPAMBOX_WordStem)  {
+    $installed = $useSPAMBOX_WordStem ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SPAMBOX_WordStem module $installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available");
   }
-  $ModuleList{'ASSP_WordStem'} = $VerASSP_WordStem.'/1.24';
-  $ModuleStat{'ASSP_WordStem'} = $installed;
+  $ModuleList{'SPAMBOX_WordStem'} = $VerSPAMBOX_WordStem.'/1.24';
+  $ModuleStat{'SPAMBOX_WordStem'} = $installed;
 
-  if ($CanUseASSP_FC) {
-    $ver=eval('ASSP_FC->VERSION'); $VerASSP_FC=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"ASSP_FC module$ver installed - ASSP file commander is available");
+  if ($CanUseSPAMBOX_FC) {
+    $ver=eval('SPAMBOX_FC->VERSION'); $VerSPAMBOX_FC=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SPAMBOX_FC module$ver installed - SPAMBOX file commander is available");
     $installed = 'enabled';
-  } elsif (!$AvailASSP_FC)  {
-    $installed = $useASSP_FC ? 'is not installed' : 'is disabled in config';
-    mlog(0,"ASSP_FC module $installed - ASSP file commander is not available");
+  } elsif (!$AvailSPAMBOX_FC)  {
+    $installed = $useSPAMBOX_FC ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SPAMBOX_FC module $installed - SPAMBOX file commander is not available");
   }
-  $ModuleList{'ASSP_FC'} = $VerASSP_FC.'/1.05';
-  $ModuleStat{'ASSP_FC'} = $installed;
+  $ModuleList{'SPAMBOX_FC'} = $VerSPAMBOX_FC.'/1.05';
+  $ModuleStat{'SPAMBOX_FC'} = $installed;
 
-  if ($CanUseASSP_SVG) {
-    $ver=eval('ASSP_SVG->VERSION'); $VerASSP_SVG=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"ASSP_SVG module$ver installed - ASSP graphical STATS are available");
+  if ($CanUseSPAMBOX_SVG) {
+    $ver=eval('SPAMBOX_SVG->VERSION'); $VerSPAMBOX_SVG=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SPAMBOX_SVG module$ver installed - SPAMBOX graphical STATS are available");
     $installed = 'enabled';
-  } elsif (!$AvailASSP_SVG)  {
-    $installed = $useASSP_SVG ? 'is not installed' : 'is disabled in config';
-    mlog(0,"ASSP_SVG module $installed - ASSP graphical STATS are not available");
+  } elsif (!$AvailSPAMBOX_SVG)  {
+    $installed = $useSPAMBOX_SVG ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SPAMBOX_SVG module $installed - SPAMBOX graphical STATS are not available");
   }
-  $ModuleList{'ASSP_SVG'} = $VerASSP_SVG.'/1.03';
-  $ModuleStat{'ASSP_SVG'} = $installed;
+  $ModuleList{'SPAMBOX_SVG'} = $VerSPAMBOX_SVG.'/1.03';
+  $ModuleStat{'SPAMBOX_SVG'} = $installed;
 
   if ($CanUseIOSocketSSL) {
     $ver=eval('IO::Socket::SSL->VERSION'); $VerIOSocketSSL=$ver; $ver=" version $ver" if $ver;
@@ -1030,11 +1030,11 @@ EOT
   $ModuleStat{'IO::Socket::SSL'} = $installed;
 
   my $v;
-  $ModuleList{'Plugins::ASSP_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=3.10;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_AFC'};
-  $ModuleList{'Plugins::ASSP_ARC'}   =~ s/([0-9\.\-\_]+)$/$v=2.05;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_ARC'};
-  $ModuleList{'Plugins::ASSP_DCC'}   =~ s/([0-9\.\-\_]+)$/$v=2.01;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_DCC'};
-  $ModuleList{'Plugins::ASSP_OCR'}   =~ s/([0-9\.\-\_]+)$/$v=2.18;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_OCR'};
-  $ModuleList{'Plugins::ASSP_Razor'} =~ s/([0-9\.\-\_]+)$/$v=1.09;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_Razor'};
+  $ModuleList{'Plugins::SPAMBOX_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=3.10;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_AFC'};
+  $ModuleList{'Plugins::SPAMBOX_ARC'}   =~ s/([0-9\.\-\_]+)$/$v=2.05;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_ARC'};
+  $ModuleList{'Plugins::SPAMBOX_DCC'}   =~ s/([0-9\.\-\_]+)$/$v=2.01;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_DCC'};
+  $ModuleList{'Plugins::SPAMBOX_OCR'}   =~ s/([0-9\.\-\_]+)$/$v=2.18;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_OCR'};
+  $ModuleList{'Plugins::SPAMBOX_Razor'} =~ s/([0-9\.\-\_]+)$/$v=1.09;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_Razor'};
 
   if (scalar keys %ModuleError) {
       mlog(0,"warning: There were module load errors detected - look in to file $base/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.");
@@ -1211,7 +1211,7 @@ EOT2
   }
 
   my $unclean = (exists $Config{clearBerkeleyDBEnv} || -e "$base/$pidfile");
-  mlog(0,'error: unclean shutdown of ASSP detected') if $unclean;
+  mlog(0,'error: unclean shutdown of SPAMBOX detected') if $unclean;
   foreach my $dir ( Glob("$base/tmpDB/*")) {
       if (-d $dir) {
           my $del;
@@ -1355,7 +1355,7 @@ EOT2
 # which cause in unexpected or missing keys in spamdb
 # for MySQL the field value is redefined from longblob to varbinary(255) - so we can read the data in MySQL-Admin
 # the length of the key field is set to 254 for all - to have one byte over for indexes (see Informix)
-# the length of the value field is set to 255 for all - this is enough for ASSP
+# the length of the value field is set to 255 for all - this is enough for SPAMBOX
 
 if ($CanUseTieRDBM) {
 # %Types is used for creating the data table if it doesn't exist already.
@@ -1368,7 +1368,7 @@ if ($CanUseTieRDBM) {
       'PgPP'    => [qw/ varchar(254)    varchar(255)     int       1          0 /],
       'Sybase'  => [qw/ varbinary(254)  varbinary(255)   tinyint   1          0 /],
 	  'Oracle'  => [qw/ varchar(254)    varchar(255)     integer   1          0 /],
-	  'CSV'     => [qw/ varchar(254)    varchar(255)     integer   1          1 /],  # should never be used by ASSP
+	  'CSV'     => [qw/ varchar(254)    varchar(255)     integer   1          1 /],  # should never be used by SPAMBOX
 	  'Informix'=> [qw/ nchar(254)      nchar(255)       integer   0          0 /],
 	  'Solid'   => [qw/ varbinary(254)  varbinary(255)   integer   1          0 /],
 	  'ODBC'    => [qw/ varbinary(254)  varbinary(255)   integer   1          0 /],
@@ -1494,7 +1494,7 @@ if ($CanUseTieRDBM) {
         *{'BerkeleyDB::_tiedHash::DELETE'} = *{'main::BDB_DELETE'};
   }
 
-  if ($CanUseASSP_WordStem) {
+  if ($CanUseSPAMBOX_WordStem) {
       $Lingua::Stem::Snowball::stemmifier = Lingua::Stem::Snowball::Stemmifier->new unless ref($Lingua::Stem::Snowball::stemmifier);
   }
   
@@ -1553,7 +1553,7 @@ if ($CanUseTieRDBM) {
   $currentDBVersion{'Spamdb'} = $Spamdb{'***DB-VERSION***'} || 'n/a';
   mlog(0,'spamdb has '.nN($i).' records') if $MaintenanceLog >= 2;
   mlog(0,"warning: Bayesian spam database has only $i records") if ($i < 500 && $spamdb);
-  mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ($haveSpamdb && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb});
+  mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ($haveSpamdb && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb});
   &mlogWrite();
   
 # check if there are at least 50 records in whitelist (~1KB)
@@ -1568,7 +1568,7 @@ if ($CanUseTieRDBM) {
       mlog(0,'The Hidden-Markov-Model-DB has '.nN($haveHMM).' records.') if $MaintenanceLog >= 2 && $haveHMM;
   }
   $currentDBVersion{'HMMdb'} = $HMMdb{'***DB-VERSION***'} || 'n/a';
-  mlog(0,"warning: the current HMMdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb});
+  mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb});
 
   if ($mysqlSlaveMode) {
       mlog(0,"assp is running in mysqlSlaveMode - no maintenance will be done for database tables!");
@@ -1666,8 +1666,8 @@ if ($CanUseTieRDBM) {
   if ($StartError) {
       mlog(0,"*******************************************************************************************");
       mlog(0,"error: an unrecoverable startup error was detected - please look in to previous messages");
-      mlog(0,"error: ASSP will not accept any SMTP connection - 'DisableSMTPNetworking' is set to on");
-      mlog(0,"error: solve the problem and restart ASSP");
+      mlog(0,"error: SPAMBOX will not accept any SMTP connection - 'DisableSMTPNetworking' is set to on");
+      mlog(0,"error: solve the problem and restart SPAMBOX");
       mlog(0,"error: after restart - login in to GUI and change 'DisableSMTPNetworking' to off, if needed");
       mlog(0,"*******************************************************************************************");
       configUpdateSMTPNet('DisableSMTPNetworking','0','2','');

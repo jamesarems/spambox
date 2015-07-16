@@ -34,7 +34,7 @@ package main; sub SNMPload_1 {
     $subOID{'.1.20.16.0'} = [\&timestring,\$nextLDAPcrossCheck,'',''];
     $subOID{'.1.20.17.0'} = [\&timestring,\$nextRebuildSpamDB,'',''];
     $subOID{'.1.20.18.0'} = [\&timestring,\$nextResendMail,'',''];
-    $subOID{'.1.20.19.0'} = [\&timestring,\$NextASSPFileDownload,'',''];
+    $subOID{'.1.20.19.0'} = [\&timestring,\$NextSPAMBOXFileDownload,'',''];
     $subOID{'.1.20.20.0'} = [\&timestring,\$NextVersionFileDownload,'',''];
     $subOID{'.1.20.21.0'} = [\&timestring,\$NextBackDNSFileDownload,'',''];
     $subOID{'.1.20.22.0'} = [\&timestring,\$NextCodeChangeCheck,'',''];

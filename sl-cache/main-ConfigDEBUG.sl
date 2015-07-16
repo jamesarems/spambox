@@ -8,7 +8,7 @@ package main; sub ConfigDEBUG {my ($name, $old, $new, $init)=@_;
         binmode($DEBUG);
         $DEBUG->autoflush;
         print $DEBUG $UTF8BOM;
-        print $DEBUG "running ASSP version: $main::MAINVERSION\n\n";
+        print $DEBUG "running SPAMBOX version: $main::MAINVERSION\n\n";
         mlog(0,"info: starting general debug mode to file $file");
     }
     mlog(0,"AdminUpdate: general debug changed to '$new' from '$old' ");

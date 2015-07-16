@@ -7,7 +7,7 @@ $headerHTTP
 $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
-<h2>ASSP Shutdown/Restart</h2>
+<h2>SPAMBOX Shutdown/Restart</h2>
 <div class="note">
 $h1
 </div>

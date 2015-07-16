@@ -1,4 +1,4 @@
 #line 1 "sub main::w32dbg"
 package main; sub w32dbg {
-    OutputDebugString('(ASSP): ' . shift);
+    OutputDebugString('(SPAMBOX): ' . shift);
 }

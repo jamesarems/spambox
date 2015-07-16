@@ -25,8 +25,8 @@ package main; sub BlockReasonsGet {
     $mimetime=~s/... (...) +(\d+) (........) (....)/$2 $1 $4 $3/o;
     $EmailBlockReportDomain = '@' . $EmailBlockReportDomain
       if $EmailBlockReportDomain !~ /^\@/o;
-    my $relboundary = '=======_00_ASSP_1298347655_======';
-    my $boundary    = '=======_01_ASSP_1298347655_======';
+    my $relboundary = '=======_00_SPAMBOX_1298347655_======';
+    my $boundary    = '=======_01_SPAMBOX_1298347655_======';
     my $mimehead    = <<"EOT";
 Date: $mimetime $tz
 MIME-Version: 1.0
@@ -273,12 +273,12 @@ WHITCHWORKER
             $ThreadIdleTime{$WorkerNumber} += 2;
             if ( !(open( $FLogFile, '<', "$File" )) ) {
                 mlog( 0,
-"warning: report is possibly incomplete, because ASSP is unable to open logfile $File"
+"warning: report is possibly incomplete, because SPAMBOX is unable to open logfile $File"
                 ) if $ReportLog;
                 $buser->{sum}{html} .=
-"<br />\nwarning: report is possibly incomplete, because ASSP is unable to open logfile $File";
+"<br />\nwarning: report is possibly incomplete, because SPAMBOX is unable to open logfile $File";
                 $buser->{sum}{text} .=
-"\r\nwarning: report is possibly incomplete, because ASSP is unable to open logfile $File";
+"\r\nwarning: report is possibly incomplete, because SPAMBOX is unable to open logfile $File";
                 next;
             }
         }
@@ -290,9 +290,9 @@ WHITCHWORKER
             if ($BlockMaxSearchTime && time - $start > $BlockMaxSearchTime) {
                 mlog(0,"warning: blockreport search in file $File has taken more than 3 minutes - skip the file") if $ReportLog;;
                 $buser->{sum}{html} .=
-"<br />\nwarning: report is possibly incomplete, because ASSP was skipping some parts of logfile $File";
+"<br />\nwarning: report is possibly incomplete, because SPAMBOX was skipping some parts of logfile $File";
                 $buser->{sum}{text} .=
-"\r\nwarning: report is possibly incomplete, because ASSP was skipping some parts of logfile $File";
+"\r\nwarning: report is possibly incomplete, because SPAMBOX was skipping some parts of logfile $File";
                 last;
             }
             $bytes += length($fl);
@@ -445,8 +445,8 @@ s/($EmailAdrRe\@$EmailDomainRe)/<a href="mailto:$EmailWhitelistAdd$EmailBlockRep
                       if (! $faddress && $is_admin);
                     $line =~ s/\[spam found\](\s*\(.*?\))( \Q$subjectStart\E)/<span name="tohid"><br \/><span class="spam">spam reason: <\/span>$1<\/span>$2/;
                     $line =~ s/($SpamTagRE|\[(?:TLS-(?:in|out)|SSL-(?:in|out)|PersonalBlack)\])/<span name="tohid">$1<\/span>/gio;
-                    my $leftbut = '<a href="mailto:'.$EmailBlockReport.$EmailBlockReportDomain.'?subject=request%20ASSP%20to%20resend%20blocked%20mail%20from%20ASSP-host%20'.$myName.'&body=%23%23%23'.$filename.'%23%23%23'.$addWhiteHint.$addFileHint.'%0D%0A" class="reqlink" target="_blank" title="request ASSP on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request ASSP on '.$myName.' to resend this blocked email"> Resend </a>';
-                    my $rightbut = '<a href="mailto:'.$ofilename.$EmailBlockReportDomain.'?&subject=request%20ASSP%20to%20resend%20blocked%20mail%20from%20ASSP-host%20'.$myName.'" class="reqlink" target="_blank" title="request ASSP on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request ASSP on '.$myName.' to resend this blocked email"> Resend </a>';
+                    my $leftbut = '<a href="mailto:'.$EmailBlockReport.$EmailBlockReportDomain.'?subject=request%20SPAMBOX%20to%20resend%20blocked%20mail%20from%20SPAMBOX-host%20'.$myName.'&body=%23%23%23'.$filename.'%23%23%23'.$addWhiteHint.$addFileHint.'%0D%0A" class="reqlink" target="_blank" title="request SPAMBOX on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request SPAMBOX on '.$myName.' to resend this blocked email"> Resend </a>';
+                    my $rightbut = '<a href="mailto:'.$ofilename.$EmailBlockReportDomain.'?&subject=request%20SPAMBOX%20to%20resend%20blocked%20mail%20from%20SPAMBOX-host%20'.$myName.'" class="reqlink" target="_blank" title="request SPAMBOX on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request SPAMBOX on '.$myName.' to resend this blocked email"> Resend </a>';
                     $rightbut = '' if (&matchSL(\@to,'BlockResendLinkLeft') or
                                              ($BlockResendLink == 1 && ! matchSL(\@to,'BlockResendLinkRight')));
                     $leftbut = '' if (&matchSL(\@to,'BlockResendLinkRight') or
@@ -537,9 +537,9 @@ EOT2
         or lc( $this->{mailfrom} ) eq lc($EmailBlockTo) )
     {
         $buser->{sum}{html} .= $t10html . "<br />\n<div name=\"tohid\">" . &needEs($lines, ' line','s') . " with $bytes analysed in " .
-            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running ASSP version $MAINVERSION<br /></div>\n";
+            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running SPAMBOX version $MAINVERSION<br /></div>\n";
         $buser->{sum}{text} .= $t10text . "\r\n\r\n" . &needEs($lines, ' line','s') . " with $bytes analysed in " .
-            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running ASSP version $MAINVERSION\r\n";
+            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running SPAMBOX version $MAINVERSION\r\n";
     } else {
         $buser->{sum}{html} .= "\n".($enableBRtoggleButton ? <<'EOT' : '');
 <script type="text/javascript">

@@ -19,7 +19,7 @@ package main; sub exportDB {
   rename("$export","$export.1");
   my $count=0;
 
-  $enc = ASSP::CRYPT->new($adminusersdbpass,0) if $doenc;
+  $enc = SPAMBOX::CRYPT->new($adminusersdbpass,0) if $doenc;
   my $obj;
   if ($obj = tied %$name) {
       $obj = $obj->{hashobj} if $doenc;

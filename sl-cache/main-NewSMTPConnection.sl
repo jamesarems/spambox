@@ -104,7 +104,7 @@ package main; sub NewSMTPConnection {
 
     if ($ip && $EmergencyBlock{$ip}) {
         mlog( $client, "$ip:$port denied by internal EMERGENCY Blocker - this IP has possibly tried before to KILL assp" );
-        mlog( $client, "$ip:$port ATTENTION ! The EMERGENCY blocking for this IP will be lifted after an ASSP restart or at least in 15 minutes" );
+        mlog( $client, "$ip:$port ATTENTION ! The EMERGENCY blocking for this IP will be lifted after an SPAMBOX restart or at least in 15 minutes" );
         $Stats{denyConnectionA}++;
         $Con{$client}->{type} = 'C';
         &NoLoopSyswrite($client,"554 <$myName> Service denied, closing transmission channel\r\n",0);

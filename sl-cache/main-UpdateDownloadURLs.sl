@@ -16,13 +16,13 @@ package main; sub UpdateDownloadURLs {
             if (/^\s*NewAsspURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
                 my $old = $NewAsspURL;
                 $NewAsspURL = $1;
-                mlog(0,"adminupdate: ASSP file download URL changed from $old to $NewAsspURL") if $NewAsspURL ne $old;
+                mlog(0,"adminupdate: SPAMBOX file download URL changed from $old to $NewAsspURL") if $NewAsspURL ne $old;
                 next;
             }
             if (/^\s*ChangeLogURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
                 my $old = $ChangeLogURL;
                 $ChangeLogURL = $1;
-                mlog(0,"adminupdate: ASSP changelog download URL changed from $old to $ChangeLogURL") if $ChangeLogURL ne $old;
+                mlog(0,"adminupdate: SPAMBOX changelog download URL changed from $old to $ChangeLogURL") if $ChangeLogURL ne $old;
                 next;
             }
             if (/^\s*(\w+)\s*:\s*(.+)$/io) {

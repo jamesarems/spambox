@@ -62,8 +62,8 @@ package main; sub downloadHTTP {
     # Create LWP object
     my $ua = LWP::UserAgent->new();
 
-    # Set useragent to ASSP version
-    $ua->agent("ASSP/$version$modversion ($^O; Perl/$]; LWP::Simple/$LWP::VERSION)");
+    # Set useragent to SPAMBOX version
+    $ua->agent("SPAMBOX/$version$modversion ($^O; Perl/$]; LWP::Simple/$LWP::VERSION)");
     $ua->timeout(20);
 
     if ($proxyserver) {

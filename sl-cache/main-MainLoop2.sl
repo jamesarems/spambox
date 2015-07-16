@@ -66,12 +66,12 @@ package main; sub MainLoop2 {
 
     if($RestartEvery && $itime >= $endtime) {
 # time to quit -- after endtime and we're bored.
-        &downASSP("restarting");
+        &downSPAMBOX("restarting");
         _assp_try_restart;
     }
 
     if ($doShutdown > 0 && $itime >= $doShutdown) {
-      &downASSP("restarting");
+      &downSPAMBOX("restarting");
       _assp_try_restart;
     }
   }

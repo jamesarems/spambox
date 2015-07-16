@@ -7,7 +7,7 @@ package main; sub SaveConfig {
  local $/ = undef;
  open($SC,'>',\$content);
 
- my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
+ my $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
 
  for my $idx (0...$#ConfigArray) {
    my $c = $ConfigArray[$idx];

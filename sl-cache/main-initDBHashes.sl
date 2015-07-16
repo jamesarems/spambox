@@ -35,7 +35,7 @@ package main; sub initDBHashes {
                                 my $cmd = "'BerkeleyDB::Hash',-Filename => \"$BerkeleyFile\", \%main::env";
                                 my $bin = $adminusersdbNoBIN ? 0 : 1 ;
                                 d("BDB-DB (initDBHashes) - $KeyName , $BerkeleyFile");
-                                $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd;
+                                $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd;
                             }
                             BDB_getRecordCount($KeyName);
                             &BDB_compact_hash($KeyName, 1000000) if $WorkerNumber == 0;
@@ -55,7 +55,7 @@ package main; sub initDBHashes {
                                 my $cmd = "'Tie::RDBM',\{db=>\$dbh,table=>\"$mysqlTable\",create=>1,DEBUG=>$DataBaseDebug\}";
                                 my $bin = $adminusersdbNoBIN ? 0 : 1 ;
                                 d("DB (initDBHashes) - $KeyName");
-                                $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
+                                $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
                             }
                         }
                     };

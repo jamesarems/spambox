@@ -35,7 +35,7 @@ package main; sub ThreadMaintMain {
         $NextTLDlistDownload = time + 120 if (-e "$base/$file");
         $NextBackDNSFileDownload = time + 300;
         $NextVersionFileDownload = time + 60;
-        $NextASSPFileDownload = time + 90;
+        $NextSPAMBOXFileDownload = time + 90;
         $NextSyncConfig = time + 60;
         $nextStatsUpload = $Stats{nextUpload};
         ScheduleMapSet('GroupsReloadEvery');
@@ -70,7 +70,7 @@ package main; sub ThreadMaintMain {
         threads->yield();
     }
     if (! $isRunTask && $doShutdown < 0) {
-        mlog(0,"info: assp has finished all running tasks after a scheduled restart was requested - initialize automatic restart for ASSP in 15 seconds");
+        mlog(0,"info: assp has finished all running tasks after a scheduled restart was requested - initialize automatic restart for SPAMBOX in 15 seconds");
         $doShutdown = time + 15;
         mlog(0,"info: damping is now switched off until assp is down") if $DoDamping;
         return;
@@ -102,11 +102,11 @@ package main; sub ThreadMaintMain {
         }
         my $res = qx($cmd);
         if ($res =~ /syntax\s+OK/ios) {
-            if ($res !~ /ASSP\s+\Q$MajorVersion\E/ios) {
-                mlog(0,"error: autoupdate: the version of '$lassp' is not an ASSP major version $MajorVersion - restoring current running script $MAINVERSION!");
+            if ($res !~ /SPAMBOX\s+\Q$MajorVersion\E/ios) {
+                mlog(0,"error: autoupdate: the version of '$lassp' is not an SPAMBOX major version $MajorVersion - restoring current running script $MAINVERSION!");
                 copy($lassp.'.run',"$lassp") && ($FileUpdate{"$lassp".'asspCode'} = ftime($lassp));
             } else {
-                mlog(0,"info: new '$lassp' script detected - syntax check returned OK - requesting automatic restart for ASSP in 15 seconds");
+                mlog(0,"info: new '$lassp' script detected - syntax check returned OK - requesting automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = -1;
             }
         } else {
@@ -129,9 +129,9 @@ package main; sub ThreadMaintMain {
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
 
-    if ($AutoUpdateASSP && ! $doShutdown && ! $allIdle && time >= $NextASSPFileDownload) {
+    if ($AutoUpdateSPAMBOX && ! $doShutdown && ! $allIdle && time >= $NextSPAMBOXFileDownload) {
         if (! $noModuleAutoUpdate && ftime("$base/notes/avail_perl_modules.txt") < time - 3600 * 12) {
-            if ($AutoUpdateASSP == 2) {
+            if ($AutoUpdateSPAMBOX == 2) {
                 mlog(0,"search and install updates for Perl modules");
                 %AvailPerlModules = Perl_upgrade_do('--install');
             } else {
@@ -161,15 +161,15 @@ package main; sub ThreadMaintMain {
             mlog(0,"finished Perl modules updates");
             $wasrun++;
         }
-        $wasrun += &downloadASSPVersion();
+        $wasrun += &downloadSPAMBOXVersion();
         if ($AutoRestartAfterCodeChange && $codeChanged == 2  &&
             ($AsAService || $AsADaemon || $AutoRestartCmd))
         {
             if ($isRunTask) {
-                mlog(0,"info: assp has updated still loaded modules - schedule automatic restart for ASSP after still running task are finished");
+                mlog(0,"info: assp has updated still loaded modules - schedule automatic restart for SPAMBOX after still running task are finished");
                 $doShutdown = -1;
             } else {
-                mlog(0,"info: assp has updated still loaded modules - initialize automatic restart for ASSP in 15 seconds");
+                mlog(0,"info: assp has updated still loaded modules - initialize automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = time + 15;
             }
         }
@@ -296,7 +296,7 @@ package main; sub ThreadMaintMain {
         $wasrun = &uploadGlobalPB('pbdb.white.db');
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
-    if(! $AutoUpdateASSP && time >= $NextVersionFileDownload) {
+    if(! $AutoUpdateSPAMBOX && time >= $NextVersionFileDownload) {
         $wasrun = &downloadVersionFile();
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
@@ -452,7 +452,7 @@ package main; sub ThreadMaintMain {
                 && $MemoryUsageLimit
                 && $usage > $MemoryUsageLimit)
             {
-                mlog(0,"warning: the memory usage of the current process is $usage MB, which exceeds $MemoryUsageLimit MB (MemoryUsageLimit) - requesting automatic restart for ASSP in 15 seconds");
+                mlog(0,"warning: the memory usage of the current process is $usage MB, which exceeds $MemoryUsageLimit MB (MemoryUsageLimit) - requesting automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = time + 15;
                 $wasrun = 1;
             } elsif ($usage && $MaintenanceLog > 2) {
@@ -560,7 +560,7 @@ package main; sub ThreadMaintMain {
               &sendNotification(
                 $EmailFrom,
                 $Notify,
-                "ASSP error notification from $myName",
+                "SPAMBOX error notification from $myName",
                 "logged error on host $myName:\r\n\r\n$textI$text2");
                 $t = '*x*';
           } else {
@@ -574,7 +574,7 @@ package main; sub ThreadMaintMain {
             &sendNotification(
               $EmailFrom,
               $Notify,
-              "ASSP information notification from $myName",
+              "SPAMBOX information notification from $myName",
               "information on host $myName:\r\n\r\nMainThread has retured to normal state after stuck\r\n");
         }
         $MainLoopStepTime2 = 0;

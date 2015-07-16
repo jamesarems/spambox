@@ -33,7 +33,7 @@ package main; sub renderConfigHTML {
   <a href="top10stats" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Top 10 Stats</a><br />' if $DoT10Stat;
   $NavMenu .= '
   <a href="statusassp?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Worker/DB/Regex Status</a><br />
-  <a href="shutdown_list?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="this monitor will slow down ASSP dramaticly - use it careful" /> SMTP Connections </a>
+  <a href="shutdown_list?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="this monitor will slow down SPAMBOX dramaticly - use it careful" /> SMTP Connections </a>
   <a href="shutdown_list?nocache='.time.'&forceRefresh=1" target="_blank" onmouseover="showhint(\''.$ConnHint.'\', this, event, \'500px\', \'1\');return false;"><img height=12 width=12 src="' . $wikiinfo . '" /></a><br />
   <a href="shutdown"><img src="' . $noIcon . '" alt="noicon" /> Shutdown/Restart</a><br />
   <a href="donations"><img src="' . $noIcon . '" alt="noicon" /> Donations</a><br /></div>';
@@ -180,7 +180,7 @@ var BrowserDetect = {
 };
 BrowserDetect.init();
 
-var detectedBrowser = 'ASSP-GUI is running in ' + BrowserDetect.browser + ' version ' + BrowserDetect.version + ' on ' + BrowserDetect.OS;
+var detectedBrowser = 'SPAMBOX-GUI is running in ' + BrowserDetect.browser + ' version ' + BrowserDetect.version + ' on ' + BrowserDetect.OS;
 if (oldBrowser) {
     detectedBrowser = detectedBrowser + ' (old javascript engine and/or browser detected)';
 }
@@ -533,7 +533,7 @@ window.onload = externalLinks;
 // Sliding Menu Script
 // copyright Stephen Chapman, 6th July 2005
 // you may copy this code but please keep the copyright notice as well
-// ASSP implementation by Thomas Eckardt
+// SPAMBOX implementation by Thomas Eckardt
 var speed = 1;
 
 function changeSlide() {
@@ -654,7 +654,7 @@ $JavaScript .= '
 * This notice MUST stay intact for legal use
 * Visit http://www.dynamicdrive.com/ for this script and 100s more.
 *
-* implemented in ASSP by Thomas Eckardt
+* implemented in SPAMBOX by Thomas Eckardt
 ***********************************************/
 
 var horizontal_offset="0px" //horizontal offset of hint box from anchor link
@@ -873,7 +873,7 @@ function processPrint(){
             if (headTags.length > 0) html += headTags[0].innerHTML;
         }
         html += \'\n</HE\' + \'AD>\n<BODY>\n\';
-        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>ASSP version '.$version.$modversion.'</b><br /><hr /><br />\';
+        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>SPAMBOX version '.$version.$modversion.'</b><br /><hr /><br />\';
 
         var printReadyElemCfg  = document.getElementById("cfgdiv");
         var printReadyElemHint = document.getElementById("mainhints");
@@ -927,7 +927,7 @@ Cache-control: no-cache
   <meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />
   <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
   <META HTTP-EQUIV=\"Expires\" CONTENT=\"-1\">
-  <title>Config ASSP ($myName) Host: $localhostname @ $localhostip</title>
+  <title>Config SPAMBOX ($myName) Host: $localhostname @ $localhostip</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
   <link rel=\"shortcut icon\" href=\"get?file=images/favicon.ico\" />
 $JavaScript
@@ -1013,11 +1013,11 @@ foreach (sort keys %Config1) {
   $headers .= '<table id="TopMenu" class="contentFoot" style="margin:0; text-align:left;" CELLSPACING=0 CELLPADDING=4 WIDTH="100%">
   <tr><td rowspan="3" align="left">';
   if (-e "$base/images/logo.gif") {
-      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"ASSP\" /></a>";
+      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"SPAMBOX\" /></a>";
   } else {
-      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"ASSP\" /></a>";
+      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"SPAMBOX\" /></a>";
   }
-  $headers .= "</td><td rowspan=\"3\" align=\"left\" onmouseover=\"showhint(detectedBrowser,this, event, '450px', '')\">ASSP version $version$modversion<br />";
+  $headers .= "</td><td rowspan=\"3\" align=\"left\" onmouseover=\"showhint(detectedBrowser,this, event, '450px', '')\">SPAMBOX version $version$modversion<br />";
 
   if ($setpro && $globalClientName && $globalClientPass) {
       $headers .= "<b><font color=white size=+3>&nbsp;&nbsp;&nbsp;&nbsp;pro</font></b>";
@@ -1030,7 +1030,7 @@ foreach (sort keys %Config1) {
   $avv =~ s/\s|\(|\)//gio;
   $stv =~ s/\s|\(|\)//gio;
   $stv = 0 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
-  $headers .= "<br /><a href=\"$NewAsspURL\" target=\"_blank\" style=\"color:green;size:-1;\">new available ASSP version $availversion</a>" if $avv gt $stv;
+  $headers .= "<br /><a href=\"$NewAsspURL\" target=\"_blank\" style=\"color:green;size:-1;\">new available SPAMBOX version $availversion</a>" if $avv gt $stv;
 
  $headers .= '</td>
   <td><a href="lists">White/Redlist/Tuplets</a></td>
@@ -1079,13 +1079,13 @@ foreach (sort keys %Config1) {
 
  $headers .= "
 <div class=\"rightButton\" style=\"text-align: center;\">
-  <input type=\"button\" value=\"logout\" onclick=\"document.forms['ASSPconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />\&nbsp;
+  <input type=\"button\" value=\"logout\" onclick=\"document.forms['SPAMBOXconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />\&nbsp;
   <a href=\"javascript:void(0);\" onclick=\"remember();return false;\" onmouseover=\"showhint('open the remember me window', this, event, '200px', '');return false;\"><img height=12 width=12 src=\"$wikiinfo\" /></a>&nbsp;
-  <input type=\"button\" value=\"Apply\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;
+  <input type=\"button\" value=\"Apply\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;
 ";
  $headers .= "
   <a href=\"./fc\" target=\"_blank\" onmouseover=\"showhint('start the assp file commander', this, event, '200px', '');return false;\"><img height=19 width=19 src=\"get?file=images/fc_main.png\" /></a>"
-    if ($CanUseASSP_FC && &canUserDo($WebIP{$ActWebSess}->{user},'action','fc'));
+    if ($CanUseSPAMBOX_FC && &canUserDo($WebIP{$ActWebSess}->{user},'action','fc'));
  $headers .= "
 </div>
 <hr />
@@ -1132,11 +1132,11 @@ foreach (sort keys %Config1) {
 <div class=\"menuLevel1\">$NavMenu</div>
 <hr />
 <div class=\"rightButton\" style=\"text-align: center;\">
-  <input type=\"button\" value=\"  logout  \" onclick=\"document.forms['ASSPconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />
+  <input type=\"button\" value=\"  logout  \" onclick=\"document.forms['SPAMBOXconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />
 </div>
 <hr />
 <div class=\"rightButton\" style=\"text-align: center;\">
-  <input type=\"button\" value=\"Apply Changes\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />
+  <input type=\"button\" value=\"Apply Changes\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />
 </div>
 <hr />
 <div class=\"menuLevel2\">
@@ -1191,7 +1191,7 @@ $headers .= "
 " if (($rootlogin or &canUserDo($WebIP{$ActWebSess}->{user},'action','editinternals')) && $DoDKIM && $ValidateSPF);
 
 $headers .= "<hr />
-	<span style=\"font-weight: bold;\">ASSP Version</span>: $version$modversion<br />
+	<span style=\"font-weight: bold;\">SPAMBOX Version</span>: $version$modversion<br />
 	".($codename?"<span style=\"font-weight: bold;\">code name</span>: $codename<br />":'')."
 	<span style=\"font-weight: bold;\">Current PID</span>: $mypid<br />
 	<span style=\"font-weight: bold;\">Started</span>: $starttime<br />
@@ -1231,7 +1231,7 @@ $headers .= "</div>
 <a href=\"donations\">donations</a> |
 <a href=\"http://assp.cvs.sourceforge.net\" rel=\"external\" target=\"_blank\">development</a> |
 <a href=\"http://assp.sourceforge.net/cgi-bin/assp_stats\" rel=\"external\" target=\"_blank\">global stats</a> |
-<a href=\"http://sourceforge.net/p/assp/wiki/ASSP_Documentation\" rel=\"external\" target=\"_blank\">docs</a> |
+<a href=\"http://sourceforge.net/p/assp/wiki/SPAMBOX_Documentation\" rel=\"external\" target=\"_blank\">docs</a> |
  <a href=\"http://sourceforge.net/mail/?group_id=69172\" rel=\"external\" target=\"_blank\">email lists</a> |
 
  <a href=\"http://sourceforge.net/p/assp/forum/\" rel=\"external\" target=\"_blank\">community forums</a> |

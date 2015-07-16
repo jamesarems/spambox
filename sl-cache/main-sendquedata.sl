@@ -252,7 +252,7 @@ package main; sub sendquedata {
       my $timeout = $smtpIdleTimeout || 180;   # send some data to the server to prevent SMTP-timeout
       if ($this->{lastwritten} && time - $this->{lastwritten} > $timeout) {
           $this->{lastwritten} = time;
-          my $dummy = "X-ASSP-KEEP:\r\n";
+          my $dummy = "X-SPAMBOX-KEEP:\r\n";
           sendque($fh,\$dummy);
       }
       return ;                         # queue the data until all data are received

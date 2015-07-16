@@ -17,8 +17,8 @@ Content-type: text/html
     $out .= "\n<head>\n<title>confidence distribution graphic</title>\n";
     $out .= "</head><body>\n";
 
-    unloadNameSpace("ASSP_SVG") if $ASSP_FC::TEST;
-    eval('use ASSP_SVG; 1;') or return $out."<h1>ERROR: can not load lib/ASSP_SVG.pm - $@</h1></body></html>";
+    unloadNameSpace("SPAMBOX_SVG") if $SPAMBOX_FC::TEST;
+    eval('use SPAMBOX_SVG; 1;') or return $out."<h1>ERROR: can not load lib/SPAMBOX_SVG.pm - $@</h1></body></html>";
     open(my $F, '<', "$base/images/svg.js") or return $out."<h1>ERROR: can not open $base/images/svg.js - $!</h1></body></html>";
     binmode $F;
     my $Jscript = join('',<$F>);
@@ -168,7 +168,7 @@ Content-type: text/html
     $tt =~ s/_/ /go;
     $size = $mobile ? 'style="width:500px;"' : 'style="width:850px;"';
 
-    $out .= "<div id=\"form\" $size>".'<form name="ASSPgraph" id="ASSPgraph" action="" method="post"><center>
+    $out .= "<div id=\"form\" $size>".'<form name="SPAMBOXgraph" id="SPAMBOXgraph" action="" method="post"><center>
     from: <input name="from" size="20" value="'.$tf.'">
     to: <input name="to" size="20" value="'.$tt.'">
     <input name="stattype" type="hidden" value="'.$qs{stattype}.'">
@@ -179,7 +179,7 @@ Content-type: text/html
 
     $size = $mobile ? 'style="width:500px; height:350px;"' : 'style="width:850px; height:500px;"';
     $out .= "<div id=\"svggraphic\" $size>\n";
-    $out .= eval{ASSP_SVG::SVG_render_confidence($stat,1,5,\@confp,$values,$plot,"$base/images");};
+    $out .= eval{SPAMBOX_SVG::SVG_render_confidence($stat,1,5,\@confp,$values,$plot,"$base/images");};
     $out .= $@ if $@;
     $out .= "</div>\n";
 

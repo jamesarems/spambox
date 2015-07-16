@@ -6,7 +6,7 @@ package main; sub registerGlobalClient {
     $url = 'http://'.$url if $url !~ m!^(?:ht|f)tps?://!io;
 
     my $ua = LWP::UserAgent->new();
-    $ua->agent("ASSP/$version$modversion ($^O; Perl/$]; LWP::UserAgent/$LWP::VERSION)");
+    $ua->agent("SPAMBOX/$version$modversion ($^O; Perl/$]; LWP::UserAgent/$LWP::VERSION)");
     $ua->timeout(20);
 
     if ($proxyserver) {

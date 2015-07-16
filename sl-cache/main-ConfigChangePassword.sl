@@ -13,8 +13,8 @@ package main; sub ConfigChangePassword {my ($name, $old, $new, $init)=@_;
             mlog(0,"error: ConfigChangePassword called without defining a value");
             return;
         }
-        my $dec = ASSP::CRYPT->new($old,0);
-        my $enc = ($usedCrypt == -1) ? ASSP::CRYPT->new($webAdminPassword,0,1) : ASSP::CRYPT->new($webAdminPassword,0);
+        my $dec = SPAMBOX::CRYPT->new($old,0);
+        my $enc = ($usedCrypt == -1) ? SPAMBOX::CRYPT->new($webAdminPassword,0,1) : SPAMBOX::CRYPT->new($webAdminPassword,0);
         foreach my $file (keys %CryptFile) {
             (open my $cf,'<' ,"$file") or next;
             binmode $cf;

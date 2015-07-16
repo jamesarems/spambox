@@ -30,7 +30,7 @@ package main; sub WebLogout {
     $rootlogin = $isrootLoggedOn;
     my $realm = time;
         &NoLoopSyswrite($fh, "HTTP/1.1 401 Unauthorized
-WWW-Authenticate: Basic realm=\"logged out ASSP session $realm - please click cancel and close the browser\"
+WWW-Authenticate: Basic realm=\"logged out SPAMBOX session $realm - please click cancel and close the browser\"
 Content-type: text/html
 
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body>
@@ -50,7 +50,7 @@ self.close();
 }
 // -->
 </script>
-<h1>Logout from ASSP completed.</h1><br /><br />please close the browser
+<h1>Logout from SPAMBOX completed.</h1><br /><br />please close the browser
 <script type=\"text/javascript\">
 <!--
 self.close();

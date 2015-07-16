@@ -50,7 +50,7 @@ package main; sub importDB {
       mlog_i(0,"adding records in file $importadd to table $mysqlTable");
    }
 
-   $dec = ASSP::CRYPT->new($adminusersdbpass,0) if $dodec;
+   $dec = SPAMBOX::CRYPT->new($adminusersdbpass,0) if $dodec;
 
    my @import = ($importrpl,$importadd);
    foreach my $importrpl (@import){

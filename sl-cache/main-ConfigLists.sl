@@ -260,7 +260,7 @@ $h3
   </table>
   </form>
   $h4
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </div>

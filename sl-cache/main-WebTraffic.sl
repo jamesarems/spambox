@@ -66,7 +66,7 @@ Content-type: text/html
 <!--
 var mydom = window.location.host;
 var myprot = '$prot';
-alert('Switched to ' + myprot + '//' + mydom + '/' + ' - Please wait some seconds to let assp finish change the configuration. It is recommended to restart ASSP!');
+alert('Switched to ' + myprot + '//' + mydom + '/' + ' - Please wait some seconds to let assp finish change the configuration. It is recommended to restart SPAMBOX!');
 window.location.href = myprot + '//' + mydom + '/$bl';
 // -->
 </script>
@@ -84,7 +84,7 @@ EOT
         if ($se) {
           my $time=gmtime();
           $time=~s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-          $resph.="\nServer: ASSP/$version$modversion";
+          $resph.="\nServer: SPAMBOX/$version$modversion";
           $resph.="\nDate: $time";
           if ($EnableHTTPCompression && $CanUseHTTPCompression && /Accept-Encoding: ([^\n]*)\n/io && $1=~/(gzip|deflate)/io) {
             my $enc=$1;
@@ -124,7 +124,7 @@ EOT
       if ($se) {
         my $time=gmtime();
         $time=~s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-        $resph.="\nServer: ASSP/$version$modversion";
+        $resph.="\nServer: SPAMBOX/$version$modversion";
         $resph.="\nDate: $time";
         if ($EnableHTTPCompression && $CanUseHTTPCompression && /Accept-Encoding: ([^\n]*)\n/io && $1=~/(gzip|deflate)/io) {
           my $enc=$1;

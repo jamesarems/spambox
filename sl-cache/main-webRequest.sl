@@ -30,7 +30,7 @@ package main; sub webRequest {
     $currentPage =~ s/^\/+//o;
     $currentPage = 'Config' unless $currentPage;
     $currentPage = ucfirst($currentPage);
-    $headers =~ s/<title>\S+ ASSP/<title>$currentPage ASSP/o if $page ne '/get' && exists $webRequests{$page};
+    $headers =~ s/<title>\S+ SPAMBOX/<title>$currentPage SPAMBOX/o if $page ne '/get' && exists $webRequests{$page};
     if(defined $data) { # GET, POST order
         $qs.='&' if ($qs ne '');
         $qs.=$data;
@@ -51,7 +51,7 @@ package main; sub webRequest {
         $certowner = ${*$fh}{'my_SSL_certificate_owner'} || $fh->peer_certificate('owner');
         ${*$fh}{'my_SSL_certificate_owner'} = $certowner;
     }
-    $enc = ASSP::CRYPT->new($Config{webAdminPassword},0) if $webSSLRequireCientCert && $SSLWEBCertVerifyCB && $cert;
+    $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0) if $webSSLRequireCientCert && $SSLWEBCertVerifyCB && $cert;
     my ($auth)=$head{authorization}=~/Basic (\S+)/io;
     my ($user,$pass) = split(/:/o,base64decode($auth));
     if ($webSSLRequireCientCert && $SSLWEBCertVerifyCB && $cert && @ExtWebAuth && !$user) {
@@ -142,7 +142,7 @@ Content-type: text/html
         my $how = ($page!~/logout/io) ? 'Unauthorized request!' : '<br />You are logged out from assp.<br /><br />Please close the browser session!';
         print $tempfh "HTTP/1.1 401 Unauthorized
 Set-Cookie: session-id=\"$cookie\";Max-Age=900;Version=\"1\";Discard;
-WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (ASSP) Configuration\"
+WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (SPAMBOX) Configuration\"
 Content-type: text/html
 
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>$how</h1>
@@ -356,7 +356,7 @@ Content-type: text/html
     } else {
         print $tempfh "HTTP/1.1 401 Unauthorized
 Set-Cookie: session-id=\"$cookie\";Max-Age=900;Version=\"1\";Discard;
-WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (ASSP) Configuration\"
+WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (SPAMBOX) Configuration\"
 Content-type: text/html
 
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>Unauthorized</h1>

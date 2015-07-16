@@ -10,7 +10,7 @@ package main; sub openLogs {
           $LOG->autoflush;
           if (! $append) {
               print $LOG $UTF8BOM;
-              mlog(0,"running ASSP version $main::MAINVERSION");
+              mlog(0,"running SPAMBOX version $main::MAINVERSION");
           }
       }
   }
@@ -28,7 +28,7 @@ package main; sub openLogs {
       binmode($DEBUG);
       $DEBUG->autoflush;
       print $DEBUG $UTF8BOM;
-      print $DEBUG "running ASSP version: $main::MAINVERSION\n\n";
+      print $DEBUG "running SPAMBOX version: $main::MAINVERSION\n\n";
       mlog(0,"info: starting general debug mode to file $file");
   }
   $@ = $e;

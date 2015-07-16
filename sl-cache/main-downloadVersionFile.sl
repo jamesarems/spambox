@@ -2,11 +2,11 @@
 package main; sub downloadVersionFile {
     d('downloadVersionFile-start');
     my $force;
-    $force = 1 if ($NextASSPFileDownload == -1 or $NextVersionFileDownload == -1);
+    $force = 1 if ($NextSPAMBOXFileDownload == -1 or $NextVersionFileDownload == -1);
     &UpdateDownloadURLs();
     if (! $versionURL) {
         mlog(0,"warning: versionupdate: no download URL found for version.txt - skip update for 24 hours");
-        $NextASSPFileDownload = time + 3600 * 24;
+        $NextSPAMBOXFileDownload = time + 3600 * 24;
         $NextVersionFileDownload = time + 3600 * 24;
         return 0;
     }

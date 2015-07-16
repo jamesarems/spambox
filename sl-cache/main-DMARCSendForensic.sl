@@ -22,7 +22,7 @@ Below is some detail information about this message:
 
 For more information please check Aggregate Reports or mail to $mailFrom .
 Feedback-Type: auth-failure
-User-Agent: ASSP/$version
+User-Agent: SPAMBOX/$version
 Version: $MAINVERSION
 Original-Mail-From: <$this->{mailfrom}>
 Arrival-Date: $rcvdtime

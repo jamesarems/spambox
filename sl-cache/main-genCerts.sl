@@ -1,6 +1,6 @@
 #line 1 "sub main::genCerts"
 package main; sub genCerts {
-# Very basic script to create SSL/TLS certificates for ASSP
+# Very basic script to create SSL/TLS certificates for SPAMBOX
 
 use File::Temp qw/ tempfile tempdir /;
 my $template;
@@ -16,7 +16,7 @@ my %opts = (
     C  => 'XY',
     ST => 'unknown',
     L  => 'unknown',
-    O  => 'ASSP',
+    O  => 'SPAMBOX',
     OU => 'Server',
     CN => $myName,
     emailAddress => $EmailAdminReportsTo,

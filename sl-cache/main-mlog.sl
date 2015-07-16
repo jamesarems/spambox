@@ -148,7 +148,7 @@ package main; sub mlog {
             if ($m =~ /$k/i) {
                 ($rcpt = $v) or next;
                 $sub = $NotifySub{$k} . " from $myName" if exists $NotifySub{$k};
-                $sub ||= "ASSP event notification from $myName [".substr($comment,0,40).']';
+                $sub ||= "SPAMBOX event notification from $myName [".substr($comment,0,40).']';
                 &sendNotification(
                   $EmailFrom,
                   $rcpt,

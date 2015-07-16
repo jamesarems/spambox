@@ -10,33 +10,33 @@ package main; sub Perl_PPM_upgrade_do {
         'uni_winnipeg.510' => 'http://cpan.uwinnipeg.ca/PPMPackages/10xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.12'} = {
         'trouchelle.512' => 'http://trouchelle.com/ppm12',
         'uni_winnipeg.512' => 'http://cpan.uwinnipeg.ca/PPMPackages/12xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.14'} = {
         'trouchelle.514' => 'http://trouchelle.com/ppm14',
         'uni_winnipeg.514' => 'http://cpan.uwinnipeg.ca/PPMPackages/14xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.16'} = {
 #        'trouchelle.516' => 'http://trouchelle.com/ppm16',
 #        'uni_winnipeg.516' => 'http://cpan.uwinnipeg.ca/PPMPackages/16xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.18'} = {
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     my $ppm = ActivePerl::PPM::Client->new;
     my $install;
@@ -53,7 +53,7 @@ package main; sub Perl_PPM_upgrade_do {
     $vstr =~ s/^(\d\.)0(\d\d).*$/$1$2/o;
     mlog(0,"perl-update: checking PPM repositories for Perl $vstr");
     if (! exists $repo{$vstr} ) {
-        mlog(0,"perl-update: error - Perl $vstr is not supported by ASSP");
+        mlog(0,"perl-update: error - Perl $vstr is not supported by SPAMBOX");
         return ;
     }
     my %rep;

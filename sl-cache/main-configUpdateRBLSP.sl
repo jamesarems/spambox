@@ -26,7 +26,7 @@ package main; sub configUpdateRBLSP {
         while (@templist) {
             my $c = shift @templist;
             if ($NODHO && $c =~ /dnsbl\.httpbl\.org/io) {
-                mlog(0,"RBLSP:warning - dnsbl.httpbl.org is not supported as RBL-Service-Provider by ASSP and will be ignored - remove the entry")
+                mlog(0,"RBLSP:warning - dnsbl.httpbl.org is not supported as RBL-Service-Provider by SPAMBOX and will be ignored - remove the entry")
                     if $WorkerNumber == 0;
                 next;
             }

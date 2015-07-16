@@ -45,7 +45,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP Remote Support ($myName)</title>
+  <title>$currentPage SPAMBOX Remote Support ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body onmouseover="this.focus();" ondblclick="this.select();">
@@ -70,7 +70,7 @@ $headerHTTP
         the public IP address or hostname (eg. the MX) and the SMTP port, assp is listening to. The support stuff will also need
         login data to access the GUI and the information if SSL is required (or not) to access the GUI.<br /><br />
         Keep in mind, that nobody else than root will be able to login to the GUI, if you are still logged on using the root account!<br /><br />
-        ASSP will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.<br /><br />
+        SPAMBOX will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.<br /><br />
         ALSO NOTICE: you will not be able to receive any email from the remote support IP address, while the remote
         support is enabled!
       </form>

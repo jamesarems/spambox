@@ -25,7 +25,7 @@ $lngmsg{'msg500017'} = 'For defining any full filepaths, always use slashes ("/"
 $lngmsghint{'msg500018'} = '# main form buttom hint 8';
 $lngmsg{'msg500018'} = <<EOT;
 Fields marked with one small (<sup>s</sup>) - which are interval definitions - accept a single or a list of crontab entries separated by '|'. Such entries could be used to flexible schedule the configured task. A description of such crontab entries could be found in 'RebuildSchedule' and 'RestartSchedule'. Notice - this requires an installed <a href="http://search.cpan.org/search?query=Schedule::Cron" rel="external">Schedule::Cron</a> module in PERL.<br /><br />
-Fields marked with at least one asterisk (*) accept a list separated by '|' (for example: abc|def|ghi) or a file designated as follows (path relative to the ASSP directory): 'file:files/filename.txt'.  Putting in the <i>file:</i> will prompt ASSP to put up a button to edit that file. <i>files</i> is the subdirectory for files. The file does not need to exist, you can create it by saving it from the editor within the UI. The file must have one entry per line; anything on a line following a number sign or a semicolon ( # ;) is ignored (a comment).<br />
+Fields marked with at least one asterisk (*) accept a list separated by '|' (for example: abc|def|ghi) or a file designated as follows (path relative to the SPAMBOX directory): 'file:files/filename.txt'.  Putting in the <i>file:</i> will prompt SPAMBOX to put up a button to edit that file. <i>files</i> is the subdirectory for files. The file does not need to exist, you can create it by saving it from the editor within the UI. The file must have one entry per line; anything on a line following a number sign or a semicolon ( # ;) is ignored (a comment).<br />
 It is possible to include custom-designed files at any line of such a file, using the following directive<br />
 <span class="positive"># include filename</span><br />
 where filename is the relative path (from $base) to the included file like files/inc1.txt or inc1.txt (one file per line). The line will be internaly replaced by the contents of the included file!<br /><br />
@@ -101,7 +101,7 @@ Refresh your browser or click [Search/Update] to update this screen. Newest entr
 EOT
 
 $lngmsg{'msg500051'} = <<EOT;
-Select [file lines only], if you want to reduce the shown number of lines to such (POST filter), which contains filenames.<br /><br /> Use the MaillogTail function carefully, while ASSP is processing any request, no new connections will be accepted by ASSP, and this could take some minutes, if you search in large or many maillogs! To start realtime maillog, click on [Auto], to stop realtime maillog, click on [Stop].
+Select [file lines only], if you want to reduce the shown number of lines to such (POST filter), which contains filenames.<br /><br /> Use the MaillogTail function carefully, while SPAMBOX is processing any request, no new connections will be accepted by SPAMBOX, and this could take some minutes, if you search in large or many maillogs! To start realtime maillog, click on [Auto], to stop realtime maillog, click on [Stop].
 EOT
 
 $lngmsg{'msg500052'} = <<EOT;
@@ -114,7 +114,7 @@ EOT
 
 $lngmsghint{'msg500060'} = '# Mail Analyzer';
 $lngmsg{'msg500060'} = <<EOT;
-This page will show you how ASSP analyzes and pre-processes an email to come up with the assigned spam probability. Regular Expressions will always check the full message. Group matching of any address will be shown. To analyze/modify individual email addresses click <a href="javascript:void(0);" onclick="popAddressAction('example\@$myName');return false;">here</a>. To analyze/modify individual IP addresses click <a href="javascript:void(0);" onclick="popIPAction('1.1.1.1');return false;">here</a>.
+This page will show you how SPAMBOX analyzes and pre-processes an email to come up with the assigned spam probability. Regular Expressions will always check the full message. Group matching of any address will be shown. To analyze/modify individual email addresses click <a href="javascript:void(0);" onclick="popAddressAction('example\@$myName');return false;">here</a>. To analyze/modify individual IP addresses click <a href="javascript:void(0);" onclick="popIPAction('1.1.1.1');return false;">here</a>.
 EOT
 
 $lngmsg{'msg500061'} = <<EOT;
@@ -144,23 +144,23 @@ EOT
 
 $lngmsghint{'msg500070'} = '# Shutdown/Restart';
 $lngmsg{'msg500070'} = <<EOT;
-Note: It's possible to restart, if ASSP runs as a service or in a script that restarts it after it stops or it runs on WIN32 version Windows 2000(or higher) or it runs on linux,
-otherwise this function can only shut ASSP down. In either case, shutdown is possibly not clean -- all SMTP sessions will be interrupted after $MaxFinConWaitTime seconds.<br /><br />
+Note: It's possible to restart, if SPAMBOX runs as a service or in a script that restarts it after it stops or it runs on WIN32 version Windows 2000(or higher) or it runs on linux,
+otherwise this function can only shut SPAMBOX down. In either case, shutdown is possibly not clean -- all SMTP sessions will be interrupted after $MaxFinConWaitTime seconds.<br /><br />
 EOT
 $lngmsg{'msg500070'} .= <<EOT if $WebIP{$ActWebSess}->{user} eq 'root';
-The following command will be started in OS-shell, if ASSP runs not as a service or daemon:<br /><b><font color=green>$AutoRestartCmd</font></b>
+The following command will be started in OS-shell, if SPAMBOX runs not as a service or daemon:<br /><b><font color=green>$AutoRestartCmd</font></b>
 EOT
 
 $lngmsghint{'msg500080'} = '# EDIT files window/frame';
 $lngmsg{'msg500080'} = <<EOT;
 <span class="negative">Attention: This is the real database content!<br />
-Incorrect editing hash lists could result in unexpected behavior or dying ASSP!</span><br />
+Incorrect editing hash lists could result in unexpected behavior or dying SPAMBOX!</span><br />
 Use |::| as terminator between key and value, for example: 102.1.1.1|::|1234567890 !<br />
 If a time is shown human readable, you can change the date or time,<br />
 but leave the format as it is ([+]YYYY-MM-DD,hh:mm:ss) and leave a possible \'+\' in front.<br />
 Use only one pair of key and value per line.<br />
 Comments are not allowed!<br />
-While the hash is saved, ASSP is unable to accept new connections!<br />
+While the hash is saved, SPAMBOX is unable to accept new connections!<br />
 Be careful saveing large hash here, this could take very long time. Better save the new contents of large hashes and lists to the Importfile, if this option is available. If possible, the DB-Import will be started immediately by the MaintThread!<br />
 After saving the contents to the Importfile, you should close this windows and wait until the import has finished!
 EOT

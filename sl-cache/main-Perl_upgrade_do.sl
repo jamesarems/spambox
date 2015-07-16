@@ -18,7 +18,7 @@ package main; sub Perl_upgrade_do {
 #    mlog(0,"info: PPM ??? $@");
     eval('
     if($> != 0 && $^O ne "MSWin32") {
-        mlog(0,"warning: ASSP is not running as user root - skip CPAN Perl module update");
+        mlog(0,"warning: SPAMBOX is not running as user root - skip CPAN Perl module update");
         return;
     }
     use CPAN;

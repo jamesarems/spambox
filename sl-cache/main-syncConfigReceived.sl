@@ -29,7 +29,7 @@ package main; sub syncConfigReceived {
         unlink $file;
         return;
     }
-    if (! ($fcont = ASSP::CRYPT->new($webAdminPassword,0)->DECRYPT(join('',$fcont)) )) {
+    if (! ($fcont = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT(join('',$fcont)) )) {
         mlog(0,"syncCFG: no results after decrypt file '$file' for $name - ignore the sync-file");
         unlink $file;
         return;
@@ -59,7 +59,7 @@ package main; sub syncConfigReceived {
         }
         next unless $var;
         if ($line =~ /^\s*#\s*UUID\s+(.+)$/o) {
-            if (ASSP::UUID::equal_uuids($UUID, $1)) {
+            if (SPAMBOX::UUID::equal_uuids($UUID, $1)) {
                 mlog(0,"syncCFG: error: the sending host has the same UUID like this assp installation - this is a possible license violation - ignore the sync-file");
                 unlink $file;
                 return;
@@ -79,7 +79,7 @@ package main; sub syncConfigReceived {
                     $currFileCont = join('',<$FileH>);
                     close $FileH;
                     if (exists $CryptFile{$File} && $currFileCont =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                        my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                        my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                         $currFileCont = $enc->DECRYPT($currFileCont);
                     }
                 }
@@ -87,7 +87,7 @@ package main; sub syncConfigReceived {
             if ($currFileCont ne $FileCont && (open my $FileH , '>',"$File")) {
                 binmode $FileH;
                 if (exists $CryptFile{$File}) {
-                    my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                    my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                     $FileCont = $enc->ENCRYPT($FileCont);
                 }
                 print $FileH $FileCont;

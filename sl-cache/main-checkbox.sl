@@ -35,7 +35,7 @@ package main; sub checkbox {my ($name,$nicename,$size,$func,$default,$valid,$onc
  if (exists $ConfigAdd{$name}) {
      $color = ($ConfigAdd{$name} eq $default) ? '' : 'style="color:#8181F7;"';
  }
- my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['ASSPconfig'].$name.checked=$cdefault;setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$hdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
+ my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['SPAMBOXconfig'].$name.checked=$cdefault;setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$hdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
  $cfgname = "($name)" if $EnableInternalNamesInDesc && $mobile;
  $cfgname .= syncShowGUI($name);
  my $display = '';

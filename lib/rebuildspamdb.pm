@@ -11,7 +11,7 @@ rb_mlog("info: rebuildspamdb module version ".${'VERSION'}." loaded");
 # (c) Fritz Borgstedt 2006 under the terms of the GPL
 # Updated Feb 2008 refactoring and rewrites
 # (c) Kevin 2008 under the terms of the GPL
-# Updated Jul 2008 refactoring and rewrites to build in as package in ASSP
+# Updated Jul 2008 refactoring and rewrites to build in as package in SPAMBOX
 # and integrated move2num
 # (c) Thomas Eckardt since 2008 under the terms of the GPL
 
@@ -88,8 +88,8 @@ $attachments = 0;
 
 $DoHMM = $main::DoHMM;
 $doattach = 0;
-$doattach = 1 if    $main::Config{ASSP_AFCDetectSpamAttachRe}
-                 && $main::ASSP_AFCDetectSpamAttachReRE !~ $main::neverMatchRE;
+$doattach = 1 if    $main::Config{SPAMBOX_AFCDetectSpamAttachRe}
+                 && $main::SPAMBOX_AFCDetectSpamAttachReRE !~ $main::neverMatchRE;
 ($mintime,$movetime) = split(/(?:\s+|,)/o,$main::RebuildFileTimeLimit,2);
 $mintime =~ s/\s//go;
 $movetime =~ s/\s//go;
@@ -108,9 +108,9 @@ if ($RebuildDebug) {
     push @dbhint , "-rebuild debug output is enabled to $main::base/rebuilddebug.txt";
 }
 
-eval (<<'EOT') if ($main::CanUseASSP_WordStem);
-    use ASSP_WordStem();
-    $ASSP_WordStem::logging = 0;
+eval (<<'EOT') if ($main::CanUseSPAMBOX_WordStem);
+    use SPAMBOX_WordStem();
+    $SPAMBOX_WordStem::logging = 0;
 EOT
 
     if ($main::canUnicode && $^O eq 'MSwin32') {require Win32::Unicode;}
@@ -271,7 +271,7 @@ EOT
             $@ = '';
             eval (<<'EOT');
                 $main::lastd{$Iam} = "mounting BerkeleyDB $DBDir/rbtmp.hamHMM";
-                $hamHMM  = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $hamHMM  = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
@@ -280,7 +280,7 @@ EOT
                                                           -Env => $BDBEnv}
                                                   );
                 $main::lastd{$Iam} = "mounting BerkeleyDB $DBDir/rbtmp.spamHMM";
-                $spamHMM = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $spamHMM = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
@@ -318,14 +318,14 @@ EOT
             $@ = '';
             eval (<<'EOT');
                 $main::lastd{$Iam} = "loading model from $DBDir/rbtmp.hamHMM in to memory";
-                $hamHMM  = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $hamHMM  = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
                                                   File => "$DBDir/rbtmp.hamHMM" ,
                                                   );
                 $main::lastd{$Iam} = "loading model from $DBDir/rbtmp.spamHMM in to memory";
-                $spamHMM = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $spamHMM = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
@@ -400,8 +400,8 @@ EOT
     binmode $RebuildLog;
     $RebuildLog->autoflush;
     $starttime = time;
-    &rb_printlog( "\n\n\nRebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in ASSP version $main::version$main::modversion\n" );
-    &rb_mlog( "RebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in ASSP version $main::version$main::modversion");
+    &rb_printlog( "\n\n\nRebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in SPAMBOX version $main::version$main::modversion\n" );
+    &rb_mlog( "RebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in SPAMBOX version $main::version$main::modversion");
     while (@dbhint) {
         my $t = shift @dbhint;
         &rb_mlog( $t ) unless $t =~ s/^\-//o;
@@ -434,11 +434,11 @@ EOT
         &rb_printlog( "\nRebuildSpamDB will normalize unicode characters\n" );
         &rb_mlog( "RebuildSpamDB will normalize unicode characters" );
     }
-    if ($main::CanUseASSP_WordStem) {
-        &rb_printlog( "\nRebuildSpamDB will use the ASSP_WordStem engine\n" );
-        &rb_mlog( "RebuildSpamDB will use the ASSP_WordStem engine" );
+    if ($main::CanUseSPAMBOX_WordStem) {
+        &rb_printlog( "\nRebuildSpamDB will use the SPAMBOX_WordStem engine\n" );
+        &rb_mlog( "RebuildSpamDB will use the SPAMBOX_WordStem engine" );
     }
-    &rb_printlog("\n---ASSP Settings---\n");
+    &rb_printlog("\n---SPAMBOX Settings---\n");
     if ($main::DoPrivatSpamdb) {
         my $text = ($main::DoPrivatSpamdb == 1) ? 'users email addresses only.'
                  : ($main::DoPrivatSpamdb == 2) ? 'each local domain.'
@@ -672,11 +672,11 @@ EOT
         $scanTime = 1 unless $scanTime;
         my $fps = sprintf("%.2f",($scanFiles / $scanTime));
         if ($fps < $tooslow && $main::useDB4Rebuild) {
-            &rb_printlog("\nRebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for ASSP. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.\n");
-            &rb_mlog("Rebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for ASSP. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.");
+            &rb_printlog("\nRebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for SPAMBOX. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.\n");
+            &rb_mlog("Rebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for SPAMBOX. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.");
         } elsif ($fps < $slow && $main::useDB4Rebuild) {
-            &rb_printlog("\nRebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.\n");
-            &rb_mlog("Rebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.");
+            &rb_printlog("\nRebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.\n");
+            &rb_mlog("Rebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.");
         } elsif ($fps < $fast && $main::useDB4Rebuild) {
             &rb_printlog("\nRebuild processed $fps files per second. Good values are $fast files per second and higher. You can speed up the rebuild process, using a cached (>=128MB) IO-controller or a RAM-disk with at least $size for the folder '$main::base/tmpDB'.\n");
             &rb_mlog("Rebuild processed $fps files per second. Good values are $fast files per second and higher. You can speed up the rebuild process, using a cached (>=128MB) IO-controller or a RAM-disk with at least $size for the folder '$main::base/tmpDB'.");
@@ -687,18 +687,18 @@ EOT
         if ($main::useDB4Rebuild) {
             &rb_printlog("\nAfter finishing the Rebuild process, the $main::base/tmpDB folder contains $used.\n");
             &rb_mlog("After finishing the Rebuild process, the $main::base/tmpDB folder contains $used.");
-            if ($main::CanUseASSP_FC && eval('require ASSP_FC;')) {
-                $ASSP_FC::freespace_kbl = 0;
-                $ASSP_FC::totalspace_kbl = 0;
-                if ( &ASSP_FC::getDriveInfo("$main::base/tmpDB",'l') && $ASSP_FC::totalspace_kbl ) {
-                    $ASSP_FC::freespace_kbl =~ s/[.,]//go;
-                    $ASSP_FC::totalspace_kbl =~ s/[.,]//go;
-                    $ASSP_FC::freespace_kbl = &main::formatNumDataSize($ASSP_FC::freespace_kbl * 1024);
-                    $ASSP_FC::totalspace_kbl = &main::formatNumDataSize($ASSP_FC::totalspace_kbl * 1024);
-                    &rb_printlog("\nAfter finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $ASSP_FC::freespace_kbl free space from total $ASSP_FC::totalspace_kbl.\n");
-                    &rb_mlog("After finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $ASSP_FC::freespace_kbl free space from total $ASSP_FC::totalspace_kbl.");
+            if ($main::CanUseSPAMBOX_FC && eval('require SPAMBOX_FC;')) {
+                $SPAMBOX_FC::freespace_kbl = 0;
+                $SPAMBOX_FC::totalspace_kbl = 0;
+                if ( &SPAMBOX_FC::getDriveInfo("$main::base/tmpDB",'l') && $SPAMBOX_FC::totalspace_kbl ) {
+                    $SPAMBOX_FC::freespace_kbl =~ s/[.,]//go;
+                    $SPAMBOX_FC::totalspace_kbl =~ s/[.,]//go;
+                    $SPAMBOX_FC::freespace_kbl = &main::formatNumDataSize($SPAMBOX_FC::freespace_kbl * 1024);
+                    $SPAMBOX_FC::totalspace_kbl = &main::formatNumDataSize($SPAMBOX_FC::totalspace_kbl * 1024);
+                    &rb_printlog("\nAfter finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $SPAMBOX_FC::freespace_kbl free space from total $SPAMBOX_FC::totalspace_kbl.\n");
+                    &rb_mlog("After finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $SPAMBOX_FC::freespace_kbl free space from total $SPAMBOX_FC::totalspace_kbl.");
                 }
-                eval('no ASSP_FC;');
+                eval('no SPAMBOX_FC;');
             }
         }
     }
@@ -760,7 +760,7 @@ EOT
     unlink "$DBDir/rb_newspam.bdb";
 
 eval (<<'EOT');
-    no ASSP_WordStem;
+    no SPAMBOX_WordStem;
 EOT
     return ! $have_error;
 }
@@ -1153,13 +1153,13 @@ sub rb_processNewCorrected {
     &main::checkDBCon() if ($main::CanUseTieRDBM && $main::DBisUsed);
     $movetime = 0;
     my %addspam;
-    my $newhamHMM  = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+    my $newhamHMM  = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                           shortest => $main::HMMSequenceLength,
                                           top => 1,
                                           nostarts => 1,
                                           simple => 1
                                           );
-    my $newspamHMM = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+    my $newspamHMM = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                           shortest => $main::HMMSequenceLength,
                                           top => 1,
                                           nostarts => 1,
@@ -1682,7 +1682,7 @@ sub rb_get {
     eval{$file->close;};
     if ($count) {
         my @keep = $message =~ /((?:X-Assp-Reported-By|X-Assp-Intended-For|X-Forwarded-For):$main::HeaderValueRe)/gois;
-        $message =~ s/X-ASSP[^:]+:$main::HeaderValueRe//gois;                   # remove all X-ASSP headers
+        $message =~ s/X-SPAMBOX[^:]+:$main::HeaderValueRe//gois;                   # remove all X-SPAMBOX headers
         $message =~ s/(?:DKIM|DomainKey)-Signature:$main::HeaderValueRe//gios;  # remove DKIM/DomainKey signatures
         $message = join('',@keep).$message;
         $headlen = index($message, "\x0D\x0A\x0D\x0A");
@@ -2104,7 +2104,7 @@ sub rb_uploadgriplist {
         my ($url) = $main::gripListUpUrl =~ /http:\/\/[^\/](\/.+)/oi;
         $connect     = <<"EOF";
 POST $url HTTP/1.1
-User-Agent: ASSP/$main::MAINVERSION ($^O; Perl/$];)
+User-Agent: SPAMBOX/$main::MAINVERSION ($^O; Perl/$];)
 Host: $main::gripListUpHost
 EOF
     }

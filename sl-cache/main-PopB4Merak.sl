@@ -2,7 +2,7 @@
 package main; sub PopB4Merak {
   return 0 unless $PopB4SMTPFile;
   my $ip=shift;
-#This is a test version of ASSP PopB4SMTP
+#This is a test version of SPAMBOX PopB4SMTP
 #This is to be used with Merak 7.5.2
 #It also works with Merak 6.5 (which I run)
 #Thanks to Jordon for the heads up on 7.5.2

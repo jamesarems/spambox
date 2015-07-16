@@ -22,7 +22,7 @@ package main; sub ConfigStatsRaw {
  my $pct2=sprintf("%.1f",$tots{msgTotal2}-$AllStats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal2}/($tots{msgTotal2}-$AllStats{locals}));
  my $cpuAvg=sprintf("%.2f\%",(! $Stats{cpuTime} ? 0 : 100*$Stats{cpuBusyTime}/$Stats{cpuTime}));
  my $cpuAvg2=sprintf("%.2f\%",(! $AllStats{cpuTime} ? 0 : 100*$AllStats{cpuBusyTime}/$AllStats{cpuTime}));
- my $currStat = &StatusASSP();
+ my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io) ? 'not healthy' : 'healthy' ;
  my $memory = memoryUsage().'MB';
 
@@ -32,7 +32,7 @@ package main; sub ConfigStatsRaw {
  }
 <<EOT . $sr;
 $headerHTTP
-ASSP Proxy Uptime | $uptime days | $uptime2 days
+SPAMBOX Proxy Uptime | $uptime days | $uptime2 days
 Messages Processed | $tots{msgTotal} ($mpd per day) | $tots{msgTotal2} ($mpd2 per day)
 Non-Local Mail Blocked | $pct% | $pct2%
 CPU Usage | $cpuAvg | $cpuAvg2

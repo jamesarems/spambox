@@ -43,7 +43,7 @@ if ($action=~/abort/io) {
   mlog(0,"shutdown/restart process initiated per admin request; SMTP session count:$smtpConcurrentSessions") if $action=~/proceed/i;
  } elsif ($action=~/success/io) {
   $refresh=3;
-  $s1='ASSP restarted successfully.';
+  $s1='SPAMBOX restarted successfully.';
   $editButtons='<input type="submit" name="action" value=" Proceed " disabled="disabled" />&nbsp;
 <input type="submit" name="action" value=" Abort " disabled="disabled" />';
   $doShutdown=0;
@@ -61,7 +61,7 @@ if ($action=~/abort/io) {
   my $quit; $quit = '<form action="quit" method="post">
 <table class="textBox" style="width: 99%;">
   <tr><td class="noBorder" align="center">Panic button:</td></tr>
-  <tr><td class="noBorder" align="center"><input type="submit" value="Terminate ASSP now!" /></td></tr>
+  <tr><td class="noBorder" align="center"><input type="submit" value="Terminate SPAMBOX now!" /></td></tr>
 </table>
 </form>' unless $AsAService;
 my $bod = $action=~/success/io ? '<body onload="top.location.href=\'/#\'">' : '<body>' ;
@@ -72,7 +72,7 @@ $headerDTDTransitional
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
   <meta http-equiv="refresh" content="$refresh;url=/shutdown_frame$query" />
-  <title>$currentPage ASSP ($myName)</title>
+  <title>$currentPage SPAMBOX ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/shutdown.css\" type=\"text/css\" />
 </head>
 $bod

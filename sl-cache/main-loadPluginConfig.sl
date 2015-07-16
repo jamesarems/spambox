@@ -90,7 +90,7 @@ package main; sub loadPluginConfig {
       next;
     }
 
-    $tmp = "ASSP_Plugin_TEST";
+    $tmp = "SPAMBOX_Plugin_TEST";
     eval{$tmp = $plobj->process(0,\$tmp)};
     if ($@) {
       mlog(0,"error loading plugin $pl (process) - error: $@");
@@ -103,15 +103,15 @@ package main; sub loadPluginConfig {
       next;
     }
 
-    $tmp = "ASSP_Plugin_TEST";
+    $tmp = "SPAMBOX_Plugin_TEST";
     eval{$tmp = $plobj->tocheck()};
     if ($@) {
       mlog(0,"error loading plugin $pl (tocheck) - error: $@");
       removePluginConfig($plobj);
       next;
     }
-    if ($tmp ne "ASSP_Plugin_TEST") {
-      mlog(0,"error plugin $pl tocheck returned $tmp - should be ASSP_Plugin_TEST");
+    if ($tmp ne "SPAMBOX_Plugin_TEST") {
+      mlog(0,"error plugin $pl tocheck returned $tmp - should be SPAMBOX_Plugin_TEST");
       removePluginConfig($plobj);
       next;
     }
@@ -136,8 +136,8 @@ package main; sub loadPluginConfig {
       removePluginConfig($plobj);
       next;
     }
-    if ($tmp ne 'ASSP_Plugin_TEST') {
-      mlog(0,"error plugin $pl result returned $tmp - should be ASSP_Plugin_TEST");
+    if ($tmp ne 'SPAMBOX_Plugin_TEST') {
+      mlog(0,"error plugin $pl result returned $tmp - should be SPAMBOX_Plugin_TEST");
       removePluginConfig($plobj);
       next;
     }

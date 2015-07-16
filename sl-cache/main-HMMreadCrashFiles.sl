@@ -49,7 +49,7 @@ package main; sub HMMreadCrashFiles {
         mlog(0,"info: no lines from crash respository left for a Hidden Markov Model");
         return;
     }
-    my $chain = ASSP::MarkovChain->new(longest => 6,
+    my $chain = SPAMBOX::MarkovChain->new(longest => 6,
                                        top => $CrashAnalyzerTopCount
                                        );
     if (! ref $chain) {

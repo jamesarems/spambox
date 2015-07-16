@@ -91,7 +91,7 @@ package main; sub ConfigMaillog {
      $CMheaders = \"<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
 <head>
   <meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />
-  <title>$currentPage ASSP ($myName) Host: $localhostname @ $localhostip</title>
+  <title>$currentPage SPAMBOX ($myName) Host: $localhostname @ $localhostip</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
   <link rel=\"shortcut icon\" href=\"get?file=images/favicon.ico\" />
 $autoJS
@@ -606,7 +606,7 @@ LOOP
  }
  $res .= ', ' if ($res &&  $qs{autorefresh} ne 'Auto');
  $res .= "searchtime $stime seconds$maxsearchtime" if ($qs{autorefresh} ne 'Auto');
- my $headline = ($qs{autorefresh} eq 'Auto') ? '' : '<h2>ASSP Maillog Tail</h2>' ;
+ my $headline = ($qs{autorefresh} eq 'Auto') ? '' : '<h2>SPAMBOX Maillog Tail</h2>' ;
 
 <<EOT;
 $headerHTTP
@@ -790,7 +790,7 @@ $maillogJump
 <div $display >
 $footers
 </div>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>

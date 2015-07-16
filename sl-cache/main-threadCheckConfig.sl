@@ -3,7 +3,7 @@ package main; sub threadCheckConfig {
     my $CFG;
     my $ok = 1;
     open($CFG,'<',"$base/spambox.cfg") or (mlog(0,"warning: can't read $base/spambox.cfg") && return);
-    my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
+    my $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
     while (<$CFG>) {
         s/\r|\n//go;
         s/^$UTFBOMRE//o;

@@ -28,7 +28,7 @@ package main; sub AnalyzeText {
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<title>ASSP Analyze from $myName</title>
+<title>SPAMBOX Analyze from $myName</title>
 <style type="text/css">
 $style
 .content {
@@ -39,7 +39,7 @@ $style
 <body>
 <div class="content">
 <br /><hr><br />
-<h2>ASSP Mail Analyzer on $myName</h2>
+<h2>SPAMBOX Mail Analyzer on $myName</h2>
 <hr><br /><br />
 $this->{reporthint}
 $res

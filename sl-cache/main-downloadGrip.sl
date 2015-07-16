@@ -86,7 +86,7 @@ my @binFiles;
 push(@binFiles, "$gripFile.bin") if ($delta);
 push(@binFiles, "$gripFile.tmp");
 
-# convert binary download form to text form used by ASSP
+# convert binary download form to text form used by SPAMBOX
 my $buf;
 my %grip = ();
 my %gripdelta = ();

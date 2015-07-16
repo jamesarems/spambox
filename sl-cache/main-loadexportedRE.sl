@@ -11,7 +11,7 @@ package main; sub loadexportedRE {
     my $re = join('',<$optRE>);
     close $optRE;
     if (exists $CryptFile{"$base/files/optRE/$name.txt"} && $re =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-        $re = ASSP::CRYPT->new($webAdminPassword,0)->DECRYPT($re);
+        $re = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT($re);
     }
     return $re;
 }

@@ -12,7 +12,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP Top ten statistic ($myName)</title>
+  <title>$currentPage SPAMBOX Top ten statistic ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body>

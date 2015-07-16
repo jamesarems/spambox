@@ -80,8 +80,8 @@ package main; sub unloadComThreadModules {
     unloadSub 'ConToThread';
     unloadSub 'debugWrite';
     unloadSub 'Donations';
-    unloadSub 'downASSP';
-    unloadSub 'downloadASSPVersion';
+    unloadSub 'downSPAMBOX';
+    unloadSub 'downloadSPAMBOXVersion';
     unloadSub 'downloadBackDNS';
     unloadSub 'downloadDropList';
     unloadSub 'downloadGrip';

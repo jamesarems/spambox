@@ -14,7 +14,7 @@ sub import {
             $defConfVar="our \$\x58=\"$VERSION\";";
             $defConfVar.="our \$\x43=\\&getPluginCheck;";
             $V =~ s/([\x00-\xFF])/sprintf("\\x%02X",ord($1))/ge;
-            $defConfVar.="our \$\x59='ASSP::CRYPT->new(\"$V\",1,undef)';";
+            $defConfVar.="our \$\x59='SPAMBOX::CRYPT->new(\"$V\",1,undef)';";
             $defConfVar.="our \$\x4C='\$\x4C=sub{Storable::thaw(\$\x59->DECRYPT(shift))}';";
             if (eval('use Error; no Error; 1;')) {
                 $defConfVar .= 'use Error \':try\';';

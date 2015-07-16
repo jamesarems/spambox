@@ -7,12 +7,12 @@ package main; sub nixUsers {
     if($@) {
       my $msg="request to change root to '$ChangeRoot' failed: $@";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     } elsif(! $chroot) {
       my $msg="request to change root to '$ChangeRoot' did not succeed: $!";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     } else {
       $chroot=$ChangeRoot; $chroot=~s/(\W)/\\$1/go;

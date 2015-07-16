@@ -41,7 +41,7 @@ function setAnchor(iname) {}
 <div>
 $mainhint
 </div>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonX" type="hidden" value="" onclick="WaitDiv();"/>
 EOT
     $sfoot = <<EOT;
@@ -66,7 +66,7 @@ $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
 $missing
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonLogout" align="right" type="button" value="Logout" onclick="eraseCookie('lastAnchor');window.location.href='./logout';return false;"/>
 </form>
 </div>
@@ -222,7 +222,7 @@ EOT
                             $s =~ s/,$//o;
                             $s .= '<br /><br />';
                         }
-                        $s .= "<a href=\"javascript:void(0);\" onmousedown=\"document.forms['ASSPconfig'].user.value='$un';return false;\"> $un </a>,";
+                        $s .= "<a href=\"javascript:void(0);\" onmousedown=\"document.forms['SPAMBOXconfig'].user.value='$un';return false;\"> $un </a>,";
                     }
                 }
                 $s =~ s/,$//o;

@@ -17,12 +17,12 @@ package main; sub checkOptionList {
             close $COL;
             my $enc;
             if (exists $CryptFile{$fil} && $value =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                 $value = $enc->DECRYPT($value);
             } elsif (exists $CryptFile{$fil}) {
                 open(my $I,'>',$fil);
                 binmode $I;
-                print $I ASSP::CRYPT->new($webAdminPassword,0)->ENCRYPT($value);
+                print $I SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($value);
                 close $I;
                 mlog(0,"info: file $fil is now stored encrypted, because it is used in secured config $name");
                 $FileUpdate{"$fil$name"} = $FileUpdate{$fil} = ftime($fil);
@@ -52,7 +52,7 @@ package main; sub checkOptionList {
                 my $inc = join('',<$INCL>);
                 close $INCL;
                 if (exists $CryptFile{"$base/$ifile"} && $inc =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                    $inc = ASSP::CRYPT->new($webAdminPassword,0)->DECRYPT($inc);
+                    $inc = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT($inc);
                 } elsif ($enc) {
                     open($INCL,'>',"$base/$ifile");
                     binmode $INCL;

@@ -14,7 +14,7 @@ package main; sub ConfigChangeAutoUpdate {
         unlink "$base/download/spambox.pl.gz.old";
         move("$base/download/spambox.pl.gz","$base/download/spambox.pl.gz.old");
         mlog(0,"info: moved file $base/download/spambox.pl.gz to $base/download/spambox.pl.gz.old") if $MaintenanceLog >= 2;
-        $NextASSPFileDownload = -1;
+        $NextSPAMBOXFileDownload = -1;
         $NextVersionFileDownload = -1;
     }
     return $ret;

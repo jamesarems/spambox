@@ -13,7 +13,7 @@ package main; sub headerFormat {
     if ($@) {
        my $hint; $hint = "- **** please install the Perl module MIME::Tools (includes MIME::Words) via 'cpan install MIME::Tools' (on nix/mac) or 'ppm install MIME-Tools' (on win32)"
            if $@ =~ /Undefined subroutine \&MIME::Words::encode_mimewords/io;
-       mlog(0,"warning: MIME encoding for our ASSP header lines failed - $@ $hint") if ! $IgnoreMIMEErrors;
+       mlog(0,"warning: MIME encoding for our SPAMBOX header lines failed - $@ $hint") if ! $IgnoreMIMEErrors;
        eval{
            $text = join("\r\n", map{headerWrap(&encodeMimeWord(&decodeMimeWords2UTF8($_),'B','UTF-8'));} split(/\r?\n/o,$text));
            $text .= "\r\n" if $text !~ /\r\n$/o;

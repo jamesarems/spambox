@@ -126,7 +126,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
    if (defined($qs{contents})) {
     $s1=$qs{contents};
     $s1= decodeHTMLEntities($s1);
-    $s1 =~ s/\n$//o; # prevents ASSP from appending a newline to the file each time it is saved.
+    $s1 =~ s/\n$//o; # prevents SPAMBOX from appending a newline to the file each time it is saved.
     $s1 =~ s/\r$//o;
     $s1 =~ s/\s+$//o;
    # make line terminators uniform
@@ -177,7 +177,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
             binmode $CE;
 #encrypt if to do
             if (exists $CryptFile{$fil}) {
-                my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                 $s1 = $enc->ENCRYPT($s1)
             }
             print $CE $s1;
@@ -441,7 +441,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
      $CE->read($s1,[$stat->($fil)]->[7]);
 #dencrypt if to do
      if (exists $CryptFile{$fil} && $s1 =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-         my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+         my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
          $s1 = $enc->DECRYPT($s1);
      }
      $CE->close;
@@ -493,7 +493,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
           $editButtons .='<div><input type="submit" name="B1" value="Do It!" />&nbsp;&nbsp;<input type="submit" name="B1" value="Delete file" onclick="return confirmDelete(\''.$fil.'\');"/>';
           my $nf = normHTML($fil);
 
-          $editButtons .='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="view decoded MIME" onclick="return popFileEditor(\''. $nf .'\',9);"/>&nbsp;&nbsp;<input type="button" value="analyze" onclick="return window.open(\'analyze?file='. $nf .'\',\'ASSP Analyze\',\'\');"/> &nbsp;&nbsp;<input type="button" value="Close" onclick="javascript:window.close();"/>'.$slo.'</div>';
+          $editButtons .='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="view decoded MIME" onclick="return popFileEditor(\''. $nf .'\',9);"/>&nbsp;&nbsp;<input type="button" value="analyze" onclick="return window.open(\'analyze?file='. $nf .'\',\'SPAMBOX Analyze\',\'\');"/> &nbsp;&nbsp;<input type="button" value="Close" onclick="javascript:window.close();"/>'.$slo.'</div>';
       } else {
           my $disabled = ($qs{B1}=~/Save to Importfile/io) ? 'disabled="disabled"' : '';
           my $fn = $hash ? 'list' : 'file';
@@ -513,9 +513,9 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
 
  my $s3;
  if ($qs{note} eq '1') {
-     my $currStat = &StatusASSP();
+     my $currStat = &StatusSPAMBOX();
      if ($currStat =~ /not healthy/io) {
-       $s3 = '<a href="./statusassp" target="blank" title="ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status."><b><font color=\'red\'>&bull;';
+       $s3 = '<a href="./statusassp" target="blank" title="SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status."><b><font color=\'red\'>&bull;';
        if (scalar keys %RegexError) {
            $s3 .= '&nbsp;-&nbsp; regex error in:&nbsp;';
            foreach(keys %RegexError) {
@@ -533,7 +533,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP File Editor ($myName $htmlfil)</title>
+  <title>$currentPage SPAMBOX File Editor ($myName $htmlfil)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
     <script type="text/javascript">
 //<![CDATA[

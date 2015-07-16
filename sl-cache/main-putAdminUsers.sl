@@ -9,8 +9,8 @@ package main; sub putAdminUsers {
       %AdminUsers = ();
     }
     $bin = $AdminUsersObject->{BIN};
-    $AdminUsersObject->{enc} = ($usedCrypt == -1) ? ASSP::CRYPT->new($pass,$bin,1) : ASSP::CRYPT->new($pass,$bin);
-    $AdminUsersObject->{dec} = ASSP::CRYPT->new($pass,$bin);
+    $AdminUsersObject->{enc} = ($usedCrypt == -1) ? SPAMBOX::CRYPT->new($pass,$bin,1) : SPAMBOX::CRYPT->new($pass,$bin);
+    $AdminUsersObject->{dec} = SPAMBOX::CRYPT->new($pass,$bin);
     if (! $mysqlSlaveMode) {
         %AdminUsers = %temphash;
         eval{$AdminUsersObject->flush();};
@@ -21,8 +21,8 @@ package main; sub putAdminUsers {
         %AdminUsersRight = ();
     }
     $bin = $AdminUsersRightObject->{BIN};
-    $AdminUsersRightObject->{enc} = ($usedCrypt == -1) ? ASSP::CRYPT->new($pass,$bin,1) : ASSP::CRYPT->new($pass,$bin);
-    $AdminUsersRightObject->{dec} = ASSP::CRYPT->new($pass,$bin);
+    $AdminUsersRightObject->{enc} = ($usedCrypt == -1) ? SPAMBOX::CRYPT->new($pass,$bin,1) : SPAMBOX::CRYPT->new($pass,$bin);
+    $AdminUsersRightObject->{dec} = SPAMBOX::CRYPT->new($pass,$bin);
     if (! $mysqlSlaveMode) {
         %AdminUsersRight = %temphash;
         eval{$AdminUsersRightObject->flush();};

@@ -62,7 +62,7 @@ EOT
         delete $l3->{min};
     }
     my $glink;
-    if ($CanUseASSP_SVG && $sc && $stat && ! $noshow) {
+    if ($CanUseSPAMBOX_SVG && $sc && $stat && ! $noshow) {
         my $text = $l1->{text};
         $text =~ s/\s*:\s*$//o;
         $text =~ s/\&nbsp;?//og;

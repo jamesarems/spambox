@@ -54,10 +54,10 @@ package main; sub ConfigStats {
  }
  $wIdle .= '</table>';
 
- my $currStat = &StatusASSP();
+ my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io)
-   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
+   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $currAvgDamp = ($Stats{damping} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($Stats{damping} / ($Stats{smtpConn} ? $Stats{smtpConn} : 1)) * 100) : '';
  my $allAvgDamp  = ($AllStats{smtpConn} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($AllStats{damping} / ($AllStats{smtpConn} ? $AllStats{smtpConn} : 1)) * 100) : '';
@@ -112,7 +112,7 @@ $headers
 </script>
    <div id="cfgdiv" class="content">
       <h2>
-        $currStat ASSP Information and Statistics
+        $currStat SPAMBOX Information and Statistics
       </h2><br />
       <table class="statBox">
         <thead>
@@ -126,7 +126,7 @@ $headers
 EOT
 
 # General Runtime Information
-$ret .= StatLine({'stat'=>'#uptime','text'=>'ASSP Proxy Uptime:','class'=>'statsOptionTitle'},
+$ret .= StatLine({'stat'=>'#uptime','text'=>'SPAMBOX Proxy Uptime:','class'=>'statsOptionTitle'},
                  {'text'=>"$uptime",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"$uptime2",'class'=>'statsOptionValue','colspan'=>'2'})
 
@@ -646,11 +646,11 @@ $ret .= StatLine({'stat'=>'bhams','text'=>'Message OK:','class'=>'statsOptionTit
                  {'text'=>"$Stats{crashAnalyze}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{crashAnalyze}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
 
-      . StatLine({'stat'=>'Razor','text'=>'ASSP_Razor Plugin:','class'=>'statsOptionTitle'},
+      . StatLine({'stat'=>'Razor','text'=>'SPAMBOX_Razor Plugin:','class'=>'statsOptionTitle'},
                  {'text'=>"$Stats{Razor}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{Razor}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
 
-      . StatLine({'stat'=>'DCC','text'=>'ASSP_DCC Plugin:','class'=>'statsOptionTitle'},
+      . StatLine({'stat'=>'DCC','text'=>'SPAMBOX_DCC Plugin:','class'=>'statsOptionTitle'},
                  {'text'=>"$Stats{DCC}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{DCC}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
 
@@ -674,7 +674,7 @@ my %tmpStats = %ScoreStats;
 ($smin,$smax) = minmax(\%ScoreStats);
 ($amin,$amax) = minmax(\%AllScoreStats);
 for (sort {lc($main::a) cmp lc($main::b)} qw(
- ASSP_AFC ASSP_DCC ASSP_OCR ASSP_Razor AUTHErrors Backscatter-failed BadAttachment BadHistory BATV-check-failed Bayesian Bayesian-HAM
+ SPAMBOX_AFC SPAMBOX_DCC SPAMBOX_OCR SPAMBOX_Razor AUTHErrors Backscatter-failed BadAttachment BadHistory BATV-check-failed Bayesian Bayesian-HAM
  BlacklistedDomain BlacklistedHelo BlackOrg BlockedCountry BombBlack BombCharSets BombData BombHeaderRe bombRe BombScript
  BombSenderHelo BombSenderIP BombSenderMailFrom BombSubjectRe bombSuspiciousRe CountryCode DKIMfailed DKIMpass DMARC-failed DNSBLfailed
  DNSBLneutral EarlyTalker ExtremeHistory ForgedHELO From-missing griplist HMM HMM-HAM HomeCountry internaladdress InvalidAddress
@@ -727,7 +727,7 @@ $ret .= StatLine({'stat'=>'','text'=>'Server Name:','class'=>'statsOptionTitle'}
                  {'text'=>"$localhostname",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'})
 
-      . StatLine({'stat'=>'','text'=>'ASSP host UUID:','class'=>'statsOptionTitle'},
+      . StatLine({'stat'=>'','text'=>'SPAMBOX host UUID:','class'=>'statsOptionTitle'},
                  {'text'=>"$UUID",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'})
 
@@ -809,7 +809,7 @@ my $currentCLtext = $currentCL ? '<a href="javascript:void(0);" onclick="javascr
 $ret .= <<EOT;
           <tr>
             <td class="statsOptionTitle">
-              ASSP Version:
+              SPAMBOX Version:
             </td>
             <td class="statsOptionValue" colspan="2">
               <table>
@@ -862,7 +862,7 @@ $ret .= <<EOT;
         <tbody id="StatItem9" class="off">
 EOT
 
-$ret .= StatLine({'stat'=>'','text'=>'ASSP License Identifier (UUID) :','class'=>'statsOptionTitle'},
+$ret .= StatLine({'stat'=>'','text'=>'SPAMBOX License Identifier (UUID) :','class'=>'statsOptionTitle'},
                  {'text'=>"$UUID",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'});
 my @lic;
@@ -959,7 +959,7 @@ $ret .= <<EOT;
       $kudos<br />
     </div>
     $footers
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>

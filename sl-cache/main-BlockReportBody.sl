@@ -45,7 +45,7 @@ package main; sub BlockReportBody {
             $sub =~ s/\s+/ /go;
 
             #        mlog(0,"subject: $sub");
-            ($host) = $sub =~ /ASSP\-host\s+(.*)/io;
+            ($host) = $sub =~ /SPAMBOX\-host\s+(.*)/io;
             $host =~ s/\s//go;
             my $rsbm_special = 0;
             #       mlog(0,"host: $host");
@@ -259,7 +259,7 @@ package main; sub BlockReportBody {
  <col /><col /><col />
  <tr>
   <th colspan="3" id="header">
-   <img src=cid:1001 alt="powered by ASSP on $myName">
+   <img src=cid:1001 alt="powered by SPAMBOX on $myName">
    $userhtml
   </th>
  </tr>

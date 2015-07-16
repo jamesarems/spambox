@@ -123,7 +123,7 @@ package main; sub BayesOK_Run {
     $itime=time-$stime; mlog($fh,"info: Bayesian-Check has taken $itime seconds") if $BayesianLog >= 2;
     return 1 if @t < 2 && $t[0] eq '';
     if (@t < 6 && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb}) {
-        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ! ($ignoreDBVersionMissMatch & 1);
+        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ! ($ignoreDBVersionMissMatch & 1);
     }
     (my $p1, my $p2, my $c1, $this->{spamprob}, $this->{spamconf}) = BayesHMMProb(\@t);
 
@@ -152,7 +152,7 @@ package main; sub BayesOK_Run {
        )
     {
         mlog($fh,sprintf("info: got different spam result for Bayesian and HMM : %.5f - %.5f",$this->{spamprob},$this->{hmmprob})) if $BayesianLog >= 2;
-        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
+        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
     }
 
     return 1 if $DoBayesian==2;
@@ -176,7 +176,7 @@ package main; sub BayesOK_Run {
         $valence[1] = int(($baysConf && $baysConfidenceHalfScore && $this->{spamconf} < $baysConf) ? $valence[1] * $this->{spamprob} / 2 + 0.5 : $this->{spamprob} * $valence[1] + 0.5);
         if (max(@valence) > 0) {
             mlog($fh,sprintf("Bayesian Check $tlit - Prob: %.5f shows an 'unsure' state - doing only message scoring - calculating half scores", $this->{spamprob}),1) if $BayesianLog;
-            mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
+            mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
             pbAdd($fh,$this->{ip},\@valence,"Bayesian",1) if $fh;
         }
     } elsif (($baysConf && $this->{spamconf} >= $baysConf) || ! $baysConf) {

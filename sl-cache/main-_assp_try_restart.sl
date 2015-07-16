@@ -1,7 +1,7 @@
 #line 1 "sub main::_assp_try_restart"
 package main; sub _assp_try_restart {
     if($AsAService) {
-        exec('cmd.exe /C net stop ASSPSMTP & net start ASSPSMTP');
+        exec('cmd.exe /C net stop SPAMBOXSMTP & net start SPAMBOXSMTP');
     } elsif ($AsADaemon == 1) {
         exit 1;
     } elsif ($AutoRestartCmd && $AsADaemon == 2) {

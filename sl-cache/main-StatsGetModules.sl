@@ -46,13 +46,13 @@ package main; sub StatsGetModules {
      my $url = 'http://search.cpan.org/search?query='.$_;
      $url = 'http://www.oracle.com/technology/products/berkeley-db/' if ($_ eq 'BerkeleyDB_DBEngine');
      $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'AsspSelfLoader');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'ASSP_WordStem');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/filecommander/' if ($_ eq 'ASSP_FC');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'ASSP_SVG');
+     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'SPAMBOX_WordStem');
+     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/filecommander/' if ($_ eq 'SPAMBOX_FC');
+     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'SPAMBOX_SVG');
      $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/Plugins/' if ($_ =~ /^Plugins/o);
      my $prov = 'CPAN';
      $prov = 'oracle' if ($_ eq 'BerkeleyDB_DBEngine');
-     $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'AsspSelfLoader' or $_ eq 'ASSP_WordStem' or $_ eq 'ASSP_FC' or $_ eq 'ASSP_SVG');
+     $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'AsspSelfLoader' or $_ eq 'SPAMBOX_WordStem' or $_ eq 'SPAMBOX_FC' or $_ eq 'SPAMBOX_SVG');
      my $stat = $ModuleStat{$_} ? $ModuleStat{$_} : 'enabled';
      if ($_ eq 'File::Scan::ClamAV' && $CanUseAvClamd && ! $AvailAvClamd) {
          $stat = 'ClamAvDaemon is down';

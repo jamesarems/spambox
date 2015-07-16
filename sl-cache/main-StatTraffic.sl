@@ -32,7 +32,7 @@ package main; sub StatTraffic {
                     my $time  = gmtime();
                     $time =~
 s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-                    $resph .= "\nServer: ASSP/$version$modversion";
+                    $resph .= "\nServer: SPAMBOX/$version$modversion";
                     $resph .= "\nDate: $time";
                     $respb =~ s/not healthy/$webStatNotHealthyResp/o;
                     $respb =~ s/([^n][^o][^t][^ ])healthy/$1$webStatHealthyResp/o;
@@ -75,7 +75,7 @@ s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
                 close($tempfh);
             }
             else {
-                my $currStat = &StatusASSP();
+                my $currStat = &StatusSPAMBOX();
                 $resp =
                   ( $currStat =~ /not healthy/io )
                   ? "$webStatNotHealthyResp\n"
@@ -87,7 +87,7 @@ s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
                 my $time  = gmtime();
                 $time =~
                   s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-                $resph .= "Server: ASSP/$version$modversion";
+                $resph .= "Server: SPAMBOX/$version$modversion";
                 $resph .= "\nDate: $time";
                 if (  !$how
                     && $EnableHTTPCompression

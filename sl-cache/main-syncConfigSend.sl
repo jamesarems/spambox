@@ -119,7 +119,7 @@ package main; sub syncConfigSend {
         my $timeout = (int(length($body) / (1024 * 1024)) + 1) * 60; # 1MB/min
         if ( $smtp &&
              do {if ($TLS) {eval{$smtp->starttls();};$localTLSfailed{$MTA} = time if ($@);};1;} &&
-             $smtp->command('ASSPSYNCCONFIG ' , ' ' . Digest::MD5::md5_base64($syncCFGPass))->response() == 2 &&
+             $smtp->command('SPAMBOXSYNCCONFIG ' , ' ' . Digest::MD5::md5_base64($syncCFGPass))->response() == 2 &&
              $smtp->data() &&
              eval {
                  my $blocking = $fh->blocking(0);

@@ -89,7 +89,7 @@ $link_to_RecRep_config
 $h1
 $RecRepdspres
 </form>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </div>

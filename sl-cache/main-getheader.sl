@@ -41,7 +41,7 @@ package main; sub getheader {
         && ! $this->{relayok}
         && ! ($this->{noprocessing} & 1)
         && ! $this->{whitelisted}
-        && $l =~ /^X-(?!ASSP)/io)
+        && $l =~ /^X-(?!SPAMBOX)/io)
     {
         my $line = $l;
         $line =~ s/\r?\n//go;
@@ -87,7 +87,7 @@ package main; sub getheader {
             $fn=' -> '.$fn if $fn ne '';
             $fn='' if !$fileLogging;
             my $logsub = ( $subjectLogging && $this->{originalsubject} ? " $subjectStart$this->{originalsubject}$subjectEnd" : '' );
-            mlog($fh,"[spam found] (crash analyzer said: 'this mail will possibly crash ASSP', will no longer analyze and forward but collect the mail)$logsub".de8($fn),0,2);
+            mlog($fh,"[spam found] (crash analyzer said: 'this mail will possibly crash SPAMBOX', will no longer analyze and forward but collect the mail)$logsub".de8($fn),0,2);
             delayWhiteExpire($fh);
             $this->{getline}=\&NullData;
             $this->{header} = 'NULL';

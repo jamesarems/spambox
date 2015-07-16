@@ -26,7 +26,7 @@ package main; sub initFileHashes {
                         if ($singleGroup eq 'AdminGroup'){
                             eval{
                                 my $cmd = "'orderedtie',\"$base/$realFileName\"" ;
-                                $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,0,$cmd;
+                                $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,0,$cmd;
                             } if (${$dbConfig} && ${$dbConfig} !~ /DB:/o);
                             if ($@) {
                                 mlog(0,"warning: unable init AdminUsersDB - only root will have access to the GUI");

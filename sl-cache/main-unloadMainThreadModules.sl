@@ -45,7 +45,7 @@ package main; sub unloadMainThreadModules {
     unloadSub 'cleanUpMaxFiles';
     unloadSub 'cleanWhitePB';
     unloadSub 'CleanWhitelist';
-    unloadSub 'downloadASSPVersion';
+    unloadSub 'downloadSPAMBOXVersion';
     unloadSub 'downloadBackDNS';
     unloadSub 'downloadDropList';
     unloadSub 'downloadGrip';

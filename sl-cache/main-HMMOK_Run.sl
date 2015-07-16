@@ -148,7 +148,7 @@ package main; sub HMMOK_Run {
     }
     my $skipBonus;
     if ($this->{hmmres} < int($maxBayesValues / 12 + 1)) {
-        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
+        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
         mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 12 + 1).' results - using monitoring mode only');
         $DoHMM = 2;
         $tlit=&tlit($DoHMM);
@@ -156,7 +156,7 @@ package main; sub HMMOK_Run {
         $this->{prepend}.="$tlit" if $DoHMM>=2;
         $skipBonus = 1;
     } elsif ($this->{hmmres} < int($maxBayesValues / 3 + 1) && $DoHMM == 1) {
-        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
+        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
         mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 3 + 1).' results - using soring mode only');
         $DoHMM = 3;
         $tlit=&tlit($DoHMM);

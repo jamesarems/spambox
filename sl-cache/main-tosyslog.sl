@@ -7,7 +7,7 @@ package main; sub tosyslog {
 
   eval{
    if ($sysLogPort && $sysLogIp) {
-       $SysLogObj ||= ASSP::Syslog->new(Facility=>$SysLogFac,Priority=>'Debug',SyslogPort=>$sysLogPort,SyslogHost=>$sysLogIp);
+       $SysLogObj ||= SPAMBOX::Syslog->new(Facility=>$SysLogFac,Priority=>'Debug',SyslogPort=>$sysLogPort,SyslogHost=>$sysLogIp);
        while (@$m) {
            my $msg = shift @$m;
            $msg =~ s/^\s+//o;

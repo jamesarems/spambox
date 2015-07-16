@@ -11,11 +11,11 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License (http://www.gnu.org/licenses/) for more details.
-# ASSP founded and developed to Version 1.0.12 by John Hanna
-# ASSP development since 1.0.12 by John Calvi
-# ASSP development since 1.2.0 by Fritz Borgstedt
+# SPAMBOX founded and developed to Version 1.0.12 by John Hanna
+# SPAMBOX development since 1.0.12 by John Calvi
+# SPAMBOX development since 1.2.0 by Fritz Borgstedt
 #
-# ASSP V2 pro development since 2.0.0 by
+# SPAMBOX V2 pro development since 2.0.0 by
 # Thomas Eckardt - DB Support, Conversions, Transparent SMTP Proxy, SSL/TLS support,
 #                  LDAP-List, recipient replacement, Plugins, multithreading,
 #                  global-penalty-box, backscatter-checks(BATV,FBMTV,DNS), VRFY-check,
@@ -42,7 +42,7 @@
 # Thank you to all, who donated to the assp project!
 #
 # the latest released version is available at:
-# http://downloads.sourceforge.net/projects/assp/files/ASSP%20V2%20multithreading/autoupdate/spambox.pl.gz
+# http://downloads.sourceforge.net/projects/assp/files/SPAMBOX%20V2%20multithreading/autoupdate/spambox.pl.gz
 #
 # the latest development version is available at:
 # http://assp.cvs.sourceforge.net/viewvc/*checkout*/assp/assp2/spambox.pl.gz
@@ -72,7 +72,7 @@ die <<EOT  if ($iThreads !~ /define/i);
 
 ******************************************************************************
 This version of Perl ( $] ) does not support iThreads (multithreading)!
-iThreads are needed to run ASSP version 2.0.0 or higher!
+iThreads are needed to run SPAMBOX version 2.0.0 or higher!
 To get more information about your Perl installation
 start the following commands in commandline or shell:
 
@@ -80,8 +80,8 @@ perl -v
 perl -V
 
 Upgrade your Perl installation to a multithreading version or
-use a singlethread version of ASSP (version 1.x.x)!
-To run this version of ASSP, a Perl version 5.016003 (5.16.3) or higher
+use a singlethread version of SPAMBOX (version 1.x.x)!
+To run this version of SPAMBOX, a Perl version 5.016003 (5.16.3) or higher
 is recommended - a version 5.010000 is at least required.
 Perl version 6.x is not supported.
 ******************************************************************************
@@ -204,9 +204,9 @@ disableUnicode();
 
 if ($subversion % 2) {
 # stable published version download
-    $versionURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/version.txt';
-    $NewAsspURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/spambox.pl.gz';
-    $ChangeLogURL = 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/changelog.txt';
+    $versionURL = 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/autoupdate/version.txt';
+    $NewAsspURL = 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/autoupdate/spambox.pl.gz';
+    $ChangeLogURL = 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/changelog.txt';
     $maxAge = 365 * 24 * 3600;
 } else {
 # stable development (beta) version download
@@ -288,14 +288,14 @@ $Storable::Eval = 1;
 #our $ProtPrefix = '(?:'.erw('ht').'|' .erw('f').')'.erw('tp').erw('s','?').erw('://');  # (ht|f)tps?://
 
 # *********************************************************************************************************************************************
-# hidden config variables that could be changed using the module CorrectASSPcfg.pm
+# hidden config variables that could be changed using the module CorrectSPAMBOXcfg.pm
 # or that could be changed using a commandline switch like --enableCrashAnalyzer:=1
 # *********************************************************************************************************************************************
 
 # CrashAnalyzer related
 our $enableCrashAnalyzer = 0;            # (0/1) enable the automatic crash analyzer (CA)
 our $CrashAnalyzerTopCount = 10;         # (number > 0) number of records used for the CA top count
-our $CrashAnalyzerWouldBlock = 1;        # (0/1) block the mail if CA detects that the mail would crash ASSP
+our $CrashAnalyzerWouldBlock = 1;        # (0/1) block the mail if CA detects that the mail would crash SPAMBOX
 
 #IP related
 our $IPv6TestPort = '51965';             # (port number) the port number that is used at startup to bind IPv6 to - to check if IPv6 is available
@@ -605,10 +605,10 @@ our %cryptConfigVars:shared = (
     'BATVSec' => 1,
     'AutoRestartCmd' => 1,
     'FileScanCMD' => 1,
-    'ASSP_OCRExec' => 1,
-    'ASSP_AFCWebScript' => 1,
-    'ASSP_AFCSMIME' => 1,
-    'ASSP_ARCSelectCode' => 1,
+    'SPAMBOX_OCRExec' => 1,
+    'SPAMBOX_AFCWebScript' => 1,
+    'SPAMBOX_AFCSMIME' => 1,
+    'SPAMBOX_ARCSelectCode' => 1,
     'runAsUser' => 1,
     'runAsGroup' => 1,
     'ChangeRoot' => 1,
@@ -1135,9 +1135,9 @@ sub loadModuleVars {
       'NetSNMP::agent' => 0,
       'Time::Hi::Res' => 1,
       'AsspSelfLoader' => 1,
-      'ASSP_WordStem' => 1,
-      'ASSP_FC' => 1,
-      'ASSP_SVG' => 1,
+      'SPAMBOX_WordStem' => 1,
+      'SPAMBOX_FC' => 1,
+      'SPAMBOX_SVG' => 1,
       'Win32::Unicode' => 1,
       'Unicode::GCString' => 1,
       'Text::Unidecode' => 1,
@@ -1162,7 +1162,7 @@ sub loadModuleVars {
         $ModulesUsed{$varname} = 1;
         $link = $link ? "<br />This module is possibly used for$link and maybe some other features." : '';
         $i++;
-        push (@cfglines,[$varname,"Use Module $_",0,\&checkbox,$default,'(.*)',undef,"If selected, the perl module $_ will be loaded if it is installed. If not selected, ASSP will not load the perl module $_ even it is installed and several features of ASSP will not be available! It is recommended to disable installed but unused modules to reduce the required memory.<span class=\"negative\"> Requires ASSP restart!</span>$link",undef,undef,'msg0'.$i.'0','msg0'.$i.'1'])
+        push (@cfglines,[$varname,"Use Module $_",0,\&checkbox,$default,'(.*)',undef,"If selected, the perl module $_ will be loaded if it is installed. If not selected, SPAMBOX will not load the perl module $_ even it is installed and several features of SPAMBOX will not be available! It is recommended to disable installed but unused modules to reduce the required memory.<span class=\"negative\"> Requires SPAMBOX restart!</span>$link",undef,undef,'msg0'.$i.'0','msg0'.$i.'1'])
     }
     push (@ConfigArray,[0,0,0,'heading','Module Setup <a href="javascript:popFileEditor(\'moduleLoadErrors.txt\',8);"><img height=12 width=12 src="' . $wikiinfo . '" alt="show module load errors" /></a>']);
     while (@cfglines) {
@@ -1240,22 +1240,22 @@ sub defConfigArray {
 
 
 [0,0,0,'heading','Configuration Synchronization and Sharing'],
-['enableCFGShare','Enable Configuration Sharing',0,\&checkbox,'','(.*)','ConfigChangeEnableCFGSync', '<hr><b>Read all positions in this section carefully (multiple times is recommended!!!)!&nbsp;A wrong configuration sequence or wrong configuration values can lead in to a destroyed ASSP configuration!</b><hr>
+['enableCFGShare','Enable Configuration Sharing',0,\&checkbox,'','(.*)','ConfigChangeEnableCFGSync', '<hr><b>Read all positions in this section carefully (multiple times is recommended!!!)!&nbsp;A wrong configuration sequence or wrong configuration values can lead in to a destroyed SPAMBOX configuration!</b><hr>
   If set, the configuration value and option files synchronization will be enabled. This synchronization belong to the configuration values, to the file that is possibly defined in a value and to the include files that are possibly defined in the configured file. If you don\'t want a specific configuration file or include file to be synchronized (send and receive), write<br />
   # assp-no-sync<br />
-  as a comment anywhere in the file. A possible reason could be for example \'localDomains\' - if ASSP1 is hosting DOMAIN1 and DOMAIN2 but ASSP2 is hosting only DOMAIN2 - so the entry for DOMAIN2 could be put in a not synchronized include file on ASSP1 and the synchronized main config file contains the entry for DOMAIN1.<br />
+  as a comment anywhere in the file. A possible reason could be for example \'localDomains\' - if SPAMBOX1 is hosting DOMAIN1 and DOMAIN2 but SPAMBOX2 is hosting only DOMAIN2 - so the entry for DOMAIN2 could be put in a not synchronized include file on SPAMBOX1 and the synchronized main config file contains the entry for DOMAIN1.<br />
   If the configuration of all values in this section is valid, the synchronization status will be shown in the GUI for each config value that is, or <b>could be shared</b>. There are several configuration values, that could not be shared. The list of all shareable values could be found in the distributed file spambox_sync.cfg<br /><br />
   For an initial synchronization setup set the following config values in this order: setup syncServer, syncConfigFile, syncTestMode and as last syncCFGPass (leave isShareSlave and isShareMaster off). Use the default (distributed syncConfigFile spambox_sync.cfg) file and configure all values to your needs - do this on all peers by removing lines or setting the general sync flag to 0 or 1 (see the description of syncConfigFile ).<br />
   If you have finished this initial setup, enable isShareMaster or isShareSlave - now assp will setup all entries in the configuration file for all sync peers to the configured default values (to 1 if isShareMaster or to 3 if isShareSlave is selected). Do this on all peers. Now you can configure the synchronization behavior for each single configuration value for each peer, if it should differ from the default setup.<br />
-  For the initial synchronization, configure only one ASSP installation as master (all others as slave). If the initial synchronization has finished, which will take up to one hour, you can configure all or some assp as master and slave. On the initial master simply switch on isShareSlave. On the inital slaves, switch on isShareMaster and change all values in the sync config file that should be bidirectional shared from 3 to 1. As last action enable enableCFGShare on the SyncSlaves first and then on the SyncMaster.<br />
+  For the initial synchronization, configure only one SPAMBOX installation as master (all others as slave). If the initial synchronization has finished, which will take up to one hour, you can configure all or some assp as master and slave. On the initial master simply switch on isShareSlave. On the inital slaves, switch on isShareMaster and change all values in the sync config file that should be bidirectional shared from 3 to 1. As last action enable enableCFGShare on the SyncSlaves first and then on the SyncMaster.<br />
   After such an initial setup, any changes of the peers (syncServer) will have no effect to the configuration file (syncConfigFile)! To add or remove a sync peer after an initial setup, you have to configure syncServer and you have to edit the sync config file manually.<br /><br />
   This option can only be enabled, if isShareMaster and/or isShareSlave and syncServer and syncConfigFile and syncCFGPass are configured!<br />
   <b>Because the synchronization is done using a special SMTP protocol (without "mail from" and "rcpt to"), this option requires an installed <a href="http://search.cpan.org/search?query=Net::SMTP" rel="external">Net::SMTP</a> module in PERL. If you want the sync feature to use a secured connection (using STARTTLS) , DoTLS has to be set to "do TLS". This special SMTP protocol is not usable to for any MTA for security reasons, so the "sync mails" could not be forwarded via any MTA.<br />
   For this reason all sync peers must have a direct or routed TCP connection to each other peer.</b><br /><br />
-  If you build a sync topology with more than two ASSP, please notice, that it is not allowed to build any ring-synchronization. Only a chain-, tree- or star- topology is supported. It is also not allowed to build a sync ring inside any of the three allowed topologies!<br />
+  If you build a sync topology with more than two SPAMBOX, please notice, that it is not allowed to build any ring-synchronization. Only a chain-, tree- or star- topology is supported. It is also not allowed to build a sync ring inside any of the three allowed topologies!<br />
   <input type="button" value="show sync status" onclick="javascript:popFileEditor(\'files/sync_failed.txt\',8);" />',undef,undef,'msg009170','msg009171'],
-['isShareMaster','This is a Share Master',0,\&checkbox,'','(.*)','ConfigChangeSync', 'If selected, ASSP will send configured configuration changes to sync peers.',undef,undef,'msg009180','msg009181'],
-['isShareSlave','This is a Share Slave',0,\&checkbox,'','(.*)','ConfigChangeSync', 'If selected, ASSP will receive configured configuration changes from sync peers. To accept a sync request, every sending peer has to be defined in syncServer - even if there are manually made entries in the sync config file for a peer.',undef,undef,'msg009190','msg009191'],
+['isShareMaster','This is a Share Master',0,\&checkbox,'','(.*)','ConfigChangeSync', 'If selected, SPAMBOX will send configured configuration changes to sync peers.',undef,undef,'msg009180','msg009181'],
+['isShareSlave','This is a Share Slave',0,\&checkbox,'','(.*)','ConfigChangeSync', 'If selected, SPAMBOX will receive configured configuration changes from sync peers. To accept a sync request, every sending peer has to be defined in syncServer - even if there are manually made entries in the sync config file for a peer.',undef,undef,'msg009190','msg009191'],
 ['syncServer','Default Sync Peers',100,\&textinput,'','^((?:' . $HostPortRe . '(?:\|' . $HostPortRe . ')*)|)$','ConfigChangeSyncServer','Define all configuration sync peers here (to send changes to or to receive changes from). Separate multiple values by "|". Any value must be a pair of hostname or ip-address and :port, like 10.10.10.10:25 or mypeerhost:125 or mypeerhost.mydomain.com:225. The :port must be defined!<br />
   The target port can be the listenPort , listenPort2 , relayPort or if syncUsesSSL is enabled, it has to be the listenPortSSL of the peer.',undef,undef,'msg009200','msg009201'],
 ['syncUsesSSL','SSL is used for the Sync SMTP Transport',0,\&checkbox,'','(.*)',undef, 'If selected, SSL will be used for the transport of the synchronization requests. In this case the target ip:port of all peers must be its listenPortSSL ! The Perl modules Net::SMTP::SSL and IO::Socket::SSL must be installed and enabled if this option is selected, otherwise all synchronization requests will fail!',undef,undef,'msg010140','msg010141'],
@@ -1270,7 +1270,7 @@ sub defConfigArray {
  3 - I am not a SyncMaster but a SyncSlave - only this SyncMaster (peer) knows the current sync status to me<br />
  4 - I am a SyncMaster and a SyncSlave (bidirectional sync) - a change of this value was still received from this syncServer (peer) and should not be sent back to this syncServer - this flag will be automatically set back to 2 at the next synchronization check<br /><br />
  ',undef,undef,'msg009220','msg009221'],
-['syncCFGPass','Config Sync Password',20,\&passinput,'','(.{6,}|)','ConfigChangeSync','The password that is used and required (additionally to the sending IP address) to identify a valid sync request. This password has to be set equal in all ASSP installations, from where and/or to where the configuration should be synchronized.<br />
+['syncCFGPass','Config Sync Password',20,\&passinput,'','(.{6,}|)','ConfigChangeSync','The password that is used and required (additionally to the sending IP address) to identify a valid sync request. This password has to be set equal in all SPAMBOX installations, from where and/or to where the configuration should be synchronized.<br />
   The password must be at least six characters long.<br />
   If you want or need to change this password, first disable enableCFGShare here and on all peers, change the password on all peers, enable enableCFGShare on SyncSlaves then enable enableCFGShare on SyncMasters.',undef,undef,'msg009230','msg009231'],
 ['syncShowGUIDetails','Show Detail Sync Information in GUI',0,\&checkbox,'','(.*)',undef, 'If selected, the detail synchronization status is shown at the top of each configuration parameter like:<br /><br />
@@ -1286,15 +1286,15 @@ sub defConfigArray {
   <hr /><div class="menuLevel1">Notes Config Sync</div>
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/configsync.txt\',3);" />',undef,undef,'msg009250','msg009251'],
 
-[ 0, 0, 0, 'heading', 'Network Setup <a href="http://sourceforge.net/p/assp/wiki/ASSP_Advanced_Workflow/" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a>' ],
+[ 0, 0, 0, 'heading', 'Network Setup <a href="http://sourceforge.net/p/assp/wiki/SPAMBOX_Advanced_Workflow/" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a>' ],
 ['DisableSMTPNetworking',"Disable all new SMTP and Proxy Network Connections",0,\&checkbox,0,'(.*)','configUpdateSMTPNet',
-  'If selected, ASSP will not answer to new SMTP and Proxy connections on \'listenPort , listenPort2 , listenPortSSL , relayPort and ProxyConf\'. Currently existing SMTP and Proxy connections are not affected! Web and Stat connection are also not affected.',undef,undef,'msg000010','msg000011'],
+  'If selected, SPAMBOX will not answer to new SMTP and Proxy connections on \'listenPort , listenPort2 , listenPortSSL , relayPort and ProxyConf\'. Currently existing SMTP and Proxy connections are not affected! Web and Stat connection are also not affected.',undef,undef,'msg000010','msg000011'],
 ['enableINET6','Enable IPv6 support',0,\&checkbox,'','(.*)','ConfigChangeIPv6','For IPv6 network support to be enabled, check this box. Default is disabled. IO::Socket::INET6 is able to handle both IPv4 and IPv6. NOTE: This option requires an installed <a href="http://search.cpan.org/search?query=IO::Socket::INET6" rel="external">IO::Socket::INET6</a> module in PERL and your system should support IPv6 sockets to give enabling this option a sense!<br />
   It is recommended to leave this option OFF as long as you don\'t want to use IPv6 addresses for a listener or a destination (SMTP,DNS-server,LDAP-server etc.).<br />
   Before you enable or disable IPv6, please check every IP listener and destination definition in assp and correct the settings. After changing this option a restart of assp is recommended. IPv4 addresses are defined for example 192.168.0.1 or 192.168.0.1:25 - IPv6 addresses are defined like [FE80:1:0:0:0:0:0:1]:25 or [FE80:1::1]:25 ! If an IPv4 address is defined for a listener, assp will listen only on the IPv4 socket. If an IPv6 address is defined for a listener, assp will listen only on the IPv6 socket. If only a port is defined for a listener, assp will listen on both IPv4 and IPv6 sockets.<br />
   For the definition of destination IP\'s applies the same. You are free to define hostnames instead of IP addresses like myhost.mydomain.com:25 - how ever, because of the needed IP address resolving, this will possibly slow down assp.',undef,undef,'msg009480','msg009481'],
 ['listenPort','SMTP Listen Port',80,\&textinput,'25',$GUIHostPort,'ConfigChangeMailPort',
-  'The port number on which ASSP will listen for incoming SMTP connections (normally 25). You can specify both an IP address and port number to limit connections to a specific interface. Separate multiple entries by "|".<p><small><i>Examples:</i> 25, 127.0.0.1:25, 127.0.0.1:25|127.0.0.2:25|[FE80:1::1]:25 </small></p>','Basic',undef,'msg000020','msg000021'],
+  'The port number on which SPAMBOX will listen for incoming SMTP connections (normally 25). You can specify both an IP address and port number to limit connections to a specific interface. Separate multiple entries by "|".<p><small><i>Examples:</i> 25, 127.0.0.1:25, 127.0.0.1:25|127.0.0.2:25|[FE80:1::1]:25 </small></p>','Basic',undef,'msg000020','msg000021'],
 ['smtpDestination','SMTP Destination',80,\&textinput,'125',$GUIHostPort,undef,
   'The IP <b>number!</b> and port number of your primary SMTP <a href=http://en.wikipedia.org/wiki/Mail_transfer_agent>mail transfer agent</a> (MTA). If multiple servers are listed and the first listed MTA does not respond, each additional MTA will be tried. If only a port number is entered, or the dynamic keyword <b>INBOUND</b> is used with a port number, then the connection will be established to the local IP address on which the connection was received. This is useful when you have several IP addresses with different domains or profiles in your MTA. If INBOUND:PORT is used, ReportingReplies (Analyze,Help,etc and CopyMail will go to 127.0.0.1:PORT or [::1]:PORT. If your needs are different, use smtpReportServer (SMTP Reporting Destination) and sendAllDestination (Copy Spam SMTP Destination). Separate multiple entries by "|"<br />.
   If you need to connect to the SMTP destination host using native SSL, write \'SSL:\' in front of the IP/host definition. In this case the Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed and enabled ( useIOSocketSSL ).<br />
@@ -1318,13 +1318,13 @@ sub defConfigArray {
   * => 172.16.1.1                # default - if not defined, the system default is used<br /><br />
   NOTICE: assp will NOT check, that the local IP address is available and bound to a local interface! It will also NOT check the system routing table! YOU SHOULD KNOW WHAT YOU DO!',undef,undef,'msg010430','msg010431'],
 ['listenPortSSL','SMTP Secure Listen Port',80,\&textinput,'',$GUIHostPort,'ConfigChangeMailPortSSL',
-  'The port number on which ASSP will listen for incoming secure SMTP connections (normally 465). You can specify both an IP address and port number to limit connections to a specific interface. Separate multiple entries by "|".<p><small><i>Examples:</i> 465, 127.0.0.1:465, 127.0.0.1:465|127.0.0.2:465 </small></p>. More configuration options are smtpSSLRequireClientCert, SSLSMTPCertVerifyCB and SSLSMTPConfigure .',undef,undef,'msg000050','msg000051'],
+  'The port number on which SPAMBOX will listen for incoming secure SMTP connections (normally 465). You can specify both an IP address and port number to limit connections to a specific interface. Separate multiple entries by "|".<p><small><i>Examples:</i> 465, 127.0.0.1:465, 127.0.0.1:465|127.0.0.2:465 </small></p>. More configuration options are smtpSSLRequireClientCert, SSLSMTPCertVerifyCB and SSLSMTPConfigure .',undef,undef,'msg000050','msg000051'],
 ['smtpDestinationSSL','SSL Destination',80,\&textinput,'',$GUIHostPort,undef,
   'The IP <b>address!</b> and port number to connect to when mail is received on the SSL listen port. If the field is blank, the primary SMTP destination will be used.<br />
   If you need to connect to the SSL destination host using native SSL, write \'SSL:\' in front of the IP/host definition. In this case the Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed and enabled ( useIOSocketSSL ).<br />
   <p><small><i>Examples:</i>127.0.0.1:565, 565</small></p>',undef,undef,'msg000060','msg000061'],
 ['listenPort2','Second SMTP Listen Port',80,\&textinput,'',$GUIHostPort,'ConfigChangeMailPort2',
-  'A secondary port number on which ASSP can accept SMTP connections. This is useful as a dedicated port for VPN clients or for those who cannot directly send mail to a mail server outside of their ISP\'s network because the ISP is blocking port 25. You may also specify an IP address to limit connections to a specific interface. Separate multiple entries by "|".<p><small><i>Examples:</i> 2525, 127.0.0.1:2525, 192.168.0.100:25000</small></p>',undef,undef,'msg000070','msg000071'],
+  'A secondary port number on which SPAMBOX can accept SMTP connections. This is useful as a dedicated port for VPN clients or for those who cannot directly send mail to a mail server outside of their ISP\'s network because the ISP is blocking port 25. You may also specify an IP address to limit connections to a specific interface. Separate multiple entries by "|".<p><small><i>Examples:</i> 2525, 127.0.0.1:2525, 192.168.0.100:25000</small></p>',undef,undef,'msg000070','msg000071'],
 ['smtpAuthServer','Second SMTP Destination',20,\&textinput,'',$GUIHostPort,undef,
   'The IP address and port number to connect to when mail is received on the second SMTP listen port. If the field is blank, the primary SMTP destination will be used. The purpose of this setting is to allow remote users to make authenticated connections and transmit their email without encountering SPF failures.
   If you need to connect to the second SMTP destination host using native SSL, write \'SSL:\' in front of the IP/host definition. In this case the Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed and enabled ( useIOSocketSSL ).<br />
@@ -1350,12 +1350,12 @@ sub defConfigArray {
   'The maximum number of simultaneous SMTP sessions. This can prevent server overloading and DoS attacks. 64 simultaneous sessions are typically enough. Zero means no limit. Connections on relayPort will be counted, but connections on relayPort will never be limited because of this value. If the value is reached, assp will wait until the number of simultaneous SMTP sessions is lower than (value - 20) or (value * 0.75).',undef,undef,'msg000110','msg000111'],
 ['noMaxSMTPSessions','No Maximum Sessions IP numbers*',60,\&textinput,'','(\S*)','ConfigMakeIPRe','Mail from any of these IP numbers will pass through without checking maximum number of simultaneous SMTP sessions. For example: 145.145.145.145',undef,undef,'msg009160','msg009161'],
 ['maxSMTPipSessions','Maximum Sessions Per IP Address',3,\&textinput,'5','(\d?\d?\d?)',undef,
-  'The maximum number of SMTP sessions allowed per IP address. Use this setting to prevent server overloading and DoS attacks. 5 sessions are typically enough. If set to 0 there is no limit imposed by ASSP. ispip (ISP/Secondary MX Servers) and acceptAllMail (Accept All Mail) matches are excluded from SMTP session limiting. PB: iplValencePB',undef,undef,'msg000120','msg000121'],
+  'The maximum number of SMTP sessions allowed per IP address. Use this setting to prevent server overloading and DoS attacks. 5 sessions are typically enough. If set to 0 there is no limit imposed by SPAMBOX. ispip (ISP/Secondary MX Servers) and acceptAllMail (Accept All Mail) matches are excluded from SMTP session limiting. PB: iplValencePB',undef,undef,'msg000120','msg000121'],
 
 ['HeaderMaxLength','Maximum Header Size',10,\&textinput,50000,'(\d*)',undef,
   'The maximum allowed header length, in bytes. At each mail hop header information is added by the mail server. A large mail header can indicate a mail loop. If the value is blank or 0 the header size will not be checked.',undef,undef,'msg000130','msg000131'],
 ['detectMailLoop','Detect Possible Mailloop',10,\&textinput,'3','(\d*)',undef,
- 'If set to a value higher than 0, ASSP count it\'s own Received-header in the header of the mail. If this count exceeds the defined value, the transmission of the message will be canceled.',undef,undef,'msg008860','msg008861'],
+ 'If set to a value higher than 0, SPAMBOX count it\'s own Received-header in the header of the mail. If this count exceeds the defined value, the transmission of the message will be canceled.',undef,undef,'msg008860','msg008861'],
 ['MaxEqualXHeader','Maximum Equal X-Header Lines*',40,\&textinput,'*=>20','^((?:.+?\s*=>\s*\d+(?:\s*\|.+?\s*=>\s*\d+)*)|\s*file\s*:\s*.+|)$','configUpdateStringToNum',
  'The maximum allowed equal X-header lines - eg. "X-SubscriberID". If the value is set to empty the header will not be checked for equal X-header lines. This check will be skipped for noprocessing, whitelisted and outgoing mails.<br />
   The default is "*=&gt;20", which means any X-header can occur 20 time maximum. You can define different values for different X-headers - wildcards like "*" and "?" are allowed to be used.<br />
@@ -1364,7 +1364,7 @@ sub defConfigArray {
   A value of zero disables the check for the defined X-header. The check is also skipped if no default like "*=&gt;20" is defined and the X-header definition is not found.',undef,undef,'msg009060','msg009061'],
 
 ['maxRealSize','Max Real Size of Local Message',10,\&textinput,'','(\d*)',undef,
- 'If the value of (number of [rcpt to] * [message size]) exceeds maxRealSize in bytes the transmission of the local message will be canceled. No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.',undef,undef,'msg000140','msg000141'],
+ 'If the value of (number of [rcpt to] * [message size]) exceeds maxRealSize in bytes the transmission of the local message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.',undef,undef,'msg000140','msg000141'],
 ['MaxRealSizeAdr','Max Real Size of Local Message Addresses*',40,\&textinput,'file:files/MaxRealSize.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxRealSize values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
 Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
@@ -1377,7 +1377,7 @@ jhanna=&gt;0<br />
 If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxRealSize will take place.'
 ,undef,undef,'msg009490','msg009491'],
 ['maxRealSizeExternal','Max Real Size of External Message',10,\&textinput,'','(\d*)',undef,
- 'If the value of (number of [rcpt to] * [message size]) exceeds maxRealSizeExternal in bytes the transmission of the external message will be canceled. No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.',undef,undef,'msg000150','msg000151'],
+ 'If the value of (number of [rcpt to] * [message size]) exceeds maxRealSizeExternal in bytes the transmission of the external message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.',undef,undef,'msg000150','msg000151'],
 ['MaxRealSizeExternalAdr','Max Real Size of External Message Addresses*',40,\&textinput,'file:files/MaxRealSizeExt.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxRealSizeExternal values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
 Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
@@ -1392,7 +1392,7 @@ If multiple matches (values) are found in a mail for any IP address in the trans
 ['maxRealSizeError','max real message size Error',80,\&textinput,'552 message exceeds MAXREALSIZE byte (size * rcpt)','(552 .*)',undef,'SMTP error message to reject maxRealSize / maxRealSizeExternal exceeding mails. For example:552 message exceeds MAXREALSIZE byte (size * rcpt)! MAXREALSIZE will be replaced by the value of maxRealSize / maxRealSizeExternal.',undef,undef,'msg000160','msg000161'],
 
 ['maxSize','Max Size of Local Message',10,\&textinput,'','(\d*)',undef,
- 'If the value of ([message size]) exceeds maxSize in bytes the transmission of the local message will be canceled. No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the transmit size.',undef,undef,'msg008620','msg008621'],
+ 'If the value of ([message size]) exceeds maxSize in bytes the transmission of the local message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the transmit size.',undef,undef,'msg008620','msg008621'],
 ['MaxSizeAdr','Max Size of Local Message Addresses*',40,\&textinput,'file:files/MaxSize.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxSize values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
 Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
@@ -1405,7 +1405,7 @@ jhanna=&gt;0<br />
 If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxSize will take place.'
 ,undef,undef,'msg009510','msg009511'],
 ['maxSizeExternal','Max Size of External Message',10,\&textinput,'','(\d*)',undef,
- 'If the value of ([message size]) exceeds maxSizeExternal in bytes the transmission of the external message will be canceled. No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the transmit size.',undef,undef,'msg008630','msg008631'],
+ 'If the value of ([message size]) exceeds maxSizeExternal in bytes the transmission of the external message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the transmit size.',undef,undef,'msg008630','msg008631'],
 ['MaxSizeExternalAdr','Max Size of External Message Addresses*',40,\&textinput,'file:files/MaxSizeExt.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxSizeExternal values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
 Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
@@ -1421,7 +1421,7 @@ If multiple matches (values) are found in a mail for any IP address in the trans
 ['MaxAUTHErrors','Max Number of AUTHentication Errors',10,\&textinput,'','(\d*)',undef,
  'If an IP (/24 network is used) exceeds this number of authentication errors (535 or 530) the transmission of the current message will be canceled and any new connection from that IP will be blocked for 5-10 minutes.<br />
   Every 5 Minutes the \'AUTHError\' -counter of the IP will be decreased by one. autValencePB is used for the penalty box.<br />
-  No limit is imposed by ASSP if the field is left blank or set to 0. This option allows admins to prevent external bruteforce or dictionary attacks via AUTH command. Whitelisted, noBlockingIPs and NoProcessing IP\'s are ignored like any relayed connection.',undef,undef,'msg009310','msg009311'],
+  No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to prevent external bruteforce or dictionary attacks via AUTH command. Whitelisted, noBlockingIPs and NoProcessing IP\'s are ignored like any relayed connection.',undef,undef,'msg009310','msg009311'],
 ['noMaxAUTHErrorIPs','Do not check MaxAUTHErrors for these IP\'s*',40,\&textinput,'','(\S*)','ConfigMakeIPRe','List of IP\'s which should not be checked for MaxAUTHErrors .  For example: 145.145.145.145|145.146.',undef,undef,'msg009580','msg009581'],
 
 ['DoSameSubject','Check Same Subjects','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(.*)',undef,
@@ -1448,14 +1448,14 @@ If multiple matches (values) are found in a mail for any IP address in the trans
 ['NoSubjectFrequencyIP','Check Equal Subject Frequency NOT for this IP\'s*',60,\&textinput,'','(\S*)','ConfigMakeIPRe','Mail from any of these IP numbers will pass through without checking the equality of subjects. For example: 145.145.145.145',undef,undef,'msg010090','msg010091'],
 
 ['smtpIdleTimeout','SMTP Idle Timeout',5,\&textinput,'180','(\d?\d?\d?\d?)',undef,
- 'The number of seconds a session is allowed to be idle before being forcibly disconnected. The default is 180 seconds. No limit is imposed by ASSP if the field is left blank or set to 0. If you have not defined an IdleTimeout on your MTA, this value should not be set to 0, because then a connection will never be timed out!',undef,undef,'msg000170','msg000171'],
+ 'The number of seconds a session is allowed to be idle before being forcibly disconnected. The default is 180 seconds. No limit is imposed by SPAMBOX if the field is left blank or set to 0. If you have not defined an IdleTimeout on your MTA, this value should not be set to 0, because then a connection will never be timed out!',undef,undef,'msg000170','msg000171'],
 ['NpWlTimeOut','SMTP Idle Timeout for Whitelisted and Noprocessing',5,\&textinput,'1200','(\d?\d?\d?\d?)',undef,
- 'The number of seconds a whitelisted or noprocessing session is allowed to be idle before being forcibly disconnected. The default is 1200 seconds. No limit is imposed by ASSP if the field is left blank or set to 0. If you have not defined an IdleTimeout on your MTA, this value should not be set to 0, because then a connection will never be timed out!',undef,undef,'msg009860','msg009861'],
+ 'The number of seconds a whitelisted or noprocessing session is allowed to be idle before being forcibly disconnected. The default is 1200 seconds. No limit is imposed by SPAMBOX if the field is left blank or set to 0. If you have not defined an IdleTimeout on your MTA, this value should not be set to 0, because then a connection will never be timed out!',undef,undef,'msg009860','msg009861'],
 ['smtpNOOPIdleTimeout','SMTP Idle Timeout after NOOP',5,\&textinput,'0','(\d?\d?\d?\d?)',undef,
- 'The number of seconds a session is allowed to be idle after a "NOOP" command is received, before being forcibly disconnected. The default is 0 seconds. No limit is imposed by ASSP if the field is left blank or set to 0.<br />
+ 'The number of seconds a session is allowed to be idle after a "NOOP" command is received, before being forcibly disconnected. The default is 0 seconds. No limit is imposed by SPAMBOX if the field is left blank or set to 0.<br />
   This should prevent hackers to hold and block connections by sending "NOOP" commands short before the "smtpIdleTimeout" is reached.',undef,undef,'msg000180','msg000181'],
 ['smtpNOOPIdleTimeoutCount','SMTP Idle Timeout after NOOP Count',5,\&textinput,'0','(\d?\d?)',undef,
- 'The number of counts a session is allowed send "NOOP" commands following on each other, before being forcibly disconnected. The default is 0. No limit is imposed by ASSP if the field is left blank or set to 0.<br />
+ 'The number of counts a session is allowed send "NOOP" commands following on each other, before being forcibly disconnected. The default is 0. No limit is imposed by SPAMBOX if the field is left blank or set to 0.<br />
   This in cooperation with "smtpNOOPIdleTimeout" should prevent hackers to hold and block connections by sending repeatedly "NOOP" commands short before the "smtpNOOPIdleTimeout" is reached. If "smtpNOOPIdleTimeout" is not defined or 0, this value will be ignored!<hr /><div class="menuLevel1">Notes On SMTP Session Limits</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/sessionlimits.txt\',3);" />',undef,undef,'msg000190','msg000191'],
 
 [0,0,0,'heading','Group definition'],
@@ -1526,7 +1526,7 @@ If multiple matches (values) are found in a mail for any IP address in the trans
  The result of each group definition will be stored in a file in files/group_export/GROUPNAME.txt.<br />
  The groups are build at every start of assp and if the defined file or an include file is stored (changed file time). To force a reload of all groups, open the file and click \'Save changes\' or change the file time with an external shell script. It is also possible to use GroupsReloadEvery, to reload the Groups definition in time intervals, if the exec: or ldap: option are used.','Basic',undef,'msg009470','msg009471'],
 ['GroupsReloadEvery','Reload the Groups definitions every this minutes <sup>s</sup>',40,\&textinput,60,$ScheduleGUIRe,'configChangeSched',
- 'ASSP will reload the Groups definition every this minutes, if the exec: or ldap: option is used in Groups. <br />
+ 'SPAMBOX will reload the Groups definition every this minutes, if the exec: or ldap: option is used in Groups. <br />
  A value of zero disables the scheduled reload. Defaults to 60 minutes.<br />
  <hr /><div class="menuLevel1">Notes On Group Definitions</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/groupsdef.txt\',3);" />','Basic',undef,'msg007910','msg007911'],
 
@@ -1576,17 +1576,17 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'Adds a line to the email header if the message is spam. For example: <a href="http://exchangepedia.com/blog/2008/01/assigning-scl-to-messages-scanned-by.html">X-Spam-Status:yes<img src="' . $wikiinfo . '" alt="Assigning SCL to messages scanned by 3rd-party antispam filters" /></a>',undef,undef,'msg000280','msg000281'],
 ['AddLevelHeader','Add Graphical Level Header',0,\&checkbox,1,'(.*)',undef,
  'Adds a line to the email header "X-Assp-Spam-Level: **** " showing the total message score represented by stars (1 - 20), every star represents five scoring points.',undef,undef,'msg000290','msg000291'],
-['AddSubjectHeader','Add X-ASSP-Original-Subject Header',1,\&checkbox,'','(.*)',undef,
- 'Adds a line to the email header "X-ASSP-Original-Subject: the subject".',undef,undef,'msg000300','msg000301'],
+['AddSubjectHeader','Add X-SPAMBOX-Original-Subject Header',1,\&checkbox,'','(.*)',undef,
+ 'Adds a line to the email header "X-SPAMBOX-Original-Subject: the subject".',undef,undef,'msg000300','msg000301'],
 ['AddSpamReasonHeader','Add Spam Reason Header',0,\&checkbox,1,'(.*)',undef,
  'Adds a line to the email header "X-Assp-Spam-Reason: " explaining why the message is spam.<br /><hr /><div class="menuLevel1">Notes On Spam Control</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/spamcontrol.txt\',3);" />',undef,undef,'msg000310','msg000311'],
 
 [0,0,0,'heading','Copy Spam &amp; Ham'],
 ['sendAllSpam','Copy Spam and Send to this Address',80,\&textinput,'','(.*)',undef,
- 'If this is set, ASSP will deliver a copy of spam mails to this address. For example: spammaster@mydomain.com. The literal USERNAME is replaced by the user part of the recipient, the literal DOMAIN is replaced by the domain part of the recipient.
+ 'If this is set, SPAMBOX will deliver a copy of spam mails to this address. For example: spammaster@mydomain.com. The literal USERNAME is replaced by the user part of the recipient, the literal DOMAIN is replaced by the domain part of the recipient.
  For example: USERNAME@Spam.DOMAIN, USERNAME+Spam@DOMAIN, catchallspamthis@DOMAIN. Separate multiple entries by comma or space. To deliver copy of spams based on the domain name (only some special hosted domains), use ccSpamInDomain .','Basic',undef,'msg000320','msg000321'],
 ['ccSpamInDomain','Copy Spam and Send to this Address per Domain*',60,\&textinput,'','(.*)','configUpdateCCD',
- 'If the domain of the recipient-address is matches one in this list, ASSP will deliver an additional copy of spam emails of a domain to this address (even if sendAllSpam is not set). For example: monitorspam@example1.com|monitor@example2.com.','Basic',undef,'msg008880','msg008881'],
+ 'If the domain of the recipient-address is matches one in this list, SPAMBOX will deliver an additional copy of spam emails of a domain to this address (even if sendAllSpam is not set). For example: monitorspam@example1.com|monitor@example2.com.','Basic',undef,'msg008880','msg008881'],
 ['sendAllDestination','Copy Spam SMTP Destination',20,\&textinput,'','^((?:SSL:)?(?:'.$PortRe.'|'.$HostPortRe.')|)$',undef,
  'IP address and port to connect to when Spam messages are copied. If blank they go to the main SMTP Destination. eg "10.0.1.3:1025", "SSL:10.0.1.3:465", "1025", etc.',undef,undef,'msg000330','msg000331'],
 ['ccSpamFilter','Copy Spam to these Recipients Only*',40,\&textinput,'','(.*)','ConfigMakeSLRe',
@@ -1604,8 +1604,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['spamTagCC','Prepend Spam Tag to Copied Spam',0,\&checkbox,1,'(.*)',undef,'The check which caused the spam detection will be prepended to the subject of the message. For example: [DNSBL]',undef,undef,'msg000400','msg000401'],
 ['sendAllHamDestination','Copy Not-Spam SMTP Destination',20,\&textinput,'','^((?:SSL:)?(?:'.$PortRe.'|'.$HostPortRe.')|)$',undef,
  'IP address and port to connect to when  Ham messages are copied. If blank they go to the Spam SMTP Destination. eg "10.0.1.3:1025", "SSL:10.0.1.3:465",, "1025", etc.',undef,undef,'msg000410','msg000411'],
-['sendHamInbound','Copy Incoming Not-Spam and Send to this Address',20,\&textinput,'','(.*)',undef, 'If you put an address in this box  ASSP will forward a copy of notspam messages from outside to this address. The literal USERNAME is replaced by the user part of the recipient, the literal DOMAIN is replaced by the domain part of the recipient. For example: archiv@mydomain.com, USERNAME@mybackup.domain, catchallforthis@DOMAIN',undef,undef,'msg000420','msg000421'],
-['sendHamOutbound','Copy Outgoing Not-Spam and Send to this Address',20,\&textinput,'','(.*)',undef, 'If you put an address in this box ASSP will forward a copy of outgoing notspam messages to this address.',undef,undef,'msg000430','msg000431'],
+['sendHamInbound','Copy Incoming Not-Spam and Send to this Address',20,\&textinput,'','(.*)',undef, 'If you put an address in this box  SPAMBOX will forward a copy of notspam messages from outside to this address. The literal USERNAME is replaced by the user part of the recipient, the literal DOMAIN is replaced by the domain part of the recipient. For example: archiv@mydomain.com, USERNAME@mybackup.domain, catchallforthis@DOMAIN',undef,undef,'msg000420','msg000421'],
+['sendHamOutbound','Copy Outgoing Not-Spam and Send to this Address',20,\&textinput,'','(.*)',undef, 'If you put an address in this box SPAMBOX will forward a copy of outgoing notspam messages to this address.',undef,undef,'msg000430','msg000431'],
 ['ccHamFilter','Copy Ham Filter*',40,\&textinput,'','(.*)','ConfigMakeSLRe',
  'Copy Not-Spam to these addresses only. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). Wildcards are supported (fribo*@domain.com).',undef,undef,'msg000440','msg000441'],
 ['ccnHamFilter','Do Not Copy Ham Filter*',40,\&textinput,'','(.*)','ConfigMakeSLRe',
@@ -1619,9 +1619,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['spamTagSL','Suppress SpamTags to Spam-Lover-Messages',0,\&checkbox,1,'(.*)',undef,
  'If set, spamTags (the method used to catch spam) does NOT get prepended to the subject of the Spam-Lover-Message.',undef,undef,'msg000480','msg000481'],
 ['groupSpamLovers',"Group SpamLovers and Not SpamLovers per mail",0,\&checkbox,'','(.*)',undef,
- 'If set, the first envelope recipient consider a mail to be for spamlovers or not. If the first envelope recipient is any SpamLover, all other (following) envelope recipients must be also any SpamLover (or reverse) - if not, their address will be not accepted by ASSP for this single mail and \'452 too many recipients\' will be sent.',undef,undef,'msg008800','msg008801'],
+ 'If set, the first envelope recipient consider a mail to be for spamlovers or not. If the first envelope recipient is any SpamLover, all other (following) envelope recipients must be also any SpamLover (or reverse) - if not, their address will be not accepted by SPAMBOX for this single mail and \'452 too many recipients\' will be sent.',undef,undef,'msg008800','msg008801'],
 ['spamLovers','All Spam-Lover*',60,\&textinput,'postmaster|abuse','(.*)','ConfigMakeSLReSL',
- 'Messages to Spam-Lovers are processed and filtered by ASSP, but (optionally) get tagged with spamSubject and are not blocked. When a
+ 'Messages to Spam-Lovers are processed and filtered by SPAMBOX, but (optionally) get tagged with spamSubject and are not blocked. When a
  Spam-Lover is not the sole recipient of a message, the message is processed
  normally, and if it is found to be spam, it will not be delivered to the Spam-Lover.
  delaySpamLovers are not included here and must be set additionally.
@@ -1630,7 +1630,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  This option and all SpamLover-Options (...SpamLovers) below accepting a second score parameter like "user@your-domain.com=>70"<br />
  If such a parameter is defined in any option for an entry and the recipient address matches this entry and the message score exceeds the parameter value, the message will be considered spam.<br />
  If there are multiple possible matches for a recipient address found, the generic longest match (and assigned value) will be used.<br />
- ASSP will use the highest found value for all envelope recipients of an email.<br />
+ SPAMBOX will use the highest found value for all envelope recipients of an email.<br />
  The according low limit is calculated as:<br />
  for outgoing mails: value - ( PenaltyMessageLimit - PenaltyMessageLow )<br />
  or<br />
@@ -1687,10 +1687,10 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['noProcessingDomains','No Processing Domains*',60,\&textinput,'sourceforge.net','(.*)','ConfigMakeRe',
  'Domains from which you want to receive all mail and  proxy without processing. Your ISP, domain registration, mail list servers, stock broker, or other key business partners might be good candidates. Note this matches the end of the address, so if you don\'t want to match subdomains then include the @. Note that buy.com would also match spambuy.com but .buy.com won\'t match buy.com. For example: sourceforge.net|@google.com|.buy.com',undef,undef,'msg000770','msg000771'],
 ['npRe','Regular Expression to Identify No Processing Mail*',60,\&textinput,'','(.*)','ConfigCompileRe',
- 'If a message matches this Perl regular expression ASSP will treat the message as a \'No Processing\' mail. For example: 169\.254\.122\.|172\.16\.|\\[autoreply\\].',undef,undef,'msg000780','msg000781'],
-['npSize','Message Size Limit',10,\&textinput,'500000','(.*)',undef,'ASSP will treat incoming messages larger than this SIZE (in bytes) as \'No Processing\' mail, after the header part of the mail is received without any error. Empty or 0 disables the feature.',undef,undef,'msg000790','msg000791'],
-['npSizeOut','Message Size Limit Outgoing',10,\&textinput,'500000','(.*)',undef,'ASSP will treat outgoing messages larger than this SIZE (in bytes) as \'No Processing\' mail. Empty or 0 disables the feature. ',undef,undef,'msg000800','msg000801'],
-['processOnlyAddresses','Process Only These Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','If the Enable Process Only Addresses check box is checked, mail solely to or from any of the addresses in this list  (envelope only) will be processed by ASSP. All others will be proxied without processing. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br /> Note that if an address matches both the NoProcessing and the OnlyTheseProcessing lists, the NoProcessing rules take precedence.',undef,undef,'msg000810','msg000811'],
+ 'If a message matches this Perl regular expression SPAMBOX will treat the message as a \'No Processing\' mail. For example: 169\.254\.122\.|172\.16\.|\\[autoreply\\].',undef,undef,'msg000780','msg000781'],
+['npSize','Message Size Limit',10,\&textinput,'500000','(.*)',undef,'SPAMBOX will treat incoming messages larger than this SIZE (in bytes) as \'No Processing\' mail, after the header part of the mail is received without any error. Empty or 0 disables the feature.',undef,undef,'msg000790','msg000791'],
+['npSizeOut','Message Size Limit Outgoing',10,\&textinput,'500000','(.*)',undef,'SPAMBOX will treat outgoing messages larger than this SIZE (in bytes) as \'No Processing\' mail. Empty or 0 disables the feature. ',undef,undef,'msg000800','msg000801'],
+['processOnlyAddresses','Process Only These Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','If the Enable Process Only Addresses check box is checked, mail solely to or from any of the addresses in this list  (envelope only) will be processed by SPAMBOX. All others will be proxied without processing. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br /> Note that if an address matches both the NoProcessing and the OnlyTheseProcessing lists, the NoProcessing rules take precedence.',undef,undef,'msg000810','msg000811'],
 ['poTestMode','Enable Process Only Addresses',0,\&checkbox,'','(.*)',undef,'<br /><hr /><div class="menuLevel1">Notes On No Processing</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/noprocessing.txt\',3);" />',,undef,undef,'msg000820','msg000821'],
 
 [0,0,0,'heading','Whitelisting'],
@@ -1774,7 +1774,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  "Put anything here to identify messages which should bypass PB, Sender Validation, Griplist, IP Limiting, Delaying, SPF, DNSBL &amp; SRS checks. For example:  email addresses of people who are forwarding from other accounts to their mailbox on your server.",undef,undef,'msg001100','msg001101'],
 ['ispHostnames','Regular Expression to Identify ISP/Secondary Hostnames*',80,\&textinput, '','(.*)', 'ConfigCompileRe', 'Hostnames (regular expression) to lookup the IP that connected to the ISP/Secondary server.<br />If found, this address is used to perform IP-based checks on forwarded messages. <br />For example: mx1\.yourisp\.com or mx1\.yourisp\.net|mx2\.yoursecondary\.com . <i>This hostnames are found in the \'Received:\' header, like  \'Received: from ...123.123.123.123... by <b>mx1.yourisp.com</b>\'</i>. Leave this blank to disable the feature. ',undef,undef,'msg001110','msg001111'],
 ['send250OKISP','Send 250 OK To ISP/Secondary MX Servers',0,\&checkbox,'1','(.*)',undef,
- 'Set this checkbox if you want ASSP to reply to IP\'s in ISPIP with \'250 OK\' instead of SMTP error code \'554 5.7.1\'.',undef,undef,'msg001120','msg001121'],
+ 'Set this checkbox if you want SPAMBOX to reply to IP\'s in ISPIP with \'250 OK\' instead of SMTP error code \'554 5.7.1\'.',undef,undef,'msg001120','msg001121'],
 ['ispgripvalue','ISP/Secondary MX Grip Value',5,\&textinput,'0.5','^(0\.?\d*|)$',undef,'It is recommended  to set it to 0.5 (Completely GReyIP) for ISP and Secondary MX servers. If left blank the Griplist X value is used (percentage of spam messages in relation to total). <br />Note: value has to be greater than 0 and less than 1, where 0 = never spam and 1 = always spam',undef,undef,'msg001130','msg001131'],
 
 ['BounceSenders','Bounce Senders*',80,\&textinput,'postmaster|mailer-daemon','(.*)','ConfigMakeRe','Envelope sender addresses treated as bounce origins. Null sender (&lt;&gt;) is always included.<br />
@@ -1798,7 +1798,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   This setting is ignored for BounceSenders, which can relay at any time . <br />
   The connection will be dropped regardless any other assp setting ( except EmailSenderOK ).<br />
   It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch this ( or RelayOnlyLocalSender ) to ON in every case',undef,undef,'msg010390','msg010391'],
-['NoRelaying','No Relaying Error <a href="http://sourceforge.net/p/assp/wiki/Relaying" target="ASSPHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a>',80,\&textinput,'530 Relaying not allowed','([25]\d\d .*)',undef,'SMTP error message to deny relaying.',undef,undef,'msg001190','msg001191'],
+['NoRelaying','No Relaying Error <a href="http://sourceforge.net/p/assp/wiki/Relaying" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a>',80,\&textinput,'530 Relaying not allowed','([25]\d\d .*)',undef,'SMTP error message to deny relaying.',undef,undef,'msg001190','msg001191'],
 ['defaultLocalHost','Default Local Host',40,\&textinput,'assp.local','('.$EmailDomainRe.')?',undef,'If you want to be able to send mail to local users without a domain name then put the default local domain here.<br /> Blank disables this feature. For example: mydomain.com .',undef,undef,'msg001200','msg001201'],
 
 ['LocalFrequencyInt','Local Frequency Interval',40,\&textinput,'0','(\d*)',undef,'The time interval in seconds in which the number of envelope recipients per sending address has not to exceed a specific number ( LocalFrequencyNumRcpt ).<br />
@@ -1819,7 +1819,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'A list of local IP-addresses, for which the \'local frequency check\' should not be done.<br />
   For example: 145.145.145.145|145.146. ',undef,undef,'msg010110','msg010111'],
 
-['genDKIM','Generate and Add DKIM <a href="http://en.wikipedia.org/wiki/DomainKeys_Identified_Mail" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a> signatures to relayed messages',0,\&checkbox,'','(.*)',undef,'If selected, ASSP will add DKIM signatures to relayed messages if it finds a valid DKIM configuration in DKIMgenConfig for the sending domain. This will also be done for noprocessing mails. This requires an installed <a href="http://search.cpan.org/search?query=Mail::DKIM" rel="external">Mail::DKIM</a> module in PERL.',undef,undef,'msg001210','msg001211'],
+['genDKIM','Generate and Add DKIM <a href="http://en.wikipedia.org/wiki/DomainKeys_Identified_Mail" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a> signatures to relayed messages',0,\&checkbox,'','(.*)',undef,'If selected, SPAMBOX will add DKIM signatures to relayed messages if it finds a valid DKIM configuration in DKIMgenConfig for the sending domain. This will also be done for noprocessing mails. This requires an installed <a href="http://search.cpan.org/search?query=Mail::DKIM" rel="external">Mail::DKIM</a> module in PERL.',undef,undef,'msg001210','msg001211'],
 ['DKIMgenConfig','The File with the DKIM configurations*',40,\&textinput,'file:dkim/dkimconfig.txt','(file:\S*)','configUpdateDKIMConf','The file that contains the DKIM configuration. A description how to configure DKIM could be found in the default file dkim/dkimconfig.txt.<br />
 <hr /><div class="menuLevel1">Notes On Relaying</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/relaying.txt\',3);" />',undef,undef,'msg001220','msg001221'],
 
@@ -1836,9 +1836,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  Enable this check only, if assp is configured to validate local domains and email addresses!<br />
  NOTICE: that removeForeignBCC take place before this check is done - step 5 will be never reached if removeForeignBCC is enabled!',undef,undef,'msg010010','msg010011'],
 
-['sendAllPostmaster','Catchall Address for Messages to Postmaster',20,\&textinput,'','(.*)',undef,'ASSP will deliver messages addressed to all postmasters of your local domains to this address. For example: postmaster@mydomain.com',undef,undef,'msg001250','msg001251'],
+['sendAllPostmaster','Catchall Address for Messages to Postmaster',20,\&textinput,'','(.*)',undef,'SPAMBOX will deliver messages addressed to all postmasters of your local domains to this address. For example: postmaster@mydomain.com',undef,undef,'msg001250','msg001251'],
 ['sendAllPostmasterNP','Skip Spam Checks for Postmaster Catchall',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg001260','msg001261'],
-['sendAllAbuse','Catchall Address for Messages to Abuse',20,\&textinput,'','(.*)',undef,'ASSP will deliver messages to all abuse addresses of your local domains to this address. For example: abuse@mydomain.com',undef,undef,'msg001270','msg001271'],
+['sendAllAbuse','Catchall Address for Messages to Abuse',20,\&textinput,'','(.*)',undef,'SPAMBOX will deliver messages to all abuse addresses of your local domains to this address. For example: abuse@mydomain.com',undef,undef,'msg001270','msg001271'],
 ['sendAllAbuseNP','Skip Spam Checks for Abuse Catchall',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg001280','msg001281'],
 ['DoRFC822','Validate addresses to conform with RFC 822','0:disabled|1:recipients|2:sender|3:both',\&listbox,2,'(.*)',undef,'If activated, the envelope sender and/or each envelope recipient is checked to conform with the email format defined in RFC 822. For an invalid sender address \'nofromValencePB\' is used for scoring - for invalid recipient addresses, each is scored with irValencePB .<br />
   For the sender address in addition a top level domain existence and DNS name server registration check is done.<br />
@@ -1848,38 +1848,38 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['RejectTheseLocalAddresses','Reject These Local Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
 'If ANY recipient is on reject list, message will not be delivered. Used for disabled legitimate accounts, where a user may have left the company. This stops wildcard mailboxes from getting these messages.',undef,undef,'msg001320','msg001321'],
 ['localDomains','Local Domains*',80,\&textinput,'putYourDomains.com|here.org','(.*)','ConfigMakeLocalDomainsRe',
- 'Check local domains against these addresses. Add a fake domain like \'assp-nospam.org\' for the email interface if you run MS Exchange. When mailing to eg. \'spam@assp-nospam.org\' MS Exchange forwards it outbound to ASSP who handles the different options. As in every field marked by \'*\' separate addresses with | or use file \'file:files/localdomains.txt\'. Wildcards are supported.<br /> For example: *mydomain.com|*.mydomain.com|here.org <br />
+ 'Check local domains against these addresses. Add a fake domain like \'assp-nospam.org\' for the email interface if you run MS Exchange. When mailing to eg. \'spam@assp-nospam.org\' MS Exchange forwards it outbound to SPAMBOX who handles the different options. As in every field marked by \'*\' separate addresses with | or use file \'file:files/localdomains.txt\'. Wildcards are supported.<br /> For example: *mydomain.com|*.mydomain.com|here.org <br />
  Use the syntax: *mydomain.com=>smtp.mydomain.com|other.com=>mx.other.com:port|other2.com=>mx.other.com:port,mx2.other.com:port to verify the recipient addresses with the SMTP-VRFY (if VRFY is not supported \'MAIL FROM:\' and \'RCPT TO:\' will be used) command on other SMTP servers. The entry behind => must be the hostname:port or ip-address:port of the MTA which is used to verify \'RCPT TO\' addresses with a VRFY command! If :port is not defined, port :25 will be used. You can use an entry like ALL=>vrfyhost:port to define a VRFY host for all local domain entries that don\'t have a MTA defined ( better use Groups ). Separate multiple VRFY hosts for failover by comma ",". You have to enable the SMTP \'VRFY\' command on your MTA - the \'EXPN\' command should be enabled! This requires an installed <a href="http://search.cpan.org/search?query=Net::SMTP" rel="external">Net::SMTP</a> module in PERL. <br />
- If you have configured LDAP and enabled DoLDAP and ASSP finds a VRFY entry for a domain, LDAP search will be done first and if this fails, the VRFY will be used. So VRFY could be used for LDAP backup/fallback/failover!<br />
- It is recommended to configure \'ldaplistdb\' in the \'File Paths and Database\' section when using this verify extension - so ASSP will store all verified recipients addresses there to minimize the queries on MTA\'s. There is no need to configure LDAP, but both VRFY and LDAP are using ldaplistdb. Please go to the \'LDAP setup\' section to configure MaxLDAPlistDays and LDAPcrossCheckInterval or start a crosscheck now with forceLDAPcrossCheck. This three parameters belong also to VRFY.','Basic',undef,'msg001330','msg001331'],
+ If you have configured LDAP and enabled DoLDAP and SPAMBOX finds a VRFY entry for a domain, LDAP search will be done first and if this fails, the VRFY will be used. So VRFY could be used for LDAP backup/fallback/failover!<br />
+ It is recommended to configure \'ldaplistdb\' in the \'File Paths and Database\' section when using this verify extension - so SPAMBOX will store all verified recipients addresses there to minimize the queries on MTA\'s. There is no need to configure LDAP, but both VRFY and LDAP are using ldaplistdb. Please go to the \'LDAP setup\' section to configure MaxLDAPlistDays and LDAPcrossCheckInterval or start a crosscheck now with forceLDAPcrossCheck. This three parameters belong also to VRFY.','Basic',undef,'msg001330','msg001331'],
 ['DoVRFY','Verify Recipients with SMTP-VRFY',0,\&checkbox,1,'(.*)',undef,  'If activated and the format \'Domain=>MTA\' is encountered in
  localDomains recipient addresses will be verified with SMTP-VRFY (if VRFY is not supported \'MAIL FROM:\' and \'RCPT TO:\' will be used).
  If you know that VRFY is not supported with a MTA, you may put the MTA into VRFYforceRCPTTO. Don\'t forget to configure LDAPFail (belongs also to VRFY) to your needs!', undef,undef,'msg008850','msg008851'],
 ['VRFYQueryTimeOut','SMTP VRFY-Query Timeout',5,\&textinput,'5','(\d\d?)',undef,
- 'The number of seconds ASSP will wait for an answer of the MTA that is queried with the VRFY command to verify a recipient address.',undef,undef,'msg001340','msg001341'],
-['VRFYforceRCPTTO','Force the usage of RCPT TO*',80,\&textinput,'','(.*)','ConfigMakeRe','Define MTA\'s here for which you want ASSP to force the usage of MAIL FROM:,RCPT TO: instead of the VRFY command. The definition of each MTA has to be the same as defined in LocalAddresses_Flat and/or localDomains (after the \'=>\') for example: smtp.mydomain.com|mx.other.com:port|10.1.1.1|10.1.1.2:125 .',undef,undef,'msg001350','msg001351'],
+ 'The number of seconds SPAMBOX will wait for an answer of the MTA that is queried with the VRFY command to verify a recipient address.',undef,undef,'msg001340','msg001341'],
+['VRFYforceRCPTTO','Force the usage of RCPT TO*',80,\&textinput,'','(.*)','ConfigMakeRe','Define MTA\'s here for which you want SPAMBOX to force the usage of MAIL FROM:,RCPT TO: instead of the VRFY command. The definition of each MTA has to be the same as defined in LocalAddresses_Flat and/or localDomains (after the \'=>\') for example: smtp.mydomain.com|mx.other.com:port|10.1.1.1|10.1.1.2:125 .',undef,undef,'msg001350','msg001351'],
 ['DisableVRFY','Disable VRFY and EXPN for External Clients',0,\&checkbox,'','(.*)',undef,'If you have enabled VRFY and/or EXPN on your MTA to make assp able to verify addresses and you do not want external clients to use VRFY and EXPN - select this option.',undef,undef,'msg008600','msg008601'],
 ['DoLDAP','Do LDAP lookup for valid local addresses',0,\&checkbox,'','(.*)',undef,'Check local addresses against an LDAP database before accepting the message.<br />Note: Checking this requires filling in the other LDAP parameters below.<br />This requires an installed <a href="http://search.cpan.org/~gbarr/perl-ldap-0.31/lib/Net/LDAP.pod" rel="external">Net::LDAP</a> module in PERL.',undef,undef,'msg001360','msg001361'],
 ['LocalAddressesNP','Do Not  Validate Local Addresses if in NoProcessing List',0,\&checkbox,'','(.*)',undef,'If a recipient is found in NoProcessing, the user validation is skipped. ',undef,undef,'msg001370','msg001371'],
-['CatchAll','Catchall per Domain*',40,\&textinput,'','(.*)','configUpdateCA','ASSP will send to this addresses/domain if no valid user is found in LocalAddresses_Flat/LDAP. <br />For example: catchall@domain1.com|catchall@domain2.com',undef,undef,'msg001390','msg001391'],
-['CatchAllAll','Catchall for All Domains',40,\&textinput,'','(.*)',undef,'ASSP will send to this address if no valid user is found  in LocalAddresses_Flat/LDAP and no match is found in Catchall per Domain. <br />For example: catchall@domain.com',undef,undef,'msg001400','msg001401'],
+['CatchAll','Catchall per Domain*',40,\&textinput,'','(.*)','configUpdateCA','SPAMBOX will send to this addresses/domain if no valid user is found in LocalAddresses_Flat/LDAP. <br />For example: catchall@domain1.com|catchall@domain2.com',undef,undef,'msg001390','msg001391'],
+['CatchAllAll','Catchall for All Domains',40,\&textinput,'','(.*)',undef,'SPAMBOX will send to this address if no valid user is found  in LocalAddresses_Flat/LDAP and no match is found in Catchall per Domain. <br />For example: catchall@domain.com',undef,undef,'msg001400','msg001401'],
 ['CatchallallISP2NULL','Move ISP Connection with wrong Recipient Address to NULL',0,\&checkbox,'','(.*)',undef,
-  'If set, ASSP will move all ISP connections with wrong recipient addresses to a NULL-connection. The ISP will receive "250 OK" until the mail has passed, but the mail will not be sent to your MTA. This is done after CatchAll but before CatchAllAll is checked.',undef,undef,'msg001410','msg001411'],
-['NullAddresses','NULL Connection Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','ASSP will dump a message silently when encountering such an address in "MAIL FROM:" or "RCPT TO:". Accepts specific addresses (null@example.com), user parts (nobody) or entire domains (@example.com).',undef,undef,'msg001420','msg001421'],
+  'If set, SPAMBOX will move all ISP connections with wrong recipient addresses to a NULL-connection. The ISP will receive "250 OK" until the mail has passed, but the mail will not be sent to your MTA. This is done after CatchAll but before CatchAllAll is checked.',undef,undef,'msg001410','msg001411'],
+['NullAddresses','NULL Connection Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','SPAMBOX will dump a message silently when encountering such an address in "MAIL FROM:" or "RCPT TO:". Accepts specific addresses (null@example.com), user parts (nobody) or entire domains (@example.com).',undef,undef,'msg001420','msg001421'],
 ['InternalAddresses','Accept Mail from Local Domains only*',80,\&textinput,'','(.*)','ConfigMakeSLRe','These local addresses accept mail only from local domains. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). Wildcards are supported (fribo*@domain.com).',undef,undef,'msg001430','msg001431'],
 ['InternalAndWhiteAddresses','Accept Mail from Local Domains and Whitelisted Senders only*',80,\&textinput,'','(.*)','ConfigMakeSLRe','These local addresses accept mail only from local domains and whitelisted external senders. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). Wildcards are supported (fribo*@domain.com).',undef,undef,'msg009890','msg009891'],
 ['SepChar','Separation Character for Subaddressing',2,\&textinput,'+','([^*]?)',undef,'RFC 3598 describes subaddressing with a Separation Character. A star (\'*\') is not allowed as Separation Character. Everything between Separation Character and @ is ignored (including Separation Character). For Example = \'+\' will allow user+subaddress@domain.com.',undef,undef,'msg001440','msg001441'],
 ['EnableBangPath','Support Bang Path',0,\&checkbox,'','(.*)',undef,
- 'If set, ASSP will support addresses like domainx!user and will convert them to user@domainx .',undef,undef,'msg001450','msg001451'],
+ 'If set, SPAMBOX will support addresses like domainx!user and will convert them to user@domainx .',undef,undef,'msg001450','msg001451'],
 ['MaxVRFYErrors','Maximum recipient verification Errors',5,\&textinput,'0','(\d+)',undef,
-  'The maximum number of failed \'RCPT TO\' or \'VRFY\' commands encountered before the connection is dropped. You can leave this field at 0, if you are using \'DoLDAP\', \'LocalAddresses_Flat\'! If configured, ASSP will drop the connection, if the count of \'550 unknown user\' errors, received from your \'smtpDestination\'(MTA), reached this value!',undef,undef,'msg001460','msg001461'],
+  'The maximum number of failed \'RCPT TO\' or \'VRFY\' commands encountered before the connection is dropped. You can leave this field at 0, if you are using \'DoLDAP\', \'LocalAddresses_Flat\'! If configured, SPAMBOX will drop the connection, if the count of \'550 unknown user\' errors, received from your \'smtpDestination\'(MTA), reached this value!',undef,undef,'msg001460','msg001461'],
 ['DoMaxDupRcpt','Block Max Duplicate Recipients','0:disabled|1:block|2:monitor|3:score',\&listbox,3,'(\d*)',undef,
   'Block remote servers that uses the same recipient address more times, than the number defined in MaxDupRcpt in the RCPT TO: command. Scoring is done with mdrValencePB . This check is skipped for outgoing, noprocessing, whitelisted and spamlovers mails. If a message has to be delayed, this check will score before the delay if set to block or score - and score and/or block on the next server request.',undef,undef,'msg008950','msg008951'],
 ['MaxDupRcpt','Maximum Allowed Duplicate Recipient Addresses',5,\&textinput,'0','(\d+)',undef,
   'The maximum number of duplicate recipient addresses that are allowed in the sequence of the RCPT TO: commands!<br />
   The number per mail is calculated by \'number of RCPT TO: commands  -  number of unique recipient addresses\'.<br />
   For example: if one address is used three times or two addresses are used each two times, will result in the same count - 2. Or if both is the case in one mail, the count will be 4.',undef,undef,'msg008960','msg008961'],
-['ReplaceRecpt','Enable recipient replacement*',80,\&textinput,'','(.*)','configChangeRcptRepl','recommented if used: file:files/rcptreplrules.txt - default empty ! This enables recipient replacement. If you do not use file:, separate the rules with |. The replacement will be done before any ASSP check. Use this option carefully - for example: if you have enabled DKIM check, the DKIM check will fail, if the recipient of the mail was modified. For a more detailed description of the rules and options, read the file: files/rcptreplrules.txt!',undef,undef,'msg001470','msg001471'],
+['ReplaceRecpt','Enable recipient replacement*',80,\&textinput,'','(.*)','configChangeRcptRepl','recommented if used: file:files/rcptreplrules.txt - default empty ! This enables recipient replacement. If you do not use file:, separate the rules with |. The replacement will be done before any SPAMBOX check. Use this option carefully - for example: if you have enabled DKIM check, the DKIM check will fail, if the recipient of the mail was modified. For a more detailed description of the rules and options, read the file: files/rcptreplrules.txt!',undef,undef,'msg001470','msg001471'],
 ['NoValidRecipient','No-Valid-Local-User Reply',80,\&textinput,'550 5.1.1 User unknown: EMAILADDRESS','([5|4|2]\d\d .*)',undef,'SMTP reply for invalid Users. Default: \'550 5.1.1 User unknown: EMAILADDRESS\' <br /> The literal EMAILADDRESS (case sensitive) is replaced by the fully qualified SMTP recipient (e.g., thisuser@yourcompany.com).<br /><hr /><div class="menuLevel1">Notes On Local Addresses</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/localaddresses.txt\',3);" />',undef,undef,'msg001480','msg001481'],
 
 [0,0,0,'heading','Validate Helo'],
@@ -1893,7 +1893,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['DoIPinHelo','Do Score Suspicious Helos','0:disabled|2:monitor|3:score',\&listbox,3,'(\d*)',undef,
   'Score servers with IP number in Helo and check for mismatch with sending IP.',undef,undef,'msg001500','msg001501'],
 ['ForceFakedLocalHelo','Enforce Check of Forged Helos Before Delaying',0,\&checkbox,1,'(.*)',undef,
-  'If set, ASSP will  check Forged Helos before DELAYING. Collecting, Testmode, CopySpam, Spam-Lover and private/domain whitelist ( WhitelistPrivacyLevel ) is ignored.',undef,undef,'msg001510','msg001511'],
+  'If set, SPAMBOX will  check Forged Helos before DELAYING. Collecting, Testmode, CopySpam, Spam-Lover and private/domain whitelist ( WhitelistPrivacyLevel ) is ignored.',undef,undef,'msg001510','msg001511'],
 ['DoFakedLocalHelo','Block Forged Helos','0:disabled|1:block|2:monitor|3:score',\&listbox,1,'(\d*)',undef,
   'Block remote servers that claim to come from our Local Domains/Local IP\'s/Local Host.',undef,undef,'msg001520','msg001521'],
 ['DoFakedUseLocalDomain','Use Local Domain List for Blocking Forged Helos',0,\&checkbox,1,'(.*)',undef,
@@ -1910,7 +1910,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['heloBlacklistIgnore','Don\'t process these HELO\'s*',80,\&textinput,'','(.*)','ConfigMakeRe',
   'HELO / EHLO greetings on this list will be excluded from all HELO checks. For example: host123.isp.com|host456.*.com',undef,undef,'msg001580','msg001581'],
 ['ForceValidateHelo','Enforce Early Helo Checks',0,\&checkbox,1,'(.*)',undef,
-  'If set, ASSP will  Validate/Invalidate the format of HELO before DELAYING. Collecting, Testmode, CopySpam, Spam-Lover and private whitelist ( WhitelistPrivacyLevel ) is ignored.',undef,undef,'msg001590','msg001591'],
+  'If set, SPAMBOX will  Validate/Invalidate the format of HELO before DELAYING. Collecting, Testmode, CopySpam, Spam-Lover and private whitelist ( WhitelistPrivacyLevel ) is ignored.',undef,undef,'msg001590','msg001591'],
 ['DoValidFormatHelo','Validate Format of HELO','0:disabled|1:block|2:monitor|3:score',\&listbox,1,'(\d*)',undef,
   'If activated, the HELO is checked against the expression below. If the Regular Expression matches, the HELO is validated as being ok. ',undef,undef,'msg001600','msg001601'],
 ['validFormatHeloRe','Regular Expression to Validate Format of HELO*',80,\&textinput,'file:files/validhelo.txt','(.*)','ConfigCompileRe',
@@ -1957,7 +1957,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['DoNoValidLocalSender','Validate Remote Sender with Local Domain Address','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,1,'(\d*)',undef,
   'If activated, each remote sender  with a local domain is checked against the <i>Local Addresses File</i> and/or LDAP. ',undef,undef,'msg001740','msg001741'],
 ['ForceNoValidLocalSender','Early "Remote Sender with Local Domain Address" Check',0,\&checkbox,'1','(.*)',undef,
-  'If set, ASSP will check Remote Sender with Local Domain Address before Delaying a message.<br /> Collecting, Testmode, CopySpam, and Spam-Lover settings are ignored.',undef,undef,'msg001750','msg001751'],
+  'If set, SPAMBOX will check Remote Sender with Local Domain Address before Delaying a message.<br /> Collecting, Testmode, CopySpam, and Spam-Lover settings are ignored.',undef,undef,'msg001750','msg001751'],
 ['DoNoSpoofing','Block Local Address from External Sender ','0:disabled|1:block|2:monitor|3:score',\&listbox,3,'(.*)',undef,
   'If activated, each external sender address built with a domain in localDomains is regarded a spoofed address. An external sender is a sender from an IP not in acceptAllMail and not authenticated. Scoring is done with slValencePB.',undef,undef,'msg001760','msg001761'],
 ['onlySpoofingCheckIP','Do Spoofing Check ONLY for these IP\'s*',80,\&textinput,'','(\S*)','ConfigMakeIPRe',
@@ -2007,9 +2007,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['noDKIMIP','Exclude these IP\'s from any DKIM Check*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from DKIM check, separated by pipes (|).',undef,undef,'msg001950','msg001951'],
 ['DKIMCacheInterval','Validate DKIM-Pre-Check-Cache Refresh Interval',4,\&textinput,7,'(\d+\.?\d*|)','configUpdateDKIMCR',
   'Domains\'s in cache will be removed after this interval in days. 0 will disable the cache.<br />
-  If activated a DKIM-pre-check will be done. If ASSP finds a DKIM-Signature in the mail header, it checks the DNS records of the sending domain for valid DKIM configurations and writes a record in to the DKIM-pre-check-cache, if it finds such configuration.<br />
-  If ASSP does not find a DKIM-Signature in the mail header, it also checks the DNS records of the sending domain for valid DKIM configurations. If it find such a configuration, the mail is considered spam, because it should have a DKIM-Signature.<br />
-  The next mail from a domain that is found in this cache, must have a DKIM-Signature to pass the DKIM-pre-check. How ever, some DNS records are wrong or inaccurate and will cause ASSP to block mails because of this - register such domains and/or IP\'s in noDKIMAddresses and/or noDKIMIP .<br />
+  If activated a DKIM-pre-check will be done. If SPAMBOX finds a DKIM-Signature in the mail header, it checks the DNS records of the sending domain for valid DKIM configurations and writes a record in to the DKIM-pre-check-cache, if it finds such configuration.<br />
+  If SPAMBOX does not find a DKIM-Signature in the mail header, it also checks the DNS records of the sending domain for valid DKIM configurations. If it find such a configuration, the mail is considered spam, because it should have a DKIM-Signature.<br />
+  The next mail from a domain that is found in this cache, must have a DKIM-Signature to pass the DKIM-pre-check. How ever, some DNS records are wrong or inaccurate and will cause SPAMBOX to block mails because of this - register such domains and/or IP\'s in noDKIMAddresses and/or noDKIMIP .<br />
   <input type="button" value=" Show DKIM Cache" onclick="javascript:popFileEditor(\'pb/pbdb.dkim.db\',5);" />',undef,undef,'msg001960','msg001961'],
 ['AddDKIMHeader','Add X-Assp-DKIM Header',0,\&checkbox,1,'(.*)',undef,
   'Add X-Assp-DKIM header.',undef,undef,'msg001970','msg001971'],
@@ -2054,13 +2054,13 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['denySMTPstrictEarly','Do Strictly Deny Connections Early',0,\&checkbox,'','(.*)',undef,
   'IP\'s in <b>denySMTPConnectionsFromAlways</b> will be denied right away.',undef,undef,'msg002050','msg002051'],
 ['enhancedOriginIPDetect','Do an Enhanced Origin IP Address Detection in the Mail Header',0,\&checkbox,'1','(.*)',undef,
-  'If selected, ASSP will analyze the mail headers "RECEIVED:" lines for IP\'s on the mail routing way to detect spam bots, that uses open relay or hijacked mail servers for mail delivery.<br />
+  'If selected, SPAMBOX will analyze the mail headers "RECEIVED:" lines for IP\'s on the mail routing way to detect spam bots, that uses open relay or hijacked mail servers for mail delivery.<br />
   Local and private IP\'s, and IP\'s listed in ispip, acceptAllMail, whiteListedIPs, noProcessingIPs, noDelay and noPB will be ignored.<br />
   The detected IP\'s will be additionally checked for IP-Blocking, DNSBL and IP-Frequency - the same way like the connected IP. These IP\'s are also additionally used for the maximum mail size calculation in MaxRealSizeAdr and MaxRealSizeExternalAdr.',undef,undef,'msg009590','msg009591'],
 ['DoFrequencyIP','Check Frequency - Maximum Connections Per IP','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(\d*)',undef,
  '',undef,undef,'msg002060','msg002061'],
 ['maxSMTPipConnects','Maximum Frequency of Connections Per IP ',3,\&textinput,'10','(\d?\d?\d?)',undef,
- 'The maximum number of SMTP connections an IP Address can make during the <a href="./#maxSMTPipDuration">IP Address Frequency Duration</a>. If a server makes more than this many connections to ASSP within the (maxSMTPipDuration) IP Address Frequency Duration it will be banned from future connections until the (maxSMTPipExpiration) IP Address Frequency Expiration is reached. This can be used to prevent server overloading and DoS attacks. 10 connections are typically enough. If left blank or 0, there is no limit imposed by ASSP. IP\'s in noPB, noDelay, acceptAllMail, ispip, whiteListedIPs, noProcessingIPs, whitebox (PBWhite) are excluded from SMTP session limiting, whitelisted and noprocessing addresses are honored',undef,undef,'msg002070','msg002071'],
+ 'The maximum number of SMTP connections an IP Address can make during the <a href="./#maxSMTPipDuration">IP Address Frequency Duration</a>. If a server makes more than this many connections to SPAMBOX within the (maxSMTPipDuration) IP Address Frequency Duration it will be banned from future connections until the (maxSMTPipExpiration) IP Address Frequency Expiration is reached. This can be used to prevent server overloading and DoS attacks. 10 connections are typically enough. If left blank or 0, there is no limit imposed by SPAMBOX. IP\'s in noPB, noDelay, acceptAllMail, ispip, whiteListedIPs, noProcessingIPs, whitebox (PBWhite) are excluded from SMTP session limiting, whitelisted and noprocessing addresses are honored',undef,undef,'msg002070','msg002071'],
 ['maxSMTPipDuration','Maximum Frequency of Connections Per IP Duration',5,\&textinput,'90','(\d?\d?\d?\d?)',undef,
  'The window (in seconds) during which the (maxSMTPipConnects) IP Frequency (see above for more details) will be scrutinized for each IP. The default is 90 seconds.',undef,undef,'msg002080','msg002081'],
 ['maxSMTPipExpiration','Expiration of Maximum Frequency',5,\&textinput,'7200','(\d?\d?\d?\d?)',undef,
@@ -2068,7 +2068,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['DoDomainIP','Check Number of IP\'s Per Domain','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(\d*)',undef,
  'This check is skipped if the IP and domain have passed the SPF-check. If ValidateSPF is enabled and an IP/Domain reaches the maxSMTPdomainIP limit, the MaintThread starts a background SPF check to prevent blocking good mails in future.',undef,undef,'msg002100','msg002101'],
 ['maxSMTPdomainIP','Limit Number of IP\'s  Per Domain',3,\&textinput,'10','(\d?\d?\d?)',undef,
- 'The number of IP(subnet) switches a domain may have during the (maxSMTPdomainIPExpiration) Limit Different IP\'s Per Domain Expiration. If a domain switches more often than this it will be banned from future connections until the Expiration is reached. This can be used to prevent server overloading and DoS attacks. 10 connections are typically enough. If left blank or 0, there is no limit imposed by ASSP. IP\'s in noPB, noDelay, acceptAllMail, ispip, whiteListedIPs, noProcessingIPs, whitebox (PBWhite) are excluded, whitelisted and noprocessing addresses are honored.',undef,undef,'msg002110','msg002111'],
+ 'The number of IP(subnet) switches a domain may have during the (maxSMTPdomainIPExpiration) Limit Different IP\'s Per Domain Expiration. If a domain switches more often than this it will be banned from future connections until the Expiration is reached. This can be used to prevent server overloading and DoS attacks. 10 connections are typically enough. If left blank or 0, there is no limit imposed by SPAMBOX. IP\'s in noPB, noDelay, acceptAllMail, ispip, whiteListedIPs, noProcessingIPs, whitebox (PBWhite) are excluded, whitelisted and noprocessing addresses are honored.',undef,undef,'msg002110','msg002111'],
 ['maxSMTPdomainIPExpiration','Expiration of Limit Number',5,\&textinput,'7200','(\d?\d?\d?\d?\d?)',undef,
   'The number of seconds that must pass before a domain blocked by the (maxSMTPdomainIP) Limit Subnet IP\'s Per Domain setting (see above for more details) is allowed to connect again. The default is 7200 (seconds).',undef,undef,'msg002120','msg002121'],
 ['maxSMTPdomainIPWL','Do Not Limit Different IP\'s For These Domains*',60,\&textinput,'gmx.de|t-online.de|yahoo.com|hotmail.com|gmail.com','(.*)','ConfigMakeRe',
@@ -2121,11 +2121,11 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'IP\'s in cache will be removed after this interval in days. 0 will disable the cache.  <input type="button" value=" show cache" onclick="javascript:popFileEditor(\'pb/pbdb.sb.db\',5);" />',undef,undef,'msg002260','msg002261'],
 
 [0,0,0,'heading','PenaltyBox / Message and IP Scoring <a href="http://sourceforge.net/p/assp/wiki/Penalty_Box" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="PenaltyBox" /></a>'],
-['DoPenalty','Do PenaltyBox - IP History<a href="http://sourceforge.net/p/assp/wiki/Penalty_Box" target="ASSPHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a>','0:disabled|1:block|2:monitor/messageScoring',\&listbox,2,'(\d*)',undef,'The PenaltyBox is a  temporary position of low esteem awarded for a perceived misdeed. It scores IP\'s based on some events ( baValencePB see  penalty scores )and writes them into a BlackBox (PBBlack). If the score per specified time interval surpasses the threshold the message is rejected (and the IP is marked for blocking). They continue to get scored  up to the Extreme Threshold.<br />
+['DoPenalty','Do PenaltyBox - IP History<a href="http://sourceforge.net/p/assp/wiki/Penalty_Box" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a>','0:disabled|1:block|2:monitor/messageScoring',\&listbox,2,'(\d*)',undef,'The PenaltyBox is a  temporary position of low esteem awarded for a perceived misdeed. It scores IP\'s based on some events ( baValencePB see  penalty scores )and writes them into a BlackBox (PBBlack). If the score per specified time interval surpasses the threshold the message is rejected (and the IP is marked for blocking). They continue to get scored  up to the Extreme Threshold.<br />
  These top performers can get a special treatment PenaltyExtreme when DoPenaltyExtreme is enabled. The WhiteBox (PBWhite) stores IP\'s which should not be put into the BlackBox (PBBlack). The WhiteBox is always enabled. If an address is in the whitelist or whitedomain, the IP goes into the WhiteBox. The WhiteBox is one of the sources  Delaying/Greylisting uses to determine when delaying should not be done. <br />Entries in <i>Don\'t do penalties for these IP\'s</i> or <i>ISP/Secondary MX Servers</i> will prevent from penalties. Select \'monitor/messageScoring\' to fill WhiteBox (PBWhite) and BlackBox (PBBlack). \'monitor/messageScoring\' is also the right choice if you do not want to block IP\'s but rather score a message in \'Message Scoring Mode\'. ',undef,undef,'msg002270','msg002271'],
 ['DoPenaltyMessage','Message Scoring Mode ','0:disabled|1:block|2:monitor|4:tagging',\&listbox,1,'(\d*)',undef,'If this feature is selected, the total score for all checks during a message is used to determine if the email is Spam. If the combined score is greater than the <b>Low MessageLimit</b> (PenaltyMessageLow) and less than or equal the <b>High MessageLimit</b> (PenaltyMessageLimit) the message will not be blocked but tagged. If the combined score is greater than the <b>High MessageLimit</b> (PenaltyMessageLimit), the message will be blocked.',undef,undef,'msg002280','msg002281'],
 ['DoLocalPenaltyMessage','Message Scoring Mode for Local and Outgoing Mails','0:disabled|1:block|2:monitor|4:tagging',\&listbox,0,'(\d*)',undef,'If this feature is selected, the total score for all checks during a local or outgoing message is used to determine if the email is Spam. If the combined score is greater than the <b>Local Low MessageLimit</b> (LocalPenaltyMessageLow) and less than or equal the <b>Local High MessageLimit</b> (LocalPenaltyMessageLimit) the message will not be blocked but tagged. If the combined score is greater than the <b>Local High MessageLimit</b> (LocalPenaltyMessageLimit), the message will be blocked.',undef,undef,'msg010330','msg010331'],
-['MsgScoreOnEnd','Message Scoring on End',0,\&checkbox,'','(.*)',undef,'ASSP will wait using the \'DoPenaltyMessage\' action, until all configured possible checks are finished. Use this, to force calculating a complete message score over all values, including all bonus values.',undef,undef,'msg002290','msg002291'],
+['MsgScoreOnEnd','Message Scoring on End',0,\&checkbox,'','(.*)',undef,'SPAMBOX will wait using the \'DoPenaltyMessage\' action, until all configured possible checks are finished. Use this, to force calculating a complete message score over all values, including all bonus values.',undef,undef,'msg002290','msg002291'],
 ['PenaltyMessageLow','Low MessageLimit',3,\&textinput,40,'(\d*)',undef,'MessageMode will not block messages whose score exceeds this threshold during the message but will tag them.  For example: 40',undef,undef,'msg002300','msg002301'],
 ['LocalPenaltyMessageLow','Low MessageLimit for Local and Outgoing Mails',3,\&textinput,40,'(\d*)',undef,'MessageMode will not block local and outgoing messages whose score exceeds this threshold during the message but will tag them.  For example: 40',undef,undef,'msg010340','msg010341'],
 ['PenaltyMessageLimit','High MessageLimit',3,\&textinput,50,'(\d*)',undef,'MessageMode will block messages whose score exceeds this threshold during the message.  For example: 50',undef,undef,'msg002310','msg002311'],
@@ -2140,12 +2140,12 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'Enter IP\'s that you want to be penalized. These IP\'s will also be automatically removed from WhiteBox (PBWhite).',undef,'7','msg002350','msg002351'],
 ['WhiteExpiration','Expiration Time for WhiteBox Entries',4,\&textinput,30,'(\d?\d?\d?\d?)',undef,
   "The WhiteBox (PBWhite) is always activated. The WhiteBox (PBWhite) is similar to the  Whitelist  - but it is not a whitelist: content-related checks like Bayesian, URIBL, Bomb  will be done, IP-related checks will be skipped. WhiteBox (PBWhite) entries will expire after this specified number of days. For example: 30",undef,undef,'msg002360','msg002361'],
-['DoDamping','Do Damping on Messagescore [0...99]',4,\&textinput,'0','(\d{1,2})',undef,'If DoPenalty and DoPenaltyMessage are set not to disabled and DoDamping is not set to 0, ASSP will slowdown the spammers traffic speed proportional to the current message score - because slowing down their speed will reduce spam everywhere.<br />
+['DoDamping','Do Damping on Messagescore [0...99]',4,\&textinput,'0','(\d{1,2})',undef,'If DoPenalty and DoPenaltyMessage are set not to disabled and DoDamping is not set to 0, SPAMBOX will slowdown the spammers traffic speed proportional to the current message score - because slowing down their speed will reduce spam everywhere.<br />
   The delay in seconds per receive/read cycle is calculated by the division [messagescore / DoDamping] . A recommended value is 5 default is 0. In this case the delay for a message score of 50 would be 10 seconds.<br />
   Do not use this option, if you have a highly frequented system, because the spammers connections will stay possibly a long time on your system, and you system could possibly reach the sessions limit ( maxSMTPSessions ).<br />
   Damping is never done for: noprocessing, whitelisted, nodelay, ISP, redlisted, noPB, outgoing/releayed and contentonly addresses, IP\'s, messages.<br />
-  Damping may not be done for forced checks, relay attemps, messages reaching maxerrors, spamtrapaddresses and if any block condition is found - because ASSP will no more read from those connections and closes such connections immediately - but ASSP will try to keep the connection open for the calculated time, before it closes the connection.<br />
-  Using this option or using a too low value (long delay) could possibly prevent ASSP from receiving spam messages, for example for spamlovers or sendAllSpam . Some Servers could give up sending data, because of too long delays.',undef,undef,'msg002370','msg002371'],
+  Damping may not be done for forced checks, relay attemps, messages reaching maxerrors, spamtrapaddresses and if any block condition is found - because SPAMBOX will no more read from those connections and closes such connections immediately - but SPAMBOX will try to keep the connection open for the calculated time, before it closes the connection.<br />
+  Using this option or using a too low value (long delay) could possibly prevent SPAMBOX from receiving spam messages, for example for spamlovers or sendAllSpam . Some Servers could give up sending data, because of too long delays.',undef,undef,'msg002370','msg002371'],
 ['maxDampingTime','Max time Used for Damping',4,\&textinput,30,'(\d?\d?\d?)',undef,
   "The maximum time in second, that is used for one damping cycle if DoDamping is not set to 0, even if the calculated value caused by DoDamping is higher. For example: 30",undef,undef,'msg002380','msg002381'],
 ['spamtrapaddresses','PenaltyBox Trap Addresses *',80,\&textinput,'put|your@penaltytrap.com|addresses|@here.org','(.*)','ConfigMakeSLRe',
@@ -2167,7 +2167,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['PenaltyDuration','Penalty Interval',4,\&textinput,60,'(\d?\d?\d?\d?)','updatePenaltyDuration',
   "IP\'s will be kept in the BlackBox (PBBlack) if their score exceeds the Penalty Limit during this interval (minutes).",undef,undef,'msg002470','msg002471'],
 ['PenaltyLimit','Penalty Limit',4,\&textinput,50,'(\d*)',undef,
-  'PB will block IP\'s whose score exceeds this threshold during the Penalty Interval. <br />Successful ASSP checks will increase the internal score per IP. For example: 50',undef,undef,'msg002480','msg002481'],
+  'PB will block IP\'s whose score exceeds this threshold during the Penalty Interval. <br />Successful SPAMBOX checks will increase the internal score per IP. For example: 50',undef,undef,'msg002480','msg002481'],
 ['PenaltyExpiration','Expiration Time',4,\&textinput,360,'(\d?\d?\d?\d?)','updatePenaltyExpiration',
   "Penalties will expire after this number of minutes. If set to Zero the Penalty BlackBox (PBBlack) will be deleted and started from scratch.",undef,undef,'msg002490','msg002491'],
 ['CleanPBInterval','Clean Up PB Databases <sup>s</sup>',40,\&textinput,3,$ScheduleGUIRe,'configChangeSched',
@@ -2309,7 +2309,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['DelayNormalizeVERPs','Normalize VERP Addresses',0,\&checkbox,1,'(.*)',undef,
   'Some mailing lists (such as Ezmlm) try to track bounces to individual mails, rather than just individual recipients, which creates a variation on the VERP method where each email has its own unique envelope sender. Since the automatic whitelisting (called savelisting to make a difference to the standard whitelisting) that is built into Greylisting depends on the envelope addresses for subsequent mails being the same, the greylisting filter will attempt to normalize the unique sender addresses, when this option is checked.',undef,undef,'msg003370','msg003371'],
 ['DelayWithMyName','Add myName to Triplets',0,\&checkbox,0,'(.*)',undef,
-  'If set, myName is added to every delay triplet (not to tuplets). This is useful and recommended, if you are using more than one ASSP host with shared databases for delaydb. This option makes the triplets unique to every ASSP host, because it is allowed for SMTP-hosts, to request a backup MX immediately after the primary MX, without waiting 5 minutes (DelayEmbargoTime) between the two requests.',undef,undef,'msg003380','msg003381'],
+  'If set, myName is added to every delay triplet (not to tuplets). This is useful and recommended, if you are using more than one SPAMBOX host with shared databases for delaydb. This option makes the triplets unique to every SPAMBOX host, because it is allowed for SMTP-hosts, to request a backup MX immediately after the primary MX, without waiting 5 minutes (DelayEmbargoTime) between the two requests.',undef,undef,'msg003380','msg003381'],
 ['DelayMD5','Use MD5 for DelayDB',0,\&checkbox,'1','(.*)',undef,
   'Message-Digest algorithm 5 is a cryptographic hash function and adds some level of security to the delay database. Must be set to off if you want to list the database with DelayShowDB/DelayShowDBwhite. This requires an installed <a href="http://search.cpan.org/search?query=Digest::MD5" rel="external">Digest::MD5</a> module in PERL.',undef,undef,'msg003390','msg003391'],
 ['DelayShowDB','Show Delay/Greylisting Database',40,\&textinput,'file:delaydb','(\S*)',undef,'The directory/file with the delay database file. If you change the filename in section Filepath ( delaydb ) you must change it here too.',undef,'8','msg003400','msg003401'],
@@ -2402,7 +2402,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Intentionally fail SPF \'unknown\'  status responses',undef,undef,'msg003640','msg003641'],
 ['SPFCacheInterval','SPF Cache Refresh Interval',4,\&textinput,7,'(\d+\.?\d*|)','configUpdateSPFCR',
   'SPF records in cache will be removed after this interval in days. 0 will disable the cache.<input type="button" value=" Show SPF Cache" onclick="javascript:popFileEditor(\'pb/pbdb.spf.db\',6);" />',undef,undef,'msg003650','msg003651'],
-['DebugSPF','Enable SPF/DNS/Whois/Senderbase Debug output to ASSP Logfile',0,\&checkbox,'','(.*)',undef,
+['DebugSPF','Enable SPF/DNS/Whois/Senderbase Debug output to SPAMBOX Logfile',0,\&checkbox,'','(.*)',undef,
  'Enables verbose debugging of SPF/DNS/Whois/Senderbase queries within the related modules.
  <br /><hr />
  <div class="menuLevel1">Notes On SPF</div>
@@ -2420,7 +2420,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   This requires an installed <a href="http://www.openspf.org/Implementations" rel="external">Mail::SRS</a> module in PERL.<br />
   You should use SRS if your message handling system forwards email for domains with published spf records and there SPF record not includes your MX.<br />
   NOTICE: In case your local users are forwarding mails (e.g. from external domains) to external domains (external mail accounts) and these foreign domains bounces back (e.g. out_of_office / vacation), your MTA (smtpDestination) will possibly get mails from external domains to be delivered to external domains!<br />
-  Note that you have to setup the outgoing path (Relay Host and Port) to let ASSP see and rewrite your outgoing traffic.<br /> Testmode is set with srsTestMode.',undef,undef,'msg003670','msg003671'],
+  Note that you have to setup the outgoing path (Relay Host and Port) to let SPAMBOX see and rewrite your outgoing traffic.<br /> Testmode is set with srsTestMode.',undef,undef,'msg003670','msg003671'],
 ['SRSAliasDomain','Alias Domain',40,\&textinput,'thisdomain.com','(.*)','updateSRSAD',
   'SPF requires the SMTP client IP to match the envelope sender (return-path). When a message is forwarded through<br />
   an intermediate server, that intermediate server may need to rewrite the return-path to remain SPF compliant.<br />
@@ -2449,7 +2449,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['ValidateRBL','Enable DNS Blacklist Validation ','0:disabled|1:block|2:monitor|3:score',\&listbox,1,'(.*)','configUpdateRBL',
   'This requires an installed <a href="http://search.cpan.org/search?query=Net::DNS" rel="external">Net::DNS</a> module in PERL.',undef,undef,'msg003750','msg003751'],
 ['ForceRBLCache','Early DNSBL Cache Blocking',0,\&checkbox,'','(.*)',undef,
-  'If set, ASSP will use cached DNSBL hits to block messages before other tests. <b>testmode</b> will override this. <b>spamlover settings</b> will be ignored.',undef,undef,'msg003760','msg003761'],
+  'If set, SPAMBOX will use cached DNSBL hits to block messages before other tests. <b>testmode</b> will override this. <b>spamlover settings</b> will be ignored.',undef,undef,'msg003760','msg003761'],
 ['noRBL','Don\'t do DNSBL for these IPs*',80,\&textinput,'','(\S*)','ConfigMakeIPRe',
  'Enter IP addresses that you don\'t want to be DNSBL validated, separated by pipes (|). For example:  127.0.0.1|172.16..',undef,'7','msg003770','msg003771'],
 ['RBLWL','Whitelisted DNSBL Validation',0,\&checkbox,0,'(.*)',undef,
@@ -2500,8 +2500,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/rbl.txt\',3);" />',undef,undef,'msg003870','msg003871'],
 
 [0,0,0,'heading','URIBL'],
- ['ValidateURIBL','Enable URI Blocklist Validation <a href="http://www.uribl.com/about.shtml" target="ASSPHELP"><img src="' . $wikiinfo . '" alt="about" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,'1','(.*)','configUpdateURIBL',
-  'Enable URI Blocklist. Messages that fail URIBL validation will receive URIBLError SMTP error code. This requires an installed <a href="http://search.cpan.org/search?query=Net::DNS" rel="external">Net::DNS</a> module and an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL. <a href="http://sourceforge.net/p/assp/wiki/" target="ASSPHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a><br />
+ ['ValidateURIBL','Enable URI Blocklist Validation <a href="http://www.uribl.com/about.shtml" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="about" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,'1','(.*)','configUpdateURIBL',
+  'Enable URI Blocklist. Messages that fail URIBL validation will receive URIBLError SMTP error code. This requires an installed <a href="http://search.cpan.org/search?query=Net::DNS" rel="external">Net::DNS</a> module and an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL. <a href="http://sourceforge.net/p/assp/wiki/" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a><br />
   <span class="negative"> 0 = disabled, 1 = block, 2 = monitor, 3 =  messagescore .</span>',undef,undef,'msg003880','msg003881'],
  ['URIBLWL','Do URI Blocklist Validation for Whitelisted',0,\&checkbox,'','(.*)',undef,'URIBL check is done ignoring all spamlovers and testmodes!',undef,undef,'msg003890','msg003891'],
  ['URIBLNP','Do URI Blocklist Validation for NoProcessing',0,\&checkbox,'','(.*)',undef,'URIBL check is done ignoring all spamlovers and testmodes!',undef,undef,'msg003900','msg003901'],
@@ -2535,7 +2535,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'More than this number of URIs in the body will increase spam probability. Enter 0 to disable feature.',undef,undef,'msg003950','msg003951'],
  ['URIBLmaxdomains','Maximum Unique Domain URIs',5,\&textinput,0,'(\d*)',undef,
   'More than this number of unique domain URIs in the body will increase spam probability. Enter 0 to disable feature.',undef,undef,'msg003960','msg003961'],
- ['URIBLNoObfuscated','Disallow Obfuscated URIs <a href="http://www.pc-help.org/obscure.htm" target="ASSPHELP"><img src="' . $wikiinfo . '" alt="obscure" /></a>',0,\&checkbox,'1','(.*)',undef,
+ ['URIBLNoObfuscated','Disallow Obfuscated URIs <a href="http://www.pc-help.org/obscure.htm" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="obscure" /></a>',0,\&checkbox,'1','(.*)',undef,
   'When enabled, messages with obfuscated URIs of types [integer/octal/hex IP, other things!] in the body will get increased spam probability and if weights are used, the double weight will be used.',undef,undef,'msg003970','msg003971'],
  ['URIBLcheckDOTinURI','Check for \'DOT\' in URI',0,\&checkbox,'','(.*)',undef,
   'When enabled, assp will also check for the used word \'DOT\' instead of a \'.\' in URI\'s like \'example<b>dot</b>com or example<b>!d o-t_</b>com\' .<br />
@@ -2590,7 +2590,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   Separate entries with a pipe |. The dot . is assumed to precede these, so don\'t include it.<br />
   For example:<br />
   ad[ep]|asx|ba[st]|chm|cmd|com|cpl|crt|dbx|exe|exe\-bin|hlp|ht[ab]|in[fs]|isp|js|jse|lnk|md[abez]|mht|ms[cipt]|nch|pcd|pif|prf|ps1?|reg|sc[frt]|sh[bs]|vb|vb[es]|wms|ws[cfh]<br />
-  If you\'ve installed the ASSP_AFC Plugin (at least version 2.10) and \'exe-bin\' is defined (on any level), the Plugin will detect executable files based on there binary content. Detected will be all executables, libraries and scripts for DOS and Windows (except .com files), MAC-OS and linux ELF (for all processor architectures).',undef,undef,'msg004120','msg004121'],
+  If you\'ve installed the SPAMBOX_AFC Plugin (at least version 2.10) and \'exe-bin\' is defined (on any level), the Plugin will detect executable files based on there binary content. Detected will be all executables, libraries and scripts for DOS and Windows (except .com files), MAC-OS and linux ELF (for all processor architectures).',undef,undef,'msg004120','msg004121'],
 ['BadAttachL2','Level 2 rejected File Extensions',80,\&textinput,'','(.*)','updateBadAttachL2',
   'This regular expression is used to identify Level 2 attachments that should be blocked.<br />
   Level 2 already includes all rejected extensions from Level 1. <br /> For example:<br /> (ad[ep]|asx|ba[st]|chm|cmd|com|cpl|crt|dbx|exe|hlp|ht[ab]|in[fs]|isp|js|jse|lnk|md[abez]|mht|ms[cipt]|nch|pcd|pif|prf|reg|sc[frt]|sh[bs]|vb|vb[es]|wms|ws[cfh]).zip',undef,undef,'msg004130','msg004131'],
@@ -2646,22 +2646,22 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailVirusReportsToRCPT','Send Virus Report To Recipient','0:disabled|1:in any case|2:for HAM only',\&listbox,0,'(\d)',undef,'If set the intended recipient of the message will be sent a copy of the Virus Report. If "for HAM only" is selected, the report will only be sent, in case the mail is not detected as SPAM before the virus check is done.
   <hr />',undef,undef,'msg004300','msg004301'],
 ['DoFileScan','Use File System Virus Scanner','0:disabled|1:block|2:monitor',\&listbox,0,'(\d)',undef,
- 'If activated, the message is written to a file inside the \'FileScanDir\' with an extension of \'maillogExt\'. After that ASSP will call \'FileScanCMD\' to detect if the temporary file is infected or not. The temporary created file(s) will be removed.<br />
+ 'If activated, the message is written to a file inside the \'FileScanDir\' with an extension of \'maillogExt\'. After that SPAMBOX will call \'FileScanCMD\' to detect if the temporary file is infected or not. The temporary created file(s) will be removed.<br />
  The infected file will be stored in a special folder, if the SpamVirusLog is set to \'quarantine\' and the filepath to the viruslog is set.<br />
  Please check the setting of FileLogScan before you enable this option!',undef,undef,'msg004310','msg004311'],
 ['FileScanDir','File Scan Directory',80,\&textinput,"$base/virusscan",'(.*)','',
- 'Define the full path to the directory where the messages are temporary stored for the file system virus scanner. This could be any directory inside your file system. The running ASSP process must have full permission to this directory and the files inside!',undef,undef,'msg004320','msg004321'],
+ 'Define the full path to the directory where the messages are temporary stored for the file system virus scanner. This could be any directory inside your file system. The running SPAMBOX process must have full permission to this directory and the files inside!',undef,undef,'msg004320','msg004321'],
 ['FileScanCMD','File Scan Command',80,\&textinput,'','(.*)','',
- 'ASSP will call this system command and expects a returned string from this command. This returned string is checked against \'FileScanBad\' and/or \'FileScanGood\' to detect if the message is OK or not! If the file does not exists after the command call, the message is consider infected. ASSP expects, that the file scan is finished when the command returns!<br />
+ 'SPAMBOX will call this system command and expects a returned string from this command. This returned string is checked against \'FileScanBad\' and/or \'FileScanGood\' to detect if the message is OK or not! If the file does not exists after the command call, the message is consider infected. SPAMBOX expects, that the file scan is finished when the command returns!<br />
   The literal \'FILENAME\' will be replaced by the full qualified file name of the temporary file.<br />
   The literal \'NUMBER\' will be replaced by the threadnumber and could be used to name logfiles and to redirect them to STDOUT.<br />
   The literal \'FILESCANDIR\' will be replaced with the value of FileScanDir.<br />
   Any case sensitive literal starting and ending with an asterix (*) like \'*rcpt*\' or \'*mailfrom*\' will be replaced by the quoted runtime connection variable of Con{fh}->{literal} (this->{literal}). You need to know the assp internals!<br />
-  If a code reference is defined for the internal variable &#36;main::FileScanCMDbuild_API in lib/CorrectASSPcfg.pm , assp will call \'&#36;FileScanCMDbuild_API->(\\&#36;cmd,&#36;this)\' before running the command. The first parameter, the command (FileScanCMD), is submitted as a reference to a scalar, which must be modified in place. If you want assp not to scan the message, set this variable to undef. The second submitted parameter is the reference to the client connection parameter HASH - &#36;Con{fh} (eg. &#36;this)<br />
+  If a code reference is defined for the internal variable &#36;main::FileScanCMDbuild_API in lib/CorrectSPAMBOXcfg.pm , assp will call \'&#36;FileScanCMDbuild_API->(\\&#36;cmd,&#36;this)\' before running the command. The first parameter, the command (FileScanCMD), is submitted as a reference to a scalar, which must be modified in place. If you want assp not to scan the message, set this variable to undef. The second submitted parameter is the reference to the client connection parameter HASH - &#36;Con{fh} (eg. &#36;this)<br />
   All outputs of this command to STDERR are automatic redirected to STDOUT.<br />
   FileScan will not run, if FileScanCMD is not specified.<br />
   If you have your online/autoprotect file scanner configured to delete infected files inside the \'FileScanDir\', define \'NORUN\' in this field! In this case FileScanGood and FileScanBad are ignored. If there is a need to wait some time for the autoprotect scanner, write \'NORUN-dddd\', where dddd are the milliseconds to wait!<br />
-  Depending on your operating system it may possible, that you have to quote (\' or ") the command, if it contains whitespaces. The replaced file name will be quoted by ASSP if needed.',undef,undef,'msg004330','msg004331'],
+  Depending on your operating system it may possible, that you have to quote (\' or ") the command, if it contains whitespaces. The replaced file name will be quoted by SPAMBOX if needed.',undef,undef,'msg004330','msg004331'],
 ['FileScanBad','RegEx to Detect \'BAD\' in Returned String*',80,\&textinput,'','(.*)','ConfigCompileRe',
  'Put anything here to identify bad messages by the string returned from the FileScanCMD. If defined and this regular expression matches, the message is consider infected.',undef,undef,'msg004340','msg004341'],
 ['FileScanGood','RegEx to Detect \'GOOD\' in Returned String*',80,\&textinput,'','(.*)','ConfigCompileRe',
@@ -2710,7 +2710,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   <span class="negative">Even if any of the following bomb parameters is set to "block", but the sum of the resulting weighted penalty value is less than the corresponding "Penalty Box Valence Value" (because of lower weights) - only scoring will be done!<br />
   A description of how of weighting regular expressions is done and working, could be found at the bottom this web page.</span><hr>',undef,undef,'msg004460','msg004461'],
 ['DoTransliterate','Transliterate non-Roman characters in to Roman',0,\&checkbox,'','(.*)',undef,
-'If enabled, ASSP tries to transliterate non-Roman characters in an email it to Roman characters. These transliterations are than additionally used in the bomb checks.<br />
+'If enabled, SPAMBOX tries to transliterate non-Roman characters in an email it to Roman characters. These transliterations are than additionally used in the bomb checks.<br />
  For example - the (character) sequence \'&#24180;&#20809;&#36890;&#20449;&#20135;&#19994;&#20250;&#22238;&#24402;&#39640;&#22686;&#38271;&#36712;&#36947;\' will be transliterated to \'Nian Guang Tong Xin Chan Ye Hui Hui Gui Gao Zeng Chang Gui Dao\' .<br />
  To transliterate something, use the \'Mail Analyzer\'.<br />
  To make this feature working, the Perl module <a href="http://search.cpan.org/search?query=Text::Unidecode" rel="external">Text::Unidecode</a> must be installed.',undef,undef,'msg00009990','msg009991'],
@@ -2781,11 +2781,11 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'SMTP error message to reject scripts. For example: 554 5.7.1 Your email appears to be spam -- send an error report to mailto:postmaster@mydomain.tld or call +12.34.56.78.90
   <br /><hr /><div class="menuLevel1">Notes On Bomb Regex</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/bombre.txt\',3);" />',undef,undef,'msg004700','msg004701'],
 
-[0,0,0,'heading','Bayesian and Hidden Markov Model (HMM) Options <a href="http://sourceforge.net/p/assp/wiki/ASSP_Bayesian_Filter" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Theory of Operation" /></a>'],
-['DoBayesian','Bayesian Check <a href="http://sourceforge.net/p/assp/wiki/General_ASSP_Questions" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Theory of Operation" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,0,'(.*)',undef,
+[0,0,0,'heading','Bayesian and Hidden Markov Model (HMM) Options <a href="http://sourceforge.net/p/assp/wiki/SPAMBOX_Bayesian_Filter" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Theory of Operation" /></a>'],
+['DoBayesian','Bayesian Check <a href="http://sourceforge.net/p/assp/wiki/General_SPAMBOX_Questions" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Theory of Operation" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,0,'(.*)',undef,
   'If activated, the message is checked based on Bayesian factors in spamdb for global and private entries. Private spamdb entries have a five times higher weight than global entries. This needs a fully functional spamdb built by rebuildspamdb. For starters it is best practice to put this inactive and build the spamdb collection with the help of DNSBL ,URIBL and spamaddresses. Scoring is done with baysValencePB for external mails, bayslocalValencePB is used for outgoing and internal mails - both values are multiplied with the detected baysProbability . It is possible to score (in and out) with a bonus for HAM with bayshamValencePB ( bayshamValencePB * ( 1 - baysProbability )).<br />
   Both, the Bayesian-check and the Hidden-Markov-Model-check (below), are using Perl version depending (Perl 5.12 and higher) <a href=\"http://unicode.org/charts/\" rel=\"external\">Unicode</a> features to recognize any possible character. How ever, some east asian languages (and some others) have graphemes, that contains multiple <a href=\"http://en.wikipedia.org/wiki/Unicode\" rel=\"external\">unicode code points</a>. If you need (or want) assp to process all text as a sequence of <a href=\"http://unicode.org/reports/tr29/\" rel=\"external\">UAX #29 Grapheme Clusters</a>, the Perl module <a href=\"http://search.cpan.org/dist/Unicode::LineBreak/\" rel=\"external\">Unicode::LineBreak</a> is required.',undef,undef,'msg004710','msg004711'],
-['DoHMM','Hidden Markov Model Check <a href="http://sourceforge.net/p/assp/wiki/General_ASSP_Questions/#Theory_of_Operation" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Theory of Operation" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,0,'(.*)',undef,
+['DoHMM','Hidden Markov Model Check <a href="http://sourceforge.net/p/assp/wiki/General_SPAMBOX_Questions/#Theory_of_Operation" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Theory of Operation" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,0,'(.*)',undef,
   "If activated, the message is checked based on a <a href=\"http://en.wikipedia.org/wiki/Hidden_Markov_model\">Hidden Markov Model</a>  for global and private entries.  Private HMM entries have a five times higher weight than global entries. This needs a fully functional HMMdb database built by rebuildspamdb. For starters it is best practice to put this in monitoring mode and build the HMM collection with the help of DNSBL ,URIBL and spamaddresses. Scoring is done with HMMValencePB for external mails, HMMlocalValencePB is used for outgoing and internal mails - both values are multiplied with the detected hmmProbability. It is possible to score (in and out) with a bonus for HAM with HMMhamValencePB ( HMMhamValencePB * ( 1 - baysProbability )).<br />
   The perl module <a href=\"http://search.cpan.org/dist/BerkeleyDB/\" rel=\"external\">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required (to store temporary data) to use this feature and 'useBerkeleyDB' must be set to ON.<br />
   If this option is disabled, the rebuildspamdb task will <b>NOT</b> build a valid HMM database!<br />
@@ -2803,7 +2803,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   <span class=\"negative\">Changing this value requires a restart of assp. Possibly a forced rebuildspamdb is required after the restart.</span>",undef,undef,'msg001240','msg001241'],
 ['DoPrivatSpamdb','Use also private entries for the Bayesian Spamdb and Hidden Markov Model databases','0:NO|1:for users only|2:for domains only|3:for users and domains',\&listbox,3,'(.*)','ConfigChangeDoPrivatSpamdb','If enabled, private entries (based on the local recipient and/or the report sender email address) will be added to the Bayesian and HMM databases. These private entries have a three times higher priority for users (full email address) and two times higher priority for domains (domain part of the email address) than global entries. To enable this option "spamdb" must be set to use a database "DB:" first!<br />
  <b>Setting this option to ON, will increase the record count for the spamdb and the HMM databases dramaticaly!</b>',undef,undef,'msg009630','msg009631'],
-['BayesMaxProcessTime','Bayesian and HMM Check Timeout ',3,\&textinput,'15','(\d+)',undef,'The Bayesian- and HMM Checks are the most memory and CPU consuming tasks that ASSP is doing on a message. If such tasks running to long on one message, other messages could run in to SMTPIdleTimeout. Define here the maximum time in seconds that ASSP should spend on Bayesian Checks for one message. Default is 60.',undef,undef,'msg004720','msg004721'],
+['BayesMaxProcessTime','Bayesian and HMM Check Timeout ',3,\&textinput,'15','(\d+)',undef,'The Bayesian- and HMM Checks are the most memory and CPU consuming tasks that SPAMBOX is doing on a message. If such tasks running to long on one message, other messages could run in to SMTPIdleTimeout. Define here the maximum time in seconds that SPAMBOX should spend on Bayesian Checks for one message. Default is 60.',undef,undef,'msg004720','msg004721'],
 ['BayesWL','Bayesian/HMM Check on Whitelisted NON Local Senders/Messages',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg006120','msg006121'],
 ['BayesNP','Bayesian/HMM Check on NoProcessing Messages',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg007420','msg007421'],
 ['BayesLocal','Bayesian/HMM Check on Local Senders',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg010360','msg010361'],
@@ -2824,7 +2824,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  The following default Bayesian math (prob = p1 / (p1 + p2)) is used to calculate the SpamProb value for \'n\' found Bayesian-Word-Pairs or HMM-Sequences, each with a spam-weight \'p\' - where 0&lt;p&lt;1 :<br /><br />
  \'SpamProb\' = (p<sub>1</sub> * p<sub>2</sub> * ... * p<sub>n</sub>) / ( p<sub>1</sub> * p<sub>2</sub> * ... * p<sub>n</sub>  + (1 - p<sub>1</sub>) * (1 - p<sub>2</sub> ) * ... * (1 - p<sub>n</sub>))<br />',undef,undef,'msg004740','msg004741'],
 ['baysConf','Bayesian and HMM Confidence Threshold',3,\&textinput,'0','(0*\.\d+|0+|)',undef,' Spam-Mails having a confidence below this threshold are passed in TestMode .
- Spam-Mails having a confidence above this threshold are blocked. Set this only above 0 if you are familiar with the bayesian statistics used in ASSP.<br />
+ Spam-Mails having a confidence above this threshold are blocked. Set this only above 0 if you are familiar with the bayesian statistics used in SPAMBOX.<br />
  Messages that are processed by the bayesian and HMM check get a spam-probability score and a confidence score. The confidence score in assp is a quality indicator. A confidence near 0 would mean the probability score is like a wild guess. A confidence score near 1 would mean that it\'s pretty sure that the bayesian analysis result is correct. The confidence threshold is an allowance to process a Bayesian/HMM Spam as-if in Bayesian TestMode, if the message\'s *confidence* score is lower than the confidence threshold.
  Set this level to a specfic value, let\'s say .001 (which is a good one for starting), then:<br />
  - messages with spam-probability higher than 0.6 and a confidence of less than 0.001 would come through as in test mode<br />
@@ -2855,14 +2855,14 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 
 [0,0,0,'heading','Backscatter Detection'],
 ['DoMSGIDsig','Do Message-ID tagging and validating (FBMTV)','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(\d*)',undef,
-  'If activated, the message-ID of each outgoing message will be signed with a unique Tag and every incoming mail will be checked against this Tag. This tagging mode is called FBMTV "Forwarder(s) Bounce Message-ID Tag Validation" and it is worldwide unique to ASSP. This Tag is build nearly the same way, as BATVTag is build for the sender address. This Tag will be removed from any incoming email, to recover the original references in the mail header! If anything is changed on this option inside the mail, no DKIM-check will be done! Before activating DoMSGIDsig, please configure MSGIDpreTag and MSGIDsec!<br />
+  'If activated, the message-ID of each outgoing message will be signed with a unique Tag and every incoming mail will be checked against this Tag. This tagging mode is called FBMTV "Forwarder(s) Bounce Message-ID Tag Validation" and it is worldwide unique to SPAMBOX. This Tag is build nearly the same way, as BATVTag is build for the sender address. This Tag will be removed from any incoming email, to recover the original references in the mail header! If anything is changed on this option inside the mail, no DKIM-check will be done! Before activating DoMSGIDsig, please configure MSGIDpreTag and MSGIDsec!<br />
    If activated and a bounced mail from null sender or postmaster contains no valid signature the configured action is taken.<br />
    If activated and any other mail contains a valid signature (eg. because it is an answer/reply to a tagged mail), this mail will be flagged as noprocessing and whitelisted !<br />
   This check requires an installed <a href="http://search.cpan.org/search?query=Digest::SHA1" rel="external">Digest::SHA1</a> module in Perl.',undef,undef,'msg004800','msg004801'],
 ['MSGIDpreTag','Message-ID pre-Tag for MSGID-TAG-generation',10,\&textinput,'sig','([a-zA-Z0-9]{2,5})',undef,'To use Message-ID signing and to create the MSGID-Tags, a pre-Tag is needed. This Tag must be 2-5 characters [a-z,A-Z,0-9] long. Default is \'sig\'.',undef,undef,'msg004810','msg004811'],
 ['MSGIDSec','Message-ID Secrets for MSGID-TAG-generation*',80,\&textinput,'0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9','(\S*)','configChangeMSGIDSec','To use Message-ID signing and to generate the MSGID-Tags, at leased one secret key is needed, up to ten keys are possible.<br />
   The notation is : generationnumber[0-9]=secretKey. For example<font color=red>(do not use!)</font>: 0=jk09Z|1=oPLmn4g|....   . Multiple pairs are separated by pipes (|). Default is  0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9 . Do not defines spaces, tabs and \'=\' as part of the keys(secrets)! <br />
-  <font color=red>Values that contains any default are not valid, please change them, to prevent detecting strange ASSP-signatures as valid local signatures!</font><br />For this reason, please define your secrets as unique as possible! The secrets are used randomly to build the Message-ID-Tags.',undef,undef,'msg004820','msg004821'],
+  <font color=red>Values that contains any default are not valid, please change them, to prevent detecting strange SPAMBOX-signatures as valid local signatures!</font><br />For this reason, please define your secrets as unique as possible! The secrets are used randomly to build the Message-ID-Tags.',undef,undef,'msg004820','msg004821'],
 ['MSGIDsigAddresses','Do FBMTV For These Addresses Only*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
   'Mail to any of these addresses will be tagged and checked by FBMTV. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). If empty, FBMTV is done for all addresses.',undef,undef,'msg004830','msg004831'],
 ['noMSGIDsigRe','Skip Message-ID signing, mail content dependent*',80,\&textinput,'','(.*)','ConfigCompileRe','Use this to skip the Message-ID tagging depending on the content of the email. If the content of the email matches this regular expression (checking MaxBytes only), FBMTV will not be done. For example: \'I am out of office\' .',undef,undef,'msg008900','msg008901'],
@@ -2871,7 +2871,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   This check requires an installed <a href="http://search.cpan.org/search?query=Digest::SHA1" rel="external">Digest::SHA1</a> module in Perl.',undef,undef,'msg004840','msg004841'],
 ['BATVSec','BATV Secrets for BATV-TAG-generation*',80,\&textinput,'0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9','(\S*)','configChangeBATVSec','To use <a href="http://en.wikipedia.org/wiki/Bounce_Address_Tag_Validation" rel="external">BATV</a> and to create the BATV-Tags, at leased one secret key is needed, up to ten keys are possible.<br />
   The notation is : generationnumber[0-9]=secretKey. For example: 0=key0|1=KEYX45rt|....   . Multiple pairs are separated by pipes (|). Default is  0=key0|1=key1|2=key2|3=key3|4=key4|5=key5|6=key6|7=key7|8=key8|9=key9 . Do not defines spaces, tabs and \'=\' as part of the keys(secrets)! The secrets are use randomly to build the BATV-Tags.',undef,undef,'msg004850','msg004851'],
-['removeBATVTag','remove strange BATV-Tags from incoming mails',0,\&checkbox,'0','(.*)',undef,'Any strange BATV-signature will be removed from the sender address and the real sender address will be used! Using this together with remindBATVTag keeps your clients addressbooks (also whitelist, delaydb ...) clean from BATV-Tags. This will also work, if DoBATV is disabled. If you do not use remindBATVTag and the MTA behind ASSP sends a bounced mail back - this mail will fail on BATV on the recipients site. If any BATVTag was removed, no DKIM-check will be done!',undef,undef,'msg004860','msg004861'],
+['removeBATVTag','remove strange BATV-Tags from incoming mails',0,\&checkbox,'0','(.*)',undef,'Any strange BATV-signature will be removed from the sender address and the real sender address will be used! Using this together with remindBATVTag keeps your clients addressbooks (also whitelist, delaydb ...) clean from BATV-Tags. This will also work, if DoBATV is disabled. If you do not use remindBATVTag and the MTA behind SPAMBOX sends a bounced mail back - this mail will fail on BATV on the recipients site. If any BATVTag was removed, no DKIM-check will be done!',undef,undef,'msg004860','msg004861'],
 ['remindBATVTag','store incoming strange BATV-Tags to remind them for outgoing bounce mails',0,\&checkbox,'0','(.*)',undef,'If defined, any incoming stange BATV-signature will be stored and any recipient of outgoing bounce mails will be checked against this list. If there is found a valid (not older than 7 days) BATV-Tag for that recipient, it will be mangled in to the recipient address. This will also work, if DoBATV is disabled.',undef,undef,'msg004870','msg004871'],
 ['DoBackSctr','Do DNS-Backscatter Detection','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(\d*)',undef,
   'If activated, the IP-address of each message received for null sender,bounced or postmaster will be checked against the list below.
@@ -2884,7 +2884,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['localBackDNSFile','Local File for the Backscatterer DNS-IP-List',0,\&textinput,'file:files/backdnslist.txt','(\s*file\s*:\s*.+|)',undef,'The name of the local file that is used for this IP-list. The content of this file is filled in to the \'Backscatter-DNS Cache\' ( BackDNSInterval ). IP\'s from this list will be removed after one day from the cache.
   <hr /><hr /><font color=red>The following configurations are valid for all Backscatter Detection Options!</font><hr />',undef,undef,'msg004920','msg004921'],
 
-['Back250OKISP','Send 250 OK to ISP if any Backscatter Detection fails',0,\&checkbox,'0','(.*)',undef,'If any Backscatter check fails for a bounced mail that is coming from an ISPIP, ASSP will send "250 OK" to the ISP, but will discard the mail, if the check is configured to block!',undef,undef,'msg004930','msg004931'],
+['Back250OKISP','Send 250 OK to ISP if any Backscatter Detection fails',0,\&checkbox,'0','(.*)',undef,'If any Backscatter check fails for a bounced mail that is coming from an ISPIP, SPAMBOX will send "250 OK" to the ISP, but will discard the mail, if the check is configured to block!',undef,undef,'msg004930','msg004931'],
 ['BackWL','Do Backscatter Detection checks for Whitelisted mail',0,\&checkbox,'','(.*)',undef,'Tagging will be always done, if not excluded by address or domain!',undef,undef,'msg004940','msg004941'],
 ['BackNP','Do Backscatter Detection checks for No Processing mail',0,\&checkbox,'','(.*)',undef,'Tagging will be always done, if not excluded by address or domain!',undef,undef,'msg004950','msg004951'],
 ['noBackSctrRe','Regular Expression to Skip all BackScatter Checks*',80,\&textinput,'','(.*)','ConfigCompileRe',
@@ -2895,8 +2895,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   <hr /><div class="menuLevel1">Notes On Backscatter Detection</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/backscatter.txt\',3);" />',undef,'7','msg004970','msg004971'],
 
 [0,0,0,'heading','TestModes'],
-['spamSubject','Prepend Spam Subject <a href="http://sourceforge.net/p/assp/wiki/Getting_Started/#Rebuild_your_Bayesian_database."><img src="' . $wikiinfo . '" alt="TestMode" /></a>',20,\&textinput,'','(.*)',undef,'Setting a filter to testmode will tell ASSP not to reject the mail but rather build up the whitelist and spam and notspam collections. This can go on for some time without disturbing normal operation. After this very important phase TestMode can be used to tag the message: if TestMode and the message is spam Spam Subject gets prepended to the subject of the email. For example: [SPAM]','Basic',undef,'msg004980','msg004981'],
-['spamTag','Prepend Spam Tag',0,\&checkbox,'','(.*)',undef,'If checked, the method(s) ASSP used which caught the spam will be prepended to the subject of the email. For example; [DNSBL]','Basic',undef,'msg004990','msg004991'],
+['spamSubject','Prepend Spam Subject <a href="http://sourceforge.net/p/assp/wiki/Getting_Started/#Rebuild_your_Bayesian_database."><img src="' . $wikiinfo . '" alt="TestMode" /></a>',20,\&textinput,'','(.*)',undef,'Setting a filter to testmode will tell SPAMBOX not to reject the mail but rather build up the whitelist and spam and notspam collections. This can go on for some time without disturbing normal operation. After this very important phase TestMode can be used to tag the message: if TestMode and the message is spam Spam Subject gets prepended to the subject of the email. For example: [SPAM]','Basic',undef,'msg004980','msg004981'],
+['spamTag','Prepend Spam Tag',0,\&checkbox,'','(.*)',undef,'If checked, the method(s) SPAMBOX used which caught the spam will be prepended to the subject of the email. For example; [DNSBL]','Basic',undef,'msg004990','msg004991'],
 ['allTestMode','All Test Mode ON',0,\&checkbox,'','(.*)',undef,'Turn all of the individual testmodes on - regardless of the individual test mode settings. ',undef,undef,'msg005000','msg005001'],
 ['baysTestMode','Bayesian/Hidden-Markov-Model Test Mode',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg005010','msg005011'],
 ['baysTestModeUserAddresses','Bayesian Test Mode User Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','These users are in test mode / mark subject only for bayesian spam, even with test mode above off','Basic',undef,'msg005020','msg005021'],
@@ -2923,7 +2923,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 
 [0,0,0,'heading','Email Interface <a href="http://sourceforge.net/p/assp/wiki/How_do_i_use_the_e-mail_interface" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="How do I use the e-mail interface" /></a>'],
 ['EmailInterfaceOk','Enable Email Interface',0,\&checkbox,1,'(.*)',undef,
-  'Checked means that you want ASSP to intercept and parse mail to the following usernames at any localdomains. The domain \'@assp.local\' is automatically a local domain and can be used for the email-interface.
+  'Checked means that you want SPAMBOX to intercept and parse mail to the following usernames at any localdomains. The domain \'@assp.local\' is automatically a local domain and can be used for the email-interface.
   <hr>
   <b>NOTICE:</b> It is possible to define any MIME-header lines in any report file after the first (subject) line. This makes it possible to define MIME encoding and/or charset settings.<br />
   If a definition of MIME encoding and/or charset is found in a report file, assp converts the report from UTF-8 in to the defined encodings. <b> Don\'t forget to terminate your MIME-header with an empty line!</b><br /><br />
@@ -2941,12 +2941,12 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailInterfaceDomains','Accept Mails (Reports) for these local domains only*',40,\&textinput,'','(.*)','ConfigMakeSLRe',
   'Enable the EmailInterface and BlockReports for these local domains ONLY (NOT RECOMMENDED). If used, you have also to define \'@assp.local\' (if required). If not used, all localdomains and \'@assp.local\' take place ( see EmailInterfaceOk ). Accepts entire domains (@domain.com|domain.com)',undef,undef,'msg010370','msg010371'],
 ['EmailSenderOK','Accept Mails (Reports) from these external addresses*',40,\&textinput,'','(.*)','ConfigMakeSLRe',
-  'Allow these external domains/addresses to report to the email interface (NOT RECOMMENDED). The reply address for the reports must be set to a local one.  By default, ASSP only accepts reports from local or authenticated users. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com)',undef,undef,'msg005260','msg005261'],
+  'Allow these external domains/addresses to report to the email interface (NOT RECOMMENDED). The reply address for the reports must be set to a local one.  By default, SPAMBOX only accepts reports from local or authenticated users. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com)',undef,undef,'msg005260','msg005261'],
 ['EmailSenderNotOK','Not Authorized Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
   'Mail from any of these addresses are not accepted from Email Interface, except "Help Report", "Analyze Report" and "Block Report/Resend". Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). The user will get informed about the denied request.',undef,undef,'msg005270','msg005271'],
 ['EmailSenderIgnore','Ignore Not Authorized Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
   'Mail from any of these addresses are not accepted from Email Interface. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com). The user will get not informed about the denied request.',undef,undef,'msg009390','msg009391'],
-['EmailHelp','Help Address<a href="http://sourceforge.net/p/assp/wiki/Getting_Started/#Instructions_for_use_for_your_end_users." target="ASSPHELP"><img src="' . $wikiinfo . '" alt="doku" /></a>',20,\&textinput,'assphelp','(.*)@?',undef,
+['EmailHelp','Help Address<a href="http://sourceforge.net/p/assp/wiki/Getting_Started/#Instructions_for_use_for_your_end_users." target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="doku" /></a>',20,\&textinput,'assphelp','(.*)@?',undef,
   'Any mail sent by local/authenticated users to this username will be interpreted as a request for help. Do not put the full address here, just the user part. For example: assphelp',undef,undef,'msg005240','msg005241'],
 ['EmailSpam','Report Spam Address',20,\&textinput,'asspspam','(.*)@?',undef,
   'Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a spam report. Multiple attachments get truncated to MaxBytesReports. Do not put the full address here, just the user part.<br />
@@ -2962,7 +2962,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   define the "host:port" of the central assp (rebuild-) instance here. Every report to EmailSpam and EmailHam (but only these!) will be forwarded to the defined host(s) and NO other local action will be taken. If the forwarding to all defined hosts fails, the request will be processed locally. To define multiple hosts for failover, separate them by pipe (|).',undef,undef,'msg009930','msg009931'],
 ['EmailErrorsReply','Reply to Spam/Not-Spam Reports','0:NO REPLY|1:REPLY TO SENDER|2:REPLY TO EmailErrorsTo|3:REPLY TO BOTH',\&listbox,1,'(\d*)',undef,  '',undef,undef,'msg005300','msg005301'],
 ['EmailErrorsTo','Send Copy of Spam/Ham-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com<br />',undef,undef,'msg005310','msg005311'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com<br />',undef,undef,'msg005310','msg005311'],
 
 ['EmailErrorsModifyWhite','Combined Spam/Ham Report &amp; Whitelist Check','0:disabled|1:modify whitelist|2:show whitelist',\&listbox,1,'(.*)',undef,
   'If set to \'modify whitelist\' Ham Reports will add email addresses to the Whitelist, Spam Reports will remove addresses from the Whitelist, also a copy of a file in the GUI to correctedspam (remove) and correctednotspam (add) will modify the Whitelist for the found addresses. If set to \'show whitelist\' Spam Reports will show if addresses are whitelisted.','Basic',undef,'msg005320','msg005321'],
@@ -2978,7 +2978,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailWhitelistReply','Reply to Add to/Remove from Whitelist','0:NO REPLY|1:REPLY TO SENDER|2:REPLY TO EmailWhitelistTo|3:REPLY TO BOTH',\&listbox,1,'(\d*)',undef,
   '',undef,undef,'msg005350','msg005351'],
 ['EmailWhitelistTo','Send Copy of Whitelist-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005360','msg005361'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005360','msg005361'],
 ['EmailRedlistAdd','Add to Redlist Address',20,\&textinput,'asspred','(.*)@?',undef,
   'Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the redlist. Only the users defined in EmailRedlistTo, EmailAdmins and EmailAdminReportsTo are able to define a list of email addresses in the mail body.  Do not put the full address here, just the user part. <br />For example: asspred.',undef,undef,'msg005370','msg005371'],
 ['EmailRedlistRemove','Remove from Redlist Addresses',20,\&textinput,'asspnotred','(.*)@?',undef,
@@ -2987,7 +2987,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailRedlistReply','Reply to Add to/Remove from Redlist','0:NO REPLY|1:REPLY TO SENDER|2:REPLY TO EmailRedlistTo|3:REPLY TO BOTH',\&listbox,1,'(\d*)',undef,
   '',undef,undef,'msg005390','msg005391'],
 ['EmailRedlistTo','Send Copy of Redlist-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005400','msg005401'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005400','msg005401'],
 ['EmailSpamLoverAdd','Add to SpamLover Addresses',20,\&textinput,'asspspamlover','(.*)@?',undef,
   'Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to spamLovers. Only the users defined in EmailSpamLoverTo, EmailAdmins and EmailAdminReportsTo are able to define a list of email addresses in the mail body. Do not put the full address here, just the user part. <br />For example: asspspamlover. To use this option, you have to configure spamLovers with "file:..." for example "file:files/spamlovers.txt" !',undef,undef,'msg005410','msg005411'],
 ['EmailSpamLoverRemove','Remove from SpamLover Addresses',20,\&textinput,'asspnotspamlover','(.*)@?',undef,
@@ -2996,7 +2996,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailSpamLoverReply','Reply to Add to/Remove from SpamLovers','0:NO REPLY|1:REPLY TO SENDER|2:REPLY TO EmailSpamLoverTo|3:REPLY TO BOTH',\&listbox,1,'(\d*)',undef,
   '',undef,undef,'msg005430','msg005431'],
 ['EmailSpamLoverTo','Send Copy of Spamlover-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005440','msg005441'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005440','msg005441'],
 ['EmailNoProcessingAdd','Add to NoProcessing Addresses',20,\&textinput,'asspnpadd','(.*)@?',undef,
   'Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the noProcessing addresses. Only the users defined in EmailNoProcessingTo, EmailAdmins and EmailAdminReportsTo are able to define a list of email addresses in the mail body. Do not put the full address here, just the user part. <br />For example: asspnpadd. To use this option, you have to configure noProcessing with "file:..." for example "file:files/noprocessing.txt" !',undef,undef,'msg005450','msg005451'],
 ['EmailNoProcessingRemove','Remove from noProcessing Addresses',20,\&textinput,'asspnprem','(.*)@?',undef,
@@ -3005,7 +3005,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailNoProcessingReply','Reply to Add to/Remove from noProcessing','0:NO REPLY|1:REPLY TO SENDER|2:REPLY TO EmailNoProcessingTo|3:REPLY TO BOTH',\&listbox,1,'(\d*)',undef,
   '',undef,undef,'msg005470','msg005471'],
 ['EmailNoProcessingTo','Send Copy of NoProcessing-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005480','msg005481'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005480','msg005481'],
 ['EmailBlackAdd','Add to BlackListed  Addresses',20,\&textinput,'assp-black','(.*)@?',undef,
   'Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the blackListedDomains addresses. Only the users defined in EmailAdmins and EmailAdminReportsTo are able to request an addition. Do not put the full address here, just the user part. <br />For example: assp-black. To use this option, you have to configure blackListedDomains with "file:..." for example "file:files/blacklisted.txt" !',undef,undef,'msg005490','msg005491'],
 ['EmailBlackRemove','Remove from BlackListed Addresses',20,\&textinput,'assp-notblack','(.*)@?',undef,
@@ -3040,7 +3040,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['EmailBlackReply','Reply to Add to/Remove from BlackListed','0:NO REPLY|1:REPLY TO SENDER|2:REPLY TO EmailBlackTo|3:REPLY TO BOTH',\&listbox,1,'(\d*)',undef,
   '',undef,undef,'msg005510','msg005511'],
 ['EmailBlackTo','Send Copy of Black-Change-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005520','msg005521'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005520','msg005521'],
 ['EmailAnalyze','Request Analyze Report',20,\&textinput,'asspanalyze','(.*)@?',undef,
   'Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a request for analyzing the mail. Do not put the full address here, just the user part. For example: asspanalyze <br />
   Use a fake domain like @assp.local when you send the email- so the full address would be then asspanalyze@assp.local. <br />You can sent multiple mails as attachments and/or zipped file(s). Each attached email-file must have the extension defined in "maillogExt". In this case only the attachments will be processed. To use this multi-attachment-feature an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL is needed. It is also possible to send MS-outlook \'.msg\' files (possibly zipped). To use this MS-outlook-feature in addition an installed <a href="http://search.cpan.org/search?query=Email::Outlook::Message" rel="external">Email::Outlook::Message</a> module in PERL is needed.','Basic',undef,'msg005530','msg005531'],
@@ -3051,12 +3051,12 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Additional Analyze Report will be generated for Spam and Ham Reports. Setting the TO Address accordingly and choosing <b>EmailAnalyzeTo</b> will send the Analyze Report to the admin only.',undef,undef,'msg005560','msg005561'],
 
 ['EmailFrom','From Address for Reports',40,\&textinput,'<spammaster@yourdomain.com>','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent from this address.',undef,undef,'msg005570','msg005571'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent from this address.',undef,undef,'msg005570','msg005571'],
 ['EmailAllowEqual','Allow \'=\' in Addresses',0,\&checkbox,'1','(.*)',undef,
   'Allow \'=\' in addresses to be whitelisted or redlisted.',undef,undef,'msg005580','msg005581'],
 
 ['EmailSenderNoReply','Do Not Reply To These Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
-  'Email sent from ASSP acknowledging your submissions will not be sent to these addresses. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).<br />
+  'Email sent from SPAMBOX acknowledging your submissions will not be sent to these addresses. Accepts specific addresses (user@example.com), user parts (user) or entire domains (@example.com).<br />
   Analyze-, PersonalBlackList- and all virus related reports are ignored by this feature (are sent even a user is listed here).<br />
   A Report copy to EmailAnalyzeTo, EmailBlackTo, EmailNoProcessingTo, EmailSpamLoverTo, EmailRedlistTo, EmailWhitelistTo and EmailErrorsTo is also ignored by this feature.<br /><hr />
   <div class="menuLevel1">Notes On Email Interface</div>
@@ -3076,7 +3076,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['correctednotspam','False-positive Collection',40,\&textinput,'errors/notspam','(\S+)',undef,
   'Good mail that was listed as spam, count 4x. This directory will be used in building the spamdb . For example: errors/notspam',undef,undef,'msg005670','msg005671'],
 ['resendmail','try to resend this files',40,\&textinput,'resendmail','(\S+)',undef,
-  'ASSP will try to resend the files in this directory to the original recipient. The files must have the "maillogExt" extension and must have the SMTP-format. For example: resendmail. This requires an installed <a href="http://search.cpan.org/search?query=Email::Send" rel="external">Email::Send</a> module in PERL.',undef,undef,'msg005680','msg005681'],
+  'SPAMBOX will try to resend the files in this directory to the original recipient. The files must have the "maillogExt" extension and must have the SMTP-format. For example: resendmail. This requires an installed <a href="http://search.cpan.org/search?query=Email::Send" rel="external">Email::Send</a> module in PERL.',undef,undef,'msg005680','msg005681'],
 ['maillogExt','Extension for Mail Files',20,\&textinput,'.eml','(\S*)',undef,
   'Enter the file extension (include the period) you want appended to the mail files in the mail collections.<br />
   Leave it blank for no extension - this setting will prevent several features from working. Never use \'.msg\' - this is an extension used by MS-outlook! For Example: .eml',undef,undef,'msg005690','msg005691'],
@@ -3094,14 +3094,14 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg009100','msg009101'],
 ['griplist','GreyIPlist Database',40,\&textinput,'griplist','(\S*)',undef,'The file with the current Grey-IP-List database -- make this blank if you don\'t use it.',undef,undef,'msg005730','msg005731'],
 ['useDB4griplist','Use BerkeleyDB for Griplist',0,\&checkbox,'','(.*)','configChangeDB',
-  'If selected ASSP uses \'BerkeleyDB\' instead of \'orderedtie\' for griplist. Depending on your settings for OrderedTieHashTableSize this could spend some memory and/or result in better performance.  The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature.',undef,undef,'msg005740','msg005741'],
+  'If selected SPAMBOX uses \'BerkeleyDB\' instead of \'orderedtie\' for griplist. Depending on your settings for OrderedTieHashTableSize this could spend some memory and/or result in better performance.  The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature.',undef,undef,'msg005740','msg005741'],
 ['droplist','Drop also Connections from these IP\'s*',40,\&textinput,'file:files/droplist.txt','(\s*file\s*:\s*.+|)','ConfigMakeIPRe','Automatically downloaded (http://www.spamhaus.org/drop/drop.lasso) list of IP\'s which should be blocked right away. This list could be used in addition to denySMTPConnectionsFrom and/or denySMTPConnectionsFromAlways!',undef,'7','msg005750','msg005751'],
 ['delaydb','Delaying Database',40,\&textinput,'delaydb','(\S*)','configChangeDB','The file with the delay database.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005760','msg005761'],
 ['ldaplistdb','LDAP Database',40,\&textinput,'ldaplist','(\S*)','configChangeDB','The file with the LDAP-cache database.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005770','msg005771'],
 ['adminusersdb','Admin Users Database',40,\&textinput,'','(\S*)','configChangeDB','The file with the GUI-Admin-Users database - default to set is \'adminusers\'.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below. Before setting this parameter, please set adminusersdbpass to a value of your choice!<br />
- <hr>To use this database shared between multiple ASSP\'s, set all ASSP to mysqlSlaveMode (except the master) and the adminusersdbpass must be the same on all installations! If you want to change the adminusersdbpass, first change it on the master.<hr>',undef,undef,'msg005780','msg005781'],
+ <hr>To use this database shared between multiple SPAMBOX\'s, set all SPAMBOX to mysqlSlaveMode (except the master) and the adminusersdbpass must be the same on all installations! If you want to change the adminusersdbpass, first change it on the master.<hr>',undef,undef,'msg005780','msg005781'],
 ['adminusersdbNoBIN','Admin Users Database uses no Binary Data (ASCII only)',0,\&checkbox,'','(.*)',undef,'Select this, if adminusersdb is set to "DB:" and your database engine does not accept or has problems with binary data (eg. Postgres). <span class="negative">If you change this value, you have to stop all assp and to cleanup both tables (adminusers and adminusersright) <b>before</b> restarting assp!</span>. To keep your data do the following: do an ExportMysqlDB - change this value - stop assp - drop or clean both tables - start assp - do an ImportMysqlDB .',undef,undef,'msg005790','msg005791'],
-['adminusersdbpass','Admin Users Database PassPhrase',40,\&passinput,'','(.+)','ConfigChangePassPhrase','The passphrase that is used to encrypt the adminusersdb. This has to be the same on all ASSP installations that are sharing the adminusersdb. If you want to change it, first change it on the master installation and than on the slaves. Do not forget to configure \'mysqlSlaveMode\' first. An empty value is not valid!',undef,undef,'msg005800','msg005801'],
+['adminusersdbpass','Admin Users Database PassPhrase',40,\&passinput,'','(.+)','ConfigChangePassPhrase','The passphrase that is used to encrypt the adminusersdb. This has to be the same on all SPAMBOX installations that are sharing the adminusersdb. If you want to change it, first change it on the master installation and than on the slaves. Do not forget to configure \'mysqlSlaveMode\' first. An empty value is not valid!',undef,undef,'msg005800','msg005801'],
 ['myhost','database hostname or IP',40,\&textinput,'','(.*)',undef,
   'You need <a  href="http://search.cpan.org/~lds/Tie-DBI-1.02/lib/Tie/RDBM.pm" rel="external">Tie::RDBM</a> to use a database instead of local files.<br />
   This way you can share whitelist, delaydb, redlist and penaltybox between servers',undef,undef,'msg005810','msg005811'],
@@ -3122,13 +3122,13 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   Sybase,SERVER=myserver,[PORT=myport]<br />
   mysql[,PORT=myport][,mysql_socket=/path/to/mysql.sock][,AutoCommit=1][,mysql_auto_reconnect=1]<br /><br />
   <span class="negative">Instead using local files for hashes and lists via shared memory, it is recommended to use <a  href=\"http://search.cpan.org/search?query=berkeleydb\" rel=\"external\">BerkeleyDB</a> (Perl-module) version 0.34 or higher for highest performance and less memory usage.  The BerkeleyDB (engine) version 4.5 or higher is required to use BerkeleyDB.</span><br />
-  If you specify BerkeleyDB here, the values for myhost, mydb, myuser and mypassword will be ignored. All possible BerkeleyDB option must be defined here - the option for \'-Filename\' is already set by ASSP! Options could be defined for example:<br />
+  If you specify BerkeleyDB here, the values for myhost, mydb, myuser and mypassword will be ignored. All possible BerkeleyDB option must be defined here - the option for \'-Filename\' is already set by SPAMBOX! Options could be defined for example:<br />
   BerkeleyDB,-Pagesize=>number,-Env=>[-Cachesize=>number,-Mode=>mode,...,...],...,...<br />
-  If \'-Env=>[-Cachesize=>number]\' (number in bytes) is specified, this cache size will be used at minimum for every single list. This is not recommended, because ASSP does automatically calculate the right cache for every list. You may setup configuration values for any BerkeleyDB, creating a file <a href=http://www.oracle.com/technology/documentation/berkeley-db/db/ref/env/db_config.html>DB_CONFIG</a> (case sensitive) in the corresponding directory ./tmpDB/[list]. Please use the BerkeleyDB documentation if you don\'t know the syntax of this file. Any value defined in that file will overwrite the corresponding internal ASSP configuration for this DB.<br /><br />
+  If \'-Env=>[-Cachesize=>number]\' (number in bytes) is specified, this cache size will be used at minimum for every single list. This is not recommended, because SPAMBOX does automatically calculate the right cache for every list. You may setup configuration values for any BerkeleyDB, creating a file <a href=http://www.oracle.com/technology/documentation/berkeley-db/db/ref/env/db_config.html>DB_CONFIG</a> (case sensitive) in the corresponding directory ./tmpDB/[list]. Please use the BerkeleyDB documentation if you don\'t know the syntax of this file. Any value defined in that file will overwrite the corresponding internal SPAMBOX configuration for this DB.<br /><br />
   The options for all drivers and their possible or required order depends on the DBD driver used, please read the driver\'s documentation, if you do not know the needed option.<br />
   The username, password, host and databasename are always used from this configuration page.',undef,undef,'msg005820','msg005821'],
 ['mydb','database name',40,\&textinput,'','(\S*)',undef,
-  'This database must exist before starting ASSP, necessary tables will be created automatically into this database.',undef,undef,'msg005830','msg005831'],
+  'This database must exist before starting SPAMBOX, necessary tables will be created automatically into this database.',undef,undef,'msg005830','msg005831'],
 ['mysqlSlaveMode','This is a slave of more then one assp-computers accessing the same database',0,\&checkbox,'','(.*)',undef,
   'If you are running more then one assp-computers accessing the same or <a href="http://www.webopedia.com/TERM/S/SPOF.html">(better because of SPOF)</a> a bidirectional replicated database<br />
   this is a slave-assp and no database maintenance will be done by this one!<br />
@@ -3167,7 +3167,7 @@ Files can be:<br />
 - adminusers.(add|rpl)<br />
 - adminusersright.(add|rpl)<br />
 Use the extension "add" or "rpl" to add or replace the records to the tables.<br />
-Only files for database-enabled tables will be imported ! The import will be done at ASSP start or if the option below is used.<br />
+Only files for database-enabled tables will be imported ! The import will be done at SPAMBOX start or if the option below is used.<br />
 Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 <span class="negative">If you plan to import in to BerkeleyDB - do the following:<br />
 - set DisableSMTPNetworking to on
@@ -3176,48 +3176,48 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 - restart assp and wait until all imports are finished
 - restart assp
 - set DisableSMTPNetworking to off </span>',undef,undef,'msg005870','msg005871'],
-['preventBulkImport','Prevent Bulk Import',0,\&checkbox,'','(.*)',undef,'Do not select, if you are using MySQL! Doing a Bulk-Import of data, ASSP modifies the properties of table columns. This could result in breaking some configured DB features like DB-replication in MSSQL. If selected, ASSP will do a line per line insert/update (which takes much more time) without modifying the tables properties.',undef,undef,'msg005880','msg005881'],
+['preventBulkImport','Prevent Bulk Import',0,\&checkbox,'','(.*)',undef,'Do not select, if you are using MySQL! Doing a Bulk-Import of data, SPAMBOX modifies the properties of table columns. This could result in breaking some configured DB features like DB-replication in MSSQL. If selected, SPAMBOX will do a line per line insert/update (which takes much more time) without modifying the tables properties.',undef,undef,'msg005880','msg005881'],
 ['fillUpImportDBDir','Fill the Import Folder',10,\&textinput,'','^([1-9]|L|)$','ConfigChangeRunTaskNow','If set to a value between 1 and 9, the corresponding backup file for any list/hash that configured to use a database will be copied from the backupDBDir to the importDBDir. The resulting file name will has an extension of ".rpl", so a possible import will replace the current table content. If a value of "L" is defined, the last backup will be used. Possible values are L or 1 - 9 or blank. Any configured value will be reset to blank after the copy is finished.',undef,undef,'msg008990','msg008991'],
 ['ImportMysqlDB','import all files from the importDBDir Directory in to the database - now.',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow',
   "All files from the \"importDBDir\" will be imported in to database $mydb. Please define the directory above, before using the import!<br />
-<input type=button value=\"Apply Changes and Run DB Import Now (if checked)\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['ASSPconfig'].theButtonRefresh.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg005890','msg005891'],
+<input type=button value=\"Apply Changes and Run DB Import Now (if checked)\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['SPAMBOXconfig'].theButtonRefresh.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg005890','msg005891'],
 ['exportDBDir','export directory',40,\&textinput,'mysql/dbexport','(\S+)',undef,'The folder to export the used tables of the database.<br />The schema of the files is the assp-schema.<br />Ten versions of exports are available!<br />For example: mysql/dbexport',undef,undef,'msg005900','msg005901'],
 ['ExportMysqlDB','export all tables from the database',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow',
   "All table of the database will be exported to the \"exportDBDir\" Directory. Please define the Directory above, before using the export!<br />
-<input type=button value=\"Apply Changes and Run DB Export Now (if checked)\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['ASSPconfig'].theButtonRefresh.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg005910','msg005911'],
+<input type=button value=\"Apply Changes and Run DB Export Now (if checked)\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['SPAMBOXconfig'].theButtonRefresh.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg005910','msg005911'],
 ['backupDBDir','backup directory',40,\&textinput,'mysql/dbbackup','(\S+)',undef,'The folder to backup the used tables of the database.<br />The schema of the files is the assp-schema.<br />Ten versions of backups are available!<br />For example: mysql/dbbackup',undef,undef,'msg005920','msg005921'],
 ['backupDBInterval','backup database Interval <sup>s</sup>',40,\&textinput,2,$ScheduleGUIRe,'configChangeSched',
   'backup the database (all tables used by assp at the time)  every this hours.<br />
   Defaults to 2 hours.',undef,undef,'msg005930','msg005931'],
 ['copyDBToOrgLoc','copy the last DB-backup to the original location',0,\&checkbox,'1','(.*)',undef,
   'If DB-backup is enabled, the last backupversion is also copied to the original location.<br />
-  If database connections are failed, while ASSP is running, ASSP will switch over to use these files instead of DB-tables.<br />
+  If database connections are failed, while SPAMBOX is running, SPAMBOX will switch over to use these files instead of DB-tables.<br />
   DB-tables will not be imported from here, this must be done from the importDBDir!',undef,undef,'msg005940','msg005941'],
-['logfile','ASSP Logfile',40,\&textinput,'logs/maillog.txt','(\S*)','ConfigChangeLogfile',
+['logfile','SPAMBOX Logfile',40,\&textinput,'logs/maillog.txt','(\S*)','ConfigChangeLogfile',
   'Blank if you don\'t want a log file. Change it to maillog.log if you don\'t want auto rollover.
-  NOTE: Changing this field requires restarting ASSP before changes take effect.',undef,undef,'msg005950','msg005951'],
+  NOTE: Changing this field requires restarting SPAMBOX before changes take effect.',undef,undef,'msg005950','msg005951'],
 ['MaxLogAge','Max Age of Logfiles',10,\&textinput,0,'(\d+)',undef,
   'The maximum file age in days of logfiles. If a logfile is older than this number in days, the file will be deleted. Default is 0 - recommended is 30. A value of 0 disables this feature and no logfile will be deleted because of its age.',undef,undef,'msg005960','msg005961'],
 ['MaxLogAgeSchedule','Runtime MaxLogAge <sup>s</sup>',40,\&textinput,'1',$ScheduleGUIRe,'configChangeSched',
   'Runtime hour for deleting old logfiles. Set a number between 0 and 23. 0 means midnight, 1 is default.',undef,undef,'msg005970','msg005971'],
 ['pidfile','PID File',40,\&textinput,'pid','(\S+)',undef,'Blank is not a valid value!<br />
-  You have to restart ASSP before you get a pid file in the new location.<br />
-  This file is used to detect a clean shutdown of ASSP - in this case it does not exist at startup!
+  You have to restart SPAMBOX before you get a pid file in the new location.<br />
+  This file is used to detect a clean shutdown of SPAMBOX - in this case it does not exist at startup!
   <hr /><div class="menuLevel1">Notes On File Path</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/filepath.txt\',3);" />',undef,undef,'msg005980','msg005981'],
 
 [0,0,0,'heading','Collecting'],
 ['spamaddresses','Spam Collect Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
   'Mail to any of these addresses are always spam and will contribute to the spam-collection unless from someone on the whitelist. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). The addresses are not validated, they  are readdressed to ccallspam, however you can supersede this by putting a valid address into sendAllCollect below.',undef,undef,'msg005990','msg005991'],
 ['sendAllCollect','Catchall Address for Collect Addresses',20,\&textinput,'','(.*)',undef,
-  'ASSP will readdress messages addressed to Collect Addresses to this address.<br />
+  'SPAMBOX will readdress messages addressed to Collect Addresses to this address.<br />
   For example: collect@mydomain.com',undef,undef,'msg006000','msg006001'],
 ['DoNotBlockCollect','Use Collect Addresses for Testing Your Environment',0,\&checkbox,'','(.*)',undef,
-  'If set ASSP will block messages from Collect Addresses <b>after</b> other checks are performed. That may help to test and control activated filters.',undef,undef,'msg006010','msg006011'],
+  'If set SPAMBOX will block messages from Collect Addresses <b>after</b> other checks are performed. That may help to test and control activated filters.',undef,undef,'msg006010','msg006011'],
 ['UseTrapToCollect','Use Penalty Trap Addresses To Collect',0,\&checkbox,'','(.*)',undef,
-  'If set ASSP will use addresses from DoPenaltyMakeTraps and spamtrapaddresses to collect spams.',undef,undef,'msg006020','msg006021'],
+  'If set SPAMBOX will use addresses from DoPenaltyMakeTraps and spamtrapaddresses to collect spams.',undef,undef,'msg006020','msg006021'],
 ['noCollecting','Do Not Collect Messages from/to these Addresses*',60,\&textinput,'','(.*)','ConfigMakeSLRe','Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).',undef,undef,'msg006030','msg006031'],
-['noCollectRe','Do Not Collect Messages - Content Based*',60,\&textinput,'','(.*)','ConfigCompileRe','If the content of a collected file (incl. X-ASSP-... headers) matches this regular expression, it will be deleted from the collection after the mail is completely processed.<br />
-  If the ASSP_ARC plugin is used, the file will be deleted from the collection after it was archived. This is the only "no collect" option which removes an already collected file, all other options will prevent assp from creating a collection file - if set to "no collection". The check is limited to MaxBytes or at max 100000 Bytes.',undef,undef,'msg008930','msg008931'],
+['noCollectRe','Do Not Collect Messages - Content Based*',60,\&textinput,'','(.*)','ConfigCompileRe','If the content of a collected file (incl. X-SPAMBOX-... headers) matches this regular expression, it will be deleted from the collection after the mail is completely processed.<br />
+  If the SPAMBOX_ARC plugin is used, the file will be deleted from the collection after it was archived. This is the only "no collect" option which removes an already collected file, all other options will prevent assp from creating a collection file - if set to "no collection". The check is limited to MaxBytes or at max 100000 Bytes.',undef,undef,'msg008930','msg008931'],
 ['DoNotCollectRedRe','Do Not Collect RedRe Matching Mails',0,\&checkbox,1,'(.*)',undef,
   'Mails (Spam/Ham) matching Red Regex (redRe) will not be stored in the collection folders.',undef,undef,'msg006040','msg006041'],
 ['DoNotCollectRedList','Do Not Collect Redlisted Mails',0,\&checkbox,'1','(.*)',undef,
@@ -3234,7 +3234,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   'This defines how file names are chosen in each collection. If set to 1, names are uniformly distributed. If set between 0.01 and 0.99, names distribution is exponential -- files get lower numbers more frequently. This prevents from corpus being refreshed too quickly, especially when MaxFiles is set to low value (ex. 3000). This setting is ignored if UseSubjectsAsMaillogNames is set to ON.<br />
  Recommended: 0.5, Default: 1',undef,undef,'msg006090','msg006091'],
 ['UseSubjectsAsMaillogNames','Use Subject as Maillog Names',0,\&checkbox,'1','(.*)','ConfigChangeUSAMN',
-  'You can turn this on to help you manually identify mail in your spam and non-spam collections. This will prevent ASSP from controlling the number of files in your collections(-> MaxFiles ). It is recommended to switch on MaintBayesCollection and to setup MaxNoBayesFileAge to your needs, if you have switched on this option.',undef,undef,'msg006100','msg006101'],
+  'You can turn this on to help you manually identify mail in your spam and non-spam collections. This will prevent SPAMBOX from controlling the number of files in your collections(-> MaxFiles ). It is recommended to switch on MaintBayesCollection and to setup MaxNoBayesFileAge to your needs, if you have switched on this option.',undef,undef,'msg006100','msg006101'],
 ['MaxAllowedDups','Max Number of Duplicate File Names',5,\&textinput,5,'(\d+)','ConfigChangeMaxAllowedDups',
   'The maximum number of logged files with the same filename (subject) that are stored in the spam folder (spamlog), if UseSubjectsAsMaillogNames is selected. Default is 0. A low value reduces the number of possibly duplicate mails, assuming that mails with the same subject will have the same content. A value of 0 disables this feature. If this number of files with the same filename is reached, the oldest file with the same subject will be moved to the discarded folder, which has to be defined ( in addition to spamlog ) for this feature to work.', undef, undef,'msg008660','msg008661'],
 ['AllowedDupSubjectRe','Regular Expression to Identify allowed duplicate Subjects*',80,\&textinput,'','(.*)','ConfigCompileRe','Messages their subject matches this regular expression will be collected regardless the setting in MaxAllowedDups .',undef,undef,'msg008670','msg008671'],
@@ -3246,21 +3246,21 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 ['MaxFileNameLength','Max Length of File Names',10,\&textinput,50,'(\d+)',undef,
   'The maximum character count that is used from the mail subject to build the file name of the logged file, if UseSubjectsAsMaillogNames is selected. This could be useful, if your mail clients having trouble to build the resend file name (right button - URL) correctly in block reports. Every non printable character will be replaced by a 4 byte string in this link.',undef,undef,'msg006130','msg006131'],
 ['MaintBayesCollection','Maintenance for Bayesian Collection',0,\&checkbox,'1','(.*)',undef,
-  'Set this to on, if you want ASSP to run a maintenance tasks on the bayesian collection folders ( spamlog , notspamlog , correctedspam , correctednotspam ). ASSP will delete the oldest files until the number of files per folder reaches MaxFiles. If you want ASSP to delete files because of their age instead of the number of files ( MaxFiles ), setup MaxBayesFileAge and/or MaxCorrectedDays to your needs.<br />
+  'Set this to on, if you want SPAMBOX to run a maintenance tasks on the bayesian collection folders ( spamlog , notspamlog , correctedspam , correctednotspam ). SPAMBOX will delete the oldest files until the number of files per folder reaches MaxFiles. If you want SPAMBOX to delete files because of their age instead of the number of files ( MaxFiles ), setup MaxBayesFileAge and/or MaxCorrectedDays to your needs.<br />
   MaintBayesCollection is useful, if UseSubjectsAsMaillogNames is set to on and doMove2Num is set to off, because in this case the number of files in every collection folder will grow infinite. If set to On, the rebuildspamdb task will also do the cleanup.',undef,undef,'msg006140','msg006141'],
 ['MaxBayesFileAge','Max Age of Bayes Files',15,\&textinput,31,'^(\d+|\d+\s+\d+)$',undef,
   'The maximum file age in days of every file in every bayesian collection folder ( spamlog , notspamlog ). If MaintBayesCollection is set to on and a file is older than this number in days, the file will be deleted. Default is 31. A value of 0 disables this feature and no file will be deleted because of its age. To use different values for spamlog and notspamlog, define two space separated values - the first for spamlog and the second for notspamlog, like \'30 60\'. The rebuildspamdb task will ignore files older than this days (if not zero).<br />
-  <span class = "negative">It is not recommended to enable this option, if you use the bayesian engine of ASSP and doMove2Num is set to ON.  A better solution in this case is, to have MaintBayesCollection take care of deletions (by date) and change this setting to 0.</span>',undef,undef,'msg006150','msg006151'],
-['MaxCorrectedDays','Max Corrected File Age',15,\&textinput,'10000','^(\d+|\d+\s+\d+)$',undef,'This is the number of days a error report will be kept in the correctedspam and correctednotspam folders. These folders are the longterm memory of ASSP, therefore the default is 10000 days (more than 27 years). To use different values for correctedspam and correctednotspam, define two space separated values - the first for correctedspam and the second for correctednotspam, like \'1000 1500\'. The rebuildspamdb task will ignore files older than this days (if not set to zero).',undef,undef,'msg008590','msg008591'],
+  <span class = "negative">It is not recommended to enable this option, if you use the bayesian engine of SPAMBOX and doMove2Num is set to ON.  A better solution in this case is, to have MaintBayesCollection take care of deletions (by date) and change this setting to 0.</span>',undef,undef,'msg006150','msg006151'],
+['MaxCorrectedDays','Max Corrected File Age',15,\&textinput,'10000','^(\d+|\d+\s+\d+)$',undef,'This is the number of days a error report will be kept in the correctedspam and correctednotspam folders. These folders are the longterm memory of SPAMBOX, therefore the default is 10000 days (more than 27 years). To use different values for correctedspam and correctednotspam, define two space separated values - the first for correctedspam and the second for correctednotspam, like \'1000 1500\'. The rebuildspamdb task will ignore files older than this days (if not set to zero).',undef,undef,'msg008590','msg008591'],
 ['MaxNoBayesFileAge','Max Age of non Bayes Files',15,\&textinput,31,'^(\d+|\d+\s+\d+\s+\d+)$',undef,
   'The maximum file age in days of every file in every non bayesian collection folder ( incomingOkMail , discarded , viruslog ). If defined and a file is older than this number in days, the file will be deleted. Default is 31. A value of 0 disables this feature and no file will be deleted because of its age. To use different values for incomingOkMail and discarded and viruslog, define three space separated values - the first for incomingOkMail and the second for discarded and the third for viruslog, like \'31 45 60\'',undef,undef,'msg006160','msg006161'],
 ['MaxFileAgeSchedule','Runtime for MaintBayesCollection and MaxNoBayesFileAge <sup>s</sup>',40,\&textinput,'1',$ScheduleGUIRe,'configChangeSched',
   'Runtime hour for deleting old collected files (bayes and non bayes). Set a number between 0 and 23. 0 means midnight, 1 is default. If empty a cleanup will not be scheduled. This could be fine, if a rebuildspamdb is scheduled, which will also do the cleanup based on the settings of MaintBayesCollection , MaxBayesFileAge and MaxCorrectedDays - but it will not maintain incomingOkMail , discarded and viruslog based on MaxNoBayesFileAge !',undef,undef,'msg006170','msg006171'],
 ['MaxBytes','Max Bytes',10,\&textinput,4000,'(\d+)',undef,
-  'How many bytes of the message body will ASSP look at - the message header is always included in all checks? Mails stored in the collecting folders will be truncated to this size. The average of Ham messages (message body) is 6K, the average of Spam messages is 3K. Usually the spam folder will be filled quicker than the notspam folder, therefore set this value to 4000 to get more wordpairs per Ham Message. When both folders are close to the maxfiles limit, reduce it to 3000.',undef,undef,'msg006180','msg006181'],
+  'How many bytes of the message body will SPAMBOX look at - the message header is always included in all checks? Mails stored in the collecting folders will be truncated to this size. The average of Ham messages (message body) is 6K, the average of Spam messages is 3K. Usually the spam folder will be filled quicker than the notspam folder, therefore set this value to 4000 to get more wordpairs per Ham Message. When both folders are close to the maxfiles limit, reduce it to 3000.',undef,undef,'msg006180','msg006181'],
 ['StoreCompleteMail','Store the Complete Mail','0:disabled|100000:up to 100 kByte|500000:up to 500 kByte|1000000:up to 1 MByte|10000000:up to 10 MByte|999999999:no limit',\&listbox,999999999,'(\d*)',undef,
-  'If set, ASSP will look at MaxBytes, but if possible it will store the complete mail up to the number of bytes configured. This could be useful for example, if you want resend blocked messages. Be careful using this option, your disk could be filled up very fast!',undef,undef,'msg006190','msg006191'],
-['MaxBytesReports','Error Max Bytes',10,\&textinput,10000,'(\d+)',undef,'How many bytes of an error report message will ASSP look at. For example: 10000. Set this to zero for no limit.',undef,undef,'msg006200','msg006201'],
+  'If set, SPAMBOX will look at MaxBytes, but if possible it will store the complete mail up to the number of bytes configured. This could be useful for example, if you want resend blocked messages. Be careful using this option, your disk could be filled up very fast!',undef,undef,'msg006190','msg006191'],
+['MaxBytesReports','Error Max Bytes',10,\&textinput,10000,'(\d+)',undef,'How many bytes of an error report message will SPAMBOX look at. For example: 10000. Set this to zero for no limit.',undef,undef,'msg006200','msg006201'],
 ['NonSpamLog','Non Spam','0:no collection|2:notspam folder',\&listbox,2,'(\d*)',undef,'Where to store whitelisted/local non spam messages. Default: notspam folder ( notspamlog ).',undef,undef,'msg006210','msg006211'],
 ['baysNonSpamLog','OK Mail','0:no collection|2:notspam folder|4:okmail folder',\&listbox,0 ,'(\d*)',undef,'Where to store non spam (message ok) messages. These are messages which are considered as HAM, but should not stored in the standard HAM folder because of our policy to use only confirmed HAM messages (whitelisted or local) for SpamDB. Set incomingOkMail accordingly if you choose \'okmail folder\'. Default: no collection',undef,undef,'msg006220','msg006221'],
 ['SpamLog','Store Spam','0:disabled|1:enabled',\&listbox,1,'(\d*)',undef,'Set this to \'disabled\' if you do not want to store any Spam regardless of settings in. Default: enabled (store in folder spamlog ).',undef,undef,'msg006230','msg006231'],
@@ -3291,12 +3291,12 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 
 ['DKIMLog','DKIM failed','0:no collection|1:spam folder|3:spam folder &amp; sendAllSpam|6:discard folder|7:discard folder &amp; sendAllSpam',\&listbox,3,'(\d*)',undef,'Where to store DKIM rejected messages. Recommended: spam folder ( spamlog ) &amp; sendAllSpam',undef,undef,'msg006470','msg006471'],
 ['BackLog','Backscatter check failed','0:no collection|1:spam folder|3:spam folder &amp; sendAllSpam|6:discard folder|7:discard folder &amp; sendAllSpam',\&listbox,6,'(\d*)',undef,'Where to store backscatter (MSGID-signing, BATV, DNS-Backscatter) rejected messages. Recommended: no collection',undef,undef,'msg006480','msg006481'],
-['freqNonSpam','Non Spam Collection Frequency',5,\&textinput,1,'(\d*)','updateLog2','Store every n\'th non spam message. If you set the value to 10 then every 10th message is logged. These frequency settings are for ASSP users with a mature installation who experience heavy mail or spam volumes. Enter a larger value if the non spam corpus is being refreshed too quickly. Default Value = 1, log every message. Leave it at the default value 1, if you use BlockReports.',undef,undef,'msg006490','msg006491'],
+['freqNonSpam','Non Spam Collection Frequency',5,\&textinput,1,'(\d*)','updateLog2','Store every n\'th non spam message. If you set the value to 10 then every 10th message is logged. These frequency settings are for SPAMBOX users with a mature installation who experience heavy mail or spam volumes. Enter a larger value if the non spam corpus is being refreshed too quickly. Default Value = 1, log every message. Leave it at the default value 1, if you use BlockReports.',undef,undef,'msg006490','msg006491'],
 ['freqSpam','Spam Collection Frequency',5,\&textinput,1,'(\d*)','updateLog3','Store every n\'th spam message. The same as for non spam but helps prevent spam corpuses being skewed by flooding. It is recommended that this be set depending on spam volume. Default value = 1, log every message. Leave it at the default value 1, if you use BlockReports.<br /><hr /><div class="menuLevel1">Notes On Collecting</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/collecting.txt\',3);" />',undef,undef,'msg006500','msg006501'],
 
 [0,0,0,'heading','Logging'],
 ['Notify','Notification Email To',80,\&textinput,'','^$|((?:'.$EmailAdrRe.'\@'.$EmailDomainRe.')(?:\s*,\s*'.$EmailAdrRe.'\@'.$EmailDomainRe.')*)',undef,
-  'Email address(es) to which you want ASSP to send a notification email per default, if a matching log entry ( NotifyRe , NoNotifyRe ) is found. Separate multiple entries by comma ",".<br />
+  'Email address(es) to which you want SPAMBOX to send a notification email per default, if a matching log entry ( NotifyRe , NoNotifyRe ) is found. Separate multiple entries by comma ",".<br />
   NOTICE: that groups are not allowed to be used here!',undef,undef,'msg006510','msg006511'],
 ['NotifyRe','Do Notify, if log entry matches*',60,\&textinput,'','(.*)','ConfigCompileNotifyRe','Regular Expression to identify loglines for which a notification message should be send.<br />
   useful entries are:<br />
@@ -3307,10 +3307,10 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   option list file: - for option file reload<br />
   error: - for any error<br />
   warning: - for any warning<br />
-  restart - to detect a ASSP restart<br />
+  restart - to detect a SPAMBOX restart<br />
   notification: too many recipients - for local frequency abuse once per day and sender<br />
   warning: too many recipients - for every local frequency abuse<br />
-  MainThread started - to detect a start of ASSP<br />
+  MainThread started - to detect a start of SPAMBOX<br />
   Admin connection - for GUI logon<br /><br />
   You may define a comma separated list (after \'=>\') of recipients in every line, this will override the default recipient defined in \'Notify\'.<br />
   for example: adminupdate:=>user1@yourdomain.com,user2@yourdomain.com.<br />
@@ -3350,9 +3350,9 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   'Syslog Facility. Valid are kern, user, mail, daemon, auth, syslog, lpr, news, uucp, cron, authpriv, ftp, local0, local1, local2, local3, local4, local5, local6',undef,undef,'msg006700','msg006701'],
 ['sysLogIp','Syslog IP',40,\&textinput,'','^(' . $HostRe .'|)$','ConfigChangeSysLog',
   'IP Address or hostname of your Network Syslog Daemon for Syslog logging.',undef,undef,'msg006710','msg006711'],
-['spamboxLog','ASSP local logging',0,\&checkbox,'1','(.*)',undef,'ASSP manages local logging. The logs (logfile) are stored inside the directory where ASSP is installed.',undef,undef,'msg006720','msg006721'],
+['spamboxLog','SPAMBOX local logging',0,\&checkbox,'1','(.*)',undef,'SPAMBOX manages local logging. The logs (logfile) are stored inside the directory where SPAMBOX is installed.',undef,undef,'msg006720','msg006721'],
 ['LogRollDays','Roll the Logfile How Often?',5,\&textinput,'1','([1-9]\d*)','ConfigChangeLogRollDays',
-  'ASSP closes and renames the log file after this number of days. Leave this at the default value 1, if you use BlockReporting.',undef,undef,'msg006730','msg006731'],
+  'SPAMBOX closes and renames the log file after this number of days. Leave this at the default value 1, if you use BlockReporting.',undef,undef,'msg006730','msg006731'],
 ['LogNameDate','LogName Date Format',30,\&textinput,'YY-MM-DD','^((?:YY(?:YY)?-)?MM-DD)$',undef,'The standard name for the logfile is YY-MM-DD.maillog.txt, use this option to set it to your needs.<br />
  possible values are:<br />
  YY-MM-DD (default)<br />
@@ -3393,7 +3393,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   This code line will switch on debug for all outgoing bounce messages.<br /><br />
   ($Con{$fh}->{ispip} && $Con{$fh}->{cip} =~ /^193\.2\.1\./)<br />
   This code line will switch on debug if the messages is from ISP and the IP of the server that was connected to the ISP begins with 193.2.1. .<br /><br />
-  To use this option, you need to know the internal ASSP variables and their usage!',undef,undef,'msg006790','msg006791'],
+  To use this option, you need to know the internal SPAMBOX variables and their usage!',undef,undef,'msg006790','msg006791'],
 ['debugNoWriteBody','Do not write Body to Debug',0,\&checkbox,'','(.*)',undef,'If selected, the sent message body data will not be written to the debug file.',undef,undef,'msg006800','msg006801'],
 ['DataBaseDebug','Database Connection Debug Mode',0,\&checkbox,'','(.*)',undef,'Select to debug the database connections!',undef,undef,'msg006810','msg006811'],
 ['ConTimeOutDebug','Connection Timeout Debug Mode',0,\&checkbox,'','(.*)',undef,'Select to debug SMTP connections that are running in to timeout!',undef,undef,'msg006820','msg006821'],
@@ -3439,7 +3439,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 ['DelayLog','Enable Greylisting/Delaying logging','0:nolog|1:standard|2:verbose',\&listbox,1,'(.*)',undef,
   '',undef,undef,'msg007020','msg007021'],
 ['BombLog','Enable Bomb logging','0:nolog|1:standard|2:verbose',\&listbox,1,'(.*)',undef,
-  'If set to verbose, the reporting to the logfile and the X-ASSP- scoring header will show the complete list of all hits. Otherwise only the highest match will be shown.',undef,undef,'msg007030','msg007031'],
+  'If set to verbose, the reporting to the logfile and the X-SPAMBOX- scoring header will show the complete list of all hits. Otherwise only the highest match will be shown.',undef,undef,'msg007030','msg007031'],
 ['AttachmentLog','Enable Attachment logging','0:nolog|1:standard|2:verbose',\&listbox,1,'(.*)',undef,
   '',undef,undef,'msg007040','msg007041'],
 ['SPFLog','Enable SPF logging','0:nolog|1:standard|2:verbose',\&listbox,1,'(.*)',undef,
@@ -3476,14 +3476,14 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   'Defines how many bytes of a matching Regular Expression will be shown in the log<br />
   Some matching Regular Expressions are too long for one line. Default: 32',undef,undef,'msg007190','msg007191'],
 ['sendNoopInfo','Send NOOP Info',0,\&checkbox,'','(.*)',undef,
-  'Checked means you want ASSP to send a "NOOP Connection from IP" message to your SMTP server.
+  'Checked means you want SPAMBOX to send a "NOOP Connection from IP" message to your SMTP server.
   <br /><hr />
   <div class="menuLevel1">Notes On Logging</div>
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/logging.txt\',3);" />',undef,undef,'msg007200','msg007201'],
 
 [0,0,0,'heading','LDAP Setup <a href="http://sourceforge.net/p/assp/wiki/LDAP" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="LDAP" /></a>'],
 ['LDAPHost','LDAP Host(s)',80,\&textinput,'localhost','^((?:(?:'.$HostRe.'|'.$HostPortRe.')(?:\|(?:'.$HostRe.'|'.$HostPortRe.'))*)|)$','updateLDAPHost','Enter the DNS-name(s) or IP address(es) of the server(s) that run(s) the <a href="http://ldap.perl.org/FAQ.html">LDAP</a> database. Second entry is backup. For example: localhost. Separate entries with pipes: LDAP-1.domain.com|LDAP-2.domain.com . To use a different than the default LDAP port, define host:port.' ,undef,undef,'msg007210','msg007211'],
-['DoLDAPSSL','Use SSL with LDAP (ldaps)','0:no|1:SSL|2:TLS',\&listbox,'0','(.*)',undef,'ASSP will use \'ldaps (SSL port 636)\' instead of ldap (port 389) or \'ldaps (TLS over port 389)\'. The Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed to use SSL or TLS!',undef,undef,'msg007220','msg007221'],
+['DoLDAPSSL','Use SSL with LDAP (ldaps)','0:no|1:SSL|2:TLS',\&listbox,'0','(.*)',undef,'SPAMBOX will use \'ldaps (SSL port 636)\' instead of ldap (port 389) or \'ldaps (TLS over port 389)\'. The Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed to use SSL or TLS!',undef,undef,'msg007220','msg007221'],
 ['LDAPtimeout','LDAP Query Timeout',2,\&textinput,15,'(\d+)',undef,'timeout when connecting to the remote server. The default is 15 seconds.',undef,undef,'msg007230','msg007231'],
 ['LDAPLogin','LDAP Login',80,\&passinput,'','(.*)',undef,'Most LDAP servers require a login and password before they allow queries.<br />Enter the DN specification for a user with sufficient permissions here.<br />For example: cn=Administrator,cn=Users,DC=yourcompany,DC=com',undef,undef,'msg007240','msg007241'],
 ['LDAPPassword','LDAP Password',20,\&passinput,'','(.*)',undef,'Enter the password for the specified LDAP login here.',undef,undef,'msg007250','msg007251'],
@@ -3499,7 +3499,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   'Delete outdated entries from the LDAP/VRFY cache. Check the LDAP cache to the LDAP server and/or VRFY-MTA and delete not existing entries.<br />
   Defaults to 12 hours. Is only used, if ldaplistdb is defined in the database section!',undef,undef,'msg007300','msg007301'],
 ['LDAPShowDB','Show local LDAP Database',40,\&textinput,'file:ldaplist','(\S*)',undef,'The directory/file with the LDAP cache database file. If you change ldaplistdb in section Filepath you must change it here too.',undef,'8','msg007310','msg007311'],
-['forceLDAPcrossCheck','force to run LDAP/VRFY-CrossCheck - now.',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow','ASSP will force to run an LDAP/VRFY-CrossCheck now!<br />'. "<input type=button value=\"Apply Changes and Run LDAP VRFY-CrossCheck Now (if checked)\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['ASSPconfig'].theButtonRefresh.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg007320','msg007321'],
+['forceLDAPcrossCheck','force to run LDAP/VRFY-CrossCheck - now.',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow','SPAMBOX will force to run an LDAP/VRFY-CrossCheck now!<br />'. "<input type=button value=\"Apply Changes and Run LDAP VRFY-CrossCheck Now (if checked)\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['SPAMBOXconfig'].theButtonRefresh.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg007320','msg007321'],
 ['MaxLDAPlistDays','Max LDAP/VRFY cache Days',5,\&textinput,'30','(\d+)',undef,'This is the number of days an address will be kept on the local LDAP/VRFY cache without any email to this address.',undef,undef,'msg007330','msg007331'],
 ['ldapLocalIPAddress','LDAP - Destination to Local IP-address Mapping*',40,\&textinput,'','^(\s*file\s*:\s*.+|)$','configChangeLocalIPMap',
   'You need to use the "file: ..." option for this parameter!<br />
@@ -3569,39 +3569,39 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
  This feature requires a Perl version 5.012000 (5.12.0) or higher.<br />
  NOTICE: the rebuildspamdb task will take up to double the time, if this feature is enabled and non-LATIN mails are processed!',undef,undef,'msg010420','msg010421'],
 ['send250OK','Send 250 OK',0,\&checkbox,'','(.*)',undef,
- 'Set this checkbox if you want ASSP to reply with \'250 OK\' instead of SMTP error code \'554 5.7.1\'. This will turn ASSP in some form of tarpit. ',undef,undef,'msg007430','msg007431'],
-['AsADaemon','Run ASSP as a Daemon','0:No|1:Yes - externally controlled|2:Yes - run AutoRestartCmd on restart and wait|3:Yes - run AutoRestartCmd on restart and exit',\&listbox,'0','(.*)',undef,'In Linux/BSD/Unix/OSX fork and close file handles. <br />
+ 'Set this checkbox if you want SPAMBOX to reply with \'250 OK\' instead of SMTP error code \'554 5.7.1\'. This will turn SPAMBOX in some form of tarpit. ',undef,undef,'msg007430','msg007431'],
+['AsADaemon','Run SPAMBOX as a Daemon','0:No|1:Yes - externally controlled|2:Yes - run AutoRestartCmd on restart and wait|3:Yes - run AutoRestartCmd on restart and exit',\&listbox,'0','(.*)',undef,'In Linux/BSD/Unix/OSX fork and close file handles. <br />
  Similar to the command "perl spambox.pl &amp;", but better.<br />
- If "externally controlled" is selected, ASSP simply ends and you have to restart assp from your daemon or watchdog script<br />
+ If "externally controlled" is selected, SPAMBOX simply ends and you have to restart assp from your daemon or watchdog script<br />
  If "run AutoRestartCmd on restart and wait" is selected, assp starts the OS command defined in AutoRestartCmd - assp will <b>NOT !</b> automatically terminate - the started command has to terminate/kill and to (re)start assp - like "service assp restart"!<br />
  If "run AutoRestartCmd on restart and exit" is selected, assp starts the OS command defined in AutoRestartCmd and terminates immediately!<br />
-  <span class="negative"> requires ASSP restart</span>',undef,undef,'msg007440','msg007441'],
-['runAsUser','Run as UID',20,\&textinput,'','(\S*)',undef,'The *nix user name to assume after startup (*nix only). use the autorestart features careful, because any restart from inside ASSP will be done with the permission of this user! <p><small><i>Examples:</i> assp, nobody</small></p>
-  <span class="negative"> requires ASSP restart</span>',undef,undef,'msg007450','msg007451'],
+  <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007440','msg007441'],
+['runAsUser','Run as UID',20,\&textinput,'','(\S*)',undef,'The *nix user name to assume after startup (*nix only). use the autorestart features careful, because any restart from inside SPAMBOX will be done with the permission of this user! <p><small><i>Examples:</i> assp, nobody</small></p>
+  <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007450','msg007451'],
 ['runAsGroup','Run as GID',20,\&textinput,'','(\S*)',undef,'The *nix group to assume after startup (*nix only).<p><small><i>Examples:</i> assp, nobody</small></p>
-  <span class="negative"> requires ASSP restart</span>',undef,undef,'msg007460','msg007461'],
-['ChangeRoot','Change Root',40,\&textinput,'','(.*)',undef,'The new root directory to which ASSP should chroot (*nix only). If blank, no chroot jail will be used. Note: if you use this feature, be sure to copy or link the etc/protocols file in your chroot jail.<br />
-  <span class="negative"> requires ASSP restart</span>',undef,undef,'msg007470','msg007471'],
-['setFilePermOnStart','Set ASSP File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, ASSP sets the permission of all ASSP- files and directories at startup to full (0777) - without any function on windows systems!',undef,undef,'msg007480','msg007481'],
-['checkFilePermOnStart','Check ASSP File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, ASSP checks the permission of all ASSP- files and directories at startup - all files must be writable for the running job - the minimum permission is 0600 - without any function on windows systems!',undef,undef,'msg007490','msg007491'],
-['AutoRestart','Automatic Restart after Exception',0,\&checkbox,'','(.*)',undef,'If ASSP detects a main exception and it runs not as service or daemon, it will try to restart it self automatically!  If running as daemon on nix/MAC , ASSP uses the action defined in AsADaemon to restart.',undef,undef,'msg007500','msg007501'],
-['AutoRestartAfterCodeChange','Automatic Restart ASSP on new or changed Script',20,\&textinput,'','^(|immed|[1-9]|1[0-9]|2[0-3])$',undef,'If selected, ASSP will restart it self, if it detects a new or changed running script. An automatic restart will not be done, if ASSP is not running as a service on windows or as daemon on linux/MAC, and AutoRestartCmd is not configured. If running as daemon on linux/MAC ( AsADaemon ) ASSP simply ends - you have to restart assp from your daemon script. Leave this field empty to disable the feature. Possible values are \'immed and 1...23\' . If set to \'immed\', assp will restart within some seconds after a detected code change. If set to \'1...23\' the restart will be scheduled to that hour. A restart at 00:00 is not supported.',undef,undef,'msg007510','msg007511'],
-['AutoUpdateASSP','Auto Update the Running Script (spambox.pl)','0:no auto update|1:download only|2:download and install',\&listbox,'0','(.*)','ConfigChangeAutoUpdate',
+  <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007460','msg007461'],
+['ChangeRoot','Change Root',40,\&textinput,'','(.*)',undef,'The new root directory to which SPAMBOX should chroot (*nix only). If blank, no chroot jail will be used. Note: if you use this feature, be sure to copy or link the etc/protocols file in your chroot jail.<br />
+  <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007470','msg007471'],
+['setFilePermOnStart','Set SPAMBOX File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, SPAMBOX sets the permission of all SPAMBOX- files and directories at startup to full (0777) - without any function on windows systems!',undef,undef,'msg007480','msg007481'],
+['checkFilePermOnStart','Check SPAMBOX File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, SPAMBOX checks the permission of all SPAMBOX- files and directories at startup - all files must be writable for the running job - the minimum permission is 0600 - without any function on windows systems!',undef,undef,'msg007490','msg007491'],
+['AutoRestart','Automatic Restart after Exception',0,\&checkbox,'','(.*)',undef,'If SPAMBOX detects a main exception and it runs not as service or daemon, it will try to restart it self automatically!  If running as daemon on nix/MAC , SPAMBOX uses the action defined in AsADaemon to restart.',undef,undef,'msg007500','msg007501'],
+['AutoRestartAfterCodeChange','Automatic Restart SPAMBOX on new or changed Script',20,\&textinput,'','^(|immed|[1-9]|1[0-9]|2[0-3])$',undef,'If selected, SPAMBOX will restart it self, if it detects a new or changed running script. An automatic restart will not be done, if SPAMBOX is not running as a service on windows or as daemon on linux/MAC, and AutoRestartCmd is not configured. If running as daemon on linux/MAC ( AsADaemon ) SPAMBOX simply ends - you have to restart assp from your daemon script. Leave this field empty to disable the feature. Possible values are \'immed and 1...23\' . If set to \'immed\', assp will restart within some seconds after a detected code change. If set to \'1...23\' the restart will be scheduled to that hour. A restart at 00:00 is not supported.',undef,undef,'msg007510','msg007511'],
+['AutoUpdateSPAMBOX','Auto Update the Running Script (spambox.pl)','0:no auto update|1:download only|2:download and install',\&listbox,'0','(.*)','ConfigChangeAutoUpdate',
  'No action will be done if \'no auto update\' is selected. You\'ll get a hint in the GUI (top) and a log line will be written, if a new version is availabe at the download location.<br />
   If \'download only\' is selected and a new assp version is available, this new version will be downloaded to the directory ' . $base . '/download (spambox.pl) and the syntax will be checked. The still running script will be saved version numbered to the download directory.<br />
   If \'download and install\' is selected, in addition the still running script will be replaced by the new version.<br />
   Configure ( AutoRestartAfterCodeChange ), if you want the new version to become the active running script.<br />
   If this value is changed to \'download and install\', the autoupdate procedure will be scheduled immediately.<br />
-  If set, ASSP (on windows systems with ActivePerl installations) will search for updated Perl modules in all registered PPM repositories &nbsp;&nbsp;<input type="button" value="new available perl modules" onclick="javascript:popFileEditor(\'notes/avail_perl_modules.txt\',5);" /><br />
+  If set, SPAMBOX (on windows systems with ActivePerl installations) will search for updated Perl modules in all registered PPM repositories &nbsp;&nbsp;<input type="button" value="new available perl modules" onclick="javascript:popFileEditor(\'notes/avail_perl_modules.txt\',5);" /><br />
   The installation of some modules could require manual configuration and the installation fails or an upgrade is not recommended. In this case put the case sensitive module names (one per line) in the following file. &nbsp;&nbsp;<input type="button" value="never upgrade these modules" onclick="javascript:popFileEditor(\'files/noupgrade.txt\',1);" /><br />
-  If this value is set to \'download and install\', ASSP will try an autoupdate of the new available modules. It is possible, that some modules could not be installed, because the XS module parts are still in use. In this case follow the instruction - click the "new available perl modules" button above. To disable the automatic Perl module update - set "noModuleAutoUpdate" below.<br />
+  If this value is set to \'download and install\', SPAMBOX will try an autoupdate of the new available modules. It is possible, that some modules could not be installed, because the XS module parts are still in use. In this case follow the instruction - click the "new available perl modules" button above. To disable the automatic Perl module update - set "noModuleAutoUpdate" below.<br />
   Click this button to see the log file for the updated modules&nbsp;&nbsp;<input type="button" value="module upgrade log" onclick="javascript:popFileEditor(\'notes/upgraded_Perl_Modules.log\',1);" /><br />
   The perl module <a href="http://search.cpan.org/dist/Compress-Zlib/" rel="external">Compress::Zlib</a> is required to use this feature.',undef,undef,'msg008810','msg008811'],
-['noModuleAutoUpdate','No Automatic Perl Module update',0,\&checkbox,'','(.*)',undef,'If set, ASSP will skip the automatic Perl module update.',undef,undef,'msg007900','msg007901'],
-['AutoRestartCmd','OS-shell command for AutoRestart',100,\&textinput,'','(.*)',undef,'The OS level shell-command that is used to autorestart ASSP, if it runs not as a service or daemon! A possible value for your system is:<br /><font color=blue>'.$dftrestartcmd.'</font><br />Leave this field blank, if ASSP runs inside an external loop (inside the OS like assp.sh or assp.cmd). If running on NIX systems and runAsUser and/or runAsGroup is used, don\'t forget to switch back to root permissions in the script!',undef,undef,'msg007520','msg007521'],
+['noModuleAutoUpdate','No Automatic Perl Module update',0,\&checkbox,'','(.*)',undef,'If set, SPAMBOX will skip the automatic Perl module update.',undef,undef,'msg007900','msg007901'],
+['AutoRestartCmd','OS-shell command for AutoRestart',100,\&textinput,'','(.*)',undef,'The OS level shell-command that is used to autorestart SPAMBOX, if it runs not as a service or daemon! A possible value for your system is:<br /><font color=blue>'.$dftrestartcmd.'</font><br />Leave this field blank, if SPAMBOX runs inside an external loop (inside the OS like assp.sh or assp.cmd). If running on NIX systems and runAsUser and/or runAsGroup is used, don\'t forget to switch back to root permissions in the script!',undef,undef,'msg007520','msg007521'],
 ['RestartEvery','Restart Timeout',10,\&textinput,'0','(\d+)','configChangeRestartEvery',
-  'ASSP will automatically terminate and restart after this many seconds. Use this setting to periodically reload configuration data, combat potential memory leaks, or perform shutdown/startup processes. This will only work properly if ASSP runs as a Windows service or in a script that restarts it after it stops or AutoRestartCmd is configured. Alternative to this field you can use ReStartSchedule, to schedule restarts.',undef,undef,'msg007530','msg007531'],
-['ReStartSchedule','Schedule Cron time for ASSP Restart <sup>s</sup>',50,\&textinput,'noschedule','^((?:'.$ScheduleRe.'(?:\|'.$ScheduleRe.')*)|noschedule)$','configChangeRSRBSched','If <b>not</b> set to "noschedule" (noschedule is default), ASSP uses scheduled times to shutdown or restart ( AutoRestartCmd )! The syntax is the same like in <a href="http://en.wikipedia.org/wiki/Cron" rel="external">"Vixie" cron</a>! To disable this Scheduler leave this field blank!<b> Never write quotes in to this field!</b><br />
+  'SPAMBOX will automatically terminate and restart after this many seconds. Use this setting to periodically reload configuration data, combat potential memory leaks, or perform shutdown/startup processes. This will only work properly if SPAMBOX runs as a Windows service or in a script that restarts it after it stops or AutoRestartCmd is configured. Alternative to this field you can use ReStartSchedule, to schedule restarts.',undef,undef,'msg007530','msg007531'],
+['ReStartSchedule','Schedule Cron time for SPAMBOX Restart <sup>s</sup>',50,\&textinput,'noschedule','^((?:'.$ScheduleRe.'(?:\|'.$ScheduleRe.')*)|noschedule)$','configChangeRSRBSched','If <b>not</b> set to "noschedule" (noschedule is default), SPAMBOX uses scheduled times to shutdown or restart ( AutoRestartCmd )! The syntax is the same like in <a href="http://en.wikipedia.org/wiki/Cron" rel="external">"Vixie" cron</a>! To disable this Scheduler leave this field blank!<b> Never write quotes in to this field!</b><br />
 This requires an installed <a href="http://search.cpan.org/search?query=Schedule::Cron" rel="external">Schedule::Cron</a> module in PERL.<br />
 <br /><b>Time and Date specification</b><br />
 <br />
@@ -3619,7 +3619,7 @@ The time and date fields are (taken mostly from "Vixie" cron):<br />
 <tr><td>day of month</td><td>1-31</td></tr>
 <tr><td>month</td><td>1-12 (or as names)</td></tr>
 <tr><td>day of week</td><td>0-7 (0 or 7 is Sunday, or as names )</td></tr>
-<tr><td>seconds</td><td>0-59 (optional) <b>not supported inside ASSP !!!</b></td></tr>
+<tr><td>seconds</td><td>0-59 (optional) <b>not supported inside SPAMBOX !!!</b></td></tr>
 </table>
 <br />
  A field may be an asterisk (*), which always stands for
@@ -3668,14 +3668,14 @@ Examples:<br />
 <br />
 In addition, ranges or lists of names are allowed.<br />
 If you want to define multiple entries separate them by "|"',undef,undef,'msg007540','msg007541'],
-['MemoryUsageLimit','Memory Limit in MB that ASSP could use',40,\&textinput,'','^(\d+|)$',undef,
+['MemoryUsageLimit','Memory Limit in MB that SPAMBOX could use',40,\&textinput,'','^(\d+|)$',undef,
  'The memory limit in megabyte the assp process could use at maximum on your system. Set this to empty or zero to disable the feature. The check is done using the schedule defined in MemoryUsageCheckSchedule . If the assp process uses more memory than the limit at a scheduled time and assp is able to restart it self - a restart will be done within 15 seconds. The user running assp must have read access to /proc on nix systems or must have read access to the WMI provider on windows systems!',undef,undef,'msg009950','msg009951'],
-['MemoryUsageCheckSchedule','Schedule(s) to check the ASSP process memory usage <sup>s</sup>',40,\&textinput,'0-59/10 * * * *','^((?:'.$ScheduleRe.'(?:\|'.$ScheduleRe.')*)|)$','configChangeSched',
+['MemoryUsageCheckSchedule','Schedule(s) to check the SPAMBOX process memory usage <sup>s</sup>',40,\&textinput,'0-59/10 * * * *','^((?:'.$ScheduleRe.'(?:\|'.$ScheduleRe.')*)|)$','configChangeSched',
  'The schedule(s) that is used to check the current memory usage of the assp process compared to the MemoryUsageLimit. Default value is (0-59/10 * * * *), which means every 10 minutes. This requires an installed <a href="http://search.cpan.org/search?query=Schedule::Cron" rel="external">Schedule::Cron</a> module in PERL.',undef,undef,'msg009960','msg009961'],
-['myName','My Name',40,\&textinput,'ASSP.nospam','('.$EmailDomainRe.')',undef,'ASSP will identify itself by this name in the email "Received:" header and in the helo when sending report-replies. Usually the fully qualified domain name of the host.<p><small><i>Examples:</i> assp.mydomain.com, ASSP.nospam</small></p>',undef,undef,'msg007550','msg007551'],
-['myNameAlso','Additional My-Name-Definitions',40,\&textinput,'','^('.$EmailDomainRe.'(?:[\|\s,]+'.$EmailDomainRe.')*|)$',undef,'If myName was changed or you use shared folders (multiple ASSP) for the corpus files, define the old or other host names here - separate multiple entries by pipe, space or comma. ASSP will use this host names in addition to myName, to detect the received headerlines while the rebuildspamdb is running and in the mail analyzer.',undef,undef,'msg007880','msg007881'],
+['myName','My Name',40,\&textinput,'SPAMBOX.nospam','('.$EmailDomainRe.')',undef,'SPAMBOX will identify itself by this name in the email "Received:" header and in the helo when sending report-replies. Usually the fully qualified domain name of the host.<p><small><i>Examples:</i> assp.mydomain.com, SPAMBOX.nospam</small></p>',undef,undef,'msg007550','msg007551'],
+['myNameAlso','Additional My-Name-Definitions',40,\&textinput,'','^('.$EmailDomainRe.'(?:[\|\s,]+'.$EmailDomainRe.')*|)$',undef,'If myName was changed or you use shared folders (multiple SPAMBOX) for the corpus files, define the old or other host names here - separate multiple entries by pipe, space or comma. SPAMBOX will use this host names in addition to myName, to detect the received headerlines while the rebuildspamdb is running and in the mail analyzer.',undef,undef,'msg007880','msg007881'],
 ['myHelo','My Helo','80',\&textinput,'','(.*)',undef,
- 'How ASSP will identify itself when connecting to the target MTA.<br />
+ 'How SPAMBOX will identify itself when connecting to the target MTA.<br />
   The values used for incoming and outgoing/local mails are separated by "|" - for example:<br /><br />
   SENDERHELO - IP - MYNAME - FQDN | MYNAME<br /><br />
   The left part "SENDERHELO - IP - MYNAME - FQDN" is used for incoming mails, the right part "MYNAME" is used for outgoing mails.<br />
@@ -3689,10 +3689,10 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
   SENDERHELO - the helo text received from the connected host<br /><br />',undef,undef,'msg007560','msg007561'],
 
 ['HideIPandHelo','Hide IP and/or Helo',40,\&textinput,'','(.*)',undef,'Replace any of these information ( ip=127.0.0.1 helo=anyhost.local ) in our received header for outgoing mails. Use the syntax ip=127.0.0.1 and/or helo=anyhost.local .',undef,undef,'msg009830','msg009831'],
-['myGreeting','Override the Server SMTP Greeting',80,\&textinput,'','(.*)',undef,'Send this SMTP greeting (eg. 220 MYNAME is ready - using ASSP VERSION) instead of your MTA\'s SMTP greeting to the client. If not defined (default), the MTA\'s greeting will be sent to the client. The literal MYNAME will be replaced with myName and the literal VERSION will be replaced by the full version string of assp. If the starting \'220 \' is not defined, assp will add it to the greeting.',undef,undef,'msg010260','msg010261'],
-['spamboxCfg','spambox.cfg*',40,\&textnoinput,'file:spambox.cfg','(.*)','configUpdateASSPCfg','For internal use only - it is spambox.cfg file. Do not change this value.',undef,undef,'msg007570','msg007571'],
-['AutoReloadCfg','Automatic Reload ConfigFile',0,\&checkbox,'','(.*)','configChangeAutoReloadCfg','If selected and the spambox.cfg file is changed externally, ASSP will reload the configuration from the file automatically.',undef,undef,'msg007580','msg007581'],
-['spamboxCfgVersion','spambox.cfg version',40,\&textnoinput,'','(.*)',undef,'ASSP will identify the spambox.cfg file. Do not change this.',undef,undef,'msg007590','msg007591'],
+['myGreeting','Override the Server SMTP Greeting',80,\&textinput,'','(.*)',undef,'Send this SMTP greeting (eg. 220 MYNAME is ready - using SPAMBOX VERSION) instead of your MTA\'s SMTP greeting to the client. If not defined (default), the MTA\'s greeting will be sent to the client. The literal MYNAME will be replaced with myName and the literal VERSION will be replaced by the full version string of assp. If the starting \'220 \' is not defined, assp will add it to the greeting.',undef,undef,'msg010260','msg010261'],
+['spamboxCfg','spambox.cfg*',40,\&textnoinput,'file:spambox.cfg','(.*)','configUpdateSPAMBOXCfg','For internal use only - it is spambox.cfg file. Do not change this value.',undef,undef,'msg007570','msg007571'],
+['AutoReloadCfg','Automatic Reload ConfigFile',0,\&checkbox,'','(.*)','configChangeAutoReloadCfg','If selected and the spambox.cfg file is changed externally, SPAMBOX will reload the configuration from the file automatically.',undef,undef,'msg007580','msg007581'],
+['spamboxCfgVersion','spambox.cfg version',40,\&textnoinput,'','(.*)',undef,'SPAMBOX will identify the spambox.cfg file. Do not change this.',undef,undef,'msg007590','msg007591'],
 ['ConfigChangeSchedule','Schedule Configuration Changes*',40,\&textinput,'','(file:.+|)','configChangeConfigSched',
  'Use this option to schedule configuration changes. You must use the file option like \'file:files/configchangeschedule.txt\' to define schedules - an empty value disables this feature.<br />
  Define one schedule per line - comments are not allowed in a schedule definition line!<br />
@@ -3717,7 +3717,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
 ['proxyuser','Proxy User',20,\&passinput,'','(\S*)',undef,'The Proxy-UserName that is used to authenticate to the proxy.',undef,undef,'msg007610','msg007611'],
 ['proxypass','Proxy Password',20,\&passinput,'','(\S*)',undef,'The password for Proxy-UserName that is used to authenticate to the proxy.',undef,undef,'msg007620','msg007621'],
 ['webAdminPort','Web Admin Port',20,\&textinput,55555,$GUIHostPort,'ConfigChangeAdminPort',
-  'The port on which ASSP will listen for http connections to the web administration interface. If you change this, after you click Apply you must change the URL on your browser to reconnect. You may also supply an IP address or hostname to limit connections to a specific interface. Separate multiple entries by pipe "|"!<p><small><i>Examples:</i> 55555, 192.168.0.5:12345, myhost:12345, 192.168.0.5:22345|myhost:12345</small></p>',undef,undef,'msg007630','msg007631'],
+  'The port on which SPAMBOX will listen for http connections to the web administration interface. If you change this, after you click Apply you must change the URL on your browser to reconnect. You may also supply an IP address or hostname to limit connections to a specific interface. Separate multiple entries by pipe "|"!<p><small><i>Examples:</i> 55555, 192.168.0.5:12345, myhost:12345, 192.168.0.5:22345|myhost:12345</small></p>',undef,undef,'msg007630','msg007631'],
 ['enableWebAdminSSL','Use https instead of http',0,\&checkbox,'','(.*)','ConfigChangeEnableAdminSSL',
  'If selected the web admin interface will be only accessible via https. If you change this, after you click Apply you must change the URL on your browser to reconnect.
   This requires an installed <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> module in PERL.<br />
@@ -3734,12 +3734,12 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
   127.0.0.1|172.16.',undef,'7','msg007660','msg007661'],
 ['httpRequireCookies','HTTP and HTTPS require enabled browser cookies',0,\&checkbox,'1','(.*)',undef,
  'Cookie based http session ID\'s are used by assp to handle different requests from the same IP (eg behind NAT). Switch this off, if you are unable to use cookies in your browser. If switched off, a security hole is opened for connection that are using NAT - it could be possible that a second workstation (behind NAT) is able to login to the GUI, without user credentials if the same OS and browser version is used.',undef,undef,'msg009000','msg009001'],
-['webStatHealthyResp','Status Response Literal for a Healthy State of ASSP',25,\&textinput,'healthy','(.+)',undef,
-  'This option must be set and it must be different to webStatNotHealthyResp. This literal will be given back in stat requests, if ASSP is working healthy.',undef,undef,'msg009260','msg009261'],
-['webStatNotHealthyResp','Status Response Literal for a Not Healthy State of ASSP',25,\&textinput,'not healthy','(.+)',undef,
-  'This option must be set and it must be different to webStatHealthyResp. This literal will be given back in stat requests, if ASSP is working not healthy.',undef,undef,'msg009270','msg009271'],
+['webStatHealthyResp','Status Response Literal for a Healthy State of SPAMBOX',25,\&textinput,'healthy','(.+)',undef,
+  'This option must be set and it must be different to webStatNotHealthyResp. This literal will be given back in stat requests, if SPAMBOX is working healthy.',undef,undef,'msg009260','msg009261'],
+['webStatNotHealthyResp','Status Response Literal for a Not Healthy State of SPAMBOX',25,\&textinput,'not healthy','(.+)',undef,
+  'This option must be set and it must be different to webStatHealthyResp. This literal will be given back in stat requests, if SPAMBOX is working not healthy.',undef,undef,'msg009270','msg009271'],
 ['webStatPort','Raw Statistics Port',20,\&textinput,55553,$GUIHostPort,'ConfigChangeStatPort',
-  'The port on which ASSP will listen for http or telnet connections to the statistics interface. You may also supply an IP address to limit connections to a specific interface. Only one value is supported!<br />
+  'The port on which SPAMBOX will listen for http or telnet connections to the statistics interface. You may also supply an IP address to limit connections to a specific interface. Only one value is supported!<br />
    The stats are available via browser or telnet (or telnet similar socket). Using telnet, press ENTER two times to get the healthy state (\' $webStatHealthyResp [CRLF]\' or \' $webStatNotHealthyResp [CRLF]\' in a single line), this is the recommended methods to get the \'UP\'-state of assp from nagios or any other external script.<br />
    Type \'stat[ENTER][ENTER]\' to get the STATS in raw text where each line is terminated with \'[CR]LF\' (CR is send in any case, if the request contains CR).<br />
    The HTML output are LF terminated STAT lines.<p><small><i>Examples:</i> 55553, 192.168.0.5:12345</small></p>',undef,undef,'msg007670','msg007671'],
@@ -3783,45 +3783,45 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
 ['MaillogTailBytes','Maillog Tail Bytes',10,\&textinput,10000,'(\d+)',undef,
   'The number of bytes that will be shown when the end of the maillog is viewed. The default value is 10000.',undef,undef,'msg007760','msg007761'],
 ['CleanCacheEvery','Cache Cleaning Interval <sup>s</sup>',40,\&textinput,'6',$ScheduleGUIRe,'configChangeSched',
-  'This period (in hours) determines how frequently ASSP does cache-housekeeping.',undef,undef,'msg007780','msg007781'],
+  'This period (in hours) determines how frequently SPAMBOX does cache-housekeeping.',undef,undef,'msg007780','msg007781'],
 ['SaveStatsEvery','Statistics Save Interval <sup>s</sup>',40,\&textinput,'30',$ScheduleGUIRe,'configChangeSched',
-  'This period (in minutes) determines how frequently ASSP statistics are written to a local file.',undef,undef,'msg007790','msg007791'],
+  'This period (in minutes) determines how frequently SPAMBOX statistics are written to a local file.',undef,undef,'msg007790','msg007791'],
 ['totalizeSpamStats','Upload Consolidated Spam Statistics',0,\&checkbox,1,'(.*)',undef,
- 'ASSP will upload its statistics to be consolidated with the <a href="http://assp.sourceforge.net/cgi-bin/assp_stats?stats" rel="external">global ASSP totals</a>. This is a great marketing tool for the ASSP project &mdash; please do not disable it unless you have a good reason to do so. No private information is being disclosed by this upload.',undef,undef,'msg007800','msg007801'],
+ 'SPAMBOX will upload its statistics to be consolidated with the <a href="http://assp.sourceforge.net/cgi-bin/assp_stats?stats" rel="external">global SPAMBOX totals</a>. This is a great marketing tool for the SPAMBOX project &mdash; please do not disable it unless you have a good reason to do so. No private information is being disclosed by this upload.',undef,undef,'msg007800','msg007801'],
 ['enableGraphStats','Enable Graphical Statistics Collection',0,\&checkbox,0,'(.*)',undef,
- 'ASSP will collect statistical data in files located in the \'/logs\' folder (scoreGraphStats-YYYY-MM.txt , statGraphStats-YYYY-MM.txt). If data are collected and the module lib/ASSP_SVG.pm is installed and the files images/stat.gplot, images/svg_style.css, images/svg_defs.svg and images/svg.js are installed and your browser supports SVG, assp will show graphical statistic data, if you click on a line in the \'Info and Stats\' view.<br />
+ 'SPAMBOX will collect statistical data in files located in the \'/logs\' folder (scoreGraphStats-YYYY-MM.txt , statGraphStats-YYYY-MM.txt). If data are collected and the module lib/SPAMBOX_SVG.pm is installed and the files images/stat.gplot, images/svg_style.css, images/svg_defs.svg and images/svg.js are installed and your browser supports SVG, assp will show graphical statistic data, if you click on a line in the \'Info and Stats\' view.<br />
  If baysConf is configured, assp will also collect statistical data about the Bayesian and HMM confidence distribution - the file names are confidenceGraphStats-YYYY-MM.txt.<br />
  It is recommended to set \'SaveStatsEvery\' to a value of 5 or 10 minutes, if this option is enabled!<br />
  Keep in mind that assp will NOT delete any of the \'*GraphStats...txt\'-files. If you don\'t need some of that files anymore, remove them manually!',undef,undef,'msg010000','msg010001'],
 ['ReloadOptionFiles','Reload Option Files Interval <sup>s</sup>',40,\&textinput,'300',$ScheduleGUIRe,'configChangeSched',
-  'If set not to zero, ASSP reloads configuration option files (file:.....) every this many seconds if they have changed. It is not recommended (and could make ASSP unavailable) to use rsync or any external tool to snychronize caches and list permanently. If you need to snychronize data between ASSP installations, you better use a database of your choice!',undef,undef,'msg007810','msg007811'],
+  'If set not to zero, SPAMBOX reloads configuration option files (file:.....) every this many seconds if they have changed. It is not recommended (and could make SPAMBOX unavailable) to use rsync or any external tool to snychronize caches and list permanently. If you need to snychronize data between SPAMBOX installations, you better use a database of your choice!',undef,undef,'msg007810','msg007811'],
 ['OrderedTieHashTableSize','Ordered-Tie Hash Table Size',10,\&textinput,10000,'(\d+)',undef,
- 'The number of entries allowed in the hash tables used by ASSP. This only belongs to Griplist if useDB4IntCache is not set. Larger numbers require more RAM but result in fewer disk hits. The default value is 10000. Adjust down to use less RAM.',undef,undef,'msg007820','msg007821'],
+ 'The number of entries allowed in the hash tables used by SPAMBOX. This only belongs to Griplist if useDB4IntCache is not set. Larger numbers require more RAM but result in fewer disk hits. The default value is 10000. Adjust down to use less RAM.',undef,undef,'msg007820','msg007821'],
 ['OutgoingBufSizeNew','Size of TCP/IP Buffer',10,\&textinput,10240000,'(\d+)',undef,
  'The default is 10240000 byte. Even more is better...',undef,undef,'msg007830','msg007831'],
 ['useDB4IntCache','Use BerkeleyDB for Internal Caches',0,\&checkbox,'','(.*)','configChangeDB',
-  'ASSP uses some internal caches that could grow to a large number of entries. Switch this on, if you want ASSP to use less memory and be a little slower. The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature.',undef,undef,'msg007840','msg007841'],
+  'SPAMBOX uses some internal caches that could grow to a large number of entries. Switch this on, if you want SPAMBOX to use less memory and be a little slower. The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature.',undef,undef,'msg007840','msg007841'],
 ['ALARMtimeout','Module Call Timeout',5,\&textinput,10,'(\d+)',undef,'Global Timeout for SPF checks. The default is 10 seconds.
   <hr /><hr /><font color=red>Thread Control - be careful changing the following green options!</font><hr />',undef,undef,'msg007850','msg007851'],
-['NumComWorkers','Number of SMTP-Threads',2,\&textinput,5,'^([12][0-9]|[2-9])$','configChangeNumThreads','Number of SMTP-Threads to be used! Typical and default is 5. 10 should be enough for 200.000 connections a day. 15 should be the absolute maximum. Values above 7 will mostly not increase performance. Configurable values are between 2 and 29. Restart ASSP if you changed this and you are using any database connection! A restart of assp is required if tis value was increased.','Basic',undef,'msg007860','msg007861'],
+['NumComWorkers','Number of SMTP-Threads',2,\&textinput,5,'^([12][0-9]|[2-9])$','configChangeNumThreads','Number of SMTP-Threads to be used! Typical and default is 5. 10 should be enough for 200.000 connections a day. 15 should be the absolute maximum. Values above 7 will mostly not increase performance. Configurable values are between 2 and 29. Restart SPAMBOX if you changed this and you are using any database connection! A restart of assp is required if tis value was increased.','Basic',undef,'msg007860','msg007861'],
 ['ReservedOutboundWorkers','Reserved Number of Outbound-SMTP-Threads on relayPort',2,\&textinput,0,'(\d\d?)',undef,'Number of SMTP-Threads to be reserved for relayed (outbound) connections on relayPort ! This number of Threads will be exclusive reserved for connections on relayPort . For example: NumComWorkers=7 and ReservedOutboundWorkers=2 - mails on listenPort , listenPort2 and listenPortSSL are using worker 1-5 and mails on relayPort using worker 7-1 ! If you are not using the relayPort, do not reserve any workers.','Basic',undef,'msg007870','msg007871'],
 ['autoRestartDiedThreads','automatically restart died threads',0,\&checkbox,'1','(.*)',undef,
   'If defined, a (for any reason) died thread will be automatically restarted!','Basic',undef,'msg007920','msg007921'],
-['MaxFinConWaitTime','Maximum time to wait for SMTP-Workers to finish connections',5,\&textinput,45,'^([1-5][0-9][0-9]|[1-9][0-9])$',undef,'The maximum time in seconds to wait for SMTP-Workers to finish connections, in case of a shutdown or restart of ASSP. Default is 45. Configurable values are 10 to 599.','Basic',undef,'msg007930','msg007931'],
+['MaxFinConWaitTime','Maximum time to wait for SMTP-Workers to finish connections',5,\&textinput,45,'^([1-5][0-9][0-9]|[1-9][0-9])$',undef,'The maximum time in seconds to wait for SMTP-Workers to finish connections, in case of a shutdown or restart of SPAMBOX. Default is 45. Configurable values are 10 to 599.','Basic',undef,'msg007930','msg007931'],
 ['MonitorMainThread','Monitor the MainThread',0,\&checkbox,'1','(.*)',undef,
   'If defined, the MainThread will be monitored for healthy by the MaintThread (Worker 10000)!','Basic',undef,'msg007940','msg007941'],
 ['EnableHighPerformance','Enable Higher Performance','0:off|3000:slightly|1000:medium|500:high|10:very high',\&listbox,'0','(.*)',undef,
   'If set, the SMTP-Worker-Threads will get new pending connections much faster - using less wait states. The speed to interrupt the workers by the MainThread is increased. Using this feature will increase the CPU usage of the system!','Basic',undef,'msg009700','msg009701'],
-['ThreadCycleTime','thread cycle time',5,\&textinput,3000,'(\d+)',undef,'Time in microseconds (for SMTP workers and MainThread) to give each other thread to run in high CPU-workload conditions. Default value is 3000, typical values are between 10 and 9000. You can set this to 0, if your OS honors system-yield-calls (0 is not recommended on Windows OS)! A higher value will reduce CPU usage but cause ASSP to run more slowly!','Basic',undef,'msg007950','msg007951'],
-['MaintThreadCycleTime','MaintenanceThread cycle time',5,\&textinput,3000,'(\d+)',undef,'Time in microseconds (for MaintThread) to give each other thread to run in high CPU-workload conditions. Default value is 3000, typical values are between 10 and 9000. You can set this to 0, if your OS honors system-yield-calls (0 is not recommended on Windows OS)! A higher value will reduce CPU usage but cause ASSP to run more slowly!','Basic',undef,'msg007960','msg007961'],
-['RebuildThreadCycleTime','RebuildSpamDBThread cycle time',5,\&textinput,30,'(\d+)',undef,'Time in microseconds (for RebuildSpamDBThread) to give each other thread to run in high CPU-workload conditions. Default value is 30, typical values are between 10 and 1000. You can set this to 0, if your OS honors system-yield-calls (0 is not recommended on Windows OS) and your system is fast enough! A higher value will reduce CPU usage but cause ASSP to run more slowly!','Basic',undef,'msg007970','msg007971'],
+['ThreadCycleTime','thread cycle time',5,\&textinput,3000,'(\d+)',undef,'Time in microseconds (for SMTP workers and MainThread) to give each other thread to run in high CPU-workload conditions. Default value is 3000, typical values are between 10 and 9000. You can set this to 0, if your OS honors system-yield-calls (0 is not recommended on Windows OS)! A higher value will reduce CPU usage but cause SPAMBOX to run more slowly!','Basic',undef,'msg007950','msg007951'],
+['MaintThreadCycleTime','MaintenanceThread cycle time',5,\&textinput,3000,'(\d+)',undef,'Time in microseconds (for MaintThread) to give each other thread to run in high CPU-workload conditions. Default value is 3000, typical values are between 10 and 9000. You can set this to 0, if your OS honors system-yield-calls (0 is not recommended on Windows OS)! A higher value will reduce CPU usage but cause SPAMBOX to run more slowly!','Basic',undef,'msg007960','msg007961'],
+['RebuildThreadCycleTime','RebuildSpamDBThread cycle time',5,\&textinput,30,'(\d+)',undef,'Time in microseconds (for RebuildSpamDBThread) to give each other thread to run in high CPU-workload conditions. Default value is 30, typical values are between 10 and 1000. You can set this to 0, if your OS honors system-yield-calls (0 is not recommended on Windows OS) and your system is fast enough! A higher value will reduce CPU usage but cause SPAMBOX to run more slowly!','Basic',undef,'msg007970','msg007971'],
 ['ThreadStackSize','Stack Size use by every Thread',5,\&textinput,0,'(\d+)',undef,'The stack size in MB that is used by every thread. Default is 0, which means to use the default system stack size. 16 MB is the default system stack size on windows platforms. This system value may differ on different platforms. To get the default stack size on linux use the shell command "ulimit -a". Try to increase this value, if you get "out of memory" errors while running assp. Changing this value requires an assp restart to take effect.','Basic',undef,'msg009030','msg009031'],
 ['IOEngine','Use This IO Engine','0:IO::Poll|1:IO::Select',\&listbox,0,'(.*)',undef,
-  'Depending on your operating system and your Perl version it could be necessary to use the non default IOEngine \'IO::Select\'. Try this if you see unexpected early closed connections in the log. You have to restart ASSP, if you have changed this value!','Basic',undef,'msg007980','msg007981'],
-['MinPollTime','Minimum Poll/Select Wait Time',5,\&textinput,2,'(\d+)',undef,'The time in milliseconds that ASSP will at least wait for IO::Poll/IO::Select events! A higher value will reduce CPU usage but cause ASSP to run more slowly! Default is 2.','Basic',undef,'msg007990','msg007991'],
-['WorkerCPUPriority','CPU priority for SMTP-Threads',5,\&textinput,0,'(0|1|2)','configChangeWorkerPriority','Set the priority for the Workers in relation to all other processes/threads on the system. Than higher the value - than lower the priority. Default is 0 (system default is 0). Possible values are 0,1 and 2. This requires installed <a href="http://search.cpan.org/search?query=Thread::State" rel="external">Thread::State</a> module. It is recommended to run the Workers on lower priority, if ASSP has to process most of the time a large number of mails at one moment ( number of mails &gt; NumComWorkers ).','Basic',undef,'msg008000','msg008001'],
+  'Depending on your operating system and your Perl version it could be necessary to use the non default IOEngine \'IO::Select\'. Try this if you see unexpected early closed connections in the log. You have to restart SPAMBOX, if you have changed this value!','Basic',undef,'msg007980','msg007981'],
+['MinPollTime','Minimum Poll/Select Wait Time',5,\&textinput,2,'(\d+)',undef,'The time in milliseconds that SPAMBOX will at least wait for IO::Poll/IO::Select events! A higher value will reduce CPU usage but cause SPAMBOX to run more slowly! Default is 2.','Basic',undef,'msg007990','msg007991'],
+['WorkerCPUPriority','CPU priority for SMTP-Threads',5,\&textinput,0,'(0|1|2)','configChangeWorkerPriority','Set the priority for the Workers in relation to all other processes/threads on the system. Than higher the value - than lower the priority. Default is 0 (system default is 0). Possible values are 0,1 and 2. This requires installed <a href="http://search.cpan.org/search?query=Thread::State" rel="external">Thread::State</a> module. It is recommended to run the Workers on lower priority, if SPAMBOX has to process most of the time a large number of mails at one moment ( number of mails &gt; NumComWorkers ).','Basic',undef,'msg008000','msg008001'],
 ['asspCpuAffinity','Cpu Affinity for assp',20,\&textinput,'-1','(\-1|\d+(?:[, ]+\d+)*)','configChangeCpuAffinity','Set the Cpu Affinity for all threads . Default is -1 (for use all CPU\'s). Possible values are comma or space separated CPU numbers starting with zero (0) or -1 for all CPU\'s. This requires installed <a href="http://search.cpan.org/search?query=Sys::CpuAffinity" rel="external">Sys::CpuAffinity</a> module. This feature will possibly not work on MacOS and OpenBSD and on any OS, if the system contains more than 32 CPU\'s.','Basic',undef,'msg009880','msg009881'],
-['PreAllocMem','pre allocate memory for every mail',5,\&textinput,100000,'(\d+)',undef,'ASSP pre-allocates this number of bytes in mainstorage two times (in/out) for every mail to avoid memoryfracmentation (particularly in ASSP long run conditions). The memory will be allocated, if the DATA command is received from the server. Default is 100000 - this is enough for most of the mails. If ASSP receives the SIZE command from the server, the pre-allocation-memory will be calculated on that value. Question: Is it better to increase this value? Answer: Yes, it is - but be careful, this may cause ASSP running in out of memory errors!','Basic',undef,'msg008010','msg008011'],
+['PreAllocMem','pre allocate memory for every mail',5,\&textinput,100000,'(\d+)',undef,'SPAMBOX pre-allocates this number of bytes in mainstorage two times (in/out) for every mail to avoid memoryfracmentation (particularly in SPAMBOX long run conditions). The memory will be allocated, if the DATA command is received from the server. Default is 100000 - this is enough for most of the mails. If SPAMBOX receives the SIZE command from the server, the pre-allocation-memory will be calculated on that value. Question: Is it better to increase this value? Answer: Yes, it is - but be careful, this may cause SPAMBOX running in out of memory errors!','Basic',undef,'msg008010','msg008011'],
 ['FreeupMemoryGarbage','Freeup Memory Garbage',0,\&checkbox,'1','(.*)',undef,
   'If defined, all Threads will try to recover memory every five minutes!','Basic',undef,'msg008020','msg008021'],
 ['ConnectionTransferTimeOut','Connection Transfer Timeout',5,\&textinput,30,'(\d+)',undef,'Global Timeout for MainThread to transfer a connection to any Worker. If no Worker is able to take the new SMTP-connection (for any reason), the new connection will be dropped! The default is 30 seconds.','Basic',undef,'msg008030','msg008031'],
@@ -3833,7 +3833,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
   <div class="menuLevel1">Notes On Server Setup</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/myserver.txt\',3);" />',undef,undef,'msg008050','msg008051'],
 
 [0,0,0,'heading','Rebuild Spamdb'],
-['RebuildSchedule','Schedule Cron time for RebuildSpamdb',50,\&textinput,'noschedule','^((?:'.$ScheduleRe.'(?:\|'.$ScheduleRe.')*)|noschedule)$','configChangeRSRBSched','If <b>not</b> set to "noschedule" (noschedule is default) , ASSP uses scheduled times to run the RebuildSpamdb! The syntax is the same like in <a href="http://en.wikipedia.org/wiki/Cron" rel="external">"Vixie" cron</a>! To disable the Scheduler write "noschedule"!<b> Never write quotes in to this field!</b><br />
+['RebuildSchedule','Schedule Cron time for RebuildSpamdb',50,\&textinput,'noschedule','^((?:'.$ScheduleRe.'(?:\|'.$ScheduleRe.')*)|noschedule)$','configChangeRSRBSched','If <b>not</b> set to "noschedule" (noschedule is default) , SPAMBOX uses scheduled times to run the RebuildSpamdb! The syntax is the same like in <a href="http://en.wikipedia.org/wiki/Cron" rel="external">"Vixie" cron</a>! To disable the Scheduler write "noschedule"!<b> Never write quotes in to this field!</b><br />
 This requires an installed <a href="http://search.cpan.org/search?query=Schedule::Cron" rel="external">Schedule::Cron</a> module in PERL.<br />
 It is possible to define more than one scheduled time per day to keep the Bayesian and HMM databes up to date, but this is not required - use \'newReportedInterval\' instead.<br />
 If a file '.$base.'/rebuilddebug.txt exists, the rebuild task will write the debug output to this file.<br />
@@ -3853,7 +3853,7 @@ The time and date fields are (taken mostly from "Vixie" cron):<br />
 <tr><td>day of month</td><td>1-31</td></tr>
 <tr><td>month</td><td>1-12 (or as names)</td></tr>
 <tr><td>day of week</td><td>0-7 (0 or 7 is Sunday, or as names )</td></tr>
-<tr><td>seconds</td><td>0-59 (optional) <b>not supported inside ASSP !!!</b></td></tr>
+<tr><td>seconds</td><td>0-59 (optional) <b>not supported inside SPAMBOX !!!</b></td></tr>
 </table>
 <br />
  A field may be an asterisk (*), which always stands for
@@ -3917,18 +3917,18 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
  If you need to copy/move several files from outside assp in to the corpus and you want assp to process them immediately, copy/move the files in to the subfolder "error/.../newManuallyAdded".',undef,undef,'msg009870','msg009871'],
 ['MaxKeepDeleted','Max Days of Keep Deleted',5,\&textinput,0,'(\d+)',undef,
   'The maximum number in days deleted files in the bayesian collection folders ( spamlog , notspamlog ) will be kept. This is necessary when EmailBlockReport is used to handle the file and the file is meanwhile deleted. The list of files that are maked for deletion is stored in trashlist.db .',undef,undef,'msg008650','msg008651'],
-['autoCorrectCorpus','Automatic Corpus Correction',60,\&textinput,'0.6-1.4-4000-14','(\d\.\d\d?-\d\.\d\d?-(?:[4-9]\d{3}|\d{5,})-\d+|)',undef,'(Syntax: a.a[a]-b.b[b]-cccc-dd or empty - default is "0.6-1.4-4000-14") If the corpus norm (the weight between spamwords/hamwords) is less than "a" (0.6 - too much ham) or greater than "b" (1.4 - too much spam), assp will delete the excess (oldest) files from the corresponding folder ( spamlog , notspamlog ). ASSP will keep a minimum of "c" (4000) files in the folder and will never delete files that are younger than "d" (14) days. This cleanup will run at the end of the rebuildspamdb task. So the corrected file corpus will take effect at the next rebuildspamdb!<br />
+['autoCorrectCorpus','Automatic Corpus Correction',60,\&textinput,'0.6-1.4-4000-14','(\d\.\d\d?-\d\.\d\d?-(?:[4-9]\d{3}|\d{5,})-\d+|)',undef,'(Syntax: a.a[a]-b.b[b]-cccc-dd or empty - default is "0.6-1.4-4000-14") If the corpus norm (the weight between spamwords/hamwords) is less than "a" (0.6 - too much ham) or greater than "b" (1.4 - too much spam), assp will delete the excess (oldest) files from the corresponding folder ( spamlog , notspamlog ). SPAMBOX will keep a minimum of "c" (4000) files in the folder and will never delete files that are younger than "d" (14) days. This cleanup will run at the end of the rebuildspamdb task. So the corrected file corpus will take effect at the next rebuildspamdb!<br />
   If this value is defined, assp will use the middle value of "a" and "b" ((a+b)/2) as target corpusnorm and will try to reach this value, using (as many as possible) but only such a count of files in the folders spamlog and notspamlog as required!',undef,undef,'msg008980','msg008981'],
 ['RebuildFileTimeLimit','File Processing time Limit',30,\&textinput,'1 5','(\d+(?:\.\d+)?(?:(?:\s+|,)\d+(?:\.\d+)?)?)',undef,'(Syntax: a[.aa] b[.bb] - default is "1 5")<br />
    Define one, or two space or comma separated values.<br />
    If the first value is not zero and the processing time of a single corpus file exceeds the first value in seconds, this will be shown in the rebuild log.<br />
    If the second value is not zero and the processing time of a single corpus file exceeds the second value in seconds, the file will be moved to the folder "$base/rebuild_error" to prevent future runtime penalties.',undef,undef,'msg009620','msg009621'],
 ['RebuildNotify','Notification Email To',80,\&textinput,'','(.*)',undef,
-  'Email address(es) to which you want ASSP to send a notification email after the rebuild task is finished. The file rebuildrun.txt is included in this notification. Separate multiple entries by "|".',undef,undef,'msg008110','msg008111'],
+  'Email address(es) to which you want SPAMBOX to send a notification email after the rebuild task is finished. The file rebuildrun.txt is included in this notification. Separate multiple entries by "|".',undef,undef,'msg008110','msg008111'],
 ['RebuildTestMode','Run the Rebuild in Test Mode',0,\&checkbox,'','(.*)',undef,'If selected, all rebuildspamdb tasks will not populate the spamdb and hmmdb - and no data will be sent to the griplist-Server.',undef,undef,'msg009720','msg009721'],
 ['forceRebuildDowngrade','Keep rebuildspamdb.pm compatible to spambox.pl',0,\&checkbox,'1','(.*)',undef,'Keep rebuildspamdb.pm compatible to spambox.pl in case of an spambox.pl version downgrade.',undef,undef,'msg009840','msg009841'],
 ['RunRebuildNow','Run RebuildSpamdb now',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow',
-  'If selected, RebuildSpamdb will be started immediately.<br />' . "<input type=button value=\"Apply Changes and Run Rebuild SpamDB Now (if checked)\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['ASSPconfig'].theButtonRefresh.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />" .
+  'If selected, RebuildSpamdb will be started immediately.<br />' . "<input type=button value=\"Apply Changes and Run Rebuild SpamDB Now (if checked)\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['SPAMBOXconfig'].theButtonRefresh.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />" .
   '<hr /><div class="menuLevel1">Last Result Of Rebuildspamdb</div><input type="button" value="Last Run Rebuildspamdb" onclick="javascript:popFileEditor(\'rebuildrun.txt\',5);" />
   <hr /><div class="menuLevel1">Rebuildspamdb-debug-output - create the file to enable the debug mode - delete the file to stop the debug mode for the rebuildspamdb task</div><input type="button" value="Rebuildspamdb-debug-output" onclick="javascript:popFileEditor(\'rebuilddebug.txt\',3);" />
   <hr /><div class="menuLevel1">normfile - shows current:<br />
@@ -3937,11 +3937,11 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 
 [0,0,0,'heading','Char Conversions / TNEF'],
 ['inChrSetConv','inbound charset conversion table*',80,\&textinput,'','(\S*)','configChangeIC',
-  'If defined, characterset conversion for inbound mails will be done. For example: if your email server does not understand UTF-8, ASSP will convert the mail parts to the characterset of your choice. The rules specified here are used to convert text parts of inbound mails from one to another characterset.<p><small><i>Example:</i>UTF-8=>ISO-8859-1|ISO-8859-15=>ISO-8859-1</small></p>
+  'If defined, characterset conversion for inbound mails will be done. For example: if your email server does not understand UTF-8, SPAMBOX will convert the mail parts to the characterset of your choice. The rules specified here are used to convert text parts of inbound mails from one to another characterset.<p><small><i>Example:</i>UTF-8=>ISO-8859-1|ISO-8859-15=>ISO-8859-1</small></p>
  This requires an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL.<br />
  This conversions are done for all (inbound,CC,report ..) mails except relayed mails. The converted mail will be not available on disk except DEBUG.',undef,undef,'msg008130','msg008131'],
 ['outChrSetConv','outbound charset conversion table*',80,\&textinput,'','(\S*)','configChangeOC',
-  'If defined, characterset conversion for outbound mails will be done. For example: if your email server is unable to send mails in UTF-8, ASSP will convert the mail parts to UTF-8. The rules specified here are used to convert text parts of outbound mails from one to another characterset.<p><small><i>Example:</i>ISO-8859-1=>UTF-8|ISO-8859-2=>UTF-8|windows-1250=>UTF-8</small></p>
+  'If defined, characterset conversion for outbound mails will be done. For example: if your email server is unable to send mails in UTF-8, SPAMBOX will convert the mail parts to UTF-8. The rules specified here are used to convert text parts of outbound mails from one to another characterset.<p><small><i>Example:</i>ISO-8859-1=>UTF-8|ISO-8859-2=>UTF-8|windows-1250=>UTF-8</small></p>
  This requires an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL.<br />
  This conversions are done only for relayed mails!',undef,undef,'msg008140','msg008141'],
 ['doInFixTNEF','convert inbound MS-TNEF attachments to MIME',0,\&checkbox,'','(.*)',undef,
@@ -3964,10 +3964,10 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 [0,0,0,'heading','SSL Proxy and TLS support'],
 ['DoTLS','How to Handle STARTTLS Requests','0:drop TLS|1:TLS to Proxy|2:do TLS',\&listbox,0,'(\d*)',undef,
   'If set to "drop TLS", any STARTTLS request will be removed from the protocol stack and no connection will ever go in to any TLS mode!<br />
-  If set to "TLS to Proxy" and both peers (client and server) supports TLS, both connection will be moved in to a transparent Proxy mode. All data will be encrypted and unreadable to ASSP.<br />
-  If set to "do TLS", ASSP will be the "man in the middle". ASSP will try to move both connections in to TLS. All data will be readable to ASSP - so all checks could be done. If any of the peers does not support TLS, ASSP will fake this (250-STARTTLS) to the other peer. So it could be possible, that the connection to the client is going in to TLS mode, even if TLS is not supported by the server. If a client does not request TLS (STARTTLS) even it has got the (250-STARTTLS), ASSP tries to start a TLS session to server, if he has sent (250-STARTTLS)! This behavior belongs to incoming and outgoing messages. This option requires the installed perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a>!<br />
+  If set to "TLS to Proxy" and both peers (client and server) supports TLS, both connection will be moved in to a transparent Proxy mode. All data will be encrypted and unreadable to SPAMBOX.<br />
+  If set to "do TLS", SPAMBOX will be the "man in the middle". SPAMBOX will try to move both connections in to TLS. All data will be readable to SPAMBOX - so all checks could be done. If any of the peers does not support TLS, SPAMBOX will fake this (250-STARTTLS) to the other peer. So it could be possible, that the connection to the client is going in to TLS mode, even if TLS is not supported by the server. If a client does not request TLS (STARTTLS) even it has got the (250-STARTTLS), SPAMBOX tries to start a TLS session to server, if he has sent (250-STARTTLS)! This behavior belongs to incoming and outgoing messages. This option requires the installed perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a>!<br />
   For "do TLS" a server-certificate-file " SSLCertFile " and a server-key-file " SSLKeyFile " must exist and must be valid!<br />
-  If you do not have valid certificates, you may generate both files online with <a href="http://www.mobilefish.com/services/ssl_certificates/ssl_certificates.php" rel="external">www.mobilefish.com</a> or you may use OpenSSL to generate <a href="http://www.mobilefish.com/developer/openssl/openssl_quickguide_self_certificate.html" rel="external">Self-signed SSL certificates</a>! If you have installed OpenSSL (must be in PATH) and installed and enabled IO::Socket::SSL and ASSP is unable to find valid certificates - ASSP will try to create them at startup!<br />
+  If you do not have valid certificates, you may generate both files online with <a href="http://www.mobilefish.com/services/ssl_certificates/ssl_certificates.php" rel="external">www.mobilefish.com</a> or you may use OpenSSL to generate <a href="http://www.mobilefish.com/developer/openssl/openssl_quickguide_self_certificate.html" rel="external">Self-signed SSL certificates</a>! If you have installed OpenSSL (must be in PATH) and installed and enabled IO::Socket::SSL and SPAMBOX is unable to find valid certificates - SPAMBOX will try to create them at startup!<br />
   <input type="button" value="SSLfailed Cache" onclick="javascript:popFileEditor(\'DB-SSLfailed\',\'1h\');" /><br />',undef,undef,'msg008210','msg008211'],
 ['SSL_version','SSL version used for transmission',20,\&textinput,'SSLv2/3','(\!?(?:SSLv2\/?3|SSLv2|SSLv3|TLSv1(_?[12])?)(?:\:\!?(SSLv2\/?3|SSLv2|SSLv3|TLSv1(_?[12])?))*)','ConfigChangeSSL',
   'Sets the version of the SSL protocol used to transmit data. The default is SSLv2/3,<br />
@@ -3987,7 +3987,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   "Optional parameter. If your private key ' SSLKeyFile ' is password protected, assp will need this password to decrypt the server\'s SSL private key file.",undef,undef,'msg009540','msg009541'],
 ['SSLCaFile','SSL Certificate Authority File',48,\&textinput,'','(.*)','ConfigChangeSSL',
   "Optional parameter to enable chained certificate validation at the client side. Full path to the file containing the server's SSL certificate authority. If you provide the ca-certificate or certificate-chain together with the certificate file in the SSLCertFile parameter, leave this field blank. For example : /usr/local/etc/ssl/certs/assp-ca.crt or c:/assp/certs/server-ca.crt. A general ca.crt file is already provided in '$dftCaFile'. The default value is empty and leave it empty as long as you don't know, how this parameter works.",undef,undef,'msg009530','msg009531'],
-['noTLSIP','Exclude these IP\'s from TLS*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from starting SSL/TLS, separated by pipes (|). For example, put all IP\'s here, that making trouble to switch to TLS every time, what will prevent ASSP from getting mails from this hosts.',undef,undef,'msg008250','msg008251'],
+['noTLSIP','Exclude these IP\'s from TLS*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from starting SSL/TLS, separated by pipes (|). For example, put all IP\'s here, that making trouble to switch to TLS every time, what will prevent SPAMBOX from getting mails from this hosts.',undef,undef,'msg008250','msg008251'],
 ['banFailedSSLIP','Ban Failed SSL IP','0:disable|1:private only|2:public only|3:both',\&listbox,3,'(\d*)',undef,
  'If set (recommended is \'both\'), an IP that fails to connect via SSL/TLS will be banned for 12 hour from using SSL/TLS.<br />
   Privat IP\'s and IP addresses listed in \'acceptAllMail\' will get one more try to correct the mistake.<br />
@@ -4000,9 +4000,9 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   <input type="button" value="edit SSLfailed Cache" onclick="javascript:popFileEditor(\'DB-SSLfailed\',\'1h\');" />',undef,undef,'msg010100','msg010101'],
 ['noBanFailedSSLIP','Exclude these IP\'s from SSLfailed Cache*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from being added to the SSLfailed-Cache, separated by pipes (|).',undef,undef,'msg010280','msg010281'],
 ['sendEHLO','Send EHLO',0,\&checkbox,'','(.*)',undef,
-  'If selected, ASSP sends an EHLO even if the client has sent only a HELO. This is useful to force the usage of TLS to the server or to satisfy XCLIENT/XFORWARD helo offers, because EHLO is needed before STARTTLS or XCLIENT/XFORWARD could be used.',undef,undef,'msg008260','msg008261'],
+  'If selected, SPAMBOX sends an EHLO even if the client has sent only a HELO. This is useful to force the usage of TLS to the server or to satisfy XCLIENT/XFORWARD helo offers, because EHLO is needed before STARTTLS or XCLIENT/XFORWARD could be used.',undef,undef,'msg008260','msg008261'],
 ['SSLRetryOnError','Retry SSL on "SSL want a read first" error',0,\&checkbox,'','(.*)',undef,
-  'If selected, ASSP retries one time to establish a SSL connection with one second delay, if the peer was not ready after STARTTLS because of a "SSL want a read/write first" error.',undef,undef,'msg008270','msg008271'],
+  'If selected, SPAMBOX retries one time to establish a SSL connection with one second delay, if the peer was not ready after STARTTLS because of a "SSL want a read/write first" error.',undef,undef,'msg008270','msg008271'],
 ['SSLtimeout','SSL Timeout (0-999)',4,\&textinput,5,'(\d{1,3})',undef,
  'SSL/TLS negotiation will timeout after this many seconds. default is : 5 seconds.',undef,undef,'msg008280','msg008281'],
 ['SSLDEBUG','Debug Level for SSL/TLS','0:no Debug|1:level 1|2:level 2|3:level 3',\&listbox,0,'(\d*)',undef,'Set the debug-level for SSL/TLS. Than higher the level, than more information are written to STDOUT!',undef,undef,'msg008290','msg008291'],
@@ -4017,7 +4017,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 ['SSLWEBCertVerifyCB','CallBack to Verify Client Certificates for GUI Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'If used, assp will call the defined subroutine as SSL->SSL_verify_callback in an eval closure submitting the original ARRAY of parameters (see the IO::Socket::SSL documentation).<br />
   The subroutine has to return 1 on certificate verification success - otherwise 0.<br />
-  You can use/modify the module lib/CorrectASSPcfg.pm to implement your code. For example<br /><br />
+  You can use/modify the module lib/CorrectSPAMBOXcfg.pm to implement your code. For example<br /><br />
   sub checkWebSSLCert {<br />
   &nbsp;&nbsp;&nbsp;&nbsp;my ($OpenSSLSays,$CertStackPtr,$DN,$OpenSSLError, $Cert)=@_;<br />
   &nbsp;&nbsp;&nbsp;&nbsp;my $subject = Net::SSLeay::X509_NAME_oneline(Net::SSLeay::X509_get_subject_name($Cert));<br />
@@ -4031,14 +4031,14 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   &nbsp;&nbsp;&nbsp;&nbsp;@main::ExtWebAuth = ($user,$pass)<br />
   &nbsp;&nbsp;&nbsp;&nbsp;return $success;<br />
   }<br /><br />
-  Now, if you set this parameter to \'CorrectASSPcfg::checkWebSSLCert\' - assp will call<br />
-  CorrectASSPcfg::checkWebSSLCert->(@_);<br />
+  Now, if you set this parameter to \'CorrectSPAMBOXcfg::checkWebSSLCert\' - assp will call<br />
+  CorrectSPAMBOXcfg::checkWebSSLCert->(@_);<br />
   The variable \'@main::ExtWebAuth\' could be used to authenticate the user to the GUI related to the used certificate. The username must be provided as first element of the array. The password could be provided as second element of the array - this is not recommended and it is not required! If the used certificate is valid and a known adminusername (root is provided) is stored as first element in \'@main::ExtWebAuth\', the user will be automatically logged on to the GUI.<br />
   <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010160','msg010161'],
 ['SSLWEBConfigure','Call to Configure SSL-Listener-Parameters for GUI Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'If used, assp will call the defined subroutine in an eval closure submitting a reference to the assp predefined SSL-Socket-Configuration-HASH.<br />
   The HASH could be modified in place to your needs - please read the documentation of IO::Socket::SSL, Net::SSLeay and OpenSSL. Return values are ignored.<br />
-  You can use/modify the module lib/CorrectASSPcfg.pm to implement your code. For example<br /><br />
+  You can use/modify the module lib/CorrectSPAMBOXcfg.pm to implement your code. For example<br /><br />
   sub configWebSSL {<br />
   &nbsp;&nbsp;&nbsp;&nbsp;my \$parms = shift;<br />
   &nbsp;&nbsp;&nbsp;&nbsp;$parms->{timeout} = 10;<br />
@@ -4046,8 +4046,8 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   &nbsp;&nbsp;&nbsp;&nbsp;$parms->{\'SSL_crl_file\'} = \'/assp/certs/crl/crllist.pem\';<br />
   &nbsp;&nbsp;&nbsp;&nbsp;return;<br />
   }<br /><br />
-  Now, if you set this parameter to \'CorrectASSPcfg::configWebSSL\' - assp will call<br />
-  CorrectASSPcfg::configWebSSL->(\%sslparms);<br />
+  Now, if you set this parameter to \'CorrectSPAMBOXcfg::configWebSSL\' - assp will call<br />
+  CorrectSPAMBOXcfg::configWebSSL->(\%sslparms);<br />
   <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010170','msg010171'],
 
 ['statSSLRequireClientCert','Client requires valid SSL Certificate for STAT Requests',0,\&checkbox,'','(.*)','ConfigChangeSSL',
@@ -4073,7 +4073,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
    <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010230','msg010231'],
 
 ['ProxyConf','Transparent TCP Proxy Table*',80,\&textinput,'','(\S*)','configChangeProxy',
-  'Define transparent Port Proxy here. ASSP will forward incoming packets to a specific destination.<br />
+  'Define transparent Port Proxy here. SPAMBOX will forward incoming packets to a specific destination.<br />
    For example: if you want incoming connections on port 465 (SMTP-SSL) to be forwarded to your email server.<br />
    <p><small><i>Example:</i>0.0.0.0:465=>192.168.1.25:465<=12.1.1.3,34.5.6.7,67.23.2.1|<br />
    10.1.1.1:1477=>192.168.1.23:25<=120.5.1.3,134.5.19.7,67.123.221.11</small></p><br />
@@ -4083,7 +4083,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 
 [0,0,0,'heading','Global PenaltyBox'],
 ['globalClientName','client registration name',60,\&textinput,'','(.*)','configUpdateGlobalClient',
- 'The Name of this global-client for registration on the global-server. This entry has to be the full qualified DNS-Name of the IP-address over which ASSP is doing HTTP-requests! If you are using a HTTP-Proxy, this should be the public IP-address of the last Proxy in chain! This DNS-Name has to be resolvable worldwide and the resolved IP-address has to match the ASSP-HTTP-connection-IP-address. It is not possible to use an IP-address in this field! Dynamic DNS-Names like "yourdomain.dyndns.org" are supported!<br />
+ 'The Name of this global-client for registration on the global-server. This entry has to be the full qualified DNS-Name of the IP-address over which SPAMBOX is doing HTTP-requests! If you are using a HTTP-Proxy, this should be the public IP-address of the last Proxy in chain! This DNS-Name has to be resolvable worldwide and the resolved IP-address has to match the SPAMBOX-HTTP-connection-IP-address. It is not possible to use an IP-address in this field! Dynamic DNS-Names like "yourdomain.dyndns.org" are supported!<br />
  To become a member of the exclusive global-penalty-box-users, you will need a subscription and you will have to pay a yearly maintenance fee. To get registered and/or to get more information, please send an email with your personal/company details and the globalClientName to "assp.globalpb@thockar.com".<br />
  The name of this client has to be known by the global server before it could be registered from here. Please wait until you have confirmation that your client name is known by the global server.<br />
  In addition to <a href="http://search.cpan.org/search?query=Compress::Zlib" rel="external">Compress::Zlib</a> this requires an installed <a href="http://search.cpan.org/search?query=LWP::UserAgent" rel="external">LWP::UserAgent</a> module in PERL.',undef,undef,'msg008310','msg008311'],
@@ -4150,11 +4150,11 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   <input type="button" value=" Edit user report queue" onclick="javascript:popFileEditor(\'files/UserBlockReportQueue.txt\',2);" />',undef,undef,'msg008430','msg008431'],
 ['QueueSchedule','Runtime for Queued Requests <sup>s</sup>',40,\&textinput,'0',$ScheduleGUIRe,'configChangeSched',
   'Runtime hour for reports in QueueUserBlockReports. Set a number between 0 and 23. 0 means midnight and is default',undef,undef,'msg008440','msg008441'],
-['BlockRepForwHost','Forward The Blockreportrequest to other ASSP',40,\&textinput,'','(.*)',undef,'If you are using more than one ASSP (backup MX), define the IP-address and relayPort (x.x.x.x:ppp - for SSL use SSL:x.x.x.x:ppp) of the other ASSP here (separate multiple entries by "|"). The Blockreportrequest will be forwarded to this ASSP and the user will get a blockreport from every ASSP. The forwarded request has the same sender and recipient like the original request. So EmailBlockReport and EmailBlockReportDomain have to be configured identically on all ASSP!!!! Resend requests are automatic forwarded to the right (or next) host, if ASSP finds the hostname in the subject of the request. If you have more than two ASSP, the logical sending structure must be a star. If ASSP(A) (the sun) is in the middle and you have also ASSP(B), ASSP(C) and ASSP(D) (satellites), ASSP(A) should know C,B and D, and B,C and D should only know A.<br />
+['BlockRepForwHost','Forward The Blockreportrequest to other SPAMBOX',40,\&textinput,'','(.*)',undef,'If you are using more than one SPAMBOX (backup MX), define the IP-address and relayPort (x.x.x.x:ppp - for SSL use SSL:x.x.x.x:ppp) of the other SPAMBOX here (separate multiple entries by "|"). The Blockreportrequest will be forwarded to this SPAMBOX and the user will get a blockreport from every SPAMBOX. The forwarded request has the same sender and recipient like the original request. So EmailBlockReport and EmailBlockReportDomain have to be configured identically on all SPAMBOX!!!! Resend requests are automatic forwarded to the right (or next) host, if SPAMBOX finds the hostname in the subject of the request. If you have more than two SPAMBOX, the logical sending structure must be a star. If SPAMBOX(A) (the sun) is in the middle and you have also SPAMBOX(B), SPAMBOX(C) and SPAMBOX(D) (satellites), SPAMBOX(A) should know C,B and D, and B,C and D should only know A.<br />
   If a forward host is unreachable, the forward request will be queued for a maximum of 24 hours and the user will be informed sending the \'reports/blockreportforwarderror.txt\' file.<br />
   The perl module <a href="http://search.cpan.org/search?query=Net::SMTP/" rel="external">Net::SMTP</a> is required to use this feature (for SSL - Net::SMTP::SSL is required).',undef,undef,'msg008450','msg008451'],
 ['EmailBlockTo','Send Copy of Block-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
-  'Email sent from ASSP acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg008460','msg008461'],
+  'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg008460','msg008461'],
 ['BlockReportAdmins','BlockReport Admins*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
  'A list of local addresses, which have the same rights like EmailAdmins, but only for all BlockReport functions (nothing else). Leave this field blank (default), to disable this feature.<br />
   This is useful, if a user must request BlockReports or resend mails for other users like an EmailAdmin and BlockReportAdmin can do it, but should not have other extended rights to use the EmailInterface.<br />
@@ -4177,7 +4177,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   The resend is done to the recipient stored in the X-Assp-Intended-For: ( requires AddIntendedForHeader ) header field and the requester, if the address was found in a TO: header field. <br />
   Accepts specific addresses (user@domain.com), user parts (user).  Wildcards are supported (fribo*@domain.com).<br />
   For example: fribo*@thisdomain.com|jhanna ',undef,undef,'msg010120','msg010121'],
-['BlockReportFile','File for Blockreportrequest',40,\&textinput,'','(file:.+)|','initMaintScheduler','A file with BlockReport requests. ASSP will generate a block report for every line in this file (file:files/blockreportlist.txt - file: is required if defined!) every day at midnight for the last day. The perl modules <a href="http://search.cpan.org/search?query=Net::SMTP/" rel="external">Net::SMTP</a> and <a href="http://search.cpan.org/search?query=Email::MIME /" rel="external">Email::MIME </a> are required to use this feature. A report will be only created, if there is at least one blocked email found! The syntax is: <br />
+['BlockReportFile','File for Blockreportrequest',40,\&textinput,'','(file:.+)|','initMaintScheduler','A file with BlockReport requests. SPAMBOX will generate a block report for every line in this file (file:files/blockreportlist.txt - file: is required if defined!) every day at midnight for the last day. The perl modules <a href="http://search.cpan.org/search?query=Net::SMTP/" rel="external">Net::SMTP</a> and <a href="http://search.cpan.org/search?query=Email::MIME /" rel="external">Email::MIME </a> are required to use this feature. A report will be only created, if there is at least one blocked email found! The syntax is: <br />
  QueryAddress=>ReportRecipient=>ReportDays  -  there are many possible combinations of this three parameters. For example:<br />
  user@domain and user@domain=>user@domain - will send a report for this user to this user<br />
  *@domain (better use) *@domain=>* - will send a report for every blocked user in this domain to this user<br />
@@ -4202,19 +4202,19 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
  This will result in an extended blockreport for the non local address(es). Replace \'non_local_domain\' with the domain name you want to query for.',undef,undef,'msg008470','msg008471'],
 ['BlockReportSchedule','Runtime BlockReportFile <sup>s</sup>',40,\&textinput,'0',$ScheduleGUIRe,'configChangeSched',
   'Runtime hour for reports in BlockReportFile. Set a number between 0 and 23. 0 means midnight and is default.',undef,undef,'msg008480','msg008481'],
-['BlockReportNow','Generate a BlockReport from BlockReportFile Now',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow', "If selected, ASSP will generate a block report from BlockReportFile now. <input type=button value=\"Apply Changes and Run Block Report Now (if checked)\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['ASSPconfig'].theButtonRefresh.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg008490','msg008491'],
+['BlockReportNow','Generate a BlockReport from BlockReportFile Now',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow', "If selected, SPAMBOX will generate a block report from BlockReportFile now. <input type=button value=\"Apply Changes and Run Block Report Now (if checked)\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['SPAMBOXconfig'].theButtonRefresh.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />",undef,undef,'msg008490','msg008491'],
 ['BlockMaxSearchTime','Max Search time per log File',4,\&textinput,'0','(\d+)',undef,
   'The maximum time in seconds, the Blockreport feature spends on searching in one log file. If this value is reached, the next log file will be processed. Default is 0. A value of 0 disables this feature and all needed log files will be fully processed.',undef,undef,'msg008500','msg008501'],
 ['BlockReportFormat','The format of the Report Email','0:text and html|1:text only|2:html only',\&listbox,0,'(\d*)',undef,
   'Block reports will be sent as multipart/alternative MIME messages. They normally contains two parts, a plain text part and a html part. Select "text only" or "html only" if you want to skip any of this parts.<br />
-  To make it possible to detect a resent email, ASSP will add a header line "X-Assp-Resend-Blocked: myName" to each email!',undef,undef,'msg008510','msg008511'],
+  To make it possible to detect a resent email, SPAMBOX will add a header line "X-Assp-Resend-Blocked: myName" to each email!',undef,undef,'msg008510','msg008511'],
 ['BlockReportHTTPName','My HTTP Name',40,\&textinput,'','(.*)',undef,'The hostname for HTTP(S) links in AdminUsers Blockreports. If not defined the local hostname will be used.',undef,undef,'msg008760','msg008761'],
 ['BlockReportFilter', 'Regular Expression to Skip Log Records*',80,\&textinput,'Virus|BlackDomain','(.*)','ConfigCompileRe',
  'Put anything here to identify messages which should not be reported in any Block Report. For example:  Virus|BlackDomain.<br />
  For individual filter settings, it is possible to overwrite this value in the BlockReportFile for every single line and in every request per email using the subject line ( read EmailBlockReport ).',undef,undef,'msg008520','msg008521'],
 ['DoT10Stat','Collect multiple TopTen Statistics',0,\&checkbox,'','(.*)',undef, 'enable the top ten statistic count (blocked IP\'s, blocked senders, blocked recipients) and the output in the GUI and BlockReports for admins.',undef,undef,'msg009790','msg009791'],
 ['inclResendLink','Include a Resend-Link for every resendable email','0:disabled|1:in plain text report|2:in html report|3:in both',\&listbox,3,'(\d*)',undef,
-  'Block reports will be sent as multipart/alternative MIME messages. They contains two parts, a plain text part and a html part. If a blocked email is stored in any folder, it is possible to include a link for each email in to the report. Define here what you want ASSP to do. Default is "in both". If set to not to disabled " fileLogging " will be automatically set to on.',undef,undef,'msg008530','msg008531'],
+  'Block reports will be sent as multipart/alternative MIME messages. They contains two parts, a plain text part and a html part. If a blocked email is stored in any folder, it is possible to include a link for each email in to the report. Define here what you want SPAMBOX to do. Default is "in both". If set to not to disabled " fileLogging " will be automatically set to on.',undef,undef,'msg008530','msg008531'],
 ['BlockResendLink','Which Link Should be included','0:both|1:left|2:right',\&listbox,0,'(\d*)',undef,
   'If HTML is enabled in inclResendLink, two links (one on the left and one on the right site) will be included in the report email by default. Depending on the used email clients it could be possible, that one of the two links will not work for you. Try out what link is working and disable the other one, if you want.',undef,undef,'msg008540','msg008541'],
 ['BlockResendLinkLeft','User which get the Left link only*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
@@ -4227,24 +4227,24 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/blockreports.txt\',3);" />',undef,undef,'msg008580','msg008581'],
 
 [0,0,0,'heading','SNMP Configuration'],
-['SNMP','Enable the ASSP-SNMP Interface','0:disable|1:enable',\&listbox,0,'(\d*)','ConfigChangeSNMP',
- 'This enables the AgentX registration of assp to a SNMP master-AgentX. ASSP will be registered to the master-AgentX as \'assp_myName\', the possible configuration file name will be assp_myName.conf . This option requires the installed perl module <a href="http://search.cpan.org/search?query=NetSNMP::agent" rel="external">NetSNMP::agent</a>. The product and needed librarys could be downloaded at <a href="http://www.net-snmp.org/download.html" rel="external">net-snmp.org</a>.<br />
+['SNMP','Enable the SPAMBOX-SNMP Interface','0:disable|1:enable',\&listbox,0,'(\d*)','ConfigChangeSNMP',
+ 'This enables the AgentX registration of assp to a SNMP master-AgentX. SPAMBOX will be registered to the master-AgentX as \'assp_myName\', the possible configuration file name will be assp_myName.conf . This option requires the installed perl module <a href="http://search.cpan.org/search?query=NetSNMP::agent" rel="external">NetSNMP::agent</a>. The product and needed librarys could be downloaded at <a href="http://www.net-snmp.org/download.html" rel="external">net-snmp.org</a>.<br />
  All configuration values are accessed using the SNMPUser account. The SNMP-permission and visibility is used from the configured user GUI-permissions.<br /><br />
-The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries. The configuration values are changeable via snmp. The file mib/ASSP-MIB could be used in SNMP browsers to get a human readable view of the OID\'s (copy it to the net-snmp MIB file location - eg: [C:]/usr/share/snmp/mibs and the MIB location of your SNMP browser). Please keep in mind, that an extensive usage of SNMP queries will slow down assp.<br /><br />
+The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries. The configuration values are changeable via snmp. The file mib/SPAMBOX-MIB could be used in SNMP browsers to get a human readable view of the OID\'s (copy it to the net-snmp MIB file location - eg: [C:]/usr/share/snmp/mibs and the MIB location of your SNMP browser). Please keep in mind, that an extensive usage of SNMP queries will slow down assp.<br /><br />
 .1   - runtime information<br />
 .1.0 - assp healthy status boolean 0/1<br />
 .1.1 - assp healthy status text<br />
-.1.2 - ASSP runtime status boolean 0/1 0=shutdown in progress - 1=running<br />
-.1.3 - ASSP runtime status text<br />
-.1.4 - ASSP version string<br />
-.1.5 - ASSP script name<br />
+.1.2 - SPAMBOX runtime status boolean 0/1 0=shutdown in progress - 1=running<br />
+.1.3 - SPAMBOX runtime status text<br />
+.1.4 - SPAMBOX version string<br />
+.1.5 - SPAMBOX script name<br />
 .1.6 - Perl version string<br />
 .1.7 - Perl executable name<br />
 .1.8 - operating system name<br />
-.1.9 - hostname where ASSP is running on<br />
-.1.10 - IP-host where ASSP is running on<br />
+.1.9 - hostname where SPAMBOX is running on<br />
+.1.10 - IP-host where SPAMBOX is running on<br />
 .1.11 - myName<br />
-.1.12 - URL to new ASSP version download<br />
+.1.12 - URL to new SPAMBOX version download<br />
 .1.13 - currently running tasks<br />
 .1.14 - current assp memory usage in MB<br />
 .1.20 - schedule information<br />
@@ -4266,7 +4266,7 @@ The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries.
 .1.20.16 - next LDAP-cross-Check<br />
 .1.20.17 - next RebuildSpamDB<br />
 .1.20.18 - next ResendMail<br />
-.1.20.19 - next ASSPFileDownload (spambox.pl)<br />
+.1.20.19 - next SPAMBOXFileDownload (spambox.pl)<br />
 .1.20.20 - next Version File Download (version.txt)<br />
 .1.20.21 - next BackDNS File Download<br />
 .1.20.22 - next Code Change Check<br />
@@ -4325,10 +4325,10 @@ The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries.
 .5.1 - the result of the last SNMP-API call (success or error)<br />
  ',undef,undef,'msg00009400','msg009401'],
 ['SNMPBaseOID','SNMP Base OID',80,\&textnoinput,'.1.3.6.1.4.1.37058.2','^(\.?(?:\d+\.)+\d+)$','ConfigChangeSNMP',
-  'The Base OID that should be used by assp. This OID will be registered to the master-AgentX. The master-AgentX will then redirect all requests for this OID and sub OID\'s to assp! The default setting  .1.3.6.1.4.1.37058.2  is needed to use the MIB file mib/ASSP-MIB in SNMP browsers.',undef,undef,'msg009410','msg009411'],
+  'The Base OID that should be used by assp. This OID will be registered to the master-AgentX. The master-AgentX will then redirect all requests for this OID and sub OID\'s to assp! The default setting  .1.3.6.1.4.1.37058.2  is needed to use the MIB file mib/SPAMBOX-MIB in SNMP browsers.',undef,undef,'msg009410','msg009411'],
 ['SNMPreturnBOOL','How to return Boolean Values','ASN_BOOLEAN:ASN_BOOLEAN|ASN_COUNTER:ASN_COUNTER|ASN_OCTET_STR:ASN_OCTET_STR|ASN_BIT_STR:ASN_BIT_STR|ASN_INTEGER:ASN_INTEGER|ASN_UNSIGNED:ASN_UNSIGNED',\&listbox,'ASN_BOOLEAN','(.+)',undef,
   'How should assp return boolean values for status OIDs. Use another setting than the default ASN_BOOLEAN, if your SNMP application or browser does not understand it!',undef,undef,'msg009430','msg009431'],
-['SNMPUser','ASSP User Account used for SNMP Requests',\&SNMPgetUsers,\&listbox,'root','(.+)','ConfigChangeSNMPUser',
+['SNMPUser','SPAMBOX User Account used for SNMP Requests',\&SNMPgetUsers,\&listbox,'root','(.+)','ConfigChangeSNMPUser',
   'The Admin Users account used for SNMP requests. If the user does no longer exists, the root account will be used!',undef,undef,'msg009440','msg009441'],
 ['SNMPwriteable','Allow Config Changes via SNMP','0:forbidden|1:allow',\&listbox,1,'(\d*)',undef,
   'Allow configuration changes via SNMP. Do not forget to setup your SNMP configuration file to secure the access to SNMP. All configuration changes via SNMP are done using the SNMPUser account!',undef,undef,'msg009450','msg009451'],
@@ -4437,11 +4437,11 @@ my $p;
 my $p2;
 
 if(lc $_[0] eq '-u') {
-    system('cmd.exe /C net stop ASSPSMTP');
+    system('cmd.exe /C net stop SPAMBOXSMTP');
     sleep(1);
-    Win32::Daemon::DeleteService('','ASSPSMTP') ||
-      print "Failed to remove ASSP service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n" & return;
-    print "Service ASSPSMTP successful removed\n";
+    Win32::Daemon::DeleteService('','SPAMBOXSMTP') ||
+      print "Failed to remove SPAMBOX service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n" & return;
+    print "Service SPAMBOXSMTP successful removed\n";
 } elsif( lc $_[0] eq '-i') {
     unless($p=$_[1]) {
         $p=$assp;
@@ -4453,7 +4453,7 @@ if(lc $_[0] eq '-u') {
         $p2=$p; $p2=~s/[\\\/]assp\.pl//io;
     }
     my %Hash = (
-        name    =>  'ASSPSMTP',
+        name    =>  'SPAMBOXSMTP',
         display =>  'Anti-Spam Smtp Proxy',
         path    =>  "\"$perl\"",
         user    =>  '',
@@ -4461,9 +4461,9 @@ if(lc $_[0] eq '-u') {
         parameters => "\"$p\" \"$p2\"",
       );
     if( Win32::Daemon::CreateService( \%Hash ) ) {
-        print "ASSP service successfully added.\n";
+        print "SPAMBOX service successfully added.\n";
     } else {
-        print "Failed to add ASSP service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n";
+        print "Failed to add SPAMBOX service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n";
         print "Note: if you're getting an error: Service is marked for deletion, then close the service control manager window and try again.\n";
     }
 }
@@ -5081,7 +5081,7 @@ sub setMakeREVars {
     'noMSGIDsigReRE' => 1,
     'noCollectReRE' => 1,
     'noBackSctrReRE' => 1,
-    'ASSP_AFCDetectSpamAttachReRE' => 1
+    'SPAMBOX_AFCDetectSpamAttachReRE' => 1
 );
 
 foreach my $k (values %MakeIPRE) {
@@ -5165,7 +5165,7 @@ sub assp_flush {
     return '0 but true';
 }
 
-sub MSWinASSPisRun {
+sub MSWinSPAMBOXisRun {
     my $pid = shift;
     print ' pid file found - checking process list using tasklist.exe .... ';
     my @tasks = `tasklist /v /nh`;
@@ -5228,12 +5228,12 @@ BEGIN {
  &check_iThreads();
  &setVersion();
  if($] lt '5.012003') {
-   print "\nPerl version 5.012003 (5.12.3) is at least recommended to run ASSP $version $modversion - you are running Perl version $] - please upgrade Perl\n";
+   print "\nPerl version 5.012003 (5.12.3) is at least recommended to run SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl\n";
  }
  if($] lt '5.012000') {
-   print "\nPerl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of ASSP $version $modversion - you are running Perl version $] - please upgrade Perl\n";
+   print "\nPerl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl\n";
  }
- die "\nPerl version $] is not supported to run ASSP $version $modversion - please downgrade Perl to version 5.1y.x\n" if($] gt '5.999999');
+ die "\nPerl version $] is not supported to run SPAMBOX $version $modversion - please downgrade Perl to version 5.1y.x\n" if($] gt '5.999999');
  # scan perl for DB drivers to display them in Config
  our @DBdriverNames;
  our $DBdrivers;
@@ -5287,7 +5287,7 @@ if ($ARGV[0] =~ /(?:\/|-{1,2})(?:\?|help|usage)/oi) {
  print "-i - installs an assp service on windows\n";
  print "ddddd - overwrites the 'webAdminPort' - same like --webAdminPort:=ddddd\n";
  print "--configParm:=configValue - overwrites the configuration parameter (case sensitive) 'configParm' with the value 'configValue'\n";
- print "\nany configuration parameter could be also overwritten by editing the module 'lib/CorrectASSPcfg.pm'\n";
+ print "\nany configuration parameter could be also overwritten by editing the module 'lib/CorrectSPAMBOXcfg.pm'\n";
  exit;
 }
 
@@ -5299,7 +5299,7 @@ $base = cwd();
 
 my ($mv,$sv,$lv) = $] =~ /(\d)\.(\d{3})(\d{3})/o;
 $mv =~ s/^0+//o;$sv =~ s/^0+//o;$lv =~ s/^0+//o; $lv ||= '0';
-print "ASSP $version$modversion is starting in directory $base\non host ". hostname() ."\nusing Perl $perl version $] ($mv.$sv.$lv), all Perl features for $VSTR are enabled\ncompiling code please wait .....\n";
+print "SPAMBOX $version$modversion is starting in directory $base\non host ". hostname() ."\nusing Perl $perl version $] ($mv.$sv.$lv), all Perl features for $VSTR are enabled\ncompiling code please wait .....\n";
 
 push @INC,$base unless grep(/^\Q$base\E$/o,@INC);
 
@@ -5331,7 +5331,7 @@ sub import {
             $defConfVar="our \$\x58=\"$VERSION\";";
             $defConfVar.="our \$\x43=\\&getPluginCheck;";
             $V =~ s/([\x00-\xFF])/sprintf("\\x%02X",ord($1))/ge;
-            $defConfVar.="our \$\x59='ASSP::CRYPT->new(\"$V\",1,undef)';";
+            $defConfVar.="our \$\x59='SPAMBOX::CRYPT->new(\"$V\",1,undef)';";
             $defConfVar.="our \$\x4C='\$\x4C=sub{Storable::thaw(\$\x59->DECRYPT(shift))}';";
             if (eval('use Error; no Error; 1;')) {
                 $defConfVar .= 'use Error \':try\';';
@@ -5438,7 +5438,7 @@ if ( $^O eq 'MSWin32' ) {
     $assp =~ s/\//\\/go;
     my $asspbase = $base;
     $asspbase =~ s/\\/\//go;
-    $dftrestartcmd = "cmd.exe /C start \"ASSPSMTP restarted\" \"$perl\" \"$assp\" \"$asspbase\"";
+    $dftrestartcmd = "cmd.exe /C start \"SPAMBOXSMTP restarted\" \"$perl\" \"$assp\" \"$asspbase\"";
 } else {
     $dftrestartcmd = "\"$perl\" \"$assp\" \"$base\" \&";
 }
@@ -5525,11 +5525,11 @@ $dftCaFile =~ s/\\/\//go;
     my $pid = <$PIDf>;
     close $PIDf;
     $pid =~ s/\r|\n|\s//go;
-    if (   ($^O eq 'MSWin32' && &MSWinASSPisRun($pid))
+    if (   ($^O eq 'MSWin32' && &MSWinSPAMBOXisRun($pid))
         or ($^O ne 'MSWin32' && kill 0, $pid))
     {
-        writeExceptionLog("Abort: ASSP is still running with process-ID: $pid - (or delete file $base/$Config{pidfile})");
-        die "\n\nAbort: ASSP is still running with process-ID: $pid - (or delete file $base/$Config{pidfile})\n\n";
+        writeExceptionLog("Abort: SPAMBOX is still running with process-ID: $pid - (or delete file $base/$Config{pidfile})");
+        die "\n\nAbort: SPAMBOX is still running with process-ID: $pid - (or delete file $base/$Config{pidfile})\n\n";
     }
  }
 
@@ -5671,18 +5671,18 @@ setMainLang();
 $lockDatabases = 1 if $DBdriver =~ /^mysql/oi; # serialize DB write access to all mysql tables per default
 $lockDatabases = 1 if $DBCacheMaxAge && $DBCacheSize;
 
-our $CanUseCorrectASSPcfg;
-if (-e "$base/lib/CorrectASSPcfg.pm") {
-    eval('use CorrectASSPcfg; &CorrectASSPcfg::set();');
+our $CanUseCorrectSPAMBOXcfg;
+if (-e "$base/lib/CorrectSPAMBOXcfg.pm") {
+    eval('use CorrectSPAMBOXcfg; &CorrectSPAMBOXcfg::set();');
     if ($@) {
-        mlog(0,"error: calling CorrectASSPcfg.pm returned error - $@") ;
-        print "\t\t\t\t\t[failed] in lib/CorrectASSPcfg.pm\ncontinue\t";
+        mlog(0,"error: calling CorrectSPAMBOXcfg.pm returned error - $@") ;
+        print "\t\t\t\t\t[failed] in lib/CorrectSPAMBOXcfg.pm\ncontinue\t";
     } else {
-        $ModuleWatch{CorrectASSPcfg} = { file => "$base/lib/CorrectASSPcfg.pm",
-                                         filetime => ftime("$base/lib/CorrectASSPcfg.pm"),
-                                         run => 'CorrectASSPcfg::set'
+        $ModuleWatch{CorrectSPAMBOXcfg} = { file => "$base/lib/CorrectSPAMBOXcfg.pm",
+                                         filetime => ftime("$base/lib/CorrectSPAMBOXcfg.pm"),
+                                         run => 'CorrectSPAMBOXcfg::set'
                                        };
-        $CanUseCorrectASSPcfg = 1;
+        $CanUseCorrectSPAMBOXcfg = 1;
     }
 }
 
@@ -5744,7 +5744,7 @@ sub serviceCheck {
     mlog(0,'service stopping');
     # AZ: 2009-03-10 - ask SCM for a grace time (2 minutes) to shutdown
     Win32::Daemon::State( SERVICE_STOP_PENDING, 120000 );
-    &downASSP('request to stop service');
+    &downSPAMBOX('request to stop service');
     $ServiceStopping = 2;
     Win32::Daemon::State( SERVICE_STOPPED );
     Win32::Daemon::StopService();
@@ -5885,12 +5885,12 @@ our $CanUseAsspSelfLoader  :shared;
 our $AvailIOSocketINET6   :shared;
 our $CanUseIOSocketINET6  :shared;
 our $SysIOSocketINET6  :shared = -1;
-our $AvailASSP_WordStem  :shared;
-our $CanUseASSP_WordStem :shared;
-our $AvailASSP_FC  :shared;
-our $CanUseASSP_FC :shared;
-our $AvailASSP_SVG  :shared;
-our $CanUseASSP_SVG :shared;
+our $AvailSPAMBOX_WordStem  :shared;
+our $CanUseSPAMBOX_WordStem :shared;
+our $AvailSPAMBOX_FC  :shared;
+our $CanUseSPAMBOX_FC :shared;
+our $AvailSPAMBOX_SVG  :shared;
+our $CanUseSPAMBOX_SVG :shared;
 our $AvailWin32Unicode  :shared;
 our $CanUseWin32Unicode :shared;
 our $AvailUnicodeGCString :shared;
@@ -5907,7 +5907,7 @@ if ( $^O eq 'MSWin32' ) {
     my $perl = $perl;
     my $assp = $assp;
     $assp = $base.'\\'.$assp if ($assp !~ /\Q$base\E/io);
-    $dftrestartcmd = "cmd.exe /C start \"ASSPSMTP restarted\" \"$perl\" -X \"$assp\" \"$base\"";
+    $dftrestartcmd = "cmd.exe /C start \"SPAMBOXSMTP restarted\" \"$perl\" -X \"$assp\" \"$base\"";
 } else {
     $dftrestartcmd = "\"$perl\" \"$assp\" \"$base\" \&";
 }
@@ -5951,7 +5951,7 @@ our $MainThreadLoopWait = 1;
 our $MinPollTimeT;
 our $MySenderBaseCode:shared;
 our $NavMenu;
-our $NextASSPFileDownload:shared;
+our $NextSPAMBOXFileDownload:shared;
 our $NextVersionFileDownload:shared;
 our $NextBackDNSFileDownload:shared;
 our $NextCodeChangeCheck:shared = time + 60;
@@ -6385,7 +6385,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
     '/top10stats' => \&top10stats,
     '/pwd' => \&ChangeMyPassword,
     '/adminusers' => \&ManageAdminUsers,
-    '/statusassp' => \&StatusASSP,
+    '/statusassp' => \&StatusSPAMBOX,
     '/remember' => \&remember,
     '/syncedit' => \&syncedit,
     '/addraction' => \&ConfigAddrAction,
@@ -6413,7 +6413,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
  &setMakeREVars();
  my $p;
  $p = '-professional' if ($setpro && $globalClientName && $globalClientPass);
- mlog(0,"ASSP$p version $version$modversion (Perl $]) (on $^O) initializing ");
+ mlog(0,"SPAMBOX$p version $version$modversion (Perl $]) (on $^O) initializing ");
 
  print "\t\t\t\t[OK]\nloading plugins";
  loadPluginConfig();           # load Configuration from Plugins to @ConfigArray
@@ -6422,7 +6422,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
  syncLoadConfigFile();
  fixConfigSettings();
 
- mlog(0,"info: an ASSP restart will be done using the AutoRestartCmd") if $MaintenanceLog;
+ mlog(0,"info: an SPAMBOX restart will be done using the AutoRestartCmd") if $MaintenanceLog;
  PrintConfigSettings() if ! SaveConfigSettings();
  chmod 0666, "$base/spambox.cfg";
 
@@ -6493,8 +6493,8 @@ $logdir = $1 if $logfile=~/(.*)\/[^\/]*/o;
 &init();
 
 &sigCentralSet();
-$SIG{INT}=sub {mlog(0,'sig INT'); &downASSP('got SIG INT'); exit 1;};
-$SIG{TERM}=sub {mlog(0,'sig TERM'); &downASSP('got SIG TERM'); exit 1;};
+$SIG{INT}=sub {mlog(0,'sig INT'); &downSPAMBOX('got SIG INT'); exit 1;};
+$SIG{TERM}=sub {mlog(0,'sig TERM'); &downSPAMBOX('got SIG TERM'); exit 1;};
 $SIG{HUP}=sub {mlog(0,'sig HUP'); &reloadConfigFile();};
 $SIG{USR1}=sub {mlog(0,'sig USR1'); &saveSMTPconnections();} if exists $SIG{USR1};
 $SIG{USR2}=sub {mlog(0,'sig USR2'); &SaveConfigSettingsForce();} if exists $SIG{USR2};
@@ -6525,7 +6525,7 @@ if ($@) {
  writeExceptionLog("$exmsg");
  goto MLOOP if $error =~ /Malformed UTF-?8 character/io;
  print $LOG "$exmsg\n" if fileno($LOG);
- &downASSP('try restarting ASSP on exception');
+ &downSPAMBOX('try restarting SPAMBOX on exception');
  &_assp_try_restart;
 }
 
@@ -6587,7 +6587,7 @@ rb_mlog("info: rebuildspamdb module version ".${'VERSION'}." loaded");
 # (c) Fritz Borgstedt 2006 under the terms of the GPL
 # Updated Feb 2008 refactoring and rewrites
 # (c) Kevin 2008 under the terms of the GPL
-# Updated Jul 2008 refactoring and rewrites to build in as package in ASSP
+# Updated Jul 2008 refactoring and rewrites to build in as package in SPAMBOX
 # and integrated move2num
 # (c) Thomas Eckardt since 2008 under the terms of the GPL
 
@@ -6664,8 +6664,8 @@ $attachments = 0;
 
 $DoHMM = $main::DoHMM;
 $doattach = 0;
-$doattach = 1 if    $main::Config{ASSP_AFCDetectSpamAttachRe}
-                 && $main::ASSP_AFCDetectSpamAttachReRE !~ $main::neverMatchRE;
+$doattach = 1 if    $main::Config{SPAMBOX_AFCDetectSpamAttachRe}
+                 && $main::SPAMBOX_AFCDetectSpamAttachReRE !~ $main::neverMatchRE;
 ($mintime,$movetime) = split(/(?:\s+|,)/o,$main::RebuildFileTimeLimit,2);
 $mintime =~ s/\s//go;
 $movetime =~ s/\s//go;
@@ -6684,9 +6684,9 @@ if ($RebuildDebug) {
     push @dbhint , "-rebuild debug output is enabled to $main::base/rebuilddebug.txt";
 }
 
-eval (<<'EOT') if ($main::CanUseASSP_WordStem);
-    use ASSP_WordStem();
-    $ASSP_WordStem::logging = 0;
+eval (<<'EOT') if ($main::CanUseSPAMBOX_WordStem);
+    use SPAMBOX_WordStem();
+    $SPAMBOX_WordStem::logging = 0;
 EOT
 
     if ($main::canUnicode && $^O eq 'MSwin32') {require Win32::Unicode;}
@@ -6847,7 +6847,7 @@ EOT
             $@ = '';
             eval (<<'EOT');
                 $main::lastd{$Iam} = "mounting BerkeleyDB $DBDir/rbtmp.hamHMM";
-                $hamHMM  = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $hamHMM  = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
@@ -6856,7 +6856,7 @@ EOT
                                                           -Env => $BDBEnv}
                                                   );
                 $main::lastd{$Iam} = "mounting BerkeleyDB $DBDir/rbtmp.spamHMM";
-                $spamHMM = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $spamHMM = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
@@ -6894,14 +6894,14 @@ EOT
             $@ = '';
             eval (<<'EOT');
                 $main::lastd{$Iam} = "loading model from $DBDir/rbtmp.hamHMM in to memory";
-                $hamHMM  = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $hamHMM  = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
                                                   File => "$DBDir/rbtmp.hamHMM" ,
                                                   );
                 $main::lastd{$Iam} = "loading model from $DBDir/rbtmp.spamHMM in to memory";
-                $spamHMM = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+                $spamHMM = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                                   shortest => $main::HMMSequenceLength,
                                                   top => 1,
                                                   nostarts => 1,
@@ -6976,8 +6976,8 @@ EOT
     binmode $RebuildLog;
     $RebuildLog->autoflush;
     $starttime = time;
-    &rb_printlog( "\n\n\nRebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in ASSP version $main::version$main::modversion\n" );
-    &rb_mlog( "RebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in ASSP version $main::version$main::modversion");
+    &rb_printlog( "\n\n\nRebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in SPAMBOX version $main::version$main::modversion\n" );
+    &rb_mlog( "RebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in SPAMBOX version $main::version$main::modversion");
     while (@dbhint) {
         my $t = shift @dbhint;
         &rb_mlog( $t ) unless $t =~ s/^\-//o;
@@ -7010,11 +7010,11 @@ EOT
         &rb_printlog( "\nRebuildSpamDB will normalize unicode characters\n" );
         &rb_mlog( "RebuildSpamDB will normalize unicode characters" );
     }
-    if ($main::CanUseASSP_WordStem) {
-        &rb_printlog( "\nRebuildSpamDB will use the ASSP_WordStem engine\n" );
-        &rb_mlog( "RebuildSpamDB will use the ASSP_WordStem engine" );
+    if ($main::CanUseSPAMBOX_WordStem) {
+        &rb_printlog( "\nRebuildSpamDB will use the SPAMBOX_WordStem engine\n" );
+        &rb_mlog( "RebuildSpamDB will use the SPAMBOX_WordStem engine" );
     }
-    &rb_printlog("\n---ASSP Settings---\n");
+    &rb_printlog("\n---SPAMBOX Settings---\n");
     if ($main::DoPrivatSpamdb) {
         my $text = ($main::DoPrivatSpamdb == 1) ? 'users email addresses only.'
                  : ($main::DoPrivatSpamdb == 2) ? 'each local domain.'
@@ -7248,11 +7248,11 @@ EOT
         $scanTime = 1 unless $scanTime;
         my $fps = sprintf("%.2f",($scanFiles / $scanTime));
         if ($fps < $tooslow && $main::useDB4Rebuild) {
-            &rb_printlog("\nRebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for ASSP. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.\n");
-            &rb_mlog("Rebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for ASSP. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.");
+            &rb_printlog("\nRebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for SPAMBOX. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.\n");
+            &rb_mlog("Rebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are too slow for SPAMBOX. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process or disable 'DoHMM'.");
         } elsif ($fps < $slow && $main::useDB4Rebuild) {
-            &rb_printlog("\nRebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.\n");
-            &rb_mlog("Rebuild processed $fps files per second. ASSP expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.");
+            &rb_printlog("\nRebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.\n");
+            &rb_mlog("Rebuild processed $fps files per second. SPAMBOX expects a speed of at least $slow files per second - good values are $fast and higher. The disk IO components (disks and/or IO-controller) of your system are slow. Use a cached (>=128MB) IO-controller or use a RAM-disk with at least $size for the folder '$main::base/tmpDB' to speed up the rebuild process.");
         } elsif ($fps < $fast && $main::useDB4Rebuild) {
             &rb_printlog("\nRebuild processed $fps files per second. Good values are $fast files per second and higher. You can speed up the rebuild process, using a cached (>=128MB) IO-controller or a RAM-disk with at least $size for the folder '$main::base/tmpDB'.\n");
             &rb_mlog("Rebuild processed $fps files per second. Good values are $fast files per second and higher. You can speed up the rebuild process, using a cached (>=128MB) IO-controller or a RAM-disk with at least $size for the folder '$main::base/tmpDB'.");
@@ -7263,18 +7263,18 @@ EOT
         if ($main::useDB4Rebuild) {
             &rb_printlog("\nAfter finishing the Rebuild process, the $main::base/tmpDB folder contains $used.\n");
             &rb_mlog("After finishing the Rebuild process, the $main::base/tmpDB folder contains $used.");
-            if ($main::CanUseASSP_FC && eval('require ASSP_FC;')) {
-                $ASSP_FC::freespace_kbl = 0;
-                $ASSP_FC::totalspace_kbl = 0;
-                if ( &ASSP_FC::getDriveInfo("$main::base/tmpDB",'l') && $ASSP_FC::totalspace_kbl ) {
-                    $ASSP_FC::freespace_kbl =~ s/[.,]//go;
-                    $ASSP_FC::totalspace_kbl =~ s/[.,]//go;
-                    $ASSP_FC::freespace_kbl = &main::formatNumDataSize($ASSP_FC::freespace_kbl * 1024);
-                    $ASSP_FC::totalspace_kbl = &main::formatNumDataSize($ASSP_FC::totalspace_kbl * 1024);
-                    &rb_printlog("\nAfter finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $ASSP_FC::freespace_kbl free space from total $ASSP_FC::totalspace_kbl.\n");
-                    &rb_mlog("After finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $ASSP_FC::freespace_kbl free space from total $ASSP_FC::totalspace_kbl.");
+            if ($main::CanUseSPAMBOX_FC && eval('require SPAMBOX_FC;')) {
+                $SPAMBOX_FC::freespace_kbl = 0;
+                $SPAMBOX_FC::totalspace_kbl = 0;
+                if ( &SPAMBOX_FC::getDriveInfo("$main::base/tmpDB",'l') && $SPAMBOX_FC::totalspace_kbl ) {
+                    $SPAMBOX_FC::freespace_kbl =~ s/[.,]//go;
+                    $SPAMBOX_FC::totalspace_kbl =~ s/[.,]//go;
+                    $SPAMBOX_FC::freespace_kbl = &main::formatNumDataSize($SPAMBOX_FC::freespace_kbl * 1024);
+                    $SPAMBOX_FC::totalspace_kbl = &main::formatNumDataSize($SPAMBOX_FC::totalspace_kbl * 1024);
+                    &rb_printlog("\nAfter finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $SPAMBOX_FC::freespace_kbl free space from total $SPAMBOX_FC::totalspace_kbl.\n");
+                    &rb_mlog("After finishing the Rebuild process, the drive that contains the $main::base/tmpDB folder has $SPAMBOX_FC::freespace_kbl free space from total $SPAMBOX_FC::totalspace_kbl.");
                 }
-                eval('no ASSP_FC;');
+                eval('no SPAMBOX_FC;');
             }
         }
     }
@@ -7336,7 +7336,7 @@ EOT
     unlink "$DBDir/rb_newspam.bdb";
 
 eval (<<'EOT');
-    no ASSP_WordStem;
+    no SPAMBOX_WordStem;
 EOT
     return ! $have_error;
 }
@@ -7729,13 +7729,13 @@ sub rb_processNewCorrected {
     &main::checkDBCon() if ($main::CanUseTieRDBM && $main::DBisUsed);
     $movetime = 0;
     my %addspam;
-    my $newhamHMM  = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+    my $newhamHMM  = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                           shortest => $main::HMMSequenceLength,
                                           top => 1,
                                           nostarts => 1,
                                           simple => 1
                                           );
-    my $newspamHMM = ASSP::MarkovChain->new(longest => $main::HMMSequenceLength,
+    my $newspamHMM = SPAMBOX::MarkovChain->new(longest => $main::HMMSequenceLength,
                                           shortest => $main::HMMSequenceLength,
                                           top => 1,
                                           nostarts => 1,
@@ -8258,7 +8258,7 @@ sub rb_get {
     eval{$file->close;};
     if ($count) {
         my @keep = $message =~ /((?:X-Assp-Reported-By|X-Assp-Intended-For|X-Forwarded-For):$main::HeaderValueRe)/gois;
-        $message =~ s/X-ASSP[^:]+:$main::HeaderValueRe//gois;                   # remove all X-ASSP headers
+        $message =~ s/X-SPAMBOX[^:]+:$main::HeaderValueRe//gois;                   # remove all X-SPAMBOX headers
         $message =~ s/(?:DKIM|DomainKey)-Signature:$main::HeaderValueRe//gios;  # remove DKIM/DomainKey signatures
         $message = join('',@keep).$message;
         $headlen = index($message, "\x0D\x0A\x0D\x0A");
@@ -8680,7 +8680,7 @@ sub rb_uploadgriplist {
         my ($url) = $main::gripListUpUrl =~ /http:\/\/[^\/](\/.+)/oi;
         $connect     = <<"EOF";
 POST $url HTTP/1.1
-User-Agent: ASSP/$main::MAINVERSION ($^O; Perl/$];)
+User-Agent: SPAMBOX/$main::MAINVERSION ($^O; Perl/$];)
 Host: $main::gripListUpHost
 EOF
     }
@@ -8947,14 +8947,14 @@ sub defineCanUseModules {
         $optReModule = 'Regexp::Optimizer' if eval('Regexp::Optimizer->VERSION') ge '0.23';
     }
 
-    $AvailASSP_WordStem    = $useASSP_WordStem ? validateModule('ASSP_WordStem()') : 0;  # ASSP_WordStem  module installed
-    $CanUseASSP_WordStem   = $AvailASSP_WordStem;
+    $AvailSPAMBOX_WordStem    = $useSPAMBOX_WordStem ? validateModule('SPAMBOX_WordStem()') : 0;  # SPAMBOX_WordStem  module installed
+    $CanUseSPAMBOX_WordStem   = $AvailSPAMBOX_WordStem;
 
-    $AvailASSP_FC    = $useASSP_FC ? validateModule('ASSP_FC()') : 0;  # ASSP_FC  module installed
-    $CanUseASSP_FC   = $AvailASSP_FC;
+    $AvailSPAMBOX_FC    = $useSPAMBOX_FC ? validateModule('SPAMBOX_FC()') : 0;  # SPAMBOX_FC  module installed
+    $CanUseSPAMBOX_FC   = $AvailSPAMBOX_FC;
 
-    $AvailASSP_SVG    = $useASSP_SVG ? validateModule('ASSP_SVG()') : 0;  # ASSP_SVG  module installed
-    $CanUseASSP_SVG   = $AvailASSP_SVG;
+    $AvailSPAMBOX_SVG    = $useSPAMBOX_SVG ? validateModule('SPAMBOX_SVG()') : 0;  # SPAMBOX_SVG  module installed
+    $CanUseSPAMBOX_SVG   = $AvailSPAMBOX_SVG;
 
     $AvailAsspSelfLoader   = $useAsspSelfLoader ? defined $AsspSelfLoader::VERSION : 0;  # AsspSelfLoader  module installed
     $CanUseAsspSelfLoader  = $AvailAsspSelfLoader;
@@ -9221,7 +9221,7 @@ $lngmsg{'msg500017'} = 'For defining any full filepaths, always use slashes ("/"
 $lngmsghint{'msg500018'} = '# main form buttom hint 8';
 $lngmsg{'msg500018'} = <<EOT;
 Fields marked with one small (<sup>s</sup>) - which are interval definitions - accept a single or a list of crontab entries separated by '|'. Such entries could be used to flexible schedule the configured task. A description of such crontab entries could be found in 'RebuildSchedule' and 'RestartSchedule'. Notice - this requires an installed <a href="http://search.cpan.org/search?query=Schedule::Cron" rel="external">Schedule::Cron</a> module in PERL.<br /><br />
-Fields marked with at least one asterisk (*) accept a list separated by '|' (for example: abc|def|ghi) or a file designated as follows (path relative to the ASSP directory): 'file:files/filename.txt'.  Putting in the <i>file:</i> will prompt ASSP to put up a button to edit that file. <i>files</i> is the subdirectory for files. The file does not need to exist, you can create it by saving it from the editor within the UI. The file must have one entry per line; anything on a line following a number sign or a semicolon ( # ;) is ignored (a comment).<br />
+Fields marked with at least one asterisk (*) accept a list separated by '|' (for example: abc|def|ghi) or a file designated as follows (path relative to the SPAMBOX directory): 'file:files/filename.txt'.  Putting in the <i>file:</i> will prompt SPAMBOX to put up a button to edit that file. <i>files</i> is the subdirectory for files. The file does not need to exist, you can create it by saving it from the editor within the UI. The file must have one entry per line; anything on a line following a number sign or a semicolon ( # ;) is ignored (a comment).<br />
 It is possible to include custom-designed files at any line of such a file, using the following directive<br />
 <span class="positive"># include filename</span><br />
 where filename is the relative path (from $base) to the included file like files/inc1.txt or inc1.txt (one file per line). The line will be internaly replaced by the contents of the included file!<br /><br />
@@ -9297,7 +9297,7 @@ Refresh your browser or click [Search/Update] to update this screen. Newest entr
 EOT
 
 $lngmsg{'msg500051'} = <<EOT;
-Select [file lines only], if you want to reduce the shown number of lines to such (POST filter), which contains filenames.<br /><br /> Use the MaillogTail function carefully, while ASSP is processing any request, no new connections will be accepted by ASSP, and this could take some minutes, if you search in large or many maillogs! To start realtime maillog, click on [Auto], to stop realtime maillog, click on [Stop].
+Select [file lines only], if you want to reduce the shown number of lines to such (POST filter), which contains filenames.<br /><br /> Use the MaillogTail function carefully, while SPAMBOX is processing any request, no new connections will be accepted by SPAMBOX, and this could take some minutes, if you search in large or many maillogs! To start realtime maillog, click on [Auto], to stop realtime maillog, click on [Stop].
 EOT
 
 $lngmsg{'msg500052'} = <<EOT;
@@ -9310,7 +9310,7 @@ EOT
 
 $lngmsghint{'msg500060'} = '# Mail Analyzer';
 $lngmsg{'msg500060'} = <<EOT;
-This page will show you how ASSP analyzes and pre-processes an email to come up with the assigned spam probability. Regular Expressions will always check the full message. Group matching of any address will be shown. To analyze/modify individual email addresses click <a href="javascript:void(0);" onclick="popAddressAction('example\@$myName');return false;">here</a>. To analyze/modify individual IP addresses click <a href="javascript:void(0);" onclick="popIPAction('1.1.1.1');return false;">here</a>.
+This page will show you how SPAMBOX analyzes and pre-processes an email to come up with the assigned spam probability. Regular Expressions will always check the full message. Group matching of any address will be shown. To analyze/modify individual email addresses click <a href="javascript:void(0);" onclick="popAddressAction('example\@$myName');return false;">here</a>. To analyze/modify individual IP addresses click <a href="javascript:void(0);" onclick="popIPAction('1.1.1.1');return false;">here</a>.
 EOT
 
 $lngmsg{'msg500061'} = <<EOT;
@@ -9340,23 +9340,23 @@ EOT
 
 $lngmsghint{'msg500070'} = '# Shutdown/Restart';
 $lngmsg{'msg500070'} = <<EOT;
-Note: It's possible to restart, if ASSP runs as a service or in a script that restarts it after it stops or it runs on WIN32 version Windows 2000(or higher) or it runs on linux,
-otherwise this function can only shut ASSP down. In either case, shutdown is possibly not clean -- all SMTP sessions will be interrupted after $MaxFinConWaitTime seconds.<br /><br />
+Note: It's possible to restart, if SPAMBOX runs as a service or in a script that restarts it after it stops or it runs on WIN32 version Windows 2000(or higher) or it runs on linux,
+otherwise this function can only shut SPAMBOX down. In either case, shutdown is possibly not clean -- all SMTP sessions will be interrupted after $MaxFinConWaitTime seconds.<br /><br />
 EOT
 $lngmsg{'msg500070'} .= <<EOT if $WebIP{$ActWebSess}->{user} eq 'root';
-The following command will be started in OS-shell, if ASSP runs not as a service or daemon:<br /><b><font color=green>$AutoRestartCmd</font></b>
+The following command will be started in OS-shell, if SPAMBOX runs not as a service or daemon:<br /><b><font color=green>$AutoRestartCmd</font></b>
 EOT
 
 $lngmsghint{'msg500080'} = '# EDIT files window/frame';
 $lngmsg{'msg500080'} = <<EOT;
 <span class="negative">Attention: This is the real database content!<br />
-Incorrect editing hash lists could result in unexpected behavior or dying ASSP!</span><br />
+Incorrect editing hash lists could result in unexpected behavior or dying SPAMBOX!</span><br />
 Use |::| as terminator between key and value, for example: 102.1.1.1|::|1234567890 !<br />
 If a time is shown human readable, you can change the date or time,<br />
 but leave the format as it is ([+]YYYY-MM-DD,hh:mm:ss) and leave a possible \'+\' in front.<br />
 Use only one pair of key and value per line.<br />
 Comments are not allowed!<br />
-While the hash is saved, ASSP is unable to accept new connections!<br />
+While the hash is saved, SPAMBOX is unable to accept new connections!<br />
 Be careful saveing large hash here, this could take very long time. Better save the new contents of large hashes and lists to the Importfile, if this option is available. If possible, the DB-Import will be started immediately by the MaintThread!<br />
 After saving the contents to the Importfile, you should close this windows and wait until the import has finished!
 EOT
@@ -9420,7 +9420,7 @@ sub renderConfigHTML {
   <a href="top10stats" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Top 10 Stats</a><br />' if $DoT10Stat;
   $NavMenu .= '
   <a href="statusassp?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="noicon" /> Worker/DB/Regex Status</a><br />
-  <a href="shutdown_list?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="this monitor will slow down ASSP dramaticly - use it careful" /> SMTP Connections </a>
+  <a href="shutdown_list?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="this monitor will slow down SPAMBOX dramaticly - use it careful" /> SMTP Connections </a>
   <a href="shutdown_list?nocache='.time.'&forceRefresh=1" target="_blank" onmouseover="showhint(\''.$ConnHint.'\', this, event, \'500px\', \'1\');return false;"><img height=12 width=12 src="' . $wikiinfo . '" /></a><br />
   <a href="shutdown"><img src="' . $noIcon . '" alt="noicon" /> Shutdown/Restart</a><br />
   <a href="donations"><img src="' . $noIcon . '" alt="noicon" /> Donations</a><br /></div>';
@@ -9567,7 +9567,7 @@ var BrowserDetect = {
 };
 BrowserDetect.init();
 
-var detectedBrowser = 'ASSP-GUI is running in ' + BrowserDetect.browser + ' version ' + BrowserDetect.version + ' on ' + BrowserDetect.OS;
+var detectedBrowser = 'SPAMBOX-GUI is running in ' + BrowserDetect.browser + ' version ' + BrowserDetect.version + ' on ' + BrowserDetect.OS;
 if (oldBrowser) {
     detectedBrowser = detectedBrowser + ' (old javascript engine and/or browser detected)';
 }
@@ -9920,7 +9920,7 @@ window.onload = externalLinks;
 // Sliding Menu Script
 // copyright Stephen Chapman, 6th July 2005
 // you may copy this code but please keep the copyright notice as well
-// ASSP implementation by Thomas Eckardt
+// SPAMBOX implementation by Thomas Eckardt
 var speed = 1;
 
 function changeSlide() {
@@ -10041,7 +10041,7 @@ $JavaScript .= '
 * This notice MUST stay intact for legal use
 * Visit http://www.dynamicdrive.com/ for this script and 100s more.
 *
-* implemented in ASSP by Thomas Eckardt
+* implemented in SPAMBOX by Thomas Eckardt
 ***********************************************/
 
 var horizontal_offset="0px" //horizontal offset of hint box from anchor link
@@ -10260,7 +10260,7 @@ function processPrint(){
             if (headTags.length > 0) html += headTags[0].innerHTML;
         }
         html += \'\n</HE\' + \'AD>\n<BODY>\n\';
-        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>ASSP version '.$version.$modversion.'</b><br /><hr /><br />\';
+        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>SPAMBOX version '.$version.$modversion.'</b><br /><hr /><br />\';
 
         var printReadyElemCfg  = document.getElementById("cfgdiv");
         var printReadyElemHint = document.getElementById("mainhints");
@@ -10314,7 +10314,7 @@ Cache-control: no-cache
   <meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />
   <META HTTP-EQUIV=\"Pragma\" CONTENT=\"no-cache\">
   <META HTTP-EQUIV=\"Expires\" CONTENT=\"-1\">
-  <title>Config ASSP ($myName) Host: $localhostname @ $localhostip</title>
+  <title>Config SPAMBOX ($myName) Host: $localhostname @ $localhostip</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
   <link rel=\"shortcut icon\" href=\"get?file=images/favicon.ico\" />
 $JavaScript
@@ -10400,11 +10400,11 @@ foreach (sort keys %Config1) {
   $headers .= '<table id="TopMenu" class="contentFoot" style="margin:0; text-align:left;" CELLSPACING=0 CELLPADDING=4 WIDTH="100%">
   <tr><td rowspan="3" align="left">';
   if (-e "$base/images/logo.gif") {
-      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"ASSP\" /></a>";
+      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"SPAMBOX\" /></a>";
   } else {
-      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"ASSP\" /></a>";
+      $headers .= "<a href=\"http://assp.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"SPAMBOX\" /></a>";
   }
-  $headers .= "</td><td rowspan=\"3\" align=\"left\" onmouseover=\"showhint(detectedBrowser,this, event, '450px', '')\">ASSP version $version$modversion<br />";
+  $headers .= "</td><td rowspan=\"3\" align=\"left\" onmouseover=\"showhint(detectedBrowser,this, event, '450px', '')\">SPAMBOX version $version$modversion<br />";
 
   if ($setpro && $globalClientName && $globalClientPass) {
       $headers .= "<b><font color=white size=+3>&nbsp;&nbsp;&nbsp;&nbsp;pro</font></b>";
@@ -10417,7 +10417,7 @@ foreach (sort keys %Config1) {
   $avv =~ s/\s|\(|\)//gio;
   $stv =~ s/\s|\(|\)//gio;
   $stv = 0 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
-  $headers .= "<br /><a href=\"$NewAsspURL\" target=\"_blank\" style=\"color:green;size:-1;\">new available ASSP version $availversion</a>" if $avv gt $stv;
+  $headers .= "<br /><a href=\"$NewAsspURL\" target=\"_blank\" style=\"color:green;size:-1;\">new available SPAMBOX version $availversion</a>" if $avv gt $stv;
 
  $headers .= '</td>
   <td><a href="lists">White/Redlist/Tuplets</a></td>
@@ -10466,13 +10466,13 @@ foreach (sort keys %Config1) {
 
  $headers .= "
 <div class=\"rightButton\" style=\"text-align: center;\">
-  <input type=\"button\" value=\"logout\" onclick=\"document.forms['ASSPconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />\&nbsp;
+  <input type=\"button\" value=\"logout\" onclick=\"document.forms['SPAMBOXconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />\&nbsp;
   <a href=\"javascript:void(0);\" onclick=\"remember();return false;\" onmouseover=\"showhint('open the remember me window', this, event, '200px', '');return false;\"><img height=12 width=12 src=\"$wikiinfo\" /></a>&nbsp;
-  <input type=\"button\" value=\"Apply\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />&nbsp;
+  <input type=\"button\" value=\"Apply\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;
 ";
  $headers .= "
   <a href=\"./fc\" target=\"_blank\" onmouseover=\"showhint('start the assp file commander', this, event, '200px', '');return false;\"><img height=19 width=19 src=\"get?file=images/fc_main.png\" /></a>"
-    if ($CanUseASSP_FC && &canUserDo($WebIP{$ActWebSess}->{user},'action','fc'));
+    if ($CanUseSPAMBOX_FC && &canUserDo($WebIP{$ActWebSess}->{user},'action','fc'));
  $headers .= "
 </div>
 <hr />
@@ -10519,11 +10519,11 @@ foreach (sort keys %Config1) {
 <div class=\"menuLevel1\">$NavMenu</div>
 <hr />
 <div class=\"rightButton\" style=\"text-align: center;\">
-  <input type=\"button\" value=\"  logout  \" onclick=\"document.forms['ASSPconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />
+  <input type=\"button\" value=\"  logout  \" onclick=\"document.forms['SPAMBOXconfig'].theButtonLogout.value='  logout  ';eraseCookie('lastAnchor');window.location.href='./logout';return false;\" />
 </div>
 <hr />
 <div class=\"rightButton\" style=\"text-align: center;\">
-  <input type=\"button\" value=\"Apply Changes\" onclick=\"document.forms['ASSPconfig'].theButtonX.value='Apply Changes';document.forms['ASSPconfig'].submit();WaitDiv();return false;\" />
+  <input type=\"button\" value=\"Apply Changes\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />
 </div>
 <hr />
 <div class=\"menuLevel2\">
@@ -10578,7 +10578,7 @@ $headers .= "
 " if (($rootlogin or &canUserDo($WebIP{$ActWebSess}->{user},'action','editinternals')) && $DoDKIM && $ValidateSPF);
 
 $headers .= "<hr />
-	<span style=\"font-weight: bold;\">ASSP Version</span>: $version$modversion<br />
+	<span style=\"font-weight: bold;\">SPAMBOX Version</span>: $version$modversion<br />
 	".($codename?"<span style=\"font-weight: bold;\">code name</span>: $codename<br />":'')."
 	<span style=\"font-weight: bold;\">Current PID</span>: $mypid<br />
 	<span style=\"font-weight: bold;\">Started</span>: $starttime<br />
@@ -10618,7 +10618,7 @@ $headers .= "</div>
 <a href=\"donations\">donations</a> |
 <a href=\"http://assp.cvs.sourceforge.net\" rel=\"external\" target=\"_blank\">development</a> |
 <a href=\"http://assp.sourceforge.net/cgi-bin/assp_stats\" rel=\"external\" target=\"_blank\">global stats</a> |
-<a href=\"http://sourceforge.net/p/assp/wiki/ASSP_Documentation\" rel=\"external\" target=\"_blank\">docs</a> |
+<a href=\"http://sourceforge.net/p/assp/wiki/SPAMBOX_Documentation\" rel=\"external\" target=\"_blank\">docs</a> |
  <a href=\"http://sourceforge.net/mail/?group_id=69172\" rel=\"external\" target=\"_blank\">email lists</a> |
 
  <a href=\"http://sourceforge.net/p/assp/forum/\" rel=\"external\" target=\"_blank\">community forums</a> |
@@ -10699,7 +10699,7 @@ sub d {
 
 sub _assp_try_restart {
     if($AsAService) {
-        exec('cmd.exe /C net stop ASSPSMTP & net start ASSPSMTP');
+        exec('cmd.exe /C net stop SPAMBOXSMTP & net start SPAMBOXSMTP');
     } elsif ($AsADaemon == 1) {
         exit 1;
     } elsif ($AutoRestartCmd && $AsADaemon == 2) {
@@ -11172,18 +11172,18 @@ sub init {
  }
 
  if($] lt '5.012003') {
-   mlog(0, "warning: Perl version 5.012003 (5.12.3) is at least recommended to run ASSP $version $modversion - you are running Perl version $] - please upgrade Perl");
+   mlog(0, "warning: Perl version 5.012003 (5.12.3) is at least recommended to run SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl");
  }
  if($] lt '5.012000') {
-   mlog(0, "Perl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of ASSP $version $modversion - you are running Perl version $] - please upgrade Perl");
+   mlog(0, "Perl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl");
  }
  my $p;
  $p = '-professional' if ($setpro && $globalClientName && $globalClientPass);
  $Y=eval($Y);
  if ($localhostname) {
-     mlog(0,"ASSP$p version $version$modversion (Perl $]) (on $^O)running on server: $localhostname ($localhostip)");
+     mlog(0,"SPAMBOX$p version $version$modversion (Perl $]) (on $^O)running on server: $localhostname ($localhostip)");
  } else {
-     mlog(0,"ASSP$p version $version$modversion (Perl $]) (on $^O) running on server: localhost ($localhostip)") ;
+     mlog(0,"SPAMBOX$p version $version$modversion (Perl $]) (on $^O) running on server: localhost ($localhostip)") ;
  }
  if ($canUnicode) {
      mlog(0,"info: unicode support is available on that system");
@@ -11307,16 +11307,16 @@ sub init {
        print "\t\t\t\t\t[SKIP]";
   }
   if ( $perlver > "5.999999") {
-       mlog(0,"Perl version $perlver is not supported for ASSP Version 2.x.x!");
+       mlog(0,"Perl version $perlver is not supported for SPAMBOX Version 2.x.x!");
   }
 
   print "\ncheck process permission";
 
-  my $tmpASSPout;
+  my $tmpSPAMBOXout;
   my $StartError;
-  if (open($tmpASSPout, ">", "$base/aaaa_tmp.pl")) {
-      binmode $tmpASSPout;
-      close $tmpASSPout;
+  if (open($tmpSPAMBOXout, ">", "$base/aaaa_tmp.pl")) {
+      binmode $tmpSPAMBOXout;
+      close $tmpSPAMBOXout;
       my $assp = $assp;
       $assp =~ s/\\/\//og;
       $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
@@ -11389,9 +11389,9 @@ sub init {
   $ModuleList{'IO::Select'} = $ver.'/1.17';
 
   if ($IOEngineRun == 0) {
-      mlog(0,'ASSP is using IOEngine - Poll');
+      mlog(0,'SPAMBOX is using IOEngine - Poll');
   } else {
-      mlog(0,'ASSP is using IOEngine - select');
+      mlog(0,'SPAMBOX is using IOEngine - select');
   }
 
   if ($CanUseThreadState) {
@@ -12086,21 +12086,21 @@ EOT
 
   if ($CanUseAsspSelfLoader) {
     $ver=eval('AsspSelfLoader->VERSION'); $VerAsspSelfLoader=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"AsspSelfLoader module$ver installed - ASSP Code Load Optimization is available");
+    mlog(0,"AsspSelfLoader module$ver installed - SPAMBOX Code Load Optimization is available");
     $installed = 'enabled';
   } elsif (!$AvailAsspSelfLoader)  {
     $installed = $useAsspSelfLoader ? 'is not installed' : 'is disabled in config';
-    mlog(0,"AsspSelfLoader module $installed - ASSP Code Load Optimization is not available");
+    mlog(0,"AsspSelfLoader module $installed - SPAMBOX Code Load Optimization is not available");
   }
   $ModuleList{'AsspSelfLoader'} = $VerAsspSelfLoader.'/'.$requiredSelfLoaderVersion;
   $ModuleStat{'AsspSelfLoader'} = $installed;
 
-  if ($CanUseASSP_WordStem) {
-    $ver=eval('ASSP_WordStem->VERSION'); $VerASSP_WordStem=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"ASSP_WordStem module$ver installed - ASSP multi lingual word stemming engine for Bayesian and HMM checks is available");
+  if ($CanUseSPAMBOX_WordStem) {
+    $ver=eval('SPAMBOX_WordStem->VERSION'); $VerSPAMBOX_WordStem=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SPAMBOX_WordStem module$ver installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is available");
     $installed = 'enabled';
-    $requiredDBVersion{'Spamdb'} .= "_WordStem$VerASSP_WordStem";
-    $requiredDBVersion{'HMMdb'}  .= "_WordStem$VerASSP_WordStem";
+    $requiredDBVersion{'Spamdb'} .= "_WordStem$VerSPAMBOX_WordStem";
+    $requiredDBVersion{'HMMdb'}  .= "_WordStem$VerSPAMBOX_WordStem";
     # make Lingua::Stem::Snowball thread safe if it is'nt
     if (! defined *{'Lingua::Stem::Snowball::CLONE_SKIP'}) {
         *{'Lingua::Stem::Snowball::CLONE_SKIP'} = *{'main::Stem_Clone_Skip'};
@@ -12108,34 +12108,34 @@ EOT
     if (! defined *{'Lingua::Stem::Snowball::CLONE'}) {
         *{'Lingua::Stem::Snowball::CLONE'} = *{'main::Stem_Clone'};
     }
-  } elsif (!$AvailASSP_WordStem)  {
-    $installed = $useASSP_WordStem ? 'is not installed' : 'is disabled in config';
-    mlog(0,"ASSP_WordStem module $installed - ASSP multi lingual word stemming engine for Bayesian and HMM checks is not available");
+  } elsif (!$AvailSPAMBOX_WordStem)  {
+    $installed = $useSPAMBOX_WordStem ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SPAMBOX_WordStem module $installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available");
   }
-  $ModuleList{'ASSP_WordStem'} = $VerASSP_WordStem.'/1.24';
-  $ModuleStat{'ASSP_WordStem'} = $installed;
+  $ModuleList{'SPAMBOX_WordStem'} = $VerSPAMBOX_WordStem.'/1.24';
+  $ModuleStat{'SPAMBOX_WordStem'} = $installed;
 
-  if ($CanUseASSP_FC) {
-    $ver=eval('ASSP_FC->VERSION'); $VerASSP_FC=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"ASSP_FC module$ver installed - ASSP file commander is available");
+  if ($CanUseSPAMBOX_FC) {
+    $ver=eval('SPAMBOX_FC->VERSION'); $VerSPAMBOX_FC=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SPAMBOX_FC module$ver installed - SPAMBOX file commander is available");
     $installed = 'enabled';
-  } elsif (!$AvailASSP_FC)  {
-    $installed = $useASSP_FC ? 'is not installed' : 'is disabled in config';
-    mlog(0,"ASSP_FC module $installed - ASSP file commander is not available");
+  } elsif (!$AvailSPAMBOX_FC)  {
+    $installed = $useSPAMBOX_FC ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SPAMBOX_FC module $installed - SPAMBOX file commander is not available");
   }
-  $ModuleList{'ASSP_FC'} = $VerASSP_FC.'/1.05';
-  $ModuleStat{'ASSP_FC'} = $installed;
+  $ModuleList{'SPAMBOX_FC'} = $VerSPAMBOX_FC.'/1.05';
+  $ModuleStat{'SPAMBOX_FC'} = $installed;
 
-  if ($CanUseASSP_SVG) {
-    $ver=eval('ASSP_SVG->VERSION'); $VerASSP_SVG=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"ASSP_SVG module$ver installed - ASSP graphical STATS are available");
+  if ($CanUseSPAMBOX_SVG) {
+    $ver=eval('SPAMBOX_SVG->VERSION'); $VerSPAMBOX_SVG=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SPAMBOX_SVG module$ver installed - SPAMBOX graphical STATS are available");
     $installed = 'enabled';
-  } elsif (!$AvailASSP_SVG)  {
-    $installed = $useASSP_SVG ? 'is not installed' : 'is disabled in config';
-    mlog(0,"ASSP_SVG module $installed - ASSP graphical STATS are not available");
+  } elsif (!$AvailSPAMBOX_SVG)  {
+    $installed = $useSPAMBOX_SVG ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SPAMBOX_SVG module $installed - SPAMBOX graphical STATS are not available");
   }
-  $ModuleList{'ASSP_SVG'} = $VerASSP_SVG.'/1.03';
-  $ModuleStat{'ASSP_SVG'} = $installed;
+  $ModuleList{'SPAMBOX_SVG'} = $VerSPAMBOX_SVG.'/1.03';
+  $ModuleStat{'SPAMBOX_SVG'} = $installed;
 
   if ($CanUseIOSocketSSL) {
     $ver=eval('IO::Socket::SSL->VERSION'); $VerIOSocketSSL=$ver; $ver=" version $ver" if $ver;
@@ -12189,11 +12189,11 @@ EOT
   $ModuleStat{'IO::Socket::SSL'} = $installed;
 
   my $v;
-  $ModuleList{'Plugins::ASSP_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=3.10;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_AFC'};
-  $ModuleList{'Plugins::ASSP_ARC'}   =~ s/([0-9\.\-\_]+)$/$v=2.05;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_ARC'};
-  $ModuleList{'Plugins::ASSP_DCC'}   =~ s/([0-9\.\-\_]+)$/$v=2.01;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_DCC'};
-  $ModuleList{'Plugins::ASSP_OCR'}   =~ s/([0-9\.\-\_]+)$/$v=2.18;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_OCR'};
-  $ModuleList{'Plugins::ASSP_Razor'} =~ s/([0-9\.\-\_]+)$/$v=1.09;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::ASSP_Razor'};
+  $ModuleList{'Plugins::SPAMBOX_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=3.10;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_AFC'};
+  $ModuleList{'Plugins::SPAMBOX_ARC'}   =~ s/([0-9\.\-\_]+)$/$v=2.05;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_ARC'};
+  $ModuleList{'Plugins::SPAMBOX_DCC'}   =~ s/([0-9\.\-\_]+)$/$v=2.01;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_DCC'};
+  $ModuleList{'Plugins::SPAMBOX_OCR'}   =~ s/([0-9\.\-\_]+)$/$v=2.18;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_OCR'};
+  $ModuleList{'Plugins::SPAMBOX_Razor'} =~ s/([0-9\.\-\_]+)$/$v=1.09;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_Razor'};
 
   if (scalar keys %ModuleError) {
       mlog(0,"warning: There were module load errors detected - look in to file $base/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.");
@@ -12370,7 +12370,7 @@ EOT2
   }
 
   my $unclean = (exists $Config{clearBerkeleyDBEnv} || -e "$base/$pidfile");
-  mlog(0,'error: unclean shutdown of ASSP detected') if $unclean;
+  mlog(0,'error: unclean shutdown of SPAMBOX detected') if $unclean;
   foreach my $dir ( Glob("$base/tmpDB/*")) {
       if (-d $dir) {
           my $del;
@@ -12514,7 +12514,7 @@ EOT2
 # which cause in unexpected or missing keys in spamdb
 # for MySQL the field value is redefined from longblob to varbinary(255) - so we can read the data in MySQL-Admin
 # the length of the key field is set to 254 for all - to have one byte over for indexes (see Informix)
-# the length of the value field is set to 255 for all - this is enough for ASSP
+# the length of the value field is set to 255 for all - this is enough for SPAMBOX
 
 if ($CanUseTieRDBM) {
 # %Types is used for creating the data table if it doesn't exist already.
@@ -12527,7 +12527,7 @@ if ($CanUseTieRDBM) {
       'PgPP'    => [qw/ varchar(254)    varchar(255)     int       1          0 /],
       'Sybase'  => [qw/ varbinary(254)  varbinary(255)   tinyint   1          0 /],
 	  'Oracle'  => [qw/ varchar(254)    varchar(255)     integer   1          0 /],
-	  'CSV'     => [qw/ varchar(254)    varchar(255)     integer   1          1 /],  # should never be used by ASSP
+	  'CSV'     => [qw/ varchar(254)    varchar(255)     integer   1          1 /],  # should never be used by SPAMBOX
 	  'Informix'=> [qw/ nchar(254)      nchar(255)       integer   0          0 /],
 	  'Solid'   => [qw/ varbinary(254)  varbinary(255)   integer   1          0 /],
 	  'ODBC'    => [qw/ varbinary(254)  varbinary(255)   integer   1          0 /],
@@ -12653,7 +12653,7 @@ if ($CanUseTieRDBM) {
         *{'BerkeleyDB::_tiedHash::DELETE'} = *{'main::BDB_DELETE'};
   }
 
-  if ($CanUseASSP_WordStem) {
+  if ($CanUseSPAMBOX_WordStem) {
       $Lingua::Stem::Snowball::stemmifier = Lingua::Stem::Snowball::Stemmifier->new unless ref($Lingua::Stem::Snowball::stemmifier);
   }
   
@@ -12712,7 +12712,7 @@ if ($CanUseTieRDBM) {
   $currentDBVersion{'Spamdb'} = $Spamdb{'***DB-VERSION***'} || 'n/a';
   mlog(0,'spamdb has '.nN($i).' records') if $MaintenanceLog >= 2;
   mlog(0,"warning: Bayesian spam database has only $i records") if ($i < 500 && $spamdb);
-  mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ($haveSpamdb && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb});
+  mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ($haveSpamdb && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb});
   &mlogWrite();
   
 # check if there are at least 50 records in whitelist (~1KB)
@@ -12727,7 +12727,7 @@ if ($CanUseTieRDBM) {
       mlog(0,'The Hidden-Markov-Model-DB has '.nN($haveHMM).' records.') if $MaintenanceLog >= 2 && $haveHMM;
   }
   $currentDBVersion{'HMMdb'} = $HMMdb{'***DB-VERSION***'} || 'n/a';
-  mlog(0,"warning: the current HMMdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb});
+  mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb});
 
   if ($mysqlSlaveMode) {
       mlog(0,"assp is running in mysqlSlaveMode - no maintenance will be done for database tables!");
@@ -12825,8 +12825,8 @@ if ($CanUseTieRDBM) {
   if ($StartError) {
       mlog(0,"*******************************************************************************************");
       mlog(0,"error: an unrecoverable startup error was detected - please look in to previous messages");
-      mlog(0,"error: ASSP will not accept any SMTP connection - 'DisableSMTPNetworking' is set to on");
-      mlog(0,"error: solve the problem and restart ASSP");
+      mlog(0,"error: SPAMBOX will not accept any SMTP connection - 'DisableSMTPNetworking' is set to on");
+      mlog(0,"error: solve the problem and restart SPAMBOX");
       mlog(0,"error: after restart - login in to GUI and change 'DisableSMTPNetworking' to off, if needed");
       mlog(0,"*******************************************************************************************");
       configUpdateSMTPNet('DisableSMTPNetworking','0','2','');
@@ -12881,7 +12881,7 @@ sub initDBHashes {
                                 my $cmd = "'BerkeleyDB::Hash',-Filename => \"$BerkeleyFile\", \%main::env";
                                 my $bin = $adminusersdbNoBIN ? 0 : 1 ;
                                 d("BDB-DB (initDBHashes) - $KeyName , $BerkeleyFile");
-                                $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd;
+                                $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd;
                             }
                             BDB_getRecordCount($KeyName);
                             &BDB_compact_hash($KeyName, 1000000) if $WorkerNumber == 0;
@@ -12901,7 +12901,7 @@ sub initDBHashes {
                                 my $cmd = "'Tie::RDBM',\{db=>\$dbh,table=>\"$mysqlTable\",create=>1,DEBUG=>$DataBaseDebug\}";
                                 my $bin = $adminusersdbNoBIN ? 0 : 1 ;
                                 d("DB (initDBHashes) - $KeyName");
-                                $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
+                                $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
                             }
                         }
                     };
@@ -12970,7 +12970,7 @@ sub initFileHashes {
                         if ($singleGroup eq 'AdminGroup'){
                             eval{
                                 my $cmd = "'orderedtie',\"$base/$realFileName\"" ;
-                                $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,0,$cmd;
+                                $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,0,$cmd;
                             } if (${$dbConfig} && ${$dbConfig} !~ /DB:/o);
                             if ($@) {
                                 mlog(0,"warning: unable init AdminUsersDB - only root will have access to the GUI");
@@ -13217,7 +13217,7 @@ sub importDB {
       mlog_i(0,"adding records in file $importadd to table $mysqlTable");
    }
 
-   $dec = ASSP::CRYPT->new($adminusersdbpass,0) if $dodec;
+   $dec = SPAMBOX::CRYPT->new($adminusersdbpass,0) if $dodec;
 
    my @import = ($importrpl,$importadd);
    foreach my $importrpl (@import){
@@ -13653,7 +13653,7 @@ sub exportDB {
   rename("$export","$export.1");
   my $count=0;
 
-  $enc = ASSP::CRYPT->new($adminusersdbpass,0) if $doenc;
+  $enc = SPAMBOX::CRYPT->new($adminusersdbpass,0) if $doenc;
   my $obj;
   if ($obj = tied %$name) {
       $obj = $obj->{hashobj} if $doenc;
@@ -13779,7 +13779,7 @@ sub checkDBCon {
                     } else {
                         my $cmd = "'BerkeleyDB::Hash',-Filename => \"$BerkeleyFile\", \%main::env";
                         my $bin = $adminusersdbNoBIN ? 0 : 1 ;
-                        $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd;
+                        $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd;
                     }
                 } else {
                     $dbh ||= DBI->connect("DBI:$DBusedDriver:".($mydb ? "database=$mydb;" : '').($myhost ? "$DBhostTag=$myhost" : '' )."$DBOption", $myuser, $mypassword,
@@ -13793,7 +13793,7 @@ sub checkDBCon {
                     } else {
                         my $cmd = "'Tie::RDBM',\{db=>\$dbh,table=>\"$mysqlTable\",create=>1,DEBUG=>$DataBaseDebug\}";
                         my $bin = $adminusersdbNoBIN ? 0 : 1 ;
-                        $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
+                        $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
                     }
                 }
             };
@@ -14116,12 +14116,12 @@ sub nixUsers {
     if($@) {
       my $msg="request to change root to '$ChangeRoot' failed: $@";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     } elsif(! $chroot) {
       my $msg="request to change root to '$ChangeRoot' did not succeed: $!";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     } else {
       $chroot=$ChangeRoot; $chroot=~s/(\W)/\\$1/go;
@@ -14150,7 +14150,7 @@ sub getUidGid { my ($uname,$gname)=@_;
     } else {
       my $msg="could not find gid for group '$gname' -- not switching effective gid -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
   }
@@ -14161,7 +14161,7 @@ sub getUidGid { my ($uname,$gname)=@_;
     } else {
       my $msg="could not find uid for user '$uname' -- not switching effective uid -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
   }
@@ -14175,7 +14175,7 @@ sub switchUsers { my ($uid,$gid)=@_;
   if($> != 0) {
     my $msg="requested to switch to user/group '$uname/$gname' but cannot set effective uid to 0 -- quitting; uid is $>";
     mlog(0,$msg);
-    &downASSP($msg);
+    &downSPAMBOX($msg);
     exit(1);
   }
   $<=0;
@@ -14186,7 +14186,7 @@ sub switchUsers { my ($uid,$gid)=@_;
     } else {
       my $msg="failed to switch effective gid to $gid ($gname) -- effective gid=$) -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
     $(=$gid;
@@ -14205,7 +14205,7 @@ sub switchUsers { my ($uid,$gid)=@_;
     } else {
       my $msg="failed to switch effective uid to $uid ($uname) -- real uid=$< -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
     if($<==$uid) {
@@ -14442,14 +14442,14 @@ sub MainLoop {
             Time::HiRes::sleep(0.5);
             $ThreadIdleTime{$WorkerNumber} += 0.5;
         }
-        &downASSP("restarting");
+        &downSPAMBOX("restarting");
         _assp_try_restart;
   }
 
   &ThreadMonitorMainLoop('Mainloop after restart check');
 
   if ($doShutdown > 0 && $itime >= $doShutdown) {
-    &downASSP("restarting");
+    &downSPAMBOX("restarting");
     _assp_try_restart;
   }
   &ConDone();
@@ -14568,12 +14568,12 @@ sub MainLoop2 {
 
     if($RestartEvery && $itime >= $endtime) {
 # time to quit -- after endtime and we're bored.
-        &downASSP("restarting");
+        &downSPAMBOX("restarting");
         _assp_try_restart;
     }
 
     if ($doShutdown > 0 && $itime >= $doShutdown) {
-      &downASSP("restarting");
+      &downSPAMBOX("restarting");
       _assp_try_restart;
     }
   }
@@ -15098,7 +15098,7 @@ sub CleanWhitelist {
 # this function allows to to see the live log/trace using
 # http://technet.microsoft.com/en-us/sysinternals/bb896647.aspx
 sub w32dbg {
-    OutputDebugString('(ASSP): ' . shift);
+    OutputDebugString('(SPAMBOX): ' . shift);
 }
 
 sub mlogRe{
@@ -15205,7 +15205,7 @@ sub debugWrite {
         binmode($DEBUG);
         $DEBUG->autoflush;
         print $DEBUG $UTF8BOM;
-        print $DEBUG "running ASSP version: $main::MAINVERSION\n\n";
+        print $DEBUG "running SPAMBOX version: $main::MAINVERSION\n\n";
         mlog(0,"info: starting partial debug mode to file $file");
     }
     threads->yield();
@@ -15377,7 +15377,7 @@ sub mlog {
             if ($m =~ /$k/i) {
                 ($rcpt = $v) or next;
                 $sub = $NotifySub{$k} . " from $myName" if exists $NotifySub{$k};
-                $sub ||= "ASSP event notification from $myName [".substr($comment,0,40).']';
+                $sub ||= "SPAMBOX event notification from $myName [".substr($comment,0,40).']';
                 &sendNotification(
                   $EmailFrom,
                   $rcpt,
@@ -15439,7 +15439,7 @@ sub tosyslog {
 
   eval{
    if ($sysLogPort && $sysLogIp) {
-       $SysLogObj ||= ASSP::Syslog->new(Facility=>$SysLogFac,Priority=>'Debug',SyslogPort=>$sysLogPort,SyslogHost=>$sysLogIp);
+       $SysLogObj ||= SPAMBOX::Syslog->new(Facility=>$SysLogFac,Priority=>'Debug',SyslogPort=>$sysLogPort,SyslogHost=>$sysLogIp);
        while (@$m) {
            my $msg = shift @$m;
            $msg =~ s/^\s+//o;
@@ -15816,7 +15816,7 @@ sub NewSMTPConnection {
 
     if ($ip && $EmergencyBlock{$ip}) {
         mlog( $client, "$ip:$port denied by internal EMERGENCY Blocker - this IP has possibly tried before to KILL assp" );
-        mlog( $client, "$ip:$port ATTENTION ! The EMERGENCY blocking for this IP will be lifted after an ASSP restart or at least in 15 minutes" );
+        mlog( $client, "$ip:$port ATTENTION ! The EMERGENCY blocking for this IP will be lifted after an SPAMBOX restart or at least in 15 minutes" );
         $Stats{denyConnectionA}++;
         $Con{$client}->{type} = 'C';
         &NoLoopSyswrite($client,"554 <$myName> Service denied, closing transmission channel\r\n",0);
@@ -16237,7 +16237,7 @@ sub SMTPTraffic {
                         $Stats{preHeader}++;
                         return;
                     }
-                    if ($s =~ /^(X-ASSP-[^(]+?)(\(\d+\))?(:$HeaderValueRe)$/io) {  # change strange X-ASSP headers
+                    if ($s =~ /^(X-SPAMBOX-[^(]+?)(\(\d+\))?(:$HeaderValueRe)$/io) {  # change strange X-SPAMBOX headers
                         my ($pre,$c,$post) = ($1,$2,$3);
                         $c =~ s/[^\d]//go;
                         $c = 0 unless $c;
@@ -16443,7 +16443,7 @@ sub loadexportedRE {
     my $re = join('',<$optRE>);
     close $optRE;
     if (exists $CryptFile{"$base/files/optRE/$name.txt"} && $re =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-        $re = ASSP::CRYPT->new($webAdminPassword,0)->DECRYPT($re);
+        $re = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT($re);
     }
     return $re;
 }
@@ -16460,7 +16460,7 @@ sub exportOptRE {
     if (open $optRE, '>',"$base/files/optRE/$name.txt") {
         binmode $optRE;
         if (exists $cryptConfigVars{$name}) {
-            print $optRE ASSP::CRYPT->new($webAdminPassword,0)->ENCRYPT($re);
+            print $optRE SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($re);
             $CryptFile{"$base/files/optRE/$name.txt"} = 1;
         } else {
             print $optRE $re;
@@ -16630,7 +16630,7 @@ sub PopB4SMTP {
 sub PopB4Merak {
   return 0 unless $PopB4SMTPFile;
   my $ip=shift;
-#This is a test version of ASSP PopB4SMTP
+#This is a test version of SPAMBOX PopB4SMTP
 #This is to be used with Merak 7.5.2
 #It also works with Merak 6.5 (which I run)
 #Thanks to Jordon for the heads up on 7.5.2
@@ -16878,7 +16878,7 @@ sub SNMPload_1_0 {
     return ( $_[0] ) ? $_[1] : $_[2];
 }
 sub SNMPload_1_0_healthy {
-    return (&StatusASSP() !~ /not healthy/io);
+    return (&StatusSPAMBOX() !~ /not healthy/io);
 }
 sub SNMPload_1_13 {
     my $ret;
@@ -16995,7 +16995,7 @@ sub SNMPload_1 {
     $subOID{'.1.20.16.0'} = [\&timestring,\$nextLDAPcrossCheck,'',''];
     $subOID{'.1.20.17.0'} = [\&timestring,\$nextRebuildSpamDB,'',''];
     $subOID{'.1.20.18.0'} = [\&timestring,\$nextResendMail,'',''];
-    $subOID{'.1.20.19.0'} = [\&timestring,\$NextASSPFileDownload,'',''];
+    $subOID{'.1.20.19.0'} = [\&timestring,\$NextSPAMBOXFileDownload,'',''];
     $subOID{'.1.20.20.0'} = [\&timestring,\$NextVersionFileDownload,'',''];
     $subOID{'.1.20.21.0'} = [\&timestring,\$NextBackDNSFileDownload,'',''];
     $subOID{'.1.20.22.0'} = [\&timestring,\$NextCodeChangeCheck,'',''];
@@ -17550,7 +17550,7 @@ Content-type: text/html
 <!--
 var mydom = window.location.host;
 var myprot = '$prot';
-alert('Switched to ' + myprot + '//' + mydom + '/' + ' - Please wait some seconds to let assp finish change the configuration. It is recommended to restart ASSP!');
+alert('Switched to ' + myprot + '//' + mydom + '/' + ' - Please wait some seconds to let assp finish change the configuration. It is recommended to restart SPAMBOX!');
 window.location.href = myprot + '//' + mydom + '/$bl';
 // -->
 </script>
@@ -17568,7 +17568,7 @@ EOT
         if ($se) {
           my $time=gmtime();
           $time=~s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-          $resph.="\nServer: ASSP/$version$modversion";
+          $resph.="\nServer: SPAMBOX/$version$modversion";
           $resph.="\nDate: $time";
           if ($EnableHTTPCompression && $CanUseHTTPCompression && /Accept-Encoding: ([^\n]*)\n/io && $1=~/(gzip|deflate)/io) {
             my $enc=$1;
@@ -17608,7 +17608,7 @@ EOT
       if ($se) {
         my $time=gmtime();
         $time=~s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-        $resph.="\nServer: ASSP/$version$modversion";
+        $resph.="\nServer: SPAMBOX/$version$modversion";
         $resph.="\nDate: $time";
         if ($EnableHTTPCompression && $CanUseHTTPCompression && /Accept-Encoding: ([^\n]*)\n/io && $1=~/(gzip|deflate)/io) {
           my $enc=$1;
@@ -17710,7 +17710,7 @@ sub StatTraffic {
                     my $time  = gmtime();
                     $time =~
 s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-                    $resph .= "\nServer: ASSP/$version$modversion";
+                    $resph .= "\nServer: SPAMBOX/$version$modversion";
                     $resph .= "\nDate: $time";
                     $respb =~ s/not healthy/$webStatNotHealthyResp/o;
                     $respb =~ s/([^n][^o][^t][^ ])healthy/$1$webStatHealthyResp/o;
@@ -17753,7 +17753,7 @@ s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
                 close($tempfh);
             }
             else {
-                my $currStat = &StatusASSP();
+                my $currStat = &StatusSPAMBOX();
                 $resp =
                   ( $currStat =~ /not healthy/io )
                   ? "$webStatNotHealthyResp\n"
@@ -17765,7 +17765,7 @@ s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
                 my $time  = gmtime();
                 $time =~
                   s/(...) (...) +(\d+) (........) (....)/$1, $3 $2 $5 $4 GMT/o;
-                $resph .= "Server: ASSP/$version$modversion";
+                $resph .= "Server: SPAMBOX/$version$modversion";
                 $resph .= "\nDate: $time";
                 if (  !$how
                     && $EnableHTTPCompression
@@ -18531,7 +18531,7 @@ sub sendquedata {
       my $timeout = $smtpIdleTimeout || 180;   # send some data to the server to prevent SMTP-timeout
       if ($this->{lastwritten} && time - $this->{lastwritten} > $timeout) {
           $this->{lastwritten} = time;
-          my $dummy = "X-ASSP-KEEP:\r\n";
+          my $dummy = "X-SPAMBOX-KEEP:\r\n";
           sendque($fh,\$dummy);
       }
       return ;                         # queue the data until all data are received
@@ -19503,7 +19503,7 @@ sub sendNotification {
     my ($from,$to,$sub,$body,$file) = @_;
     my $text;
     if (! $from) {
-        $from = 'ASSP <>';
+        $from = 'SPAMBOX <>';
         mlog(0,"*x*warning: 'EmailFrom' seems to be not configured - using '$from' as FROM: address");
     }
     if (! $to) {
@@ -19647,7 +19647,7 @@ sub resend_mail {
 
       if (! $mailfrom) {
           ($howF, $mailfrom) = ($1,$2)
-             if ($message =~ s/\n(from:)\s*(ASSP <>)\s*\r?\n/\n/sio);
+             if ($message =~ s/\n(from:)\s*(SPAMBOX <>)\s*\r?\n/\n/sio);
           if (! $mailfrom) {
               mlog(0,"*x*(re)send - $file - From: and X-Assp-Envelope-From: headertag not found");
               $message = "# (re)send - $file - From: and X-Assp-Envelope-From: headertag not found\r\n".$message;
@@ -19923,7 +19923,7 @@ sub headerFormat {
     if ($@) {
        my $hint; $hint = "- **** please install the Perl module MIME::Tools (includes MIME::Words) via 'cpan install MIME::Tools' (on nix/mac) or 'ppm install MIME-Tools' (on win32)"
            if $@ =~ /Undefined subroutine \&MIME::Words::encode_mimewords/io;
-       mlog(0,"warning: MIME encoding for our ASSP header lines failed - $@ $hint") if ! $IgnoreMIMEErrors;
+       mlog(0,"warning: MIME encoding for our SPAMBOX header lines failed - $@ $hint") if ! $IgnoreMIMEErrors;
        eval{
            $text = join("\r\n", map{headerWrap(&encodeMimeWord(&decodeMimeWords2UTF8($_),'B','UTF-8'));} split(/\r?\n/o,$text));
            $text .= "\r\n" if $text !~ /\r\n$/o;
@@ -20695,10 +20695,10 @@ sub getline {
             return;
         }
 
-    } elsif (&syncCanSync() && $enableCFGShare && $isShareSlave && $l=~/^ *ASSPSYNCCONFIG\s*([^\r\n]+)\r\n/o ) {
+    } elsif (&syncCanSync() && $enableCFGShare && $isShareSlave && $l=~/^ *SPAMBOXSYNCCONFIG\s*([^\r\n]+)\r\n/o ) {
         my $pass = $1;
-        mlog(0,"info: got ASSPSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
-        $this->{lastcmd} = 'ASSPSYNCCONFIG';
+        mlog(0,"info: got SPAMBOXSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
+        $this->{lastcmd} = 'SPAMBOXSYNCCONFIG';
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
         my @tservers = split(/\|/o, $syncServer);
         my @servers;
@@ -20722,13 +20722,13 @@ sub getline {
         }
         if (! @servers || ! (@servers = grep { $this->{ip} eq $_ } @servers )) {
             NoLoopSyswrite( $fh, "502 $this->{lastcmd} not implemented $this->{ip} - @servers\r\n" ,0);
-            mlog($fh,"syncCFG: error - got 'ASSPSYNCCONFIG' command from wrong ip $this->{ip}");
+            mlog($fh,"syncCFG: error - got 'SPAMBOXSYNCCONFIG' command from wrong ip $this->{ip}");
             done($fh);
             return;
         }
         if (Digest::MD5::md5_base64($syncCFGPass) ne $pass) {
             NoLoopSyswrite( $fh, "500 $this->{lastcmd} wrong authentication - check you configuration\r\n" ,0);
-            mlog($fh,"syncCFG: error - got wrong password in 'ASSPSYNCCONFIG' command from $this->{ip}");
+            mlog($fh,"syncCFG: error - got wrong password in 'SPAMBOXSYNCCONFIG' command from $this->{ip}");
             done($fh);
             return;
         }
@@ -20738,19 +20738,19 @@ sub getline {
         $this->{getline} = \&syncRCVData;
         NoLoopSyswrite($fh,"250 OK start the config sync\r\n",0);
         return;
-    } elsif ($l=~/^ *ASSPSYNCCONFIG\s*([^\r\n]+)?\r\n/o ) {
+    } elsif ($l=~/^ *SPAMBOXSYNCCONFIG\s*([^\r\n]+)?\r\n/o ) {
         my $pass = $1;
-        mlog(0,"info: got ASSPSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
-        $this->{lastcmd} = 'ASSPSYNCCONFIG';
+        mlog(0,"info: got SPAMBOXSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
+        $this->{lastcmd} = 'SPAMBOXSYNCCONFIG';
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
         if (Digest::MD5::md5_base64($syncCFGPass) ne $pass) {
             NoLoopSyswrite( $fh, "502 $this->{lastcmd} not implemented\r\n",0 );
-            mlog($fh,"syncCFG: error - got syncCFG request, but this is not an 'isShareSlave' and got wrong password in 'ASSPSYNCCONFIG' command from $this->{ip}");
+            mlog($fh,"syncCFG: error - got syncCFG request, but this is not an 'isShareSlave' and got wrong password in 'SPAMBOXSYNCCONFIG' command from $this->{ip}");
             done($fh);
             return;
         }
         NoLoopSyswrite( $fh, "500 $this->{lastcmd} - sync peer $this->{ip} is not registered on $myName or this is not an isShareSlave\r\n",0 );
-        mlog($fh,"syncCFG: error - got 'ASSPSYNCCONFIG' command from ip $this->{ip} - the request will be ignored - check your configuration");
+        mlog($fh,"syncCFG: error - got 'SPAMBOXSYNCCONFIG' command from ip $this->{ip} - the request will be ignored - check your configuration");
         done($fh);
         return;
 
@@ -22826,7 +22826,7 @@ sub getheader {
         && ! $this->{relayok}
         && ! ($this->{noprocessing} & 1)
         && ! $this->{whitelisted}
-        && $l =~ /^X-(?!ASSP)/io)
+        && $l =~ /^X-(?!SPAMBOX)/io)
     {
         my $line = $l;
         $line =~ s/\r?\n//go;
@@ -22872,7 +22872,7 @@ sub getheader {
             $fn=' -> '.$fn if $fn ne '';
             $fn='' if !$fileLogging;
             my $logsub = ( $subjectLogging && $this->{originalsubject} ? " $subjectStart$this->{originalsubject}$subjectEnd" : '' );
-            mlog($fh,"[spam found] (crash analyzer said: 'this mail will possibly crash ASSP', will no longer analyze and forward but collect the mail)$logsub".de8($fn),0,2);
+            mlog($fh,"[spam found] (crash analyzer said: 'this mail will possibly crash SPAMBOX', will no longer analyze and forward but collect the mail)$logsub".de8($fn),0,2);
             delayWhiteExpire($fh);
             $this->{getline}=\&NullData;
             $this->{header} = 'NULL';
@@ -24802,8 +24802,8 @@ sub downloadHTTP {
     # Create LWP object
     my $ua = LWP::UserAgent->new();
 
-    # Set useragent to ASSP version
-    $ua->agent("ASSP/$version$modversion ($^O; Perl/$]; LWP::Simple/$LWP::VERSION)");
+    # Set useragent to SPAMBOX version
+    $ua->agent("SPAMBOX/$version$modversion ($^O; Perl/$]; LWP::Simple/$LWP::VERSION)");
     $ua->timeout(20);
 
     if ($proxyserver) {
@@ -26706,7 +26706,7 @@ Below is some detail information about this message:
 
 For more information please check Aggregate Reports or mail to $mailFrom .
 Feedback-Type: auth-failure
-User-Agent: ASSP/$version
+User-Agent: SPAMBOX/$version
 Version: $MAINVERSION
 Original-Mail-From: <$this->{mailfrom}>
 Arrival-Date: $rcvdtime
@@ -28110,7 +28110,7 @@ sub subjectFrequencyOK_Run {
 
     my $sub = lc($this->{subject3});
     my @subWords;
-    $sub = eval{&ASSP_WordStem::process($sub) if ($CanUseASSP_WordStem);} || $sub;
+    $sub = eval{&SPAMBOX_WordStem::process($sub) if ($CanUseSPAMBOX_WordStem);} || $sub;
     @HmmBayWords = ();
     use re 'eval';
     local $^R;
@@ -33417,7 +33417,7 @@ sub ListReportBody {
             ReturnMail($fh,$EmailWhitelistTo,$file,'',\"$this->{rcpt}\n\n$this->{report}\n",$this->{mailfrom}) if ( $EmailWhitelistTo && ($EmailWhitelistReply==2 || $EmailWhitelistReply==3));
         } elsif  ($this->{reportaddr} eq 'EmailHelp' )
         {
-            ReturnMail($fh,$this->{mailfrom},$file,'ASSP-Help', \"$this->{rcpt}\n\n$this->{report}\n") ;
+            ReturnMail($fh,$this->{mailfrom},$file,'SPAMBOX-Help', \"$this->{rcpt}\n\n$this->{report}\n") ;
 
         } elsif  ($this->{reportaddr} eq 'EmailRedlistAdd' || $this->{reportaddr} eq 'EmailRedlistRemove')
         {
@@ -34859,9 +34859,9 @@ sub BlockedMailResend {
         $outfile->print( <<EOT );
 From: $EmailFrom
 To: $this->{mailfrom}
-Subject: failed - request ASSP to resend blocked mail
+Subject: failed - request SPAMBOX to resend blocked mail
 
-The requested email-file $filename no longer exists on ASSP-host $myName.
+The requested email-file $filename no longer exists on SPAMBOX-host $myName.
 Please contact your email administrator, if you need more information.
 
 .
@@ -34891,9 +34891,9 @@ EOT
         $outfile->print( <<EOT );
 From: $EmailFrom
 To: $this->{mailfrom}
-Subject: denied - request ASSP to resend blocked mail
+Subject: denied - request SPAMBOX to resend blocked mail
 
-The requested email-file $filename on ASSP-host $myName possibly contains a virus!
+The requested email-file $filename on SPAMBOX-host $myName possibly contains a virus!
 Please contact your email administrator, if you need more information.
 
 .
@@ -35177,7 +35177,7 @@ sub BlockReportGen {
  <col /><col /><col />
  <tr>
   <th colspan="3" id="header">
-   <img src=cid:1001 alt="powered by ASSP on $myName">
+   <img src=cid:1001 alt="powered by SPAMBOX on $myName">
    $userhtml
   </th>
  </tr>
@@ -35305,8 +35305,8 @@ sub BlockReasonsGet {
     $mimetime=~s/... (...) +(\d+) (........) (....)/$2 $1 $4 $3/o;
     $EmailBlockReportDomain = '@' . $EmailBlockReportDomain
       if $EmailBlockReportDomain !~ /^\@/o;
-    my $relboundary = '=======_00_ASSP_1298347655_======';
-    my $boundary    = '=======_01_ASSP_1298347655_======';
+    my $relboundary = '=======_00_SPAMBOX_1298347655_======';
+    my $boundary    = '=======_01_SPAMBOX_1298347655_======';
     my $mimehead    = <<"EOT";
 Date: $mimetime $tz
 MIME-Version: 1.0
@@ -35553,12 +35553,12 @@ WHITCHWORKER
             $ThreadIdleTime{$WorkerNumber} += 2;
             if ( !(open( $FLogFile, '<', "$File" )) ) {
                 mlog( 0,
-"warning: report is possibly incomplete, because ASSP is unable to open logfile $File"
+"warning: report is possibly incomplete, because SPAMBOX is unable to open logfile $File"
                 ) if $ReportLog;
                 $buser->{sum}{html} .=
-"<br />\nwarning: report is possibly incomplete, because ASSP is unable to open logfile $File";
+"<br />\nwarning: report is possibly incomplete, because SPAMBOX is unable to open logfile $File";
                 $buser->{sum}{text} .=
-"\r\nwarning: report is possibly incomplete, because ASSP is unable to open logfile $File";
+"\r\nwarning: report is possibly incomplete, because SPAMBOX is unable to open logfile $File";
                 next;
             }
         }
@@ -35570,9 +35570,9 @@ WHITCHWORKER
             if ($BlockMaxSearchTime && time - $start > $BlockMaxSearchTime) {
                 mlog(0,"warning: blockreport search in file $File has taken more than 3 minutes - skip the file") if $ReportLog;;
                 $buser->{sum}{html} .=
-"<br />\nwarning: report is possibly incomplete, because ASSP was skipping some parts of logfile $File";
+"<br />\nwarning: report is possibly incomplete, because SPAMBOX was skipping some parts of logfile $File";
                 $buser->{sum}{text} .=
-"\r\nwarning: report is possibly incomplete, because ASSP was skipping some parts of logfile $File";
+"\r\nwarning: report is possibly incomplete, because SPAMBOX was skipping some parts of logfile $File";
                 last;
             }
             $bytes += length($fl);
@@ -35725,8 +35725,8 @@ s/($EmailAdrRe\@$EmailDomainRe)/<a href="mailto:$EmailWhitelistAdd$EmailBlockRep
                       if (! $faddress && $is_admin);
                     $line =~ s/\[spam found\](\s*\(.*?\))( \Q$subjectStart\E)/<span name="tohid"><br \/><span class="spam">spam reason: <\/span>$1<\/span>$2/;
                     $line =~ s/($SpamTagRE|\[(?:TLS-(?:in|out)|SSL-(?:in|out)|PersonalBlack)\])/<span name="tohid">$1<\/span>/gio;
-                    my $leftbut = '<a href="mailto:'.$EmailBlockReport.$EmailBlockReportDomain.'?subject=request%20ASSP%20to%20resend%20blocked%20mail%20from%20ASSP-host%20'.$myName.'&body=%23%23%23'.$filename.'%23%23%23'.$addWhiteHint.$addFileHint.'%0D%0A" class="reqlink" target="_blank" title="request ASSP on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request ASSP on '.$myName.' to resend this blocked email"> Resend </a>';
-                    my $rightbut = '<a href="mailto:'.$ofilename.$EmailBlockReportDomain.'?&subject=request%20ASSP%20to%20resend%20blocked%20mail%20from%20ASSP-host%20'.$myName.'" class="reqlink" target="_blank" title="request ASSP on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request ASSP on '.$myName.' to resend this blocked email"> Resend </a>';
+                    my $leftbut = '<a href="mailto:'.$EmailBlockReport.$EmailBlockReportDomain.'?subject=request%20SPAMBOX%20to%20resend%20blocked%20mail%20from%20SPAMBOX-host%20'.$myName.'&body=%23%23%23'.$filename.'%23%23%23'.$addWhiteHint.$addFileHint.'%0D%0A" class="reqlink" target="_blank" title="request SPAMBOX on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request SPAMBOX on '.$myName.' to resend this blocked email"> Resend </a>';
+                    my $rightbut = '<a href="mailto:'.$ofilename.$EmailBlockReportDomain.'?&subject=request%20SPAMBOX%20to%20resend%20blocked%20mail%20from%20SPAMBOX-host%20'.$myName.'" class="reqlink" target="_blank" title="request SPAMBOX on '.$myName.' to resend this blocked email"><img src=cid:1000 alt="request SPAMBOX on '.$myName.' to resend this blocked email"> Resend </a>';
                     $rightbut = '' if (&matchSL(\@to,'BlockResendLinkLeft') or
                                              ($BlockResendLink == 1 && ! matchSL(\@to,'BlockResendLinkRight')));
                     $leftbut = '' if (&matchSL(\@to,'BlockResendLinkRight') or
@@ -35817,9 +35817,9 @@ EOT2
         or lc( $this->{mailfrom} ) eq lc($EmailBlockTo) )
     {
         $buser->{sum}{html} .= $t10html . "<br />\n<div name=\"tohid\">" . &needEs($lines, ' line','s') . " with $bytes analysed in " .
-            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running ASSP version $MAINVERSION<br /></div>\n";
+            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running SPAMBOX version $MAINVERSION<br /></div>\n";
         $buser->{sum}{text} .= $t10text . "\r\n\r\n" . &needEs($lines, ' line','s') . " with $bytes analysed in " .
-            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running ASSP version $MAINVERSION\r\n";
+            &needEs($numfiles,' logfile','s') . " on host $myName in $runtime seconds - running SPAMBOX version $MAINVERSION\r\n";
     } else {
         $buser->{sum}{html} .= "\n".($enableBRtoggleButton ? <<'EOT' : '');
 <script type="text/javascript">
@@ -36120,7 +36120,7 @@ sub BlockReportBody2Q {
         my $sub = $email->header("Subject") || '';    # get the subject of the email
         $sub =~ s/\r?\n//go;
 
-        ($host) = $sub =~ /ASSP\-host\s+(.*)/io;
+        ($host) = $sub =~ /SPAMBOX\-host\s+(.*)/io;
         $host =~ s/\s//go;
 
         BlockReportForwardRequest($fh,$host) if ( lc($myName) ne lc($host) );
@@ -36252,7 +36252,7 @@ sub BlockReportBody {
             $sub =~ s/\s+/ /go;
 
             #        mlog(0,"subject: $sub");
-            ($host) = $sub =~ /ASSP\-host\s+(.*)/io;
+            ($host) = $sub =~ /SPAMBOX\-host\s+(.*)/io;
             $host =~ s/\s//go;
             my $rsbm_special = 0;
             #       mlog(0,"host: $host");
@@ -36466,7 +36466,7 @@ sub BlockReportBody {
  <col /><col /><col />
  <tr>
   <th colspan="3" id="header">
-   <img src=cid:1001 alt="powered by ASSP on $myName">
+   <img src=cid:1001 alt="powered by SPAMBOX on $myName">
    $userhtml
   </th>
  </tr>
@@ -36688,7 +36688,7 @@ sub BlockReportText {
             $section = '';
         } elsif ($section) {
             s/REPORTDAYS/$numdays/go;
-            s/ASSPNAME/$myName/go;
+            s/SPAMBOXNAME/$myName/go;
             s/EMAILADDRESS/$for/go;
             s/NUMBER/$number/go;
             $slines{$section} .= $_;
@@ -37247,7 +37247,7 @@ sub HMMOK_Run {
     }
     my $skipBonus;
     if ($this->{hmmres} < int($maxBayesValues / 12 + 1)) {
-        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
+        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
         mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 12 + 1).' results - using monitoring mode only');
         $DoHMM = 2;
         $tlit=&tlit($DoHMM);
@@ -37255,7 +37255,7 @@ sub HMMOK_Run {
         $this->{prepend}.="$tlit" if $DoHMM>=2;
         $skipBonus = 1;
     } elsif ($this->{hmmres} < int($maxBayesValues / 3 + 1) && $DoHMM == 1) {
-        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
+        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
         mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 3 + 1).' results - using soring mode only');
         $DoHMM = 3;
         $tlit=&tlit($DoHMM);
@@ -37726,7 +37726,7 @@ sub BayesOK_Run {
     $itime=time-$stime; mlog($fh,"info: Bayesian-Check has taken $itime seconds") if $BayesianLog >= 2;
     return 1 if @t < 2 && $t[0] eq '';
     if (@t < 6 && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb}) {
-        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ! ($ignoreDBVersionMissMatch & 1);
+        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ! ($ignoreDBVersionMissMatch & 1);
     }
     (my $p1, my $p2, my $c1, $this->{spamprob}, $this->{spamconf}) = BayesHMMProb(\@t);
 
@@ -37755,7 +37755,7 @@ sub BayesOK_Run {
        )
     {
         mlog($fh,sprintf("info: got different spam result for Bayesian and HMM : %.5f - %.5f",$this->{spamprob},$this->{hmmprob})) if $BayesianLog >= 2;
-        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
+        mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
     }
 
     return 1 if $DoBayesian==2;
@@ -37779,7 +37779,7 @@ sub BayesOK_Run {
         $valence[1] = int(($baysConf && $baysConfidenceHalfScore && $this->{spamconf} < $baysConf) ? $valence[1] * $this->{spamprob} / 2 + 0.5 : $this->{spamprob} * $valence[1] + 0.5);
         if (max(@valence) > 0) {
             mlog($fh,sprintf("Bayesian Check $tlit - Prob: %.5f shows an 'unsure' state - doing only message scoring - calculating half scores", $this->{spamprob}),1) if $BayesianLog;
-            mlog(0,"warning: the current Spamdb is possibly incompatible to this version of ASSP. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
+            mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
             pbAdd($fh,$this->{ip},\@valence,"Bayesian",1) if $fh;
         }
     } elsif (($baysConf && $this->{spamconf} >= $baysConf) || ! $baysConf) {
@@ -38201,14 +38201,14 @@ sub AttachMD5Mail {
     my $m = shift;
     my $msg = ref($m) ? $m : \$m;
     return unless $$msg;
-    return unless eval('$main::ASSP_AFCDetectSpamAttachRe');
+    return unless eval('$main::SPAMBOX_AFCDetectSpamAttachRe');
     my %md5;
     my $t = Time::HiRes::time() + 3;
 
     $o_EMM_pm = 1;
     eval {
         $Email::MIME::ContentType::STRICT_PARAMS=0;      # no output about invalid CT
-        my $re = ${'main::ASSP_AFCDetectSpamAttachReRE'};
+        my $re = ${'main::SPAMBOX_AFCDetectSpamAttachReRE'};
         my $email = Email::MIME->new($$msg);
         fixUpMIMEHeader($email);
 
@@ -38520,8 +38520,8 @@ sub clean {
     s/["']\s*\/?s*>|target\s*=\s*['"]?_blank['"]?|<\s*\/|:\/\/ //go;
     s/ \d{2,} / 1234 /go;
     $msg = &decHTMLent($_);
-    if ($CanUseASSP_WordStem) {
-        my $ret = eval{&ASSP_WordStem::process($msg);};
+    if ($CanUseSPAMBOX_WordStem) {
+        my $ret = eval{&SPAMBOX_WordStem::process($msg);};
         if ($ret) {
             return ("helo: $helo\n$rcpt\n".$ret,1);
         } else {
@@ -38874,7 +38874,7 @@ my @binFiles;
 push(@binFiles, "$gripFile.bin") if ($delta);
 push(@binFiles, "$gripFile.tmp");
 
-# convert binary download form to text form used by ASSP
+# convert binary download form to text form used by SPAMBOX
 my $buf;
 my %grip = ();
 my %gripdelta = ();
@@ -39297,13 +39297,13 @@ sub UpdateDownloadURLs {
             if (/^\s*NewAsspURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
                 my $old = $NewAsspURL;
                 $NewAsspURL = $1;
-                mlog(0,"adminupdate: ASSP file download URL changed from $old to $NewAsspURL") if $NewAsspURL ne $old;
+                mlog(0,"adminupdate: SPAMBOX file download URL changed from $old to $NewAsspURL") if $NewAsspURL ne $old;
                 next;
             }
             if (/^\s*ChangeLogURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
                 my $old = $ChangeLogURL;
                 $ChangeLogURL = $1;
-                mlog(0,"adminupdate: ASSP changelog download URL changed from $old to $ChangeLogURL") if $ChangeLogURL ne $old;
+                mlog(0,"adminupdate: SPAMBOX changelog download URL changed from $old to $ChangeLogURL") if $ChangeLogURL ne $old;
                 next;
             }
             if (/^\s*(\w+)\s*:\s*(.+)$/io) {
@@ -39327,11 +39327,11 @@ sub UpdateDownloadURLs {
 sub downloadVersionFile {
     d('downloadVersionFile-start');
     my $force;
-    $force = 1 if ($NextASSPFileDownload == -1 or $NextVersionFileDownload == -1);
+    $force = 1 if ($NextSPAMBOXFileDownload == -1 or $NextVersionFileDownload == -1);
     &UpdateDownloadURLs();
     if (! $versionURL) {
         mlog(0,"warning: versionupdate: no download URL found for version.txt - skip update for 24 hours");
-        $NextASSPFileDownload = time + 3600 * 24;
+        $NextSPAMBOXFileDownload = time + 3600 * 24;
         $NextVersionFileDownload = time + 3600 * 24;
         return 0;
     }
@@ -39385,20 +39385,20 @@ sub downloadVersionFile {
     return $ret || $force;
 }
 
-sub downloadASSPVersion {
-    d('downloadASSPVersion-start');
-    return 0 unless $AutoUpdateASSP;
+sub downloadSPAMBOXVersion {
+    d('downloadSPAMBOXVersion-start');
+    return 0 unless $AutoUpdateSPAMBOX;
     checkVersionAge();
     &UpdateDownloadURLs();
     if (! $NewAsspURL ) {
         mlog(0,"warning: autoupdate: no download URL found for spambox.pl - skip update for 24 hours");
-        $NextASSPFileDownload = time + 3600 * 24;
+        $NextSPAMBOXFileDownload = time + 3600 * 24;
         $NextVersionFileDownload = time + 3600 * 24;
         return 0;
     }
     if (! $versionURL) {
         mlog(0,"warning: autoupdate: no download URL found for version.txt - skip update for 24 hours");
-        $NextASSPFileDownload = time + 3600 * 24;
+        $NextSPAMBOXFileDownload = time + 3600 * 24;
         $NextVersionFileDownload = time + 3600 * 24;
         return 0;
     }
@@ -39408,35 +39408,35 @@ sub downloadASSPVersion {
     $assp = $base.'/'.$assp if ($assp !~ /\Q$base\E/io);
     if (-e "$base/download/spambox.pl" && ! -w "$base/download/spambox.pl") {
         mlog(0,"warning: autoupdate: unable to write to $base/download/spambox.pl - skip update - please check the file permission");
-        $NextASSPFileDownload = time + 3600;
+        $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
     if (-e "$base/download/spambox.pl.gz" && ! -w "$base/download/spambox.pl.gz") {
         mlog(0,"warning: autoupdate: unable to write to $base/download/spambox.pl.gz - skip update - please check the file permission");
-        $NextASSPFileDownload = time + 3600;
+        $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
     if (! -w "$assp") {
         mlog(0,"warning: autoupdate: unable to write to $assp - skip update - please check the file permission");
-        $NextASSPFileDownload = time + 3600;
+        $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
     -d "$base/download" or mkdir "$base/download", 0755;
     if (! -e "$base/download/spambox.pl" && ! copy("$assp","$base/download/spambox.pl")) {
         mlog(0,"warning: autoupdate: unable to copy current script '$assp' to '$base/download/spambox.pl' - skip update - $!");
-        $NextASSPFileDownload = time + 3600;
+        $NextSPAMBOXFileDownload = time + 3600;
         return 0;
     }
     unless (&downloadVersionFile()){
-        $NextASSPFileDownload = $NextVersionFileDownload;
+        $NextSPAMBOXFileDownload = $NextVersionFileDownload;
         return 0;
     }
     my $ret;
-    $NextASSPFileDownload = 0;
+    $NextSPAMBOXFileDownload = 0;
     mlog(0,"Info: autoupdate: performing spambox.pl.gz download to $base/download/spambox.pl.gz") if $MaintenanceLog;
     $ret = downloadHTTP("$NewAsspURL",
                  "$base/download/spambox.pl.gz",
-                 \$NextASSPFileDownload,
+                 \$NextSPAMBOXFileDownload,
                  "spambox.pl.gz",16,12,4,4);
     return 0 unless $ret;
     mlog(0,"Info: autoupdate: new spambox.pl.gz downloaded to $base/download/spambox.pl.gz") if $MaintenanceLog;
@@ -39479,7 +39479,7 @@ sub downloadASSPVersion {
             return 0;
         }
     }
-    return 0 if $AutoUpdateASSP == 1;
+    return 0 if $AutoUpdateSPAMBOX == 1;
     if (copy("$base/download/spambox.pl", "$assp")) {
         mlog(0,"info: autoupdate: new version assp installed - '$assp' - version $availversion");
     } else {
@@ -39581,7 +39581,7 @@ sub Perl_upgrade_do {
 #    mlog(0,"info: PPM ??? $@");
     eval('
     if($> != 0 && $^O ne "MSWin32") {
-        mlog(0,"warning: ASSP is not running as user root - skip CPAN Perl module update");
+        mlog(0,"warning: SPAMBOX is not running as user root - skip CPAN Perl module update");
         return;
     }
     use CPAN;
@@ -39684,33 +39684,33 @@ sub Perl_PPM_upgrade_do {
         'uni_winnipeg.510' => 'http://cpan.uwinnipeg.ca/PPMPackages/10xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.12'} = {
         'trouchelle.512' => 'http://trouchelle.com/ppm12',
         'uni_winnipeg.512' => 'http://cpan.uwinnipeg.ca/PPMPackages/12xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.14'} = {
         'trouchelle.514' => 'http://trouchelle.com/ppm14',
         'uni_winnipeg.514' => 'http://cpan.uwinnipeg.ca/PPMPackages/14xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.16'} = {
 #        'trouchelle.516' => 'http://trouchelle.com/ppm16',
 #        'uni_winnipeg.516' => 'http://cpan.uwinnipeg.ca/PPMPackages/16xx/',
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     $repo{'5.18'} = {
         'bribes.org' => 'http://www.bribes.org/perl/ppm/',
         "$base\\assp.mod" => 'file:///'.$base.'/assp.mod/',
-        'ASSP2' => 'http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/packages/'
+        'SPAMBOX2' => 'http://downloads.sourceforge.net/project/assp/SPAMBOX%20V2%20multithreading/packages/'
     };
     my $ppm = ActivePerl::PPM::Client->new;
     my $install;
@@ -39727,7 +39727,7 @@ sub Perl_PPM_upgrade_do {
     $vstr =~ s/^(\d\.)0(\d\d).*$/$1$2/o;
     mlog(0,"perl-update: checking PPM repositories for Perl $vstr");
     if (! exists $repo{$vstr} ) {
-        mlog(0,"perl-update: error - Perl $vstr is not supported by ASSP");
+        mlog(0,"perl-update: error - Perl $vstr is not supported by SPAMBOX");
         return ;
     }
     my %rep;
@@ -40533,7 +40533,7 @@ sub MaillogClose {
             }
             $mfh->close;
             if ($buf && $buf =~ /$noCollectReRE/is) {
-                if (exists $runOnMaillogClose{'ASSP_ARC::setvars'}) {
+                if (exists $runOnMaillogClose{'SPAMBOX_ARC::setvars'}) {
                     $Con{$fh}->{deletemaillog} = 'content matches noCollectRe';
                 } else {
                     $unlink->($Con{$fh}->{maillogfilename});
@@ -41429,7 +41429,7 @@ sub WebLogout {
     $rootlogin = $isrootLoggedOn;
     my $realm = time;
         &NoLoopSyswrite($fh, "HTTP/1.1 401 Unauthorized
-WWW-Authenticate: Basic realm=\"logged out ASSP session $realm - please click cancel and close the browser\"
+WWW-Authenticate: Basic realm=\"logged out SPAMBOX session $realm - please click cancel and close the browser\"
 Content-type: text/html
 
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body>
@@ -41449,7 +41449,7 @@ self.close();
 }
 // -->
 </script>
-<h1>Logout from ASSP completed.</h1><br /><br />please close the browser
+<h1>Logout from SPAMBOX completed.</h1><br /><br />please close the browser
 <script type=\"text/javascript\">
 <!--
 self.close();
@@ -41497,7 +41497,7 @@ sub webRequest {
     $currentPage =~ s/^\/+//o;
     $currentPage = 'Config' unless $currentPage;
     $currentPage = ucfirst($currentPage);
-    $headers =~ s/<title>\S+ ASSP/<title>$currentPage ASSP/o if $page ne '/get' && exists $webRequests{$page};
+    $headers =~ s/<title>\S+ SPAMBOX/<title>$currentPage SPAMBOX/o if $page ne '/get' && exists $webRequests{$page};
     if(defined $data) { # GET, POST order
         $qs.='&' if ($qs ne '');
         $qs.=$data;
@@ -41518,7 +41518,7 @@ sub webRequest {
         $certowner = ${*$fh}{'my_SSL_certificate_owner'} || $fh->peer_certificate('owner');
         ${*$fh}{'my_SSL_certificate_owner'} = $certowner;
     }
-    $enc = ASSP::CRYPT->new($Config{webAdminPassword},0) if $webSSLRequireCientCert && $SSLWEBCertVerifyCB && $cert;
+    $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0) if $webSSLRequireCientCert && $SSLWEBCertVerifyCB && $cert;
     my ($auth)=$head{authorization}=~/Basic (\S+)/io;
     my ($user,$pass) = split(/:/o,base64decode($auth));
     if ($webSSLRequireCientCert && $SSLWEBCertVerifyCB && $cert && @ExtWebAuth && !$user) {
@@ -41609,7 +41609,7 @@ Content-type: text/html
         my $how = ($page!~/logout/io) ? 'Unauthorized request!' : '<br />You are logged out from assp.<br /><br />Please close the browser session!';
         print $tempfh "HTTP/1.1 401 Unauthorized
 Set-Cookie: session-id=\"$cookie\";Max-Age=900;Version=\"1\";Discard;
-WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (ASSP) Configuration\"
+WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (SPAMBOX) Configuration\"
 Content-type: text/html
 
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>$how</h1>
@@ -41823,7 +41823,7 @@ Content-type: text/html
     } else {
         print $tempfh "HTTP/1.1 401 Unauthorized
 Set-Cookie: session-id=\"$cookie\";Max-Age=900;Version=\"1\";Discard;
-WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (ASSP) Configuration\"
+WWW-Authenticate: Basic realm=\"Anti-Spam SMTP Proxy (SPAMBOX) Configuration\"
 Content-type: text/html
 
 <html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>Unauthorized</h1>
@@ -41860,10 +41860,10 @@ sub ConfigQuit {
 Content-type: text/html
 
 
-<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>ASSP Terminated.</h1>
+<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\"><body><h1>SPAMBOX Terminated.</h1>
 </body></html>
 ",0);
- &downASSP('quit requested from admin interface');
+ &downSPAMBOX('quit requested from admin interface');
  exit 2;
 }
 
@@ -42152,7 +42152,7 @@ EOT
         delete $l3->{min};
     }
     my $glink;
-    if ($CanUseASSP_SVG && $sc && $stat && ! $noshow) {
+    if ($CanUseSPAMBOX_SVG && $sc && $stat && ! $noshow) {
         my $text = $l1->{text};
         $text =~ s/\s*:\s*$//o;
         $text =~ s/\&nbsp;?//og;
@@ -42230,13 +42230,13 @@ sub StatsGetModules {
      my $url = 'http://search.cpan.org/search?query='.$_;
      $url = 'http://www.oracle.com/technology/products/berkeley-db/' if ($_ eq 'BerkeleyDB_DBEngine');
      $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'AsspSelfLoader');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'ASSP_WordStem');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/filecommander/' if ($_ eq 'ASSP_FC');
-     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'ASSP_SVG');
+     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'SPAMBOX_WordStem');
+     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/filecommander/' if ($_ eq 'SPAMBOX_FC');
+     $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/lib/' if ($_ eq 'SPAMBOX_SVG');
      $url = 'http://assp.cvs.sourceforge.net/viewvc/assp/assp2/Plugins/' if ($_ =~ /^Plugins/o);
      my $prov = 'CPAN';
      $prov = 'oracle' if ($_ eq 'BerkeleyDB_DBEngine');
-     $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'AsspSelfLoader' or $_ eq 'ASSP_WordStem' or $_ eq 'ASSP_FC' or $_ eq 'ASSP_SVG');
+     $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'AsspSelfLoader' or $_ eq 'SPAMBOX_WordStem' or $_ eq 'SPAMBOX_FC' or $_ eq 'SPAMBOX_SVG');
      my $stat = $ModuleStat{$_} ? $ModuleStat{$_} : 'enabled';
      if ($_ eq 'File::Scan::ClamAV' && $CanUseAvClamd && ! $AvailAvClamd) {
          $stat = 'ClamAvDaemon is down';
@@ -42323,10 +42323,10 @@ sub ConfigStats {
  }
  $wIdle .= '</table>';
 
- my $currStat = &StatusASSP();
+ my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io)
-   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
+   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $currAvgDamp = ($Stats{damping} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($Stats{damping} / ($Stats{smtpConn} ? $Stats{smtpConn} : 1)) * 100) : '';
  my $allAvgDamp  = ($AllStats{smtpConn} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($AllStats{damping} / ($AllStats{smtpConn} ? $AllStats{smtpConn} : 1)) * 100) : '';
@@ -42381,7 +42381,7 @@ $headers
 </script>
    <div id="cfgdiv" class="content">
       <h2>
-        $currStat ASSP Information and Statistics
+        $currStat SPAMBOX Information and Statistics
       </h2><br />
       <table class="statBox">
         <thead>
@@ -42395,7 +42395,7 @@ $headers
 EOT
 
 # General Runtime Information
-$ret .= StatLine({'stat'=>'#uptime','text'=>'ASSP Proxy Uptime:','class'=>'statsOptionTitle'},
+$ret .= StatLine({'stat'=>'#uptime','text'=>'SPAMBOX Proxy Uptime:','class'=>'statsOptionTitle'},
                  {'text'=>"$uptime",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"$uptime2",'class'=>'statsOptionValue','colspan'=>'2'})
 
@@ -42915,11 +42915,11 @@ $ret .= StatLine({'stat'=>'bhams','text'=>'Message OK:','class'=>'statsOptionTit
                  {'text'=>"$Stats{crashAnalyze}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{crashAnalyze}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
 
-      . StatLine({'stat'=>'Razor','text'=>'ASSP_Razor Plugin:','class'=>'statsOptionTitle'},
+      . StatLine({'stat'=>'Razor','text'=>'SPAMBOX_Razor Plugin:','class'=>'statsOptionTitle'},
                  {'text'=>"$Stats{Razor}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{Razor}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
 
-      . StatLine({'stat'=>'DCC','text'=>'ASSP_DCC Plugin:','class'=>'statsOptionTitle'},
+      . StatLine({'stat'=>'DCC','text'=>'SPAMBOX_DCC Plugin:','class'=>'statsOptionTitle'},
                  {'text'=>"$Stats{DCC}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{DCC}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
 
@@ -42943,7 +42943,7 @@ my %tmpStats = %ScoreStats;
 ($smin,$smax) = minmax(\%ScoreStats);
 ($amin,$amax) = minmax(\%AllScoreStats);
 for (sort {lc($main::a) cmp lc($main::b)} qw(
- ASSP_AFC ASSP_DCC ASSP_OCR ASSP_Razor AUTHErrors Backscatter-failed BadAttachment BadHistory BATV-check-failed Bayesian Bayesian-HAM
+ SPAMBOX_AFC SPAMBOX_DCC SPAMBOX_OCR SPAMBOX_Razor AUTHErrors Backscatter-failed BadAttachment BadHistory BATV-check-failed Bayesian Bayesian-HAM
  BlacklistedDomain BlacklistedHelo BlackOrg BlockedCountry BombBlack BombCharSets BombData BombHeaderRe bombRe BombScript
  BombSenderHelo BombSenderIP BombSenderMailFrom BombSubjectRe bombSuspiciousRe CountryCode DKIMfailed DKIMpass DMARC-failed DNSBLfailed
  DNSBLneutral EarlyTalker ExtremeHistory ForgedHELO From-missing griplist HMM HMM-HAM HomeCountry internaladdress InvalidAddress
@@ -42996,7 +42996,7 @@ $ret .= StatLine({'stat'=>'','text'=>'Server Name:','class'=>'statsOptionTitle'}
                  {'text'=>"$localhostname",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'})
 
-      . StatLine({'stat'=>'','text'=>'ASSP host UUID:','class'=>'statsOptionTitle'},
+      . StatLine({'stat'=>'','text'=>'SPAMBOX host UUID:','class'=>'statsOptionTitle'},
                  {'text'=>"$UUID",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'})
 
@@ -43078,7 +43078,7 @@ my $currentCLtext = $currentCL ? '<a href="javascript:void(0);" onclick="javascr
 $ret .= <<EOT;
           <tr>
             <td class="statsOptionTitle">
-              ASSP Version:
+              SPAMBOX Version:
             </td>
             <td class="statsOptionValue" colspan="2">
               <table>
@@ -43131,7 +43131,7 @@ $ret .= <<EOT;
         <tbody id="StatItem9" class="off">
 EOT
 
-$ret .= StatLine({'stat'=>'','text'=>'ASSP License Identifier (UUID) :','class'=>'statsOptionTitle'},
+$ret .= StatLine({'stat'=>'','text'=>'SPAMBOX License Identifier (UUID) :','class'=>'statsOptionTitle'},
                  {'text'=>"$UUID",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'});
 my @lic;
@@ -43228,7 +43228,7 @@ $ret .= <<EOT;
       $kudos<br />
     </div>
     $footers
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>
@@ -43260,7 +43260,7 @@ sub ConfigStatsRaw {
  my $pct2=sprintf("%.1f",$tots{msgTotal2}-$AllStats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal2}/($tots{msgTotal2}-$AllStats{locals}));
  my $cpuAvg=sprintf("%.2f\%",(! $Stats{cpuTime} ? 0 : 100*$Stats{cpuBusyTime}/$Stats{cpuTime}));
  my $cpuAvg2=sprintf("%.2f\%",(! $AllStats{cpuTime} ? 0 : 100*$AllStats{cpuBusyTime}/$AllStats{cpuTime}));
- my $currStat = &StatusASSP();
+ my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io) ? 'not healthy' : 'healthy' ;
  my $memory = memoryUsage().'MB';
 
@@ -43270,7 +43270,7 @@ sub ConfigStatsRaw {
  }
 <<EOT . $sr;
 $headerHTTP
-ASSP Proxy Uptime | $uptime days | $uptime2 days
+SPAMBOX Proxy Uptime | $uptime days | $uptime2 days
 Messages Processed | $tots{msgTotal} ($mpd per day) | $tots{msgTotal2} ($mpd2 per day)
 Non-Local Mail Blocked | $pct% | $pct2%
 CPU Usage | $cpuAvg | $cpuAvg2
@@ -43471,16 +43471,16 @@ sub ex {
 sub ConfigFC {
     my ( $href, $qsref ) = @_;
 
-    if ($CanUseASSP_FC) {
-        if (! ${'ASSP_FC::TEST'}) {
-            my $ret = eval{ASSP_FC::process( $href, $qsref );};
+    if ($CanUseSPAMBOX_FC) {
+        if (! ${'SPAMBOX_FC::TEST'}) {
+            my $ret = eval{SPAMBOX_FC::process( $href, $qsref );};
             return ($@) ? $@ : $ret;
         } else {
             eval ('
-            no ASSP_FC;
-            delete $INC{\'ASSP_FC.pm\'};
-            require ASSP_FC;
-            return ASSP_FC::process( $href, $qsref );
+            no SPAMBOX_FC;
+            delete $INC{\'SPAMBOX_FC.pm\'};
+            require SPAMBOX_FC;
+            return SPAMBOX_FC::process( $href, $qsref );
             ');
             mlog(0,"warning: filecommander failed in test mode - $@") if $@;
         }
@@ -43488,7 +43488,7 @@ sub ConfigFC {
         return  "HTTP/1.1 200 OK
 Content-type: text/html
 
-ERROR: lib/ASSP_FC.pm is missing
+ERROR: lib/SPAMBOX_FC.pm is missing
 ";
 
     }
@@ -43513,8 +43513,8 @@ Content-type: text/html
     $out .= "\n<head>\n<title>statistic graphic</title>\n";
     $out .= "</head><body>\n";
 
-    unloadNameSpace("ASSP_SVG") if $ASSP_FC::TEST;
-    eval('use ASSP_SVG; 1;') or return $out."<h1>ERROR: can not load lib/ASSP_SVG.pm - $@</h1></body></html>";
+    unloadNameSpace("SPAMBOX_SVG") if $SPAMBOX_FC::TEST;
+    eval('use SPAMBOX_SVG; 1;') or return $out."<h1>ERROR: can not load lib/SPAMBOX_SVG.pm - $@</h1></body></html>";
     open(my $F, '<', "$base/images/svg.js") or return $out."<h1>ERROR: can not open $base/images/svg.js - $!</h1></body></html>";
     binmode $F;
     my $Jscript = join('',<$F>);
@@ -43570,12 +43570,12 @@ Content-type: text/html
     $qs{stattype} ||= 'stat';
     $qs{stattype} = lc($qs{stattype});
     my $statfile = lc($qs{stattype}).'GraphStats';
-    my $xstep = (ASSP_SVG::SVG_time_to_sec($to) - ASSP_SVG::SVG_time_to_sec($from))/substr($size,0,3);
+    my $xstep = (SPAMBOX_SVG::SVG_time_to_sec($to) - SPAMBOX_SVG::SVG_time_to_sec($from))/substr($size,0,3);
     my $fy = substr($from,0,4);
     my $fm = substr($from,5,2);
     my $ty = substr($to,0,4);
     my $tm = substr($to,5,2);
-    my $nextstep = ASSP_SVG::SVG_time_to_sec($from);
+    my $nextstep = SPAMBOX_SVG::SVG_time_to_sec($from);
     my $firststep;
     for my $yy ($fy ... $ty) {
         my $ttm = ($yy == $ty) ? $tm : 12;
@@ -43597,7 +43597,7 @@ Content-type: text/html
                     $dp = $firststep;
                     $firststep = undef;
                 }
-                $t = ASSP_SVG::SVG_time_to_sec($t);
+                $t = SPAMBOX_SVG::SVG_time_to_sec($t);
                 next if ($nextstep > $t);
                 $nextstep = int($t + $xstep - $t % $xstep);
                 $dp .= $_;
@@ -43646,7 +43646,7 @@ Content-type: text/html
     $tt =~ s/_/ /go;
     $size = $mobile ? 'style="width:500px;"' : 'style="width:850px;"';
 
-    $out .= "<div id=\"form\" $size>".'<form name="ASSPgraph" id="ASSPgraph" action="" method="post"><center>
+    $out .= "<div id=\"form\" $size>".'<form name="SPAMBOXgraph" id="SPAMBOXgraph" action="" method="post"><center>
     from: <input name="from" size="20" value="'.$tf.'">
     to: <input name="to" size="20" value="'.$tt.'">
     <input name="stattype" type="hidden" value="'.$qs{stattype}.'">
@@ -43657,7 +43657,7 @@ Content-type: text/html
 
     $size = $mobile ? 'style="width:500px; height:350px;"' : 'style="width:850px; height:500px;"';
     $out .= "<div id=\"svggraphic\" $size>\n";
-    $out .= eval{ASSP_SVG::SVG_render($stat,$from,$to,\@confp,\$dp,$plot,"$base/images");};
+    $out .= eval{SPAMBOX_SVG::SVG_render($stat,$from,$to,\@confp,\$dp,$plot,"$base/images");};
     $out .= "</div>\n";
 
     $out .= '<script type="text/javascript">'."\n";
@@ -43686,8 +43686,8 @@ Content-type: text/html
     $out .= "\n<head>\n<title>confidence distribution graphic</title>\n";
     $out .= "</head><body>\n";
 
-    unloadNameSpace("ASSP_SVG") if $ASSP_FC::TEST;
-    eval('use ASSP_SVG; 1;') or return $out."<h1>ERROR: can not load lib/ASSP_SVG.pm - $@</h1></body></html>";
+    unloadNameSpace("SPAMBOX_SVG") if $SPAMBOX_FC::TEST;
+    eval('use SPAMBOX_SVG; 1;') or return $out."<h1>ERROR: can not load lib/SPAMBOX_SVG.pm - $@</h1></body></html>";
     open(my $F, '<', "$base/images/svg.js") or return $out."<h1>ERROR: can not open $base/images/svg.js - $!</h1></body></html>";
     binmode $F;
     my $Jscript = join('',<$F>);
@@ -43837,7 +43837,7 @@ Content-type: text/html
     $tt =~ s/_/ /go;
     $size = $mobile ? 'style="width:500px;"' : 'style="width:850px;"';
 
-    $out .= "<div id=\"form\" $size>".'<form name="ASSPgraph" id="ASSPgraph" action="" method="post"><center>
+    $out .= "<div id=\"form\" $size>".'<form name="SPAMBOXgraph" id="SPAMBOXgraph" action="" method="post"><center>
     from: <input name="from" size="20" value="'.$tf.'">
     to: <input name="to" size="20" value="'.$tt.'">
     <input name="stattype" type="hidden" value="'.$qs{stattype}.'">
@@ -43848,7 +43848,7 @@ Content-type: text/html
 
     $size = $mobile ? 'style="width:500px; height:350px;"' : 'style="width:850px; height:500px;"';
     $out .= "<div id=\"svggraphic\" $size>\n";
-    $out .= eval{ASSP_SVG::SVG_render_confidence($stat,1,5,\@confp,$values,$plot,"$base/images");};
+    $out .= eval{SPAMBOX_SVG::SVG_render_confidence($stat,1,5,\@confp,$values,$plot,"$base/images");};
     $out .= $@ if $@;
     $out .= "</div>\n";
 
@@ -43949,7 +43949,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP Top ten statistic ($myName)</title>
+  <title>$currentPage SPAMBOX Top ten statistic ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body>
@@ -44223,7 +44223,7 @@ $h3
   </table>
   </form>
   $h4
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </div>
@@ -44512,17 +44512,17 @@ sub ConfigAnalyze {
     }
     if ($maillength > length($mail)) {
         $fm .= "analyze is restricted to a maximum length of $mBytes bytes<br />\n";
-        $fm .= "attachments will be fully analyzed using ASSP_AFC<br />\n" if (${'DoASSP_AFC'});
+        $fm .= "attachments will be fully analyzed using SPAMBOX_AFC<br />\n" if (${'DoSPAMBOX_AFC'});
         $fm .= "attachments will be fully scanned for viruses<br />\n" if (($UseAvClamd && $CanUseAvClamd) || ($DoFileScan && $FileScanCMD));;
     }
     if ($normalizeUnicode && $CanUseUnicodeNormalize) {
         $fm .= "text processing uses unicode normalization<br />\n";
     }
     if ($mail =~ /X-Assp-ID: (.+)/io) {
-        $fm .= "ASSP-ID: $1<br />";
+        $fm .= "SPAMBOX-ID: $1<br />";
     }
     if ($mail =~ /X-Assp-Session: (.+)/io) {
-        $fm .= "ASSP-Session: $1<br />";
+        $fm .= "SPAMBOX-Session: $1<br />";
     }
     my $reportedBy;
     my ($xorgsub) = $mail =~ /X-Assp-Original-Subject:\s*($HeaderValueRe)/ios;
@@ -44558,7 +44558,7 @@ sub ConfigAnalyze {
         }
         $hasheader = 1;
     }
-    $fm .= "removed all local X-ASSP- header lines for analysis<br />\n"
+    $fm .= "removed all local X-SPAMBOX- header lines for analysis<br />\n"
         if ($mail =~ s/x-assp-[^()]+?:\s*$HeaderValueRe//gios);
     my $mystatus;
     my $foundReceived = 0;
@@ -44692,7 +44692,7 @@ sub ConfigAnalyze {
             push @recHeader, $1, $2;
             my $who = $1;
             my $s = $2;
-            $noDKIM = 1 if $who =~ /^X-ASSP-[^(]+?\(\d+\)/io;
+            $noDKIM = 1 if $who =~ /^X-SPAMBOX-[^(]+?\(\d+\)/io;
             next if $who !~ /^(from|sender|reply-to|errors-to|list-\w+|ReturnReceipt|Return-Receipt-To|Disposition-Notification-To)$/io;
             $mailfrom = lc($1) if (! $mailfrom && lc($1) eq 'from');
             &headerUnwrap($s);
@@ -45211,9 +45211,9 @@ sub ConfigAnalyze {
                 fixUpMIMEHeader($email);
                 @parts = parts_subparts($email);
             };
-            if (${'DoASSP_AFC'} && $ASSP_AFC::VERSION >= '3.08' && $baysConf > 0 && exists($preMakeRE{'ASSP_AFCDetectSpamAttachReRE'}) && ${'ASSP_AFCDetectSpamAttachRe'}) {
+            if (${'DoSPAMBOX_AFC'} && $SPAMBOX_AFC::VERSION >= '3.08' && $baysConf > 0 && exists($preMakeRE{'SPAMBOX_AFCDetectSpamAttachReRE'}) && ${'SPAMBOX_AFCDetectSpamAttachRe'}) {
                 my ($domain) = $reportedBy =~ /$EmailAdrRe(\@$EmailDomainRe)/io;
-                my $re = ${'ASSP_AFCDetectSpamAttachReRE'};
+                my $re = ${'SPAMBOX_AFCDetectSpamAttachReRE'};
                 foreach my $part ( @parts ) {
                     my $filename =   attrHeader($part,'Content-Type','filename','name')
                                   || $part->filename
@@ -45227,11 +45227,11 @@ sub ConfigAnalyze {
                         && defined($imgprob = $Spamdb{ "$reportedBy $imghash" } || $Spamdb{ "$domain $imghash" } || $Spamdb{ $imghash }))
                     {
                         if ($imgprob >= $baysProbability) {
-                          $fm .= "<b><font color='red'>&bull;</font> <a href='./#ASSP_AFCDetectSpamAttachRe'>spam attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
+                          $fm .= "<b><font color='red'>&bull;</font> <a href='./#SPAMBOX_AFCDetectSpamAttachRe'>spam attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
                         } elsif ($imgprob <= (1 - $baysProbability)) {
-                          $fm .= "<b><font color='green'>&bull;</font> <a href='./#ASSP_AFCDetectSpamAttachRe'>ham attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
+                          $fm .= "<b><font color='green'>&bull;</font> <a href='./#SPAMBOX_AFCDetectSpamAttachRe'>ham attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
                         } else {
-                          $fm .= "<b><font color='yellow'>&bull;</font> <a href='./#ASSP_AFCDetectSpamAttachRe'>neutral attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
+                          $fm .= "<b><font color='yellow'>&bull;</font> <a href='./#SPAMBOX_AFCDetectSpamAttachRe'>neutral attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
                         }
                     }
                 }
@@ -45255,10 +45255,10 @@ sub ConfigAnalyze {
                 my $orgname = $filename;
 
                 my $self;
-                if ($orgname && ${'DoASSP_AFC'} && $ASSP_AFC::VERSION >= '3.08' && eval{$self = ASSP_AFC->new()} ) {
+                if ($orgname && ${'DoSPAMBOX_AFC'} && $SPAMBOX_AFC::VERSION >= '3.08' && eval{$self = SPAMBOX_AFC->new()} ) {
                     $Con{$tmpfh} = {};
                     $self->{detectBinEXE} = 1;
-                    $self->{blockEncryptedZIP} = ${'ASSP_AFCblockEncryptedZIP'};
+                    $self->{blockEncryptedZIP} = ${'SPAMBOX_AFCblockEncryptedZIP'};
                     $self->{attZipRun} = sub { return 1 };
                     $Con{$tmpfh}->{rcpt} = "$reportedBy " if $reportedBy;
                     $Con{$tmpfh}->{rcpt} .= join(' ',keys %to);
@@ -45705,8 +45705,8 @@ sub ConfigAnalyze {
         if (!$mystatus) {
             my $bayestext;
             $bayestext = "<font color='red'>&bull; Bayesian Check is disabled</font>" if !$DoBayesian;
-            $bayestext .= ' - word stemming engine is used' if eval{$ASSP_WordStem::VERSION;};
-            $bayestext .= ' - language '.$ASSP_WordStem::last_lang_detect.' detected' if eval{$ASSP_WordStem::last_lang_detect};
+            $bayestext .= ' - word stemming engine is used' if eval{$SPAMBOX_WordStem::VERSION;};
+            $bayestext .= ' - language '.$SPAMBOX_WordStem::last_lang_detect.' detected' if eval{$SPAMBOX_WordStem::last_lang_detect};
             $bayestext .= "<br /><font color='red'>&bull;</font> <b>Spamdb</b> has version: <b>$currentDBVersion{Spamdb}</b> - required version: <b>$requiredDBVersion{Spamdb}</b> !" if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
             $ba .= "<b><font size='3' color='#003366'>Bayesian Analysis: $bayestext</font></b><br /><br />";
 
@@ -45929,7 +45929,7 @@ setOutput(getInput().replace(eval("/"+findText+"/ig"), replaceText));
 //]]>
 </script>
 <div id="cfgdiv" class="content">
-<h2>ASSP Mail Analyzer</h2>
+<h2>SPAMBOX Mail Analyzer</h2>
 <div class="note">$h1
 </div><br />
 $fm$ba$st
@@ -45960,7 +45960,7 @@ $h4</small></p>
 </div>
 
 $footers
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>
@@ -45996,7 +45996,7 @@ sub AnalyzeText {
 <html>
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<title>ASSP Analyze from $myName</title>
+<title>SPAMBOX Analyze from $myName</title>
 <style type="text/css">
 $style
 .content {
@@ -46007,7 +46007,7 @@ $style
 <body>
 <div class="content">
 <br /><hr><br />
-<h2>ASSP Mail Analyzer on $myName</h2>
+<h2>SPAMBOX Mail Analyzer on $myName</h2>
 <hr><br /><br />
 $this->{reporthint}
 $res
@@ -46197,7 +46197,7 @@ sub ConfigMaillog {
      $CMheaders = \"<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">
 <head>
   <meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=utf-8\" />
-  <title>$currentPage ASSP ($myName) Host: $localhostname @ $localhostip</title>
+  <title>$currentPage SPAMBOX ($myName) Host: $localhostname @ $localhostip</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
   <link rel=\"shortcut icon\" href=\"get?file=images/favicon.ico\" />
 $autoJS
@@ -46712,7 +46712,7 @@ LOOP
  }
  $res .= ', ' if ($res &&  $qs{autorefresh} ne 'Auto');
  $res .= "searchtime $stime seconds$maxsearchtime" if ($qs{autorefresh} ne 'Auto');
- my $headline = ($qs{autorefresh} eq 'Auto') ? '' : '<h2>ASSP Maillog Tail</h2>' ;
+ my $headline = ($qs{autorefresh} eq 'Auto') ? '' : '<h2>SPAMBOX Maillog Tail</h2>' ;
 
 <<EOT;
 $headerHTTP
@@ -46896,7 +46896,7 @@ $maillogJump
 <div $display >
 $footers
 </div>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>
@@ -47357,7 +47357,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP address action ($myName)</title>
+  <title>$currentPage SPAMBOX address action ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body onmouseover="this.focus();" ondblclick="this.select();">
@@ -47591,7 +47591,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP IP action ($myName)</title>
+  <title>$currentPage SPAMBOX IP action ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body onmouseover="this.focus();" ondblclick="this.select();">
@@ -47679,7 +47679,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP Remote Support ($myName)</title>
+  <title>$currentPage SPAMBOX Remote Support ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body onmouseover="this.focus();" ondblclick="this.select();">
@@ -47704,7 +47704,7 @@ $headerHTTP
         the public IP address or hostname (eg. the MX) and the SMTP port, assp is listening to. The support stuff will also need
         login data to access the GUI and the information if SSL is required (or not) to access the GUI.<br /><br />
         Keep in mind, that nobody else than root will be able to login to the GUI, if you are still logged on using the root account!<br /><br />
-        ASSP will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.<br /><br />
+        SPAMBOX will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.<br /><br />
         ALSO NOTICE: you will not be able to receive any email from the remote support IP address, while the remote
         support is enabled!
       </form>
@@ -47884,7 +47884,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
    if (defined($qs{contents})) {
     $s1=$qs{contents};
     $s1= decodeHTMLEntities($s1);
-    $s1 =~ s/\n$//o; # prevents ASSP from appending a newline to the file each time it is saved.
+    $s1 =~ s/\n$//o; # prevents SPAMBOX from appending a newline to the file each time it is saved.
     $s1 =~ s/\r$//o;
     $s1 =~ s/\s+$//o;
    # make line terminators uniform
@@ -47935,7 +47935,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
             binmode $CE;
 #encrypt if to do
             if (exists $CryptFile{$fil}) {
-                my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                 $s1 = $enc->ENCRYPT($s1)
             }
             print $CE $s1;
@@ -48199,7 +48199,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
      $CE->read($s1,[$stat->($fil)]->[7]);
 #dencrypt if to do
      if (exists $CryptFile{$fil} && $s1 =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-         my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+         my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
          $s1 = $enc->DECRYPT($s1);
      }
      $CE->close;
@@ -48251,7 +48251,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
           $editButtons .='<div><input type="submit" name="B1" value="Do It!" />&nbsp;&nbsp;<input type="submit" name="B1" value="Delete file" onclick="return confirmDelete(\''.$fil.'\');"/>';
           my $nf = normHTML($fil);
 
-          $editButtons .='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="view decoded MIME" onclick="return popFileEditor(\''. $nf .'\',9);"/>&nbsp;&nbsp;<input type="button" value="analyze" onclick="return window.open(\'analyze?file='. $nf .'\',\'ASSP Analyze\',\'\');"/> &nbsp;&nbsp;<input type="button" value="Close" onclick="javascript:window.close();"/>'.$slo.'</div>';
+          $editButtons .='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="button" value="view decoded MIME" onclick="return popFileEditor(\''. $nf .'\',9);"/>&nbsp;&nbsp;<input type="button" value="analyze" onclick="return window.open(\'analyze?file='. $nf .'\',\'SPAMBOX Analyze\',\'\');"/> &nbsp;&nbsp;<input type="button" value="Close" onclick="javascript:window.close();"/>'.$slo.'</div>';
       } else {
           my $disabled = ($qs{B1}=~/Save to Importfile/io) ? 'disabled="disabled"' : '';
           my $fn = $hash ? 'list' : 'file';
@@ -48271,9 +48271,9 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
 
  my $s3;
  if ($qs{note} eq '1') {
-     my $currStat = &StatusASSP();
+     my $currStat = &StatusSPAMBOX();
      if ($currStat =~ /not healthy/io) {
-       $s3 = '<a href="./statusassp" target="blank" title="ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status."><b><font color=\'red\'>&bull;';
+       $s3 = '<a href="./statusassp" target="blank" title="SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status."><b><font color=\'red\'>&bull;';
        if (scalar keys %RegexError) {
            $s3 .= '&nbsp;-&nbsp; regex error in:&nbsp;';
            foreach(keys %RegexError) {
@@ -48291,7 +48291,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP File Editor ($myName $htmlfil)</title>
+  <title>$currentPage SPAMBOX File Editor ($myName $htmlfil)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
     <script type="text/javascript">
 //<![CDATA[
@@ -48482,7 +48482,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP remember me ($myName)</title>
+  <title>$currentPage SPAMBOX remember me ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body onmouseover="this.focus();" ondblclick="this.select();">
@@ -48575,10 +48575,10 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
 </table>
 </form>' unless $AsAService;
 
-my $currStat = &StatusASSP();
+my $currStat = &StatusSPAMBOX();
 $currStat = ($currStat =~ /not healthy/io)
-   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>ASSP '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   ? '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
+   : '<a href="./statusassp" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $lFoptions = "<option value=\"default\">default</option>";
  my @DIR = Glob("$base/language/*");
@@ -48598,7 +48598,7 @@ $currStat = ($currStat =~ /not healthy/io)
  $lFoptions
  </select></span>
 
-    &nbsp;<input type=\"button\" value=\"edit\" onclick=\"javascript:popFileEditor('language/'+(document.forms['ASSPconfig'].languageFile.value=='default' || document.forms['ASSPconfig'].languageFile.value=='' ? 'assp.lng' : document.forms['ASSPconfig'].languageFile.value),1);
+    &nbsp;<input type=\"button\" value=\"edit\" onclick=\"javascript:popFileEditor('language/'+(document.forms['SPAMBOXconfig'].languageFile.value=='default' || document.forms['SPAMBOXconfig'].languageFile.value=='' ? 'assp.lng' : document.forms['SPAMBOXconfig'].languageFile.value),1);
     \" /><br />
     &nbsp;<input type=\"button\" value=\"readme\" onclick=\"javascript:popFileEditor('language/readme.txt',1);\" />
     </div><hr />
@@ -48622,8 +48622,8 @@ $headerHTTP
 $headerDTDTransitional
 $headers
 <div id="cfgh2" class="content"$fullCFG2>
-<h2>$currStat ASSP$runas - Configuration ($WebIP{$ActWebSess}->{user}$blocking)$networkatt</h2>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<h2>$currStat SPAMBOX$runas - Configuration ($WebIP{$ActWebSess}->{user}$blocking)$networkatt</h2>
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 </div>
 <script type="text/javascript">
 <!--
@@ -48689,27 +48689,27 @@ $headerHTTP
 $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
-<h2>ASSP Donations</h2>
+<h2>SPAMBOX Donations</h2>
 <div class="note">
-ASSP is here thanks to the following people, please feel free to donate to support the ASSP project.
+SPAMBOX is here thanks to the following people, please feel free to donate to support the SPAMBOX project.
 </div>
 <br />
 <table style="width: 99%;" class="textBox">
 <tr>
-<td class="underline">John Hanna the founder and developer of ASSP up to version 1.0.12</td>
+<td class="underline">John Hanna the founder and developer of SPAMBOX up to version 1.0.12</td>
 <td class="underline">&nbsp;</td>
 </tr>
 <tr>
-<td class="underline">John Calvi the developer of ASSP from version 1.0.12.</td>
+<td class="underline">John Calvi the developer of SPAMBOX from version 1.0.12.</td>
 <td class="underline">&nbsp;</td>
 </tr>
 <tr>
-<td class="underline">Fritz Borgstedt &dagger; the developer of ASSP V1 since 1.2.0</td>
+<td class="underline">Fritz Borgstedt &dagger; the developer of SPAMBOX V1 since 1.2.0</td>
 <td class="underline">&nbsp;</td>
 </tr>
 <tr>
-<td class="underline">Thomas Eckardt the developer of ASSP V2 since 2.0.0</td>
-<td class="underline"><a href="https://www.paypal.com/xclick/business=Thomas.Eckardt%40thockar.com&amp;item_name=Support+ASSP&amp;item_number=assp&amp;no_note=1&amp;tax=0&amp;currency_code=USD" rel="external">Donate via Paypal</a></td>
+<td class="underline">Thomas Eckardt the developer of SPAMBOX V2 since 2.0.0</td>
+<td class="underline"><a href="https://www.paypal.com/xclick/business=Thomas.Eckardt%40thockar.com&amp;item_name=Support+SPAMBOX&amp;item_number=assp&amp;no_note=1&amp;tax=0&amp;currency_code=USD" rel="external">Donate via Paypal</a></td>
 </tr>
 <tr>
 <td class="underline">bitcoins are also welcome</td>
@@ -48735,7 +48735,7 @@ $kudos
 <br />
 </div>
 $footers
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>
@@ -48847,7 +48847,7 @@ $headerHTTP
 $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
-<h2>ASSP Shutdown/Restart</h2>
+<h2>SPAMBOX Shutdown/Restart</h2>
 <div class="note">
 $h1
 </div>
@@ -48911,7 +48911,7 @@ if ($action=~/abort/io) {
   mlog(0,"shutdown/restart process initiated per admin request; SMTP session count:$smtpConcurrentSessions") if $action=~/proceed/i;
  } elsif ($action=~/success/io) {
   $refresh=3;
-  $s1='ASSP restarted successfully.';
+  $s1='SPAMBOX restarted successfully.';
   $editButtons='<input type="submit" name="action" value=" Proceed " disabled="disabled" />&nbsp;
 <input type="submit" name="action" value=" Abort " disabled="disabled" />';
   $doShutdown=0;
@@ -48929,7 +48929,7 @@ if ($action=~/abort/io) {
   my $quit; $quit = '<form action="quit" method="post">
 <table class="textBox" style="width: 99%;">
   <tr><td class="noBorder" align="center">Panic button:</td></tr>
-  <tr><td class="noBorder" align="center"><input type="submit" value="Terminate ASSP now!" /></td></tr>
+  <tr><td class="noBorder" align="center"><input type="submit" value="Terminate SPAMBOX now!" /></td></tr>
 </table>
 </form>' unless $AsAService;
 my $bod = $action=~/success/io ? '<body onload="top.location.href=\'/#\'">' : '<body>' ;
@@ -48940,7 +48940,7 @@ $headerDTDTransitional
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
   <meta http-equiv="refresh" content="$refresh;url=/shutdown_frame$query" />
-  <title>$currentPage ASSP ($myName)</title>
+  <title>$currentPage SPAMBOX ($myName)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/shutdown.css\" type=\"text/css\" />
 </head>
 $bod
@@ -49139,7 +49139,7 @@ function processPrint(){
         }
         html = html.replace(/noprint(?:.|\n)+?endnoprint/g, \'\');
         html += \'\n</HE\' + \'AD>\n<BODY>\n\';
-        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>ASSP version '.$version.$modversion.'</b><br /><hr /><br />\';
+        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>SPAMBOX version '.$version.$modversion.'</b><br /><hr /><br />\';
 
         var printReadyElemCfg  = document.getElementById("cfgdiv");
 
@@ -49302,7 +49302,7 @@ $headerDTDTransitional
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
   $focusJS
-  <title>$currentPage ASSP ($myName) this monitor will slow down ASSP dramaticly - use it careful</title>
+  <title>$currentPage SPAMBOX ($myName) this monitor will slow down SPAMBOX dramaticly - use it careful</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
 </head>
 <body onfocus="tStart();" onblur="tStop();">
@@ -49351,14 +49351,14 @@ sub WorkerStatus {
      return %status;
 }
 
-sub StatusASSP {
+sub StatusSPAMBOX {
      my %status = &WorkerStatus();
      my $refresh = 5;
      my $query = '?nocache='.time;
      my $s1;
      my $tmpCount = 0;
      my $rowclass;
-     my $healthy = 'ASSP Worker/DB/Regex Status - <span class="positive">healthy</span>';
+     my $healthy = 'SPAMBOX Worker/DB/Regex Status - <span class="positive">healthy</span>';
      
      $s1 = "<tr><td class=\"conTabletitle\">Worker</td><td class=\"conTabletitle\">loop age</td><td class=\"conTabletitle\">current action</td></tr>";
 
@@ -49378,7 +49378,7 @@ sub StatusASSP {
              } else {
                  $s1 .= "<td><span class=\"negative\">$status{$s}{lastloop} s</span></td>";
                  $s1 .= "<td><span class=\"negative\">$status{$s}{lastaction} (stuck)</span></td>";
-                 $healthy = 'ASSP Worker/DB/Regex Status - <span class="negative">not healthy</span>';
+                 $healthy = 'SPAMBOX Worker/DB/Regex Status - <span class="negative">not healthy</span>';
              }
          } else {
              $s1 .= "<td>$status{$s}{lastloop} s</td>";
@@ -49400,7 +49400,7 @@ sub StatusASSP {
          $s2 .= $rowclass;
          $s2 .= "<td><span class=\"negative\"><b>$s</b></span></td>";
          $s2 .= "</tr>";
-         $healthy = 'ASSP Worker/DB/Regex Status - <span class="negative">not healthy</span>';
+         $healthy = 'SPAMBOX Worker/DB/Regex Status - <span class="negative">not healthy</span>';
      }
      if (! $tmpCount) {
          $s2 .= "<tr><td><span class=\"positive\"><b>no failed database tables</b></span></td></tr>";
@@ -49418,7 +49418,7 @@ sub StatusASSP {
          $s21 .= $rowclass;
          $s21 .= "<td><span class=\"negative\"><b>Spamdb</b></span> has version: <b>$currentDBVersion{Spamdb}</b> - required version: <b>$requiredDBVersion{Spamdb}</b> ! Run a rebuildspamdb to correct this!</td>";
          $s21 .= "</tr>";
-         $healthy = 'ASSP Worker/DB/Regex Status - <span class="negative">not healthy</span>';
+         $healthy = 'SPAMBOX Worker/DB/Regex Status - <span class="negative">not healthy</span>';
      }
      if (! ($ignoreDBVersionMissMatch & 2) && $DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb}) {
          $tmpCount++;
@@ -49430,7 +49430,7 @@ sub StatusASSP {
          $s21 .= $rowclass;
          $s21 .= "<td><span class=\"negative\"><b>HMMdb</b></span> has version: <b>$currentDBVersion{HMMdb}</b> - required version: <b>$requiredDBVersion{HMMdb}</b> ! Run a rebuildspamdb to correct this!</td>";
          $s21 .= "</tr>";
-         $healthy = 'ASSP Worker/DB/Regex Status - <span class="negative">not healthy</span>';
+         $healthy = 'SPAMBOX Worker/DB/Regex Status - <span class="negative">not healthy</span>';
      }
      if (! $tmpCount) {
          $s21 .= "<tr><td><span class=\"positive\"><b>no database version missmatch found</b></span></td></tr>";
@@ -49449,7 +49449,7 @@ sub StatusASSP {
              $s3 .= "<td><span class=\"negative\"><b>$s : $RegexError{$s}</b></span></td>";
              $s3 .= "</tr>";
          }
-         $healthy = 'ASSP Worker/DB/Regex Status - <span class="negative">not healthy</span>';
+         $healthy = 'SPAMBOX Worker/DB/Regex Status - <span class="negative">not healthy</span>';
      } else {
          $s3 .= "<tr><td><span class=\"positive\"><b>no failed regular expressions</b></span></td></tr>";
      }
@@ -49486,7 +49486,7 @@ sub StatusASSP {
         }
         html = html.replace(/noprint(?:.|\n)+?endnoprint/g, \'\');
         html += \'\n</HE\' + \'AD>\n<BODY>\n\';
-        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>ASSP version '.$version.$modversion.'</b><br /><hr /><br />\';
+        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>SPAMBOX version '.$version.$modversion.'</b><br /><hr /><br />\';
 
         var printReadyElemCfg  = document.getElementById("cfgdiv");
 
@@ -49512,7 +49512,7 @@ $headerDTDTransitional
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
   $focusJS
-  <title>$currentPage ASSP ($myName) Worker/DB/Regex Status</title>
+  <title>$currentPage SPAMBOX ($myName) Worker/DB/Regex Status</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
 </head>
 <body onfocus="tStart();" onblur="tStop();">
@@ -49558,7 +49558,7 @@ sub SaveConfig {
  local $/ = undef;
  open($SC,'>',\$content);
 
- my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
+ my $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
 
  for my $idx (0...$#ConfigArray) {
    my $c = $ConfigArray[$idx];
@@ -49612,7 +49612,7 @@ sub threadCheckConfig {
     my $CFG;
     my $ok = 1;
     open($CFG,'<',"$base/spambox.cfg") or (mlog(0,"warning: can't read $base/spambox.cfg") && return);
-    my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
+    my $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
     while (<$CFG>) {
         s/\r|\n//go;
         s/^$UTFBOMRE//o;
@@ -49663,7 +49663,7 @@ sub textinput {my ($name,$nicename,$size,$func,$default,$valid,$onchange,$descri
  $hdefault =~ s/'|"|\n//go;
  $hdefault =~ s/\\/\\\\/go;
  $showdefault = $hdefault ? $hdefault : '&nbsp;';
- my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['ASSPconfig'].$name.value='$hdefault';setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$showdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
+ my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['SPAMBOXconfig'].$name.value='$hdefault';setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$showdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
  $cfgname = "($name)" if $EnableInternalNamesInDesc && $mobile;
  $cfgname .= syncShowGUI($name);
  my $edit  =  '';
@@ -50008,7 +50008,7 @@ sub listbox {
 	}
     my $color = ($conf eq $default) ? '' : 'style="color:#8181F7;"';
 
-    my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['ASSPconfig'].$name.value='$default';setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$hdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
+    my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['SPAMBOXconfig'].$name.value='$default';setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$hdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
     $cfgname = "($name)" if $EnableInternalNamesInDesc && $mobile;
     $cfgname .= syncShowGUI($name);
     if (! $rootlogin && (exists $cryptConfigVars{$name} ||
@@ -50104,7 +50104,7 @@ sub checkbox {my ($name,$nicename,$size,$func,$default,$valid,$onchange,$descrip
  if (exists $ConfigAdd{$name}) {
      $color = ($ConfigAdd{$name} eq $default) ? '' : 'style="color:#8181F7;"';
  }
- my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['ASSPconfig'].$name.checked=$cdefault;setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$hdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
+ my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['SPAMBOXconfig'].$name.checked=$cdefault;setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$hdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
  $cfgname = "($name)" if $EnableInternalNamesInDesc && $mobile;
  $cfgname .= syncShowGUI($name);
  my $display = '';
@@ -50205,7 +50205,7 @@ sub checkUpdate {
                 mlog(0,"AdminUpdate: $name changed $text") unless $new eq $old;
                 ${$name}=$new;
     # -- this sets the variable name with the same name as the config key to the new value
-    # -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
+    # -- for example $Config{myName}="SPAMBOX-nospam" -> $myName="SPAMBOX-nospam";
             }
             $ConfigChanged = 1 unless exists $RunTaskNow{$name};
             if ($info !~ /span class.+?negative/o) {
@@ -50499,7 +50499,7 @@ sub fixConfigSettings {
         delete $Config{allowAdminConnectionsFromName};
     }
 
-    if ($Config{EmailFrom} =~ /ASSP <>/io) {
+    if ($Config{EmailFrom} =~ /SPAMBOX <>/io) {
         mlog(0,"warning: invalid value '$Config{EmailFrom}' in EmailFrom was set to ''");
         $EmailFrom = $Config{EmailFrom} = '';
     }
@@ -50531,7 +50531,7 @@ sub fixConfigSettings {
         # EmailWhitelist is not used in this version
         delete $Config{EmailWhitelist};
     }
-    if (! exists $Config{AutoUpdateASSP}) {
+    if (! exists $Config{AutoUpdateSPAMBOX}) {
         $Config{AutoRestartAfterCodeChange} = 'immed' if $Config{AutoRestartAfterCodeChange} == 1;
     }
 
@@ -50544,7 +50544,7 @@ sub fixConfigSettings {
     if ($Config{BayesMaxProcessTime} > 15) {
         $BayesMaxProcessTime = $Config{BayesMaxProcessTime} = 15;
     }
-    if ($maxBayesValues > 30 && ! -e "$base/lib/ASSP_WordStem.pm") {
+    if ($maxBayesValues > 30 && ! -e "$base/lib/SPAMBOX_WordStem.pm") {
        $maxBayesValues = 30;
     }
     $maxBayesValues = 30 if $maxBayesValues < 30;
@@ -50601,15 +50601,15 @@ sub fixConfigSettings {
     }
 
 # -- check and set the used or available encryption engine
-    $CanUseCryptGhost = $AvailCryptGhost = ASSP::CRYPT->new('a',0,0)->ENCRYPT('a') ne ASSP::CRYPT->new('a',0,1)->ENCRYPT('a');
+    $CanUseCryptGhost = $AvailCryptGhost = SPAMBOX::CRYPT->new('a',0,0)->ENCRYPT('a') ne SPAMBOX::CRYPT->new('a',0,1)->ENCRYPT('a');
     if ($Config{adminusersdbpass} && $Config{adminusersdbpass} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o) {
-        if ($AvailCryptGhost && defined ASSP::CRYPT->new($Config{webAdminPassword},0,1)->DECRYPT($Config{adminusersdbpass})) {
+        if ($AvailCryptGhost && defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,1)->DECRYPT($Config{adminusersdbpass})) {
             $usedCrypt = 1; # can and use Crypt::GOST
-        } elsif ($AvailCryptGhost && defined ASSP::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
+        } elsif ($AvailCryptGhost && defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
             $CanUseCryptGhost = 0;
             $usedCrypt = -1; # can but don't use Crypt::GOST - try a later engine change
             mlog(0,"info: the old encryption engine is still used, but the new, faster one (Crypt::GOST) is available - the engine will be changed at a later time");
-        } elsif (defined ASSP::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
+        } elsif (defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
             $usedCrypt = 0;  # can't and don't use Crypt::GOST
         } else {
             mlog(0,"error: encryption engine ERROR - unable to decrypt the value for 'adminusersdbpass'");
@@ -50619,33 +50619,33 @@ sub fixConfigSettings {
     }
 
 # -- decrypt/encrypt security vars
-    my $dec = ASSP::CRYPT->new($Config{webAdminPassword},0);
+    my $dec = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
     foreach (keys %cryptConfigVars) {
         $Config{$_} = $dec->DECRYPT($Config{$_}) if ($Config{$_} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o && defined $dec->DECRYPT($Config{$_})) ;
     }
     $Config{adminusersdbpass} = $Config{webAdminPassword} unless $Config{adminusersdbpass};
     $Config{SNMPUser} = 'root' unless $Config{SNMPUser};
 
-    ASSP::UUID::init();
+    SPAMBOX::UUID::init();
     if (   ! exists $Config{UUID}
-        || ! ASSP::UUID::is_uuid_string($Config{UUID})
-        || ! ASSP::UUID::version_of_uuid($Config{UUID}) == 1)
+        || ! SPAMBOX::UUID::is_uuid_string($Config{UUID})
+        || ! SPAMBOX::UUID::version_of_uuid($Config{UUID}) == 1)
     {
-        mlog(0,"error: invalid ASSP - UUID and License Indentifier was found  : '$Config{UUID}'") if exists $Config{UUID};
-        if ($Config{UUID} = ASSP::UUID::create_uuid_as_string()) {
-            mlog(0,"AdminInfo: a new ASSP - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
-            mlog(0,"AdminUpdate: a new ASSP - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
+        mlog(0,"error: invalid SPAMBOX - UUID and License Indentifier was found  : '$Config{UUID}'") if exists $Config{UUID};
+        if ($Config{UUID} = SPAMBOX::UUID::create_uuid_as_string()) {
+            mlog(0,"AdminInfo: a new SPAMBOX - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
+            mlog(0,"AdminUpdate: a new SPAMBOX - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
         } else {
-            mlog(0,"error: unable to create a valid ASSP - UUID and License Indentifier");
+            mlog(0,"error: unable to create a valid SPAMBOX - UUID and License Indentifier");
         }
     }
 
     if (    $Config{UUID}
-         && ASSP::UUID::time_of_uuid($Config{UUID}) > time + 7201
-         && ASSP::UUID::is_uuid_string($Config{UUID})
-         && ASSP::UUID::version_of_uuid($Config{UUID}) == 1 )
+         && SPAMBOX::UUID::time_of_uuid($Config{UUID}) > time + 7201
+         && SPAMBOX::UUID::is_uuid_string($Config{UUID})
+         && SPAMBOX::UUID::version_of_uuid($Config{UUID}) == 1 )
     {
-        mlog(0,"error: the local time or the ASSP - UUID and License Indentifier is not valid!");
+        mlog(0,"error: the local time or the SPAMBOX - UUID and License Indentifier is not valid!");
     }
 
     $ConfigAdd{UUID} = $Config{UUID} if $Config{UUID};
@@ -50653,7 +50653,7 @@ sub fixConfigSettings {
     $ConfigAdd{globalUploadURL} = $Config{globalUploadURL};
 
 # -- this resets the variable name with the same name as the config key to the new value
-# -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
+# -- for example $Config{myName}="SPAMBOX-nospam" -> $myName="SPAMBOX-nospam";
     foreach (keys %Config) {${$_}=$Config{$_};}
 
     # set the date/time for spambox.cfg
@@ -50857,8 +50857,8 @@ sub unloadComThreadModules {
     unloadSub 'ConToThread';
     unloadSub 'debugWrite';
     unloadSub 'Donations';
-    unloadSub 'downASSP';
-    unloadSub 'downloadASSPVersion';
+    unloadSub 'downSPAMBOX';
+    unloadSub 'downloadSPAMBOXVersion';
     unloadSub 'downloadBackDNS';
     unloadSub 'downloadDropList';
     unloadSub 'downloadGrip';
@@ -51061,7 +51061,7 @@ sub unloadMainThreadModules {
     unloadSub 'cleanUpMaxFiles';
     unloadSub 'cleanWhitePB';
     unloadSub 'CleanWhitelist';
-    unloadSub 'downloadASSPVersion';
+    unloadSub 'downloadSPAMBOXVersion';
     unloadSub 'downloadBackDNS';
     unloadSub 'downloadDropList';
     unloadSub 'downloadGrip';
@@ -51094,7 +51094,7 @@ sub ThreadCompileAllRE {
         'configUpdateURIBLSP' => 1,
         'configUpdateRWLSP' => 1,
         'updateDNS' => 1,
-        'configUpdateASSPCfg' => 1,
+        'configUpdateSPAMBOXCfg' => 1,
         'configUpdateDKIMConf' => 1,
         'configChangeRcptRepl' => 1,
         'ConfigCompileRe' => 1,
@@ -52543,12 +52543,12 @@ sub checkOptionList {
             close $COL;
             my $enc;
             if (exists $CryptFile{$fil} && $value =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                 $value = $enc->DECRYPT($value);
             } elsif (exists $CryptFile{$fil}) {
                 open(my $I,'>',$fil);
                 binmode $I;
-                print $I ASSP::CRYPT->new($webAdminPassword,0)->ENCRYPT($value);
+                print $I SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($value);
                 close $I;
                 mlog(0,"info: file $fil is now stored encrypted, because it is used in secured config $name");
                 $FileUpdate{"$fil$name"} = $FileUpdate{$fil} = ftime($fil);
@@ -52578,7 +52578,7 @@ sub checkOptionList {
                 my $inc = join('',<$INCL>);
                 close $INCL;
                 if (exists $CryptFile{"$base/$ifile"} && $inc =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                    $inc = ASSP::CRYPT->new($webAdminPassword,0)->DECRYPT($inc);
+                    $inc = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT($inc);
                 } elsif ($enc) {
                     open($INCL,'>',"$base/$ifile");
                     binmode $INCL;
@@ -53288,7 +53288,7 @@ sub ConfigChangeMailPort {my ($name, $old, $new, $init)=@_;
 
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new mail port $new (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new mail port - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new mail port - SPAMBOX-Restart required\');</script>";
     }
 }
 
@@ -53327,7 +53327,7 @@ sub ConfigChangeMailPort2 {my ($name, $old, $new, $init)=@_;
 
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new secondary mail port $new (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new secondary mail port - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new secondary mail port - SPAMBOX-Restart required\');</script>";
     }
 }
 
@@ -53642,7 +53642,7 @@ sub ConfigChangeAdminPort {my ($name, $old, $new, $init)=@_;
 
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new admin port $new $usessl (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new admin port $usessl - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new admin port $usessl - SPAMBOX-Restart required\');</script>";
     }
 }
 
@@ -53713,7 +53713,7 @@ sub ConfigChangeStatPort {my ($name, $old, $new, $init)=@_;
 
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new stat port $new $usessl (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new stat port $usessl - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new stat port $usessl - SPAMBOX-Restart required\');</script>";
     }
 }
 
@@ -53793,8 +53793,8 @@ sub ConfigChangePassword {my ($name, $old, $new, $init)=@_;
             mlog(0,"error: ConfigChangePassword called without defining a value");
             return;
         }
-        my $dec = ASSP::CRYPT->new($old,0);
-        my $enc = ($usedCrypt == -1) ? ASSP::CRYPT->new($webAdminPassword,0,1) : ASSP::CRYPT->new($webAdminPassword,0);
+        my $dec = SPAMBOX::CRYPT->new($old,0);
+        my $enc = ($usedCrypt == -1) ? SPAMBOX::CRYPT->new($webAdminPassword,0,1) : SPAMBOX::CRYPT->new($webAdminPassword,0);
         foreach my $file (keys %CryptFile) {
             (open my $cf,'<' ,"$file") or next;
             binmode $cf;
@@ -53843,8 +53843,8 @@ sub putAdminUsers {
       %AdminUsers = ();
     }
     $bin = $AdminUsersObject->{BIN};
-    $AdminUsersObject->{enc} = ($usedCrypt == -1) ? ASSP::CRYPT->new($pass,$bin,1) : ASSP::CRYPT->new($pass,$bin);
-    $AdminUsersObject->{dec} = ASSP::CRYPT->new($pass,$bin);
+    $AdminUsersObject->{enc} = ($usedCrypt == -1) ? SPAMBOX::CRYPT->new($pass,$bin,1) : SPAMBOX::CRYPT->new($pass,$bin);
+    $AdminUsersObject->{dec} = SPAMBOX::CRYPT->new($pass,$bin);
     if (! $mysqlSlaveMode) {
         %AdminUsers = %temphash;
         eval{$AdminUsersObject->flush();};
@@ -53855,8 +53855,8 @@ sub putAdminUsers {
         %AdminUsersRight = ();
     }
     $bin = $AdminUsersRightObject->{BIN};
-    $AdminUsersRightObject->{enc} = ($usedCrypt == -1) ? ASSP::CRYPT->new($pass,$bin,1) : ASSP::CRYPT->new($pass,$bin);
-    $AdminUsersRightObject->{dec} = ASSP::CRYPT->new($pass,$bin);
+    $AdminUsersRightObject->{enc} = ($usedCrypt == -1) ? SPAMBOX::CRYPT->new($pass,$bin,1) : SPAMBOX::CRYPT->new($pass,$bin);
+    $AdminUsersRightObject->{dec} = SPAMBOX::CRYPT->new($pass,$bin);
     if (! $mysqlSlaveMode) {
         %AdminUsersRight = %temphash;
         eval{$AdminUsersRightObject->flush();};
@@ -53943,7 +53943,7 @@ sub ConfigChangeRelayPort {my ($name, $old, $new, $init)=@_;
         $$name = $Config{$name}=$new;
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new relay port $new (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new relay port - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new relay port - SPAMBOX-Restart required\');</script>";
     }
 }
 
@@ -54152,10 +54152,10 @@ sub configChangeNumThreads {
         $PerfStartTime = time;
     }
     if ($new > $old) {
-        mlog(0,$auto."Update: request to change SMTP-Threadnumber to $new (changed from $old) -- ASSP-Restart is recommended!");
+        mlog(0,$auto."Update: request to change SMTP-Threadnumber to $new (changed from $old) -- SPAMBOX-Restart is recommended!");
 #        $NumComWorkers = $new;
         $Config{$name} = $new;
-        return "<span class=\"positive\"> - NumComWorkers increased - ASSP-Restart is required</span><script type=\"text/javascript\">alert(\'NumComWorkers increased - ASSP-Restart is required\');</script>";
+        return "<span class=\"positive\"> - NumComWorkers increased - SPAMBOX-Restart is required</span><script type=\"text/javascript\">alert(\'NumComWorkers increased - SPAMBOX-Restart is required\');</script>";
     }
     if ($new == 0) {
         mlog(0,$auto."Update: request to change SMTP-Threadnumber to 0 (changed from $old) -- value 0 is not permitted for NumComWorkers>");
@@ -54167,7 +54167,7 @@ sub configChangeNumThreads {
     }
     $NumComWorkers = $Config{$name} = $new;
     mlog(0,$auto."Update: request to change SMTP-Threadnumber to $new (changed from $old) - Restart required to freeup memory!");
-    return "<span class=\"positive\"> - ASSP-Restart is required to freeup memory</span><script type=\"text/javascript\">alert(\'NumComWorkers changed - ASSP-Restart is required to freeup memory\');</script>";
+    return "<span class=\"positive\"> - SPAMBOX-Restart is required to freeup memory</span><script type=\"text/javascript\">alert(\'NumComWorkers changed - SPAMBOX-Restart is required to freeup memory\');</script>";
 }
 
 sub ConfigChangeAutoUpdate {
@@ -54185,7 +54185,7 @@ sub ConfigChangeAutoUpdate {
         unlink "$base/download/spambox.pl.gz.old";
         move("$base/download/spambox.pl.gz","$base/download/spambox.pl.gz.old");
         mlog(0,"info: moved file $base/download/spambox.pl.gz to $base/download/spambox.pl.gz.old") if $MaintenanceLog >= 2;
-        $NextASSPFileDownload = -1;
+        $NextSPAMBOXFileDownload = -1;
         $NextVersionFileDownload = -1;
     }
     return $ret;
@@ -54200,7 +54200,7 @@ sub ConfigDEBUG {my ($name, $old, $new, $init)=@_;
         binmode($DEBUG);
         $DEBUG->autoflush;
         print $DEBUG $UTF8BOM;
-        print $DEBUG "running ASSP version: $main::MAINVERSION\n\n";
+        print $DEBUG "running SPAMBOX version: $main::MAINVERSION\n\n";
         mlog(0,"info: starting general debug mode to file $file");
     }
     mlog(0,"AdminUpdate: general debug changed to '$new' from '$old' ");
@@ -54799,7 +54799,7 @@ sub configUpdateRBLSP {
         while (@templist) {
             my $c = shift @templist;
             if ($NODHO && $c =~ /dnsbl\.httpbl\.org/io) {
-                mlog(0,"RBLSP:warning - dnsbl.httpbl.org is not supported as RBL-Service-Provider by ASSP and will be ignored - remove the entry")
+                mlog(0,"RBLSP:warning - dnsbl.httpbl.org is not supported as RBL-Service-Provider by SPAMBOX and will be ignored - remove the entry")
                     if $WorkerNumber == 0;
                 next;
             }
@@ -55140,7 +55140,7 @@ sub configUpdateCCD {
     return '';
 }
 
-sub configUpdateASSPCfg {
+sub configUpdateSPAMBOXCfg {
     my ($name, $old, $new, $init)=@_;
     if (fileUpdated("spambox.cfg",$name)){
         if ($WorkerNumber == 0) {
@@ -56668,7 +56668,7 @@ $headerHTTP
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
-  <title>$currentPage ASSP SyncConfig ($myName - $name)</title>
+  <title>$currentPage SPAMBOX SyncConfig ($myName - $name)</title>
   <link rel=\"stylesheet\" href=\"get?file=images/editor.css\" type=\"text/css\" />
 </head>
 <body onmouseover="this.focus();" >
@@ -56993,7 +56993,7 @@ sub syncConfigSend {
         my $timeout = (int(length($body) / (1024 * 1024)) + 1) * 60; # 1MB/min
         if ( $smtp &&
              do {if ($TLS) {eval{$smtp->starttls();};$localTLSfailed{$MTA} = time if ($@);};1;} &&
-             $smtp->command('ASSPSYNCCONFIG ' , ' ' . Digest::MD5::md5_base64($syncCFGPass))->response() == 2 &&
+             $smtp->command('SPAMBOXSYNCCONFIG ' , ' ' . Digest::MD5::md5_base64($syncCFGPass))->response() == 2 &&
              $smtp->data() &&
              eval {
                  my $blocking = $fh->blocking(0);
@@ -57046,7 +57046,7 @@ sub syncGetFile {
         my $cont = join('',<$FH>);
         close $FH;
         if (exists $CryptFile{$ffil} && $cont =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-            my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+            my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
             $cont = $enc->DECRYPT($cont);
         }
         $body  = MIME::Base64::encode_base64("# file start $file\r\n",'')."\r\n";
@@ -57094,7 +57094,7 @@ sub syncConfigReceived {
         unlink $file;
         return;
     }
-    if (! ($fcont = ASSP::CRYPT->new($webAdminPassword,0)->DECRYPT(join('',$fcont)) )) {
+    if (! ($fcont = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT(join('',$fcont)) )) {
         mlog(0,"syncCFG: no results after decrypt file '$file' for $name - ignore the sync-file");
         unlink $file;
         return;
@@ -57124,7 +57124,7 @@ sub syncConfigReceived {
         }
         next unless $var;
         if ($line =~ /^\s*#\s*UUID\s+(.+)$/o) {
-            if (ASSP::UUID::equal_uuids($UUID, $1)) {
+            if (SPAMBOX::UUID::equal_uuids($UUID, $1)) {
                 mlog(0,"syncCFG: error: the sending host has the same UUID like this assp installation - this is a possible license violation - ignore the sync-file");
                 unlink $file;
                 return;
@@ -57144,7 +57144,7 @@ sub syncConfigReceived {
                     $currFileCont = join('',<$FileH>);
                     close $FileH;
                     if (exists $CryptFile{$File} && $currFileCont =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                        my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                        my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                         $currFileCont = $enc->DECRYPT($currFileCont);
                     }
                 }
@@ -57152,7 +57152,7 @@ sub syncConfigReceived {
             if ($currFileCont ne $FileCont && (open my $FileH , '>',"$File")) {
                 binmode $FileH;
                 if (exists $CryptFile{$File}) {
-                    my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+                    my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                     $FileCont = $enc->ENCRYPT($FileCont);
                 }
                 print $FileH $FileCont;
@@ -57276,7 +57276,7 @@ sub syncRCVQuit {
         if (open my $FH, '>',"$file") {
             binmode $FH;
             $this->{header} =~ s/\.[\r\n]+$//o;
-            print $FH ASSP::CRYPT->new($webAdminPassword,0)->ENCRYPT($this->{header});
+            print $FH SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($this->{header});
             close $FH;
             $syncToDo = 1;
         } else {
@@ -57309,7 +57309,7 @@ sub reloadConfigFile {
     close $RCF;
     delete $newConfig{ConfigSavedOK};
     
-    my $dec = ASSP::CRYPT->new($Config{webAdminPassword},0);
+    my $dec = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
 
     foreach (keys %cryptConfigVars) {
         $newConfig{$_} = $dec->DECRYPT($newConfig{$_}) if ($newConfig{$_} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o && defined $dec->DECRYPT($newConfig{$_})) ;
@@ -57328,7 +57328,7 @@ sub reloadConfigFile {
                     ${$name}=$new;
 
 # -- this sets the variable name with the same name as the config key to the new value
-# -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
+# -- for example $Config{myName}="SPAMBOX-nospam" -> $myName="SPAMBOX-nospam";
                 }
                 if (exists $cryptConfigVars{$name} &&
                     $new =~ /^(?:[a-fA-F0-9]{2}){5,}$/o &&
@@ -58108,7 +58108,7 @@ $link_to_RecRep_config
 $h1
 $RecRepdspres
 </form>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </div>
@@ -58134,7 +58134,7 @@ $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
 <h2><span class="negative">You are root - please go to <a href="./#webAdminPassword" style="color:#684f00" onmousedown="showDisp(\'$ConfigPos{webAdminPassword}\');gotoAnchor(\'webAdminPassword\');return false;" >webAdminPassword</a> to change your password!</span></h2>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonLogout" align="right" type="button" value="Logout" onclick="eraseCookie('lastAnchor');window.location.href='./logout';return false;"/>
 </form>
 </div>
@@ -58179,7 +58179,7 @@ $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
 <h2><span class="positive">Your Password was successfuly changed</span></h2>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonLogout" align="right" type="button" value="Logout" onclick="eraseCookie('lastAnchor');window.location.href='./logout';return false;"/>
 </form>
 </div>
@@ -58203,7 +58203,7 @@ $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
 <h2>Change Your Password</h2>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
     <table class="textBox" style="width: 50%;">
         <tr>
             <td class="noBorder">old password : </td>
@@ -58274,7 +58274,7 @@ function setAnchor(iname) {}
 <div>
 $mainhint
 </div>
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonX" type="hidden" value="" onclick="WaitDiv();"/>
 EOT
     $sfoot = <<EOT;
@@ -58299,7 +58299,7 @@ $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
 $missing
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonLogout" align="right" type="button" value="Logout" onclick="eraseCookie('lastAnchor');window.location.href='./logout';return false;"/>
 </form>
 </div>
@@ -58455,7 +58455,7 @@ EOT
                             $s =~ s/,$//o;
                             $s .= '<br /><br />';
                         }
-                        $s .= "<a href=\"javascript:void(0);\" onmousedown=\"document.forms['ASSPconfig'].user.value='$un';return false;\"> $un </a>,";
+                        $s .= "<a href=\"javascript:void(0);\" onmousedown=\"document.forms['SPAMBOXconfig'].user.value='$un';return false;\"> $un </a>,";
                     }
                 }
                 $s =~ s/,$//o;
@@ -59036,7 +59036,7 @@ sub loadPluginConfig {
       next;
     }
 
-    $tmp = "ASSP_Plugin_TEST";
+    $tmp = "SPAMBOX_Plugin_TEST";
     eval{$tmp = $plobj->process(0,\$tmp)};
     if ($@) {
       mlog(0,"error loading plugin $pl (process) - error: $@");
@@ -59049,15 +59049,15 @@ sub loadPluginConfig {
       next;
     }
 
-    $tmp = "ASSP_Plugin_TEST";
+    $tmp = "SPAMBOX_Plugin_TEST";
     eval{$tmp = $plobj->tocheck()};
     if ($@) {
       mlog(0,"error loading plugin $pl (tocheck) - error: $@");
       removePluginConfig($plobj);
       next;
     }
-    if ($tmp ne "ASSP_Plugin_TEST") {
-      mlog(0,"error plugin $pl tocheck returned $tmp - should be ASSP_Plugin_TEST");
+    if ($tmp ne "SPAMBOX_Plugin_TEST") {
+      mlog(0,"error plugin $pl tocheck returned $tmp - should be SPAMBOX_Plugin_TEST");
       removePluginConfig($plobj);
       next;
     }
@@ -59082,8 +59082,8 @@ sub loadPluginConfig {
       removePluginConfig($plobj);
       next;
     }
-    if ($tmp ne 'ASSP_Plugin_TEST') {
-      mlog(0,"error plugin $pl result returned $tmp - should be ASSP_Plugin_TEST");
+    if ($tmp ne 'SPAMBOX_Plugin_TEST') {
+      mlog(0,"error plugin $pl result returned $tmp - should be SPAMBOX_Plugin_TEST");
       removePluginConfig($plobj);
       next;
     }
@@ -59368,15 +59368,15 @@ sub setOverwriteDo {                # overwrite the configured Do.. with plDo
 # Thread Control
 ###################################
 
-sub EXITASSP {
+sub EXITSPAMBOX {
     exit 1;
 }
 
-sub downASSP {
+sub downSPAMBOX {
     my $text = shift;
     return if $doShutdownForce;
     $doShutdownForce = 1;
-    $SIG{TERM} = \&EXITASSP;
+    $SIG{TERM} = \&EXITSPAMBOX;
     foreach (keys %SIG) {
        next if /TERM/io;
        $SIG{$_} = 'IGNORE';
@@ -59449,7 +59449,7 @@ sub openLogs {
           $LOG->autoflush;
           if (! $append) {
               print $LOG $UTF8BOM;
-              mlog(0,"running ASSP version $main::MAINVERSION");
+              mlog(0,"running SPAMBOX version $main::MAINVERSION");
           }
       }
   }
@@ -59467,7 +59467,7 @@ sub openLogs {
       binmode($DEBUG);
       $DEBUG->autoflush;
       print $DEBUG $UTF8BOM;
-      print $DEBUG "running ASSP version: $main::MAINVERSION\n\n";
+      print $DEBUG "running SPAMBOX version: $main::MAINVERSION\n\n";
       mlog(0,"info: starting general debug mode to file $file");
   }
   $@ = $e;
@@ -59566,8 +59566,8 @@ sub ConToThread {
                 $exceptCount++;
                 my $wt = $ConnectionTransferTimeOut * $exceptCount;
                 if ($exceptCount > 3) {
-                    mlog(0,"error: $WorkerName is unable to transfer connection to any worker within $wt seconds - restart ASSP!");
-                    &downASSP("restarting");
+                    mlog(0,"error: $WorkerName is unable to transfer connection to any worker within $wt seconds - restart SPAMBOX!");
+                    &downSPAMBOX("restarting");
                     _assp_try_restart;
                 }
                 $loop = 1;
@@ -59717,7 +59717,7 @@ sub resetFH {
           mlog(0,"info: renewed listening for SMTP relay connections on port @$lsnRelayI - after too many errors");
       } else {
           mlog(0,"error: renewing listening for SMTP relay connections on port @$lsnRelayI - after too many errors");
-          &downASSP("try restarting ASSP: failed to renew listener on @$lsnRelayI");
+          &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsnRelayI");
           _assp_try_restart;
       }
       return;
@@ -59743,7 +59743,7 @@ sub resetFH {
           mlog(0,"info: renewed listening for additional SMTP connections on port @$lsn2I - after too many errors");
       } else {
           mlog(0,"error: renewing listening for additional SMTP connections on port @$lsn2I - after too many errors");
-          &downASSP("try restarting ASSP: failed to renew listener on @$lsn2I");
+          &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsn2I");
           _assp_try_restart;
       }
       return;
@@ -59769,7 +59769,7 @@ sub resetFH {
           mlog(0,"info: renewed listening for secure SMTP connections on port @$lsnSSLI - after too many errors");
       } else {
           mlog(0,"error: renewing listening for secure SMTP connections on port @$lsnSSLI - after too many errors");
-          &downASSP("try restarting ASSP: failed to renew listener on @$lsnSSLI");
+          &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsnSSLI");
           _assp_try_restart;
       }
       return;
@@ -59799,7 +59799,7 @@ sub resetFH {
                   mlog(0,"info: proxy new started: listening on port @$dummy forwarded to $to$allow - after too many errors");
               } else {
                   mlog(0,"error: renewing proxy on port @$dummy forwarded to $to$allow - after too many errors");
-                  &downASSP("try restarting ASSP: failed to renew proxy on port @$dummy forwarded to $to$allow");
+                  &downSPAMBOX("try restarting SPAMBOX: failed to renew proxy on port @$dummy forwarded to $to$allow");
                   _assp_try_restart;
               }
               last;
@@ -59836,7 +59836,7 @@ sub resetFH {
        mlog(0,"info: renewed listening for SMTP connections on port @$lsnI - after too many errors");
    } else {
        mlog(0,"error: renewing listening for SMTP connections on port @$lsnI - after too many errors");
-       &downASSP("try restarting ASSP: failed to renew listener on @$lsnI");
+       &downSPAMBOX("try restarting SPAMBOX: failed to renew listener on @$lsnI");
        _assp_try_restart;
    }
 }
@@ -59869,7 +59869,7 @@ sub ThreadWaitFinCon {
             return;
         } else {                  # some connection are active - try to restart
             $notallfinished = scalar(keys %ConFno);
-            &downASSP("try restarting ASSP: con in thread: $notallfinished, con concurrent: $smtpConcurrentSessions, con total: $SMTPSessionIP{Total}");
+            &downSPAMBOX("try restarting SPAMBOX: con in thread: $notallfinished, con concurrent: $smtpConcurrentSessions, con total: $SMTPSessionIP{Total}");
             _assp_try_restart;
         }
     }
@@ -60752,7 +60752,7 @@ sub ThreadMaintMain {
         $NextTLDlistDownload = time + 120 if (-e "$base/$file");
         $NextBackDNSFileDownload = time + 300;
         $NextVersionFileDownload = time + 60;
-        $NextASSPFileDownload = time + 90;
+        $NextSPAMBOXFileDownload = time + 90;
         $NextSyncConfig = time + 60;
         $nextStatsUpload = $Stats{nextUpload};
         ScheduleMapSet('GroupsReloadEvery');
@@ -60787,7 +60787,7 @@ sub ThreadMaintMain {
         threads->yield();
     }
     if (! $isRunTask && $doShutdown < 0) {
-        mlog(0,"info: assp has finished all running tasks after a scheduled restart was requested - initialize automatic restart for ASSP in 15 seconds");
+        mlog(0,"info: assp has finished all running tasks after a scheduled restart was requested - initialize automatic restart for SPAMBOX in 15 seconds");
         $doShutdown = time + 15;
         mlog(0,"info: damping is now switched off until assp is down") if $DoDamping;
         return;
@@ -60819,11 +60819,11 @@ sub ThreadMaintMain {
         }
         my $res = qx($cmd);
         if ($res =~ /syntax\s+OK/ios) {
-            if ($res !~ /ASSP\s+\Q$MajorVersion\E/ios) {
-                mlog(0,"error: autoupdate: the version of '$lassp' is not an ASSP major version $MajorVersion - restoring current running script $MAINVERSION!");
+            if ($res !~ /SPAMBOX\s+\Q$MajorVersion\E/ios) {
+                mlog(0,"error: autoupdate: the version of '$lassp' is not an SPAMBOX major version $MajorVersion - restoring current running script $MAINVERSION!");
                 copy($lassp.'.run',"$lassp") && ($FileUpdate{"$lassp".'asspCode'} = ftime($lassp));
             } else {
-                mlog(0,"info: new '$lassp' script detected - syntax check returned OK - requesting automatic restart for ASSP in 15 seconds");
+                mlog(0,"info: new '$lassp' script detected - syntax check returned OK - requesting automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = -1;
             }
         } else {
@@ -60846,9 +60846,9 @@ sub ThreadMaintMain {
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
 
-    if ($AutoUpdateASSP && ! $doShutdown && ! $allIdle && time >= $NextASSPFileDownload) {
+    if ($AutoUpdateSPAMBOX && ! $doShutdown && ! $allIdle && time >= $NextSPAMBOXFileDownload) {
         if (! $noModuleAutoUpdate && ftime("$base/notes/avail_perl_modules.txt") < time - 3600 * 12) {
-            if ($AutoUpdateASSP == 2) {
+            if ($AutoUpdateSPAMBOX == 2) {
                 mlog(0,"search and install updates for Perl modules");
                 %AvailPerlModules = Perl_upgrade_do('--install');
             } else {
@@ -60878,15 +60878,15 @@ sub ThreadMaintMain {
             mlog(0,"finished Perl modules updates");
             $wasrun++;
         }
-        $wasrun += &downloadASSPVersion();
+        $wasrun += &downloadSPAMBOXVersion();
         if ($AutoRestartAfterCodeChange && $codeChanged == 2  &&
             ($AsAService || $AsADaemon || $AutoRestartCmd))
         {
             if ($isRunTask) {
-                mlog(0,"info: assp has updated still loaded modules - schedule automatic restart for ASSP after still running task are finished");
+                mlog(0,"info: assp has updated still loaded modules - schedule automatic restart for SPAMBOX after still running task are finished");
                 $doShutdown = -1;
             } else {
-                mlog(0,"info: assp has updated still loaded modules - initialize automatic restart for ASSP in 15 seconds");
+                mlog(0,"info: assp has updated still loaded modules - initialize automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = time + 15;
             }
         }
@@ -61013,7 +61013,7 @@ sub ThreadMaintMain {
         $wasrun = &uploadGlobalPB('pbdb.white.db');
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
-    if(! $AutoUpdateASSP && time >= $NextVersionFileDownload) {
+    if(! $AutoUpdateSPAMBOX && time >= $NextVersionFileDownload) {
         $wasrun = &downloadVersionFile();
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
@@ -61169,7 +61169,7 @@ sub ThreadMaintMain {
                 && $MemoryUsageLimit
                 && $usage > $MemoryUsageLimit)
             {
-                mlog(0,"warning: the memory usage of the current process is $usage MB, which exceeds $MemoryUsageLimit MB (MemoryUsageLimit) - requesting automatic restart for ASSP in 15 seconds");
+                mlog(0,"warning: the memory usage of the current process is $usage MB, which exceeds $MemoryUsageLimit MB (MemoryUsageLimit) - requesting automatic restart for SPAMBOX in 15 seconds");
                 $doShutdown = time + 15;
                 $wasrun = 1;
             } elsif ($usage && $MaintenanceLog > 2) {
@@ -61277,7 +61277,7 @@ sub ThreadMaintMain {
               &sendNotification(
                 $EmailFrom,
                 $Notify,
-                "ASSP error notification from $myName",
+                "SPAMBOX error notification from $myName",
                 "logged error on host $myName:\r\n\r\n$textI$text2");
                 $t = '*x*';
           } else {
@@ -61291,7 +61291,7 @@ sub ThreadMaintMain {
             &sendNotification(
               $EmailFrom,
               $Notify,
-              "ASSP information notification from $myName",
+              "SPAMBOX information notification from $myName",
               "information on host $myName:\r\n\r\nMainThread has retured to normal state after stuck\r\n");
         }
         $MainLoopStepTime2 = 0;
@@ -61647,7 +61647,7 @@ sub ThreadRebuildSpamDBMain {
         if ($ReStartSchedule && $ReStartSchedule !~ /noschedule/io) {
             for (split/\|/o,$ReStartSchedule) {$cron->add_entry($_,\&schedShutdown);}
             $nextRestart = getNextSched($ReStartSchedule,'ReStart Scheduler') || '';
-            $nextRestart = ' - next ASSP-ReStart is scheduled for '.timestring($nextRestart) if $nextRestart;
+            $nextRestart = ' - next SPAMBOX-ReStart is scheduled for '.timestring($nextRestart) if $nextRestart;
         }
 
         mlog(0,"info: starting RebuildSpamdb Scheduler with '$RebuildSchedule'$nextRebuild") if($ScheduleLog && $spamdb && $RebuildSchedule !~ /noschedule/io);
@@ -62561,7 +62561,7 @@ sub sigCentralHandler {
     }
     if ($sig =~ /abrt|break|quit|kill|term|int/io) {
       if ($WorkerNumber == 0) {
-        &downASSP("restarting on signal $sig");
+        &downSPAMBOX("restarting on signal $sig");
         _assp_try_restart;
       } else {
         $doShutdown = time + 15;
@@ -62685,7 +62685,7 @@ sub registerGlobalClient {
     $url = 'http://'.$url if $url !~ m!^(?:ht|f)tps?://!io;
 
     my $ua = LWP::UserAgent->new();
-    $ua->agent("ASSP/$version$modversion ($^O; Perl/$]; LWP::UserAgent/$LWP::VERSION)");
+    $ua->agent("SPAMBOX/$version$modversion ($^O; Perl/$]; LWP::UserAgent/$LWP::VERSION)");
     $ua->timeout(20);
 
     if ($proxyserver) {
@@ -62752,7 +62752,7 @@ sub sendGlobalFile {
     $url = 'http://'.$url if $url !~ m!^(?:ht|f)tps?://!io;
 
     my $ua = LWP::UserAgent->new();
-    $ua->agent("ASSP/$version$modversion ($^O; Perl/$]; LWP::UserAgent/$LWP::VERSION)");
+    $ua->agent("SPAMBOX/$version$modversion ($^O; Perl/$]; LWP::UserAgent/$LWP::VERSION)");
     $ua->timeout(20);
 
     if ($proxyserver) {
@@ -63207,7 +63207,7 @@ sub printallCon {
     my $OUT;
     open $OUT, '>',"$file";
     binmode $OUT;
-    print $OUT "ASSP version: $MAINVERSION\n\n";
+    print $OUT "SPAMBOX version: $MAINVERSION\n\n";
     print $OUT "Worker $WorkerNumber - Connection Data ----\n\n";
     print $OUT "exception detected $exept\n" if $exept;
     print $OUT "last debug step was: $lastd{$WorkerNumber}\n";
@@ -63248,7 +63248,7 @@ sub printallCon {
 }
 
 sub genCerts {
-# Very basic script to create SSL/TLS certificates for ASSP
+# Very basic script to create SSL/TLS certificates for SPAMBOX
 
 use File::Temp qw/ tempfile tempdir /;
 my $template;
@@ -63264,7 +63264,7 @@ my %opts = (
     C  => 'XY',
     ST => 'unknown',
     L  => 'unknown',
-    O  => 'ASSP',
+    O  => 'SPAMBOX',
     OU => 'Server',
     CN => $myName,
     emailAddress => $EmailAdminReportsTo,
@@ -63777,7 +63777,7 @@ sub HMMreadCrashFiles {
         mlog(0,"info: no lines from crash respository left for a Hidden Markov Model");
         return;
     }
-    my $chain = ASSP::MarkovChain->new(longest => 6,
+    my $chain = SPAMBOX::MarkovChain->new(longest => 6,
                                        top => $CrashAnalyzerTopCount
                                        );
     if (! ref $chain) {
@@ -65056,8 +65056,8 @@ package RBL;
 # Copyright (C) 2002 Asher Blum.  All rights reserved.
 # This code is free software; you can redistribute it and/or modify it under
 # the same terms as Perl itself.
-# Modified for integration with ASSP 1 by John Calvi
-# redesigned for ASSP V2 by Thomas Eckardt 2007-2014.
+# Modified for integration with SPAMBOX 1 by John Calvi
+# redesigned for SPAMBOX V2 by Thomas Eckardt 2007-2014.
 
 use strict qw(vars subs);
 use IO::Socket;
@@ -65454,12 +65454,12 @@ sub DESTROY {
 }
 1;
 
-package ASSP::CryptTie;
+package SPAMBOX::CryptTie;
 
 ##################################
 # module to encrypt keys and values of hashes and tied hashes
 #
-# this modules uses ASSP::CRYPT as encryption engine
+# this modules uses SPAMBOX::CRYPT as encryption engine
 #
 # written and copyright by Thomas Eckardt (2009)
 ##################################
@@ -65489,24 +65489,24 @@ sub TIEHASH {
     }
 
     $self->{hashobj}->{'noRDBMcache'} = 1;
-    $self->{enc} = ASSP::CRYPT->new($pass,$bin);
-    $self->{dec} = ASSP::CRYPT->new($pass,$bin);
+    $self->{enc} = SPAMBOX::CRYPT->new($pass,$bin);
+    $self->{dec} = SPAMBOX::CRYPT->new($pass,$bin);
     $self->{BIN} = $bin;
     $self->{doflush} = $db_module eq 'orderedtie' ? 1 : 0;
 
     my $fkey = $self->{hashobj}->FIRSTKEY;
     if (defined $fkey) {
         $fkey = $self->{dec}->DECRYPT($fkey);
-        die 'ASSP::CRYPT ERROR: DATA and PASSPHRASE are incompatible!' unless defined $fkey;
+        die 'SPAMBOX::CRYPT ERROR: DATA and PSPAMBOXHRASE are incompatible!' unless defined $fkey;
     }
 
     bless $self, $c;
 
     # satisfy the selfloader
-    if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'ASSP::CryptTie::DESTROY'}) {
+    if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'SPAMBOX::CryptTie::DESTROY'}) {
         &DESTROY(0);
     }
-    if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'ASSP::CryptTie::UNTIE'}) {
+    if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'SPAMBOX::CryptTie::UNTIE'}) {
         $self->UNTIE(0);
     }
 
@@ -65517,7 +65517,7 @@ sub DESTROY {my $self = shift; return unless $self; undef $self->{hashobj}; unti
 
 sub UNTIE {
  my ($obj,$count) = @_;
- &main::mlog(0, "error: untie attempted in ASSP::CryptTie while $count inner references still exists") if $count;
+ &main::mlog(0, "error: untie attempted in SPAMBOX::CryptTie while $count inner references still exists") if $count;
 }
 
 sub STORE { my ($self, $key, $value)=@_;
@@ -65559,7 +65559,7 @@ sub flush {my ($self)=@_;
 }
 1;
 
-package ASSP::CRYPT;
+package SPAMBOX::CRYPT;
 ##################################
 # based on GOST 28147-89  (Vipul Ved Prakash, 1997)
 #
@@ -65728,7 +65728,7 @@ sub DESTROY {
 }
 1;
 
-package ASSP::MarkovChain;
+package SPAMBOX::MarkovChain;
 
 ##################################
 # based on Algorithm::MarkovChain 0.07
@@ -65760,7 +65760,7 @@ sub new {
              && ($self->{q}->[1] = defined(${'main::'.chr(ord(',') << 1)}))
              && ($self->{q}->[2] = defined(${'main::lockHMM'}))
         }) || do {
-            my $ret = 'error: ASSP::MarkovChain internal exception('.join(',',@{$self->{q}}).')';
+            my $ret = 'error: SPAMBOX::MarkovChain internal exception('.join(',',@{$self->{q}}).')';
             undef $self;
             &main::mlog(0,$ret);
             return $ret;
@@ -65777,13 +65777,13 @@ sub new {
         } || do {
             my $e = $@;
             undef $self;
-            my $ret = "error: ASSP::MarkovChain - $e - BDB:$BerkeleyDB::Error";
+            my $ret = "error: SPAMBOX::MarkovChain - $e - BDB:$BerkeleyDB::Error";
             &main::mlog(0,$ret);
             delete $args{BDB};
             $@ = $e;
             return $ret;
         };
-        return 'error: ASSP::MarkovChain unknown exception - possible coding error'
+        return 'error: SPAMBOX::MarkovChain unknown exception - possible coding error'
             if (!ref$self||!$self->{simple}||!@{$self->{q}}||grep(/[A-Z]/o,@{$self->{q}}));
     } elsif ($args{File}) {
         my $file = $args{File};
@@ -65827,9 +65827,9 @@ sub new {
     delete $self->{q};
     delete $args{q};
     if ($args{chains}) {
-        return 'error: ASSP::MarkovChain chains is not a HASH-reference'
+        return 'error: SPAMBOX::MarkovChain chains is not a HASH-reference'
           unless ref $args{chains} eq 'HASH';
-        return 'error: ASSP::MarkovChain totals is not a HASH-reference'
+        return 'error: SPAMBOX::MarkovChain totals is not a HASH-reference'
           unless ref $args{totals} eq 'HASH';
 
         $self->{chains} = $args{chains};
@@ -66245,7 +66245,7 @@ sub parse_data {
 sub get_whois_results {
     my $self = shift;
     $self->{ip} = $self->{Address};
-    return ASSP::Whois::IP::whoisip_query($self->{ip},$self->{Timeout},undef,undef);
+    return SPAMBOX::Whois::IP::whoisip_query($self->{ip},$self->{Timeout},undef,undef);
 }
 
 sub map_whois_results {
@@ -66303,7 +66303,7 @@ sub DESTROY {
 }
 1;
 
-package ASSP::Syslog;
+package SPAMBOX::Syslog;
 ##################################
 # somehow based on Net::Syslog 0.04
 # Perl extension for sending syslog messages directly to a remote syslogd. 1.05
@@ -66446,7 +66446,7 @@ sub DESTROY {
 1;
 
 
-package ASSP::Whois::IP;
+package SPAMBOX::Whois::IP;
 ########################################
 # based on Net::Whois::IP 1.21 2007-03-07 16:49:36 ben Exp $
 # modified by Thomas Eckardt (c) 2014
@@ -66679,7 +66679,7 @@ sub whoisip_get_connect {
 
 1;
 
-package ASSP::UUID;
+package SPAMBOX::UUID;
 ########################################
 # based on UUID::Tiny 1.04 with
 # Copyright 2009, 2010, 2013 Christian Augustin

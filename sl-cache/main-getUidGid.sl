@@ -15,7 +15,7 @@ package main; sub getUidGid { my ($uname,$gname)=@_;
     } else {
       my $msg="could not find gid for group '$gname' -- not switching effective gid -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
   }
@@ -26,7 +26,7 @@ package main; sub getUidGid { my ($uname,$gname)=@_;
     } else {
       my $msg="could not find uid for user '$uname' -- not switching effective uid -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
   }

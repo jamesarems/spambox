@@ -108,8 +108,8 @@ package main; sub clean {
     s/["']\s*\/?s*>|target\s*=\s*['"]?_blank['"]?|<\s*\/|:\/\/ //go;
     s/ \d{2,} / 1234 /go;
     $msg = &decHTMLent($_);
-    if ($CanUseASSP_WordStem) {
-        my $ret = eval{&ASSP_WordStem::process($msg);};
+    if ($CanUseSPAMBOX_WordStem) {
+        my $ret = eval{&SPAMBOX_WordStem::process($msg);};
         if ($ret) {
             return ("helo: $helo\n$rcpt\n".$ret,1);
         } else {

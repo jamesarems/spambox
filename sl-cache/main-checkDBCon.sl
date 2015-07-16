@@ -58,7 +58,7 @@ package main; sub checkDBCon {
                     } else {
                         my $cmd = "'BerkeleyDB::Hash',-Filename => \"$BerkeleyFile\", \%main::env";
                         my $bin = $adminusersdbNoBIN ? 0 : 1 ;
-                        $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd;
+                        $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd;
                     }
                 } else {
                     $dbh ||= DBI->connect("DBI:$DBusedDriver:".($mydb ? "database=$mydb;" : '').($myhost ? "$DBhostTag=$myhost" : '' )."$DBOption", $myuser, $mypassword,
@@ -72,7 +72,7 @@ package main; sub checkDBCon {
                     } else {
                         my $cmd = "'Tie::RDBM',\{db=>\$dbh,table=>\"$mysqlTable\",create=>1,DEBUG=>$DataBaseDebug\}";
                         my $bin = $adminusersdbNoBIN ? 0 : 1 ;
-                        $$CacheObject=tie %$KeyName,'ASSP::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
+                        $$CacheObject=tie %$KeyName,'SPAMBOX::CryptTie',$adminusersdbpass,$bin,$cmd,$dbh;
                     }
                 }
             };

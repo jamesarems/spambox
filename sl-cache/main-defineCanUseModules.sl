@@ -131,14 +131,14 @@ package main; sub defineCanUseModules {
         $optReModule = 'Regexp::Optimizer' if eval('Regexp::Optimizer->VERSION') ge '0.23';
     }
 
-    $AvailASSP_WordStem    = $useASSP_WordStem ? validateModule('ASSP_WordStem()') : 0;  # ASSP_WordStem  module installed
-    $CanUseASSP_WordStem   = $AvailASSP_WordStem;
+    $AvailSPAMBOX_WordStem    = $useSPAMBOX_WordStem ? validateModule('SPAMBOX_WordStem()') : 0;  # SPAMBOX_WordStem  module installed
+    $CanUseSPAMBOX_WordStem   = $AvailSPAMBOX_WordStem;
 
-    $AvailASSP_FC    = $useASSP_FC ? validateModule('ASSP_FC()') : 0;  # ASSP_FC  module installed
-    $CanUseASSP_FC   = $AvailASSP_FC;
+    $AvailSPAMBOX_FC    = $useSPAMBOX_FC ? validateModule('SPAMBOX_FC()') : 0;  # SPAMBOX_FC  module installed
+    $CanUseSPAMBOX_FC   = $AvailSPAMBOX_FC;
 
-    $AvailASSP_SVG    = $useASSP_SVG ? validateModule('ASSP_SVG()') : 0;  # ASSP_SVG  module installed
-    $CanUseASSP_SVG   = $AvailASSP_SVG;
+    $AvailSPAMBOX_SVG    = $useSPAMBOX_SVG ? validateModule('SPAMBOX_SVG()') : 0;  # SPAMBOX_SVG  module installed
+    $CanUseSPAMBOX_SVG   = $AvailSPAMBOX_SVG;
 
     $AvailAsspSelfLoader   = $useAsspSelfLoader ? defined $AsspSelfLoader::VERSION : 0;  # AsspSelfLoader  module installed
     $CanUseAsspSelfLoader  = $AvailAsspSelfLoader;

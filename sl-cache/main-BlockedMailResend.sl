@@ -37,9 +37,9 @@ package main; sub BlockedMailResend {
         $outfile->print( <<EOT );
 From: $EmailFrom
 To: $this->{mailfrom}
-Subject: failed - request ASSP to resend blocked mail
+Subject: failed - request SPAMBOX to resend blocked mail
 
-The requested email-file $filename no longer exists on ASSP-host $myName.
+The requested email-file $filename no longer exists on SPAMBOX-host $myName.
 Please contact your email administrator, if you need more information.
 
 .
@@ -69,9 +69,9 @@ EOT
         $outfile->print( <<EOT );
 From: $EmailFrom
 To: $this->{mailfrom}
-Subject: denied - request ASSP to resend blocked mail
+Subject: denied - request SPAMBOX to resend blocked mail
 
-The requested email-file $filename on ASSP-host $myName possibly contains a virus!
+The requested email-file $filename on SPAMBOX-host $myName possibly contains a virus!
 Please contact your email administrator, if you need more information.
 
 .

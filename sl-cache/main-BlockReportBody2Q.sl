@@ -61,7 +61,7 @@ package main; sub BlockReportBody2Q {
         my $sub = $email->header("Subject") || '';    # get the subject of the email
         $sub =~ s/\r?\n//go;
 
-        ($host) = $sub =~ /ASSP\-host\s+(.*)/io;
+        ($host) = $sub =~ /SPAMBOX\-host\s+(.*)/io;
         $host =~ s/\s//go;
 
         BlockReportForwardRequest($fh,$host) if ( lc($myName) ne lc($host) );

@@ -321,10 +321,10 @@ package main; sub getline {
             return;
         }
 
-    } elsif (&syncCanSync() && $enableCFGShare && $isShareSlave && $l=~/^ *ASSPSYNCCONFIG\s*([^\r\n]+)\r\n/o ) {
+    } elsif (&syncCanSync() && $enableCFGShare && $isShareSlave && $l=~/^ *SPAMBOXSYNCCONFIG\s*([^\r\n]+)\r\n/o ) {
         my $pass = $1;
-        mlog(0,"info: got ASSPSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
-        $this->{lastcmd} = 'ASSPSYNCCONFIG';
+        mlog(0,"info: got SPAMBOXSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
+        $this->{lastcmd} = 'SPAMBOXSYNCCONFIG';
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
         my @tservers = split(/\|/o, $syncServer);
         my @servers;
@@ -348,13 +348,13 @@ package main; sub getline {
         }
         if (! @servers || ! (@servers = grep { $this->{ip} eq $_ } @servers )) {
             NoLoopSyswrite( $fh, "502 $this->{lastcmd} not implemented $this->{ip} - @servers\r\n" ,0);
-            mlog($fh,"syncCFG: error - got 'ASSPSYNCCONFIG' command from wrong ip $this->{ip}");
+            mlog($fh,"syncCFG: error - got 'SPAMBOXSYNCCONFIG' command from wrong ip $this->{ip}");
             done($fh);
             return;
         }
         if (Digest::MD5::md5_base64($syncCFGPass) ne $pass) {
             NoLoopSyswrite( $fh, "500 $this->{lastcmd} wrong authentication - check you configuration\r\n" ,0);
-            mlog($fh,"syncCFG: error - got wrong password in 'ASSPSYNCCONFIG' command from $this->{ip}");
+            mlog($fh,"syncCFG: error - got wrong password in 'SPAMBOXSYNCCONFIG' command from $this->{ip}");
             done($fh);
             return;
         }
@@ -364,19 +364,19 @@ package main; sub getline {
         $this->{getline} = \&syncRCVData;
         NoLoopSyswrite($fh,"250 OK start the config sync\r\n",0);
         return;
-    } elsif ($l=~/^ *ASSPSYNCCONFIG\s*([^\r\n]+)?\r\n/o ) {
+    } elsif ($l=~/^ *SPAMBOXSYNCCONFIG\s*([^\r\n]+)?\r\n/o ) {
         my $pass = $1;
-        mlog(0,"info: got ASSPSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
-        $this->{lastcmd} = 'ASSPSYNCCONFIG';
+        mlog(0,"info: got SPAMBOXSYNCCONFIG request from $this->{ip}") if $ConnectionLog >=2;
+        $this->{lastcmd} = 'SPAMBOXSYNCCONFIG';
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
         if (Digest::MD5::md5_base64($syncCFGPass) ne $pass) {
             NoLoopSyswrite( $fh, "502 $this->{lastcmd} not implemented\r\n",0 );
-            mlog($fh,"syncCFG: error - got syncCFG request, but this is not an 'isShareSlave' and got wrong password in 'ASSPSYNCCONFIG' command from $this->{ip}");
+            mlog($fh,"syncCFG: error - got syncCFG request, but this is not an 'isShareSlave' and got wrong password in 'SPAMBOXSYNCCONFIG' command from $this->{ip}");
             done($fh);
             return;
         }
         NoLoopSyswrite( $fh, "500 $this->{lastcmd} - sync peer $this->{ip} is not registered on $myName or this is not an isShareSlave\r\n",0 );
-        mlog($fh,"syncCFG: error - got 'ASSPSYNCCONFIG' command from ip $this->{ip} - the request will be ignored - check your configuration");
+        mlog($fh,"syncCFG: error - got 'SPAMBOXSYNCCONFIG' command from ip $this->{ip} - the request will be ignored - check your configuration");
         done($fh);
         return;
 

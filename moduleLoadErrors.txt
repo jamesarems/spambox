@@ -1,1 +1,18 @@
-There were no module load errors detected.
+module SPAMBOX_WordStem could not be loaded (see error below): check with >perl -e "use SPAMBOX_WordStem;"
+Can't locate SPAMBOX_WordStem.pm in @INC (@INC contains: /root/spambox/lib /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 . /root/spambox /root/spambox/Plugins) at (eval 151) line 1, <DATA> line 747.
+BEGIN failed--compilation aborted at (eval 151) line 1, <DATA> line 747.
+
+
+
+module SPAMBOX_FC could not be loaded (see error below): check with >perl -e "use SPAMBOX_FC;"
+Can't locate SPAMBOX_FC.pm in @INC (@INC contains: /root/spambox/lib /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 . /root/spambox /root/spambox/Plugins) at (eval 152) line 1, <DATA> line 747.
+BEGIN failed--compilation aborted at (eval 152) line 1, <DATA> line 747.
+
+
+
+module SPAMBOX_SVG could not be loaded (see error below): check with >perl -e "use SPAMBOX_SVG;"
+Can't locate SPAMBOX_SVG.pm in @INC (@INC contains: /root/spambox/lib /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 . /root/spambox /root/spambox/Plugins) at (eval 153) line 1, <DATA> line 747.
+BEGIN failed--compilation aborted at (eval 153) line 1, <DATA> line 747.
+
+
+

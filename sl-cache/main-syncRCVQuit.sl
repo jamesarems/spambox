@@ -19,7 +19,7 @@ package main; sub syncRCVQuit {
         if (open my $FH, '>',"$file") {
             binmode $FH;
             $this->{header} =~ s/\.[\r\n]+$//o;
-            print $FH ASSP::CRYPT->new($webAdminPassword,0)->ENCRYPT($this->{header});
+            print $FH SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($this->{header});
             close $FH;
             $syncToDo = 1;
         } else {

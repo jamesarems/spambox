@@ -165,7 +165,7 @@ package main; sub BlockReportGen {
  <col /><col /><col />
  <tr>
   <th colspan="3" id="header">
-   <img src=cid:1001 alt="powered by ASSP on $myName">
+   <img src=cid:1001 alt="powered by SPAMBOX on $myName">
    $userhtml
   </th>
  </tr>

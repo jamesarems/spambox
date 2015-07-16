@@ -19,7 +19,7 @@ package main; sub textinput {my ($name,$nicename,$size,$func,$default,$valid,$on
  $hdefault =~ s/'|"|\n//go;
  $hdefault =~ s/\\/\\\\/go;
  $showdefault = $hdefault ? $hdefault : '&nbsp;';
- my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['ASSPconfig'].$name.value='$hdefault';setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$showdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
+ my $cfgname = $EnableInternalNamesInDesc?"<a href=\"javascript:void(0);\"$color onmousedown=\"document.forms['SPAMBOXconfig'].$name.value='$hdefault';setAnchor('$name');return false;\" onmouseover=\"showhint('<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\'100%\\'><tr><td>click to reset<br />to default value</td><td>$showdefault</td></tr></table>', this, event, '450px', '1'); return true;\" onmouseout=\"window.status='';return true;\"><i>($name)</i></a>":'';
  $cfgname = "($name)" if $EnableInternalNamesInDesc && $mobile;
  $cfgname .= syncShowGUI($name);
  my $edit  =  '';

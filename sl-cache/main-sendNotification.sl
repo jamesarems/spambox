@@ -3,7 +3,7 @@ package main; sub sendNotification {
     my ($from,$to,$sub,$body,$file) = @_;
     my $text;
     if (! $from) {
-        $from = 'ASSP <>';
+        $from = 'SPAMBOX <>';
         mlog(0,"*x*warning: 'EmailFrom' seems to be not configured - using '$from' as FROM: address");
     }
     if (! $to) {

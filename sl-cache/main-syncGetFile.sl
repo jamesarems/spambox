@@ -15,7 +15,7 @@ package main; sub syncGetFile {
         my $cont = join('',<$FH>);
         close $FH;
         if (exists $CryptFile{$ffil} && $cont =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-            my $enc = ASSP::CRYPT->new($webAdminPassword,0);
+            my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
             $cont = $enc->DECRYPT($cont);
         }
         $body  = MIME::Base64::encode_base64("# file start $file\r\n",'')."\r\n";

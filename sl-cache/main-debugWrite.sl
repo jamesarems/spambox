@@ -13,7 +13,7 @@ package main; sub debugWrite {
         binmode($DEBUG);
         $DEBUG->autoflush;
         print $DEBUG $UTF8BOM;
-        print $DEBUG "running ASSP version: $main::MAINVERSION\n\n";
+        print $DEBUG "running SPAMBOX version: $main::MAINVERSION\n\n";
         mlog(0,"info: starting partial debug mode to file $file");
     }
     threads->yield();

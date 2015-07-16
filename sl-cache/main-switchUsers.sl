@@ -6,7 +6,7 @@ package main; sub switchUsers { my ($uid,$gid)=@_;
   if($> != 0) {
     my $msg="requested to switch to user/group '$uname/$gname' but cannot set effective uid to 0 -- quitting; uid is $>";
     mlog(0,$msg);
-    &downASSP($msg);
+    &downSPAMBOX($msg);
     exit(1);
   }
   $<=0;
@@ -17,7 +17,7 @@ package main; sub switchUsers { my ($uid,$gid)=@_;
     } else {
       my $msg="failed to switch effective gid to $gid ($gname) -- effective gid=$) -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
     $(=$gid;
@@ -36,7 +36,7 @@ package main; sub switchUsers { my ($uid,$gid)=@_;
     } else {
       my $msg="failed to switch effective uid to $uid ($uname) -- real uid=$< -- quitting";
       mlog(0,$msg);
-      &downASSP($msg);
+      &downSPAMBOX($msg);
       exit(1);
     }
     if($<==$uid) {

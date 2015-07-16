@@ -22,8 +22,8 @@ package main; sub ConToThread {
                 $exceptCount++;
                 my $wt = $ConnectionTransferTimeOut * $exceptCount;
                 if ($exceptCount > 3) {
-                    mlog(0,"error: $WorkerName is unable to transfer connection to any worker within $wt seconds - restart ASSP!");
-                    &downASSP("restarting");
+                    mlog(0,"error: $WorkerName is unable to transfer connection to any worker within $wt seconds - restart SPAMBOX!");
+                    &downSPAMBOX("restarting");
                     _assp_try_restart;
                 }
                 $loop = 1;

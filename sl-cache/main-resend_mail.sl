@@ -61,7 +61,7 @@ package main; sub resend_mail {
 
       if (! $mailfrom) {
           ($howF, $mailfrom) = ($1,$2)
-             if ($message =~ s/\n(from:)\s*(ASSP <>)\s*\r?\n/\n/sio);
+             if ($message =~ s/\n(from:)\s*(SPAMBOX <>)\s*\r?\n/\n/sio);
           if (! $mailfrom) {
               mlog(0,"*x*(re)send - $file - From: and X-Assp-Envelope-From: headertag not found");
               $message = "# (re)send - $file - From: and X-Assp-Envelope-From: headertag not found\r\n".$message;

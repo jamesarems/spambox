@@ -96,7 +96,7 @@ package main; sub ThreadRebuildSpamDBMain {
         if ($ReStartSchedule && $ReStartSchedule !~ /noschedule/io) {
             for (split/\|/o,$ReStartSchedule) {$cron->add_entry($_,\&schedShutdown);}
             $nextRestart = getNextSched($ReStartSchedule,'ReStart Scheduler') || '';
-            $nextRestart = ' - next ASSP-ReStart is scheduled for '.timestring($nextRestart) if $nextRestart;
+            $nextRestart = ' - next SPAMBOX-ReStart is scheduled for '.timestring($nextRestart) if $nextRestart;
         }
 
         mlog(0,"info: starting RebuildSpamdb Scheduler with '$RebuildSchedule'$nextRebuild") if($ScheduleLog && $spamdb && $RebuildSchedule !~ /noschedule/io);

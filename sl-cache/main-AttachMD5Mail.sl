@@ -3,14 +3,14 @@ package main; sub AttachMD5Mail {
     my $m = shift;
     my $msg = ref($m) ? $m : \$m;
     return unless $$msg;
-    return unless eval('$main::ASSP_AFCDetectSpamAttachRe');
+    return unless eval('$main::SPAMBOX_AFCDetectSpamAttachRe');
     my %md5;
     my $t = Time::HiRes::time() + 3;
 
     $o_EMM_pm = 1;
     eval {
         $Email::MIME::ContentType::STRICT_PARAMS=0;      # no output about invalid CT
-        my $re = ${'main::ASSP_AFCDetectSpamAttachReRE'};
+        my $re = ${'main::SPAMBOX_AFCDetectSpamAttachReRE'};
         my $email = Email::MIME->new($$msg);
         fixUpMIMEHeader($email);
 

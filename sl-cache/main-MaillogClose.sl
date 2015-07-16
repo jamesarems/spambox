@@ -36,7 +36,7 @@ package main; sub MaillogClose {
             }
             $mfh->close;
             if ($buf && $buf =~ /$noCollectReRE/is) {
-                if (exists $runOnMaillogClose{'ASSP_ARC::setvars'}) {
+                if (exists $runOnMaillogClose{'SPAMBOX_ARC::setvars'}) {
                     $Con{$fh}->{deletemaillog} = 'content matches noCollectRe';
                 } else {
                     $unlink->($Con{$fh}->{maillogfilename});

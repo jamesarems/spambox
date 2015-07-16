@@ -66,6 +66,6 @@ package main; sub ConfigChangeStatPort {my ($name, $old, $new, $init)=@_;
 
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new stat port $new $usessl (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new stat port $usessl - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new stat port $usessl - SPAMBOX-Restart required\');</script>";
     }
 }

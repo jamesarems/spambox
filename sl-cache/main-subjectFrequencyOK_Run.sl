@@ -15,7 +15,7 @@ package main; sub subjectFrequencyOK_Run {
 
     my $sub = lc($this->{subject3});
     my @subWords;
-    $sub = eval{&ASSP_WordStem::process($sub) if ($CanUseASSP_WordStem);} || $sub;
+    $sub = eval{&SPAMBOX_WordStem::process($sub) if ($CanUseSPAMBOX_WordStem);} || $sub;
     @HmmBayWords = ();
     use re 'eval';
     local $^R;

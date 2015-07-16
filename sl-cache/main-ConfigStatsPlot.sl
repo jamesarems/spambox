@@ -18,8 +18,8 @@ Content-type: text/html
     $out .= "\n<head>\n<title>statistic graphic</title>\n";
     $out .= "</head><body>\n";
 
-    unloadNameSpace("ASSP_SVG") if $ASSP_FC::TEST;
-    eval('use ASSP_SVG; 1;') or return $out."<h1>ERROR: can not load lib/ASSP_SVG.pm - $@</h1></body></html>";
+    unloadNameSpace("SPAMBOX_SVG") if $SPAMBOX_FC::TEST;
+    eval('use SPAMBOX_SVG; 1;') or return $out."<h1>ERROR: can not load lib/SPAMBOX_SVG.pm - $@</h1></body></html>";
     open(my $F, '<', "$base/images/svg.js") or return $out."<h1>ERROR: can not open $base/images/svg.js - $!</h1></body></html>";
     binmode $F;
     my $Jscript = join('',<$F>);
@@ -75,12 +75,12 @@ Content-type: text/html
     $qs{stattype} ||= 'stat';
     $qs{stattype} = lc($qs{stattype});
     my $statfile = lc($qs{stattype}).'GraphStats';
-    my $xstep = (ASSP_SVG::SVG_time_to_sec($to) - ASSP_SVG::SVG_time_to_sec($from))/substr($size,0,3);
+    my $xstep = (SPAMBOX_SVG::SVG_time_to_sec($to) - SPAMBOX_SVG::SVG_time_to_sec($from))/substr($size,0,3);
     my $fy = substr($from,0,4);
     my $fm = substr($from,5,2);
     my $ty = substr($to,0,4);
     my $tm = substr($to,5,2);
-    my $nextstep = ASSP_SVG::SVG_time_to_sec($from);
+    my $nextstep = SPAMBOX_SVG::SVG_time_to_sec($from);
     my $firststep;
     for my $yy ($fy ... $ty) {
         my $ttm = ($yy == $ty) ? $tm : 12;
@@ -102,7 +102,7 @@ Content-type: text/html
                     $dp = $firststep;
                     $firststep = undef;
                 }
-                $t = ASSP_SVG::SVG_time_to_sec($t);
+                $t = SPAMBOX_SVG::SVG_time_to_sec($t);
                 next if ($nextstep > $t);
                 $nextstep = int($t + $xstep - $t % $xstep);
                 $dp .= $_;
@@ -151,7 +151,7 @@ Content-type: text/html
     $tt =~ s/_/ /go;
     $size = $mobile ? 'style="width:500px;"' : 'style="width:850px;"';
 
-    $out .= "<div id=\"form\" $size>".'<form name="ASSPgraph" id="ASSPgraph" action="" method="post"><center>
+    $out .= "<div id=\"form\" $size>".'<form name="SPAMBOXgraph" id="SPAMBOXgraph" action="" method="post"><center>
     from: <input name="from" size="20" value="'.$tf.'">
     to: <input name="to" size="20" value="'.$tt.'">
     <input name="stattype" type="hidden" value="'.$qs{stattype}.'">
@@ -162,7 +162,7 @@ Content-type: text/html
 
     $size = $mobile ? 'style="width:500px; height:350px;"' : 'style="width:850px; height:500px;"';
     $out .= "<div id=\"svggraphic\" $size>\n";
-    $out .= eval{ASSP_SVG::SVG_render($stat,$from,$to,\@confp,\$dp,$plot,"$base/images");};
+    $out .= eval{SPAMBOX_SVG::SVG_render($stat,$from,$to,\@confp,\$dp,$plot,"$base/images");};
     $out .= "</div>\n";
 
     $out .= '<script type="text/javascript">'."\n";

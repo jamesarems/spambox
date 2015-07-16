@@ -45,17 +45,17 @@ package main; sub ConfigAnalyze {
     }
     if ($maillength > length($mail)) {
         $fm .= "analyze is restricted to a maximum length of $mBytes bytes<br />\n";
-        $fm .= "attachments will be fully analyzed using ASSP_AFC<br />\n" if (${'DoASSP_AFC'});
+        $fm .= "attachments will be fully analyzed using SPAMBOX_AFC<br />\n" if (${'DoSPAMBOX_AFC'});
         $fm .= "attachments will be fully scanned for viruses<br />\n" if (($UseAvClamd && $CanUseAvClamd) || ($DoFileScan && $FileScanCMD));;
     }
     if ($normalizeUnicode && $CanUseUnicodeNormalize) {
         $fm .= "text processing uses unicode normalization<br />\n";
     }
     if ($mail =~ /X-Assp-ID: (.+)/io) {
-        $fm .= "ASSP-ID: $1<br />";
+        $fm .= "SPAMBOX-ID: $1<br />";
     }
     if ($mail =~ /X-Assp-Session: (.+)/io) {
-        $fm .= "ASSP-Session: $1<br />";
+        $fm .= "SPAMBOX-Session: $1<br />";
     }
     my $reportedBy;
     my ($xorgsub) = $mail =~ /X-Assp-Original-Subject:\s*($HeaderValueRe)/ios;
@@ -91,7 +91,7 @@ package main; sub ConfigAnalyze {
         }
         $hasheader = 1;
     }
-    $fm .= "removed all local X-ASSP- header lines for analysis<br />\n"
+    $fm .= "removed all local X-SPAMBOX- header lines for analysis<br />\n"
         if ($mail =~ s/x-assp-[^()]+?:\s*$HeaderValueRe//gios);
     my $mystatus;
     my $foundReceived = 0;
@@ -225,7 +225,7 @@ package main; sub ConfigAnalyze {
             push @recHeader, $1, $2;
             my $who = $1;
             my $s = $2;
-            $noDKIM = 1 if $who =~ /^X-ASSP-[^(]+?\(\d+\)/io;
+            $noDKIM = 1 if $who =~ /^X-SPAMBOX-[^(]+?\(\d+\)/io;
             next if $who !~ /^(from|sender|reply-to|errors-to|list-\w+|ReturnReceipt|Return-Receipt-To|Disposition-Notification-To)$/io;
             $mailfrom = lc($1) if (! $mailfrom && lc($1) eq 'from');
             &headerUnwrap($s);
@@ -744,9 +744,9 @@ package main; sub ConfigAnalyze {
                 fixUpMIMEHeader($email);
                 @parts = parts_subparts($email);
             };
-            if (${'DoASSP_AFC'} && $ASSP_AFC::VERSION >= '3.08' && $baysConf > 0 && exists($preMakeRE{'ASSP_AFCDetectSpamAttachReRE'}) && ${'ASSP_AFCDetectSpamAttachRe'}) {
+            if (${'DoSPAMBOX_AFC'} && $SPAMBOX_AFC::VERSION >= '3.08' && $baysConf > 0 && exists($preMakeRE{'SPAMBOX_AFCDetectSpamAttachReRE'}) && ${'SPAMBOX_AFCDetectSpamAttachRe'}) {
                 my ($domain) = $reportedBy =~ /$EmailAdrRe(\@$EmailDomainRe)/io;
-                my $re = ${'ASSP_AFCDetectSpamAttachReRE'};
+                my $re = ${'SPAMBOX_AFCDetectSpamAttachReRE'};
                 foreach my $part ( @parts ) {
                     my $filename =   attrHeader($part,'Content-Type','filename','name')
                                   || $part->filename
@@ -760,11 +760,11 @@ package main; sub ConfigAnalyze {
                         && defined($imgprob = $Spamdb{ "$reportedBy $imghash" } || $Spamdb{ "$domain $imghash" } || $Spamdb{ $imghash }))
                     {
                         if ($imgprob >= $baysProbability) {
-                          $fm .= "<b><font color='red'>&bull;</font> <a href='./#ASSP_AFCDetectSpamAttachRe'>spam attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
+                          $fm .= "<b><font color='red'>&bull;</font> <a href='./#SPAMBOX_AFCDetectSpamAttachRe'>spam attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
                         } elsif ($imgprob <= (1 - $baysProbability)) {
-                          $fm .= "<b><font color='green'>&bull;</font> <a href='./#ASSP_AFCDetectSpamAttachRe'>ham attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
+                          $fm .= "<b><font color='green'>&bull;</font> <a href='./#SPAMBOX_AFCDetectSpamAttachRe'>ham attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
                         } else {
-                          $fm .= "<b><font color='yellow'>&bull;</font> <a href='./#ASSP_AFCDetectSpamAttachRe'>neutral attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
+                          $fm .= "<b><font color='yellow'>&bull;</font> <a href='./#SPAMBOX_AFCDetectSpamAttachRe'>neutral attachment</a> ($1 - $orgname) found - spam probability is $imgprob</b><br />";
                         }
                     }
                 }
@@ -788,10 +788,10 @@ package main; sub ConfigAnalyze {
                 my $orgname = $filename;
 
                 my $self;
-                if ($orgname && ${'DoASSP_AFC'} && $ASSP_AFC::VERSION >= '3.08' && eval{$self = ASSP_AFC->new()} ) {
+                if ($orgname && ${'DoSPAMBOX_AFC'} && $SPAMBOX_AFC::VERSION >= '3.08' && eval{$self = SPAMBOX_AFC->new()} ) {
                     $Con{$tmpfh} = {};
                     $self->{detectBinEXE} = 1;
-                    $self->{blockEncryptedZIP} = ${'ASSP_AFCblockEncryptedZIP'};
+                    $self->{blockEncryptedZIP} = ${'SPAMBOX_AFCblockEncryptedZIP'};
                     $self->{attZipRun} = sub { return 1 };
                     $Con{$tmpfh}->{rcpt} = "$reportedBy " if $reportedBy;
                     $Con{$tmpfh}->{rcpt} .= join(' ',keys %to);
@@ -1238,8 +1238,8 @@ package main; sub ConfigAnalyze {
         if (!$mystatus) {
             my $bayestext;
             $bayestext = "<font color='red'>&bull; Bayesian Check is disabled</font>" if !$DoBayesian;
-            $bayestext .= ' - word stemming engine is used' if eval{$ASSP_WordStem::VERSION;};
-            $bayestext .= ' - language '.$ASSP_WordStem::last_lang_detect.' detected' if eval{$ASSP_WordStem::last_lang_detect};
+            $bayestext .= ' - word stemming engine is used' if eval{$SPAMBOX_WordStem::VERSION;};
+            $bayestext .= ' - language '.$SPAMBOX_WordStem::last_lang_detect.' detected' if eval{$SPAMBOX_WordStem::last_lang_detect};
             $bayestext .= "<br /><font color='red'>&bull;</font> <b>Spamdb</b> has version: <b>$currentDBVersion{Spamdb}</b> - required version: <b>$requiredDBVersion{Spamdb}</b> !" if $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb} && ! ($ignoreDBVersionMissMatch & 1);
             $ba .= "<b><font size='3' color='#003366'>Bayesian Analysis: $bayestext</font></b><br /><br />";
 
@@ -1462,7 +1462,7 @@ setOutput(getInput().replace(eval("/"+findText+"/ig"), replaceText));
 //]]>
 </script>
 <div id="cfgdiv" class="content">
-<h2>ASSP Mail Analyzer</h2>
+<h2>SPAMBOX Mail Analyzer</h2>
 <div class="note">$h1
 </div><br />
 $fm$ba$st
@@ -1493,7 +1493,7 @@ $h4</small></p>
 </div>
 
 $footers
-<form name="ASSPconfig" id="ASSPconfig" action="" method="post">
+<form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
   <input name="theButtonLogout" type="hidden" value="" />
 </form>
 </body></html>

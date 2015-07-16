@@ -106,7 +106,7 @@ package main; sub SMTPTraffic {
                         $Stats{preHeader}++;
                         return;
                     }
-                    if ($s =~ /^(X-ASSP-[^(]+?)(\(\d+\))?(:$HeaderValueRe)$/io) {  # change strange X-ASSP headers
+                    if ($s =~ /^(X-SPAMBOX-[^(]+?)(\(\d+\))?(:$HeaderValueRe)$/io) {  # change strange X-SPAMBOX headers
                         my ($pre,$c,$post) = ($1,$2,$3);
                         $c =~ s/[^\d]//go;
                         $c = 0 unless $c;

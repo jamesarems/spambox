@@ -64,13 +64,13 @@ our %accounts;
 
 # -- check and set the used or available encryption engine
 our $usedCrypt;
-our $AvailCryptGhost = ASSP::CRYPT->new('a',0,0)->ENCRYPT('a') ne ASSP::CRYPT->new('a',0,1)->ENCRYPT('a');
+our $AvailCryptGhost = SPAMBOX::CRYPT->new('a',0,0)->ENCRYPT('a') ne SPAMBOX::CRYPT->new('a',0,1)->ENCRYPT('a');
 if ($Config{adminusersdbpass} && $Config{adminusersdbpass} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o) {
-    if ($AvailCryptGhost && defined ASSP::CRYPT->new($Config{webAdminPassword},0,1)->DECRYPT($Config{adminusersdbpass})) {
+    if ($AvailCryptGhost && defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,1)->DECRYPT($Config{adminusersdbpass})) {
         $usedCrypt = 1; # can and use Crypt::GOST
-    } elsif ($AvailCryptGhost && defined ASSP::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
+    } elsif ($AvailCryptGhost && defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
         $usedCrypt = 0; # can but don't use Crypt::GOST
-    } elsif (defined ASSP::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
+    } elsif (defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
         $usedCrypt = 0;  # can't and don't use Crypt::GOST
     } else {
         print "POP3: error: encryption engine ERROR - unable to decrypt the value for 'adminusersdbpass'\n";
@@ -325,7 +325,7 @@ sub getPOPcfg {
     my $popcfg = join('',<$CFG>);
     close $CFG;
     if ($spamboxCfgVersion !~ /^1/ && $popcfg =~ /^(?:[a-zA-Z0-9]{2}){10,}$/o) {
-        my $enc = ASSP::CRYPT->new($Config{webAdminPassword},0);
+        my $enc = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
         $popcfg = $enc->DECRYPT($popcfg) if $popcfg =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o;
         die "error: unable to decrypt the configuration file $base/spambox.cfg\n" unless $popcfg;
     }
@@ -419,7 +419,7 @@ sub loadexportedRE {
     return join('',@re);
 }
 
-package ASSP::CRYPT;
+package SPAMBOX::CRYPT;
 ##################################
 # based on GOST 28147-89  (Vipul Ved Prakash, 1997)
 #

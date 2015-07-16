@@ -31,7 +31,7 @@ package main; sub fixConfigSettings {
         delete $Config{allowAdminConnectionsFromName};
     }
 
-    if ($Config{EmailFrom} =~ /ASSP <>/io) {
+    if ($Config{EmailFrom} =~ /SPAMBOX <>/io) {
         mlog(0,"warning: invalid value '$Config{EmailFrom}' in EmailFrom was set to ''");
         $EmailFrom = $Config{EmailFrom} = '';
     }
@@ -63,7 +63,7 @@ package main; sub fixConfigSettings {
         # EmailWhitelist is not used in this version
         delete $Config{EmailWhitelist};
     }
-    if (! exists $Config{AutoUpdateASSP}) {
+    if (! exists $Config{AutoUpdateSPAMBOX}) {
         $Config{AutoRestartAfterCodeChange} = 'immed' if $Config{AutoRestartAfterCodeChange} == 1;
     }
 
@@ -76,7 +76,7 @@ package main; sub fixConfigSettings {
     if ($Config{BayesMaxProcessTime} > 15) {
         $BayesMaxProcessTime = $Config{BayesMaxProcessTime} = 15;
     }
-    if ($maxBayesValues > 30 && ! -e "$base/lib/ASSP_WordStem.pm") {
+    if ($maxBayesValues > 30 && ! -e "$base/lib/SPAMBOX_WordStem.pm") {
        $maxBayesValues = 30;
     }
     $maxBayesValues = 30 if $maxBayesValues < 30;
@@ -133,15 +133,15 @@ package main; sub fixConfigSettings {
     }
 
 # -- check and set the used or available encryption engine
-    $CanUseCryptGhost = $AvailCryptGhost = ASSP::CRYPT->new('a',0,0)->ENCRYPT('a') ne ASSP::CRYPT->new('a',0,1)->ENCRYPT('a');
+    $CanUseCryptGhost = $AvailCryptGhost = SPAMBOX::CRYPT->new('a',0,0)->ENCRYPT('a') ne SPAMBOX::CRYPT->new('a',0,1)->ENCRYPT('a');
     if ($Config{adminusersdbpass} && $Config{adminusersdbpass} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o) {
-        if ($AvailCryptGhost && defined ASSP::CRYPT->new($Config{webAdminPassword},0,1)->DECRYPT($Config{adminusersdbpass})) {
+        if ($AvailCryptGhost && defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,1)->DECRYPT($Config{adminusersdbpass})) {
             $usedCrypt = 1; # can and use Crypt::GOST
-        } elsif ($AvailCryptGhost && defined ASSP::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
+        } elsif ($AvailCryptGhost && defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
             $CanUseCryptGhost = 0;
             $usedCrypt = -1; # can but don't use Crypt::GOST - try a later engine change
             mlog(0,"info: the old encryption engine is still used, but the new, faster one (Crypt::GOST) is available - the engine will be changed at a later time");
-        } elsif (defined ASSP::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
+        } elsif (defined SPAMBOX::CRYPT->new($Config{webAdminPassword},0,0)->DECRYPT($Config{adminusersdbpass})) {
             $usedCrypt = 0;  # can't and don't use Crypt::GOST
         } else {
             mlog(0,"error: encryption engine ERROR - unable to decrypt the value for 'adminusersdbpass'");
@@ -151,33 +151,33 @@ package main; sub fixConfigSettings {
     }
 
 # -- decrypt/encrypt security vars
-    my $dec = ASSP::CRYPT->new($Config{webAdminPassword},0);
+    my $dec = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
     foreach (keys %cryptConfigVars) {
         $Config{$_} = $dec->DECRYPT($Config{$_}) if ($Config{$_} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o && defined $dec->DECRYPT($Config{$_})) ;
     }
     $Config{adminusersdbpass} = $Config{webAdminPassword} unless $Config{adminusersdbpass};
     $Config{SNMPUser} = 'root' unless $Config{SNMPUser};
 
-    ASSP::UUID::init();
+    SPAMBOX::UUID::init();
     if (   ! exists $Config{UUID}
-        || ! ASSP::UUID::is_uuid_string($Config{UUID})
-        || ! ASSP::UUID::version_of_uuid($Config{UUID}) == 1)
+        || ! SPAMBOX::UUID::is_uuid_string($Config{UUID})
+        || ! SPAMBOX::UUID::version_of_uuid($Config{UUID}) == 1)
     {
-        mlog(0,"error: invalid ASSP - UUID and License Indentifier was found  : '$Config{UUID}'") if exists $Config{UUID};
-        if ($Config{UUID} = ASSP::UUID::create_uuid_as_string()) {
-            mlog(0,"AdminInfo: a new ASSP - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
-            mlog(0,"AdminUpdate: a new ASSP - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
+        mlog(0,"error: invalid SPAMBOX - UUID and License Indentifier was found  : '$Config{UUID}'") if exists $Config{UUID};
+        if ($Config{UUID} = SPAMBOX::UUID::create_uuid_as_string()) {
+            mlog(0,"AdminInfo: a new SPAMBOX - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
+            mlog(0,"AdminUpdate: a new SPAMBOX - UUID and License Indentifier was created for this installation : '$Config{UUID}'");
         } else {
-            mlog(0,"error: unable to create a valid ASSP - UUID and License Indentifier");
+            mlog(0,"error: unable to create a valid SPAMBOX - UUID and License Indentifier");
         }
     }
 
     if (    $Config{UUID}
-         && ASSP::UUID::time_of_uuid($Config{UUID}) > time + 7201
-         && ASSP::UUID::is_uuid_string($Config{UUID})
-         && ASSP::UUID::version_of_uuid($Config{UUID}) == 1 )
+         && SPAMBOX::UUID::time_of_uuid($Config{UUID}) > time + 7201
+         && SPAMBOX::UUID::is_uuid_string($Config{UUID})
+         && SPAMBOX::UUID::version_of_uuid($Config{UUID}) == 1 )
     {
-        mlog(0,"error: the local time or the ASSP - UUID and License Indentifier is not valid!");
+        mlog(0,"error: the local time or the SPAMBOX - UUID and License Indentifier is not valid!");
     }
 
     $ConfigAdd{UUID} = $Config{UUID} if $Config{UUID};
@@ -185,7 +185,7 @@ package main; sub fixConfigSettings {
     $ConfigAdd{globalUploadURL} = $Config{globalUploadURL};
 
 # -- this resets the variable name with the same name as the config key to the new value
-# -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
+# -- for example $Config{myName}="SPAMBOX-nospam" -> $myName="SPAMBOX-nospam";
     foreach (keys %Config) {${$_}=$Config{$_};}
 
     # set the date/time for spambox.cfg

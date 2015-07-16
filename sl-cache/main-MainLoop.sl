@@ -169,14 +169,14 @@ package main; sub MainLoop {
             Time::HiRes::sleep(0.5);
             $ThreadIdleTime{$WorkerNumber} += 0.5;
         }
-        &downASSP("restarting");
+        &downSPAMBOX("restarting");
         _assp_try_restart;
   }
 
   &ThreadMonitorMainLoop('Mainloop after restart check');
 
   if ($doShutdown > 0 && $itime >= $doShutdown) {
-    &downASSP("restarting");
+    &downSPAMBOX("restarting");
     _assp_try_restart;
   }
   &ConDone();

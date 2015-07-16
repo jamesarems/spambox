@@ -17,7 +17,7 @@ package main; sub reloadConfigFile {
     close $RCF;
     delete $newConfig{ConfigSavedOK};
     
-    my $dec = ASSP::CRYPT->new($Config{webAdminPassword},0);
+    my $dec = SPAMBOX::CRYPT->new($Config{webAdminPassword},0);
 
     foreach (keys %cryptConfigVars) {
         $newConfig{$_} = $dec->DECRYPT($newConfig{$_}) if ($newConfig{$_} =~ /^(?:[a-fA-F0-9]{2}){5,}$/o && defined $dec->DECRYPT($newConfig{$_})) ;
@@ -36,7 +36,7 @@ package main; sub reloadConfigFile {
                     ${$name}=$new;
 
 # -- this sets the variable name with the same name as the config key to the new value
-# -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
+# -- for example $Config{myName}="SPAMBOX-nospam" -> $myName="SPAMBOX-nospam";
                 }
                 if (exists $cryptConfigVars{$name} &&
                     $new =~ /^(?:[a-fA-F0-9]{2}){5,}$/o &&

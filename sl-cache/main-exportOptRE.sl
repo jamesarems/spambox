@@ -11,7 +11,7 @@ package main; sub exportOptRE {
     if (open $optRE, '>',"$base/files/optRE/$name.txt") {
         binmode $optRE;
         if (exists $cryptConfigVars{$name}) {
-            print $optRE ASSP::CRYPT->new($webAdminPassword,0)->ENCRYPT($re);
+            print $optRE SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($re);
             $CryptFile{"$base/files/optRE/$name.txt"} = 1;
         } else {
             print $optRE $re;

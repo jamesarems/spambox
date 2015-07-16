@@ -33,7 +33,7 @@ package main; sub checkUpdate {
                 mlog(0,"AdminUpdate: $name changed $text") unless $new eq $old;
                 ${$name}=$new;
     # -- this sets the variable name with the same name as the config key to the new value
-    # -- for example $Config{myName}="ASSP-nospam" -> $myName="ASSP-nospam";
+    # -- for example $Config{myName}="SPAMBOX-nospam" -> $myName="SPAMBOX-nospam";
             }
             $ConfigChanged = 1 unless exists $RunTaskNow{$name};
             if ($info !~ /span class.+?negative/o) {

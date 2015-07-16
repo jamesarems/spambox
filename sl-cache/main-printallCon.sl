@@ -11,7 +11,7 @@ package main; sub printallCon {
     my $OUT;
     open $OUT, '>',"$file";
     binmode $OUT;
-    print $OUT "ASSP version: $MAINVERSION\n\n";
+    print $OUT "SPAMBOX version: $MAINVERSION\n\n";
     print $OUT "Worker $WorkerNumber - Connection Data ----\n\n";
     print $OUT "exception detected $exept\n" if $exept;
     print $OUT "last debug step was: $lastd{$WorkerNumber}\n";

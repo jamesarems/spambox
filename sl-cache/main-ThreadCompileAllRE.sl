@@ -13,7 +13,7 @@ package main; sub ThreadCompileAllRE {
         'configUpdateURIBLSP' => 1,
         'configUpdateRWLSP' => 1,
         'updateDNS' => 1,
-        'configUpdateASSPCfg' => 1,
+        'configUpdateSPAMBOXCfg' => 1,
         'configUpdateDKIMConf' => 1,
         'configChangeRcptRepl' => 1,
         'ConfigCompileRe' => 1,

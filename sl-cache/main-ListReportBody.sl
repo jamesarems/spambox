@@ -51,7 +51,7 @@ package main; sub ListReportBody {
             ReturnMail($fh,$EmailWhitelistTo,$file,'',\"$this->{rcpt}\n\n$this->{report}\n",$this->{mailfrom}) if ( $EmailWhitelistTo && ($EmailWhitelistReply==2 || $EmailWhitelistReply==3));
         } elsif  ($this->{reportaddr} eq 'EmailHelp' )
         {
-            ReturnMail($fh,$this->{mailfrom},$file,'ASSP-Help', \"$this->{rcpt}\n\n$this->{report}\n") ;
+            ReturnMail($fh,$this->{mailfrom},$file,'SPAMBOX-Help', \"$this->{rcpt}\n\n$this->{report}\n") ;
 
         } elsif  ($this->{reportaddr} eq 'EmailRedlistAdd' || $this->{reportaddr} eq 'EmailRedlistRemove')
         {

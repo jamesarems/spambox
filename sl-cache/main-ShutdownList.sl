@@ -175,7 +175,7 @@ function processPrint(){
         }
         html = html.replace(/noprint(?:.|\n)+?endnoprint/g, \'\');
         html += \'\n</HE\' + \'AD>\n<BODY>\n\';
-        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>ASSP version '.$version.$modversion.'</b><br /><hr /><br />\';
+        html += \'<img src="get?file=images/logo.gif" />&nbsp;&nbsp;&nbsp;<b>SPAMBOX version '.$version.$modversion.'</b><br /><hr /><br />\';
 
         var printReadyElemCfg  = document.getElementById("cfgdiv");
 
@@ -338,7 +338,7 @@ $headerDTDTransitional
 <head>
   <meta http-equiv="content-type" content="application/xhtml+xml; charset=utf-8" />
   $focusJS
-  <title>$currentPage ASSP ($myName) this monitor will slow down ASSP dramaticly - use it careful</title>
+  <title>$currentPage SPAMBOX ($myName) this monitor will slow down SPAMBOX dramaticly - use it careful</title>
   <link rel=\"stylesheet\" href=\"get?file=images/assp.css\" type=\"text/css\" />
 </head>
 <body onfocus="tStart();" onblur="tStop();">

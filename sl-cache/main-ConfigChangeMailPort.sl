@@ -35,6 +35,6 @@ package main; sub ConfigChangeMailPort {my ($name, $old, $new, $init)=@_;
 
         # don't have permissions to change
         mlog(0,"AdminUpdate: request to listen on new mail port $new (changed from $old) -- restart required; euid=$>");
-        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new mail port - ASSP-Restart required\');</script>";
+        return "<br />Restart required; euid=$><script type=\"text/javascript\">alert(\'new mail port - SPAMBOX-Restart required\');</script>";
     }
 }

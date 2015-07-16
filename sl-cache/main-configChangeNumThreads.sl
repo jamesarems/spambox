@@ -16,10 +16,10 @@ package main; sub configChangeNumThreads {
         $PerfStartTime = time;
     }
     if ($new > $old) {
-        mlog(0,$auto."Update: request to change SMTP-Threadnumber to $new (changed from $old) -- ASSP-Restart is recommended!");
+        mlog(0,$auto."Update: request to change SMTP-Threadnumber to $new (changed from $old) -- SPAMBOX-Restart is recommended!");
 #        $NumComWorkers = $new;
         $Config{$name} = $new;
-        return "<span class=\"positive\"> - NumComWorkers increased - ASSP-Restart is required</span><script type=\"text/javascript\">alert(\'NumComWorkers increased - ASSP-Restart is required\');</script>";
+        return "<span class=\"positive\"> - NumComWorkers increased - SPAMBOX-Restart is required</span><script type=\"text/javascript\">alert(\'NumComWorkers increased - SPAMBOX-Restart is required\');</script>";
     }
     if ($new == 0) {
         mlog(0,$auto."Update: request to change SMTP-Threadnumber to 0 (changed from $old) -- value 0 is not permitted for NumComWorkers>");
@@ -31,5 +31,5 @@ package main; sub configChangeNumThreads {
     }
     $NumComWorkers = $Config{$name} = $new;
     mlog(0,$auto."Update: request to change SMTP-Threadnumber to $new (changed from $old) - Restart required to freeup memory!");
-    return "<span class=\"positive\"> - ASSP-Restart is required to freeup memory</span><script type=\"text/javascript\">alert(\'NumComWorkers changed - ASSP-Restart is required to freeup memory\');</script>";
+    return "<span class=\"positive\"> - SPAMBOX-Restart is required to freeup memory</span><script type=\"text/javascript\">alert(\'NumComWorkers changed - SPAMBOX-Restart is required to freeup memory\');</script>";
 }
