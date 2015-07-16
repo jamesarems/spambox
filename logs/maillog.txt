@@ -6234,3 +6234,54 @@ Jul-16-15 15:00:03 [Worker_10000] Info: 0 records of Whitelist saved
 Jul-16-15 15:00:03 [Worker_10000] Saving redlist
 Jul-16-15 15:00:03 [Worker_10000] Info: start saving Redlist
 Jul-16-15 15:00:03 [Worker_10000] Info: 0 records of Redlist saved
+Jul-16-15 15:01:41 [Worker_10000] Cleaning up delaying databases ...
+Jul-16-15 15:01:41 [Worker_10000] Saving delaying records
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving Delay
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of Delay saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving DelayWhite
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of DelayWhite saved
+Jul-16-15 15:01:41 [Worker_10000] Saving penalty records
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PBBlack
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PBBlack saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PBWhite
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PBWhite saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PBTrap
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PBTrap saved
+Jul-16-15 15:01:41 [Worker_10000] Saving cache records
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving RBLCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of RBLCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving URIBLCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of URIBLCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving SPFCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of SPFCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PTRCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PTRCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving MXACache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of MXACache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving SBCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of SBCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving RWLCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of RWLCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving DKIMCache
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of DKIMCache saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving BATVTag
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of BATVTag saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving BackDNS
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of BackDNS saved
+Jul-16-15 15:01:41 [Worker_10000] Saving personal Black records
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PersBlack
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PersBlack saved
+Jul-16-15 15:01:41 [Worker_10000] Cleaning penalty records...
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PBBlack
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PBBlack saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PBWhite
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PBWhite saved
+Jul-16-15 15:01:41 [Worker_10000] Info: start saving PBTrap
+Jul-16-15 15:01:41 [Worker_10000] Info: 0 records of PBTrap saved
+Jul-16-15 15:13:50 [Worker_10000] Info: saving Stats in file spamboxstats.sav
+Jul-16-15 15:13:50 [Worker_10000] Info: saving ScoreStats in file spamboxscorestats.sav
+Jul-16-15 15:13:50 [Worker_10000] Info: synchronizing all BerkeleyDB hashes to disk
+Jul-16-15 15:13:50 [Worker_10000] Info: compacting all BerkeleyDB hashes on disk
+Jul-16-15 15:26:46 [Main_Thread] Admin connection from user root on host 10.254.254.51:38266; page:/; session-ID:d269ea10e86992a4e5e2f0dc12d825a4;
+Jul-16-15 15:28:54 [Worker_10000] Info: synchronizing all BerkeleyDB hashes to disk
+Jul-16-15 15:28:54 [Worker_10000] Info: compacting all BerkeleyDB hashes on disk

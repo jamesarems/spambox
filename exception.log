@@ -2,3 +2,4 @@
  warning: unable to open any config file - default config values will be used!
  warning: unable to open /root/spambox/spambox.cfg for reading - will try to use backup config files!
  warning: unable to open any config file - default config values will be used!
+ Abort: SPAMBOX is still running with process-ID: 8124 - (or delete file /root/spambox/pid)
