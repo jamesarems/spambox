@@ -1789,7 +1789,7 @@ AsADaemon: Run SPAMBOX as a Daemon -- In Linux/BSD/Unix/OSX fork and close file 
  If "externally controlled" is selected, SPAMBOX simply ends and you have to restart spambox from your daemon or watchdog script
  If "run AutoRestartCmd on restart and wait" is selected, spambox starts the OS command defined in AutoRestartCmd - spambox will NOT ! automatically terminate - the started command has to terminate/kill and to (re)start spambox - like "service spambox restart"!
  If "run AutoRestartCmd on restart and exit" is selected, spambox starts the OS command defined in AutoRestartCmd and terminates immediately!
-   requires SPAMBOX restart  
+   requires SPAMBOX restart   
 runAsUser: Run as UID -- The *nix user name to assume after startup (*nix only). use the autorestart features careful, because any restart from inside SPAMBOX will be done with the permission of this user! Examples: spambox, nobody
    requires SPAMBOX restart  
 runAsGroup: Run as GID -- The *nix group to assume after startup (*nix only).Examples: spambox, nobody
@@ -1923,11 +1923,11 @@ ConfigChangeSchedule: Schedule Configuration Changes* -- Use this option to sche
 proxyserver: Proxy Server -- The Proxy Server to use when uploading global statistics and downloading the greylist.Examples: 192.168.0.1:8080, 192.168.0.1  
 proxyuser: Proxy User -- The Proxy-UserName that is used to authenticate to the proxy.  
 proxypass: Proxy Password -- The password for Proxy-UserName that is used to authenticate to the proxy.  
-webAdminPort: Web Admin Port -- The port on which SPAMBOX will listen for http connections to the web administration interface. If you change this, after you click Apply you must change the URL on your browser to reconnect. You may also supply an IP address or hostname to limit connections to a specific interface. Separate multiple entries by pipe "|"!Examples: 55555, 192.168.0.5:12345, myhost:12345, 192.168.0.5:22345|myhost:12345 default: 55555 
+webAdminPort: Web Admin Port -- The port on which SPAMBOX will listen for http connections to the web administration interface. If you change this, after you click Apply you must change the URL on your browser to reconnect. You may also supply an IP address or hostname to limit connections to a specific interface. Separate multiple entries by pipe "|"!Examples: 55555, 192.168.0.5:12345, myhost:12345, 192.168.0.5:22345|myhost:12345 default: 55555  
 enableWebAdminSSL: Use https instead of http -- If selected the web admin interface will be only accessible via https. If you change this, after you click Apply you must change the URL on your browser to reconnect.
   This requires an installed IO::Socket::SSL module in PERL.
   A server-certificate-file "certs/server-cert.pem" and a server-key-file "certs/server-key.pem" must exist and must be valid!
-  If you do not have valid certificates, you may generate both files online with www.mobilefish.com or you may use OpenSSL to generate Self-signed SSL certificates! More configuration options are webSSLRequireCientCert, SSLWEBCertVerifyCB and SSLWEBConfigure .  
+  If you do not have valid certificates, you may generate both files online with www.mobilefish.com or you may use OpenSSL to generate Self-signed SSL certificates! More configuration options are webSSLRequireCientCert, SSLWEBCertVerifyCB and SSLWEBConfigure .   
 webAdminPassword: Web Admin Password - Masterpassword (root) -- The password for the web administration interface for user root(minimum of 5 characters).
   DO NOT use the digits "45" as the first two characters of the password or you will be not able to login ever again!
   If root is logged on, no other logins are allowed. Always use the "logoff"-button as root to terminate the session - closing the browser without logoff could cause other session to be disallowed. default: nospam4me  
@@ -1939,10 +1939,10 @@ webStatNotHealthyResp: Status Response Literal for a Not Healthy State of SPAMBO
 webStatPort: Raw Statistics Port -- The port on which SPAMBOX will listen for http or telnet connections to the statistics interface. You may also supply an IP address to limit connections to a specific interface. Only one value is supported!
    The stats are available via browser or telnet (or telnet similar socket). Using telnet, press ENTER two times to get the healthy state (' $webStatHealthyResp [CRLF]' or ' $webStatNotHealthyResp [CRLF]' in a single line), this is the recommended methods to get the 'UP'-state of spambox from nagios or any other external script.
    Type 'stat[ENTER][ENTER]' to get the STATS in raw text where each line is terminated with '[CR]LF' (CR is send in any case, if the request contains CR).
-   The HTML output are LF terminated STAT lines.Examples: 55553, 192.168.0.5:12345 default: 55553 
+   The HTML output are LF terminated STAT lines.Examples: 55553, 192.168.0.5:12345 default: 55553  
 enableWebStatSSL: Use https instead of http -- The web stat interface will be only accessible via https.
   This requires an installed IO::Socket::SSL module in PERL.
-  A server-certificate-file "certs/server-cert.pem" and a server-key-file "certs/server-key.pem" must exits and must be valid! More configuration options are statSSLRequireClientCert, SSLSTATCertVerifyCB and SSLSTATConfigure .  
+  A server-certificate-file "certs/server-cert.pem" and a server-key-file "certs/server-key.pem" must exits and must be valid! More configuration options are statSSLRequireClientCert, SSLSTATCertVerifyCB and SSLSTATConfigure .   
 allowStatConnectionsFrom: Only Allow Raw Statistics Connections From* -- An optional list of IP addresses from which you will accept raw statistical connections. Blank means accept connections from any IP address. Examples:
  127.0.0.1|172.16. default: 127.0.0.1 
 EnableHTTPCompression: Enable HTTP Compression in GUI -- Enable HTTP Compression for faster web administration interface loading. The perl module Compress::Zlib is required to use this feature. default: 1 

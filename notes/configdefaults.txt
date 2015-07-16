@@ -52,8 +52,13 @@ fileLogging -- File name logging: On (Default: Off)
 # DNS Setup #
 DNSResponseLog -- Show DNS Name Servers Response Time in Log: Off (Default: Off) 
 # Server Setup #
+AsADaemon -- Run SPAMBOX as a Daemon: Yes - run AutoRestartCmd on restart and wait (Default: No) 
 spamboxCfgVersion -- spambox.cfg version: 2.4.5(15162) (Default:  ) 
-webAdminPassword -- Web Admin Password - Masterpassword (root): 45WPcXBk5dhLo (Default: nospam4me) 
+webAdminPort -- Web Admin Port: 8090 (Default: 55555) 
+enableWebAdminSSL -- Use https instead of http: On (Default: Off) 
+webAdminPassword -- Web Admin Password - Masterpassword (root): 45jL6wBR.nhYY (Default: nospam4me) 
+webStatPort -- Raw Statistics Port: 8091 (Default: 55553) 
+enableWebStatSSL -- Use https instead of http: On (Default: Off) 
 enableGraphStats -- Enable Graphical Statistics Collection: Off (Default: Off) 
 # Rebuild Spamdb #
 # Char Conversions / TNEF #

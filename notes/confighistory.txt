@@ -19,3 +19,11 @@ Thu Jul 16 12:13:24 2015:   [root 10.254.254.51] doDKIMConv changed from 'Off' t
 Thu Jul 16 12:13:24 2015:   [root 10.254.254.51] useConvertTNEF changed from 'Off' to 'Off'
 Thu Jul 16 12:13:24 2015:   [root 10.254.254.51] useMailSRS changed from 'Off' to 'Off'
 Thu Jul 16 12:13:24 2015:   [root 10.254.254.51] useNetSNMPagent changed from 'Off' to 'Off'
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] AsADaemon changed from 'No (0)' to 'Yes - run AutoRestartCmd on restart and wait (2)'
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] listening on new admin port 0.0.0.0:8090  (changed from 55555)
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] listening on admin port HTTPS (changed from HTTP)
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] listening on new admin port 0.0.0.0:8090 HTTPS (changed from 8090)
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] root Password changed
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] listening on new stat port 0.0.0.0:8091  (changed from 55553)
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] listening on stat port HTTPS (changed from HTTP)
+Thu Jul 16 14:42:32 2015:   [root 10.254.254.51] listening on new stat port 0.0.0.0:8091 HTTPS (changed from 8091)
