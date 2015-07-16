@@ -424,7 +424,7 @@ our %neverShareCFG = (
     'LDAPShowDB' => 1,
     'forceLDAPcrossCheck' => 1,
     'myName' => 1,
-    'asspCfg' => 1,
+    'spamboxCfg' => 1,
     'spamboxCfgVersion' => 1,
     'NumComWorkers' => 1,
     'ReservedOutboundWorkers' => 1,
@@ -1244,8 +1244,8 @@ sub defConfigArray {
   If set, the configuration value and option files synchronization will be enabled. This synchronization belong to the configuration values, to the file that is possibly defined in a value and to the include files that are possibly defined in the configured file. If you don\'t want a specific configuration file or include file to be synchronized (send and receive), write<br />
   # assp-no-sync<br />
   as a comment anywhere in the file. A possible reason could be for example \'localDomains\' - if ASSP1 is hosting DOMAIN1 and DOMAIN2 but ASSP2 is hosting only DOMAIN2 - so the entry for DOMAIN2 could be put in a not synchronized include file on ASSP1 and the synchronized main config file contains the entry for DOMAIN1.<br />
-  If the configuration of all values in this section is valid, the synchronization status will be shown in the GUI for each config value that is, or <b>could be shared</b>. There are several configuration values, that could not be shared. The list of all shareable values could be found in the distributed file assp_sync.cfg<br /><br />
-  For an initial synchronization setup set the following config values in this order: setup syncServer, syncConfigFile, syncTestMode and as last syncCFGPass (leave isShareSlave and isShareMaster off). Use the default (distributed syncConfigFile assp_sync.cfg) file and configure all values to your needs - do this on all peers by removing lines or setting the general sync flag to 0 or 1 (see the description of syncConfigFile ).<br />
+  If the configuration of all values in this section is valid, the synchronization status will be shown in the GUI for each config value that is, or <b>could be shared</b>. There are several configuration values, that could not be shared. The list of all shareable values could be found in the distributed file spambox_sync.cfg<br /><br />
+  For an initial synchronization setup set the following config values in this order: setup syncServer, syncConfigFile, syncTestMode and as last syncCFGPass (leave isShareSlave and isShareMaster off). Use the default (distributed syncConfigFile spambox_sync.cfg) file and configure all values to your needs - do this on all peers by removing lines or setting the general sync flag to 0 or 1 (see the description of syncConfigFile ).<br />
   If you have finished this initial setup, enable isShareMaster or isShareSlave - now assp will setup all entries in the configuration file for all sync peers to the configured default values (to 1 if isShareMaster or to 3 if isShareSlave is selected). Do this on all peers. Now you can configure the synchronization behavior for each single configuration value for each peer, if it should differ from the default setup.<br />
   For the initial synchronization, configure only one ASSP installation as master (all others as slave). If the initial synchronization has finished, which will take up to one hour, you can configure all or some assp as master and slave. On the initial master simply switch on isShareSlave. On the inital slaves, switch on isShareMaster and change all values in the sync config file that should be bidirectional shared from 3 to 1. As last action enable enableCFGShare on the SyncSlaves first and then on the SyncMaster.<br />
   After such an initial setup, any changes of the peers (syncServer) will have no effect to the configuration file (syncConfigFile)! To add or remove a sync peer after an initial setup, you have to configure syncServer and you have to edit the sync config file manually.<br /><br />
@@ -1260,7 +1260,7 @@ sub defConfigArray {
   The target port can be the listenPort , listenPort2 , relayPort or if syncUsesSSL is enabled, it has to be the listenPortSSL of the peer.',undef,undef,'msg009200','msg009201'],
 ['syncUsesSSL','SSL is used for the Sync SMTP Transport',0,\&checkbox,'','(.*)',undef, 'If selected, SSL will be used for the transport of the synchronization requests. In this case the target ip:port of all peers must be its listenPortSSL ! The Perl modules Net::SMTP::SSL and IO::Socket::SSL must be installed and enabled if this option is selected, otherwise all synchronization requests will fail!',undef,undef,'msg010140','msg010141'],
 ['syncTestMode','Test Mode for Config Sync',0,\&checkbox,'','(.*)',undef, 'If selected, a master (isShareMaster) will process all steps to send configuration changes, but will not realy send the request to the peers. A slave (isShareSlave) will receive all sync requests, but it will not change the configuration values and possibly sent configuration files will be stored at the original location and will get an extension of ".synctest".',undef,undef,'msg009210','msg009211'],
-['syncConfigFile','Configuration File for Config Sync*',40,\&textinput,'file:assp_sync.cfg','(file:\S+|)','ConfigChangeSyncFile','Define the synchronization configuration file here (default is file:assp_sync.cfg).<br />
+['syncConfigFile','Configuration File for Config Sync*',40,\&textinput,'file:spambox_sync.cfg','(file:\S+|)','ConfigChangeSyncFile','Define the synchronization configuration file here (default is file:spambox_sync.cfg).<br />
  This file holds the configuration and the current status of all synchronized assp configuration values.<br />
  The format of an initial value is:  "varname:=syncflag" - where syncflag could be 0 -not shared and 1 -is shared - for example: HeaderMaxLength:=1 . The syncflag is a general sign, which means, a value of 0 disables the synchronization of the config value for all peers. A value of 1, enables the peer configuration that possibly follows.<br />
  The format after an initial setup is: "varname:=syncflag,syncServer1=status,syncServer2=status,......". The "status" could be one of the following:<br /><br />
@@ -3690,7 +3690,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
 
 ['HideIPandHelo','Hide IP and/or Helo',40,\&textinput,'','(.*)',undef,'Replace any of these information ( ip=127.0.0.1 helo=anyhost.local ) in our received header for outgoing mails. Use the syntax ip=127.0.0.1 and/or helo=anyhost.local .',undef,undef,'msg009830','msg009831'],
 ['myGreeting','Override the Server SMTP Greeting',80,\&textinput,'','(.*)',undef,'Send this SMTP greeting (eg. 220 MYNAME is ready - using ASSP VERSION) instead of your MTA\'s SMTP greeting to the client. If not defined (default), the MTA\'s greeting will be sent to the client. The literal MYNAME will be replaced with myName and the literal VERSION will be replaced by the full version string of assp. If the starting \'220 \' is not defined, assp will add it to the greeting.',undef,undef,'msg010260','msg010261'],
-['asspCfg','spambox.cfg*',40,\&textnoinput,'file:spambox.cfg','(.*)','configUpdateASSPCfg','For internal use only - it is spambox.cfg file. Do not change this value.',undef,undef,'msg007570','msg007571'],
+['spamboxCfg','spambox.cfg*',40,\&textnoinput,'file:spambox.cfg','(.*)','configUpdateASSPCfg','For internal use only - it is spambox.cfg file. Do not change this value.',undef,undef,'msg007570','msg007571'],
 ['AutoReloadCfg','Automatic Reload ConfigFile',0,\&checkbox,'','(.*)','configChangeAutoReloadCfg','If selected and the spambox.cfg file is changed externally, ASSP will reload the configuration from the file automatically.',undef,undef,'msg007580','msg007581'],
 ['spamboxCfgVersion','spambox.cfg version',40,\&textnoinput,'','(.*)',undef,'ASSP will identify the spambox.cfg file. Do not change this.',undef,undef,'msg007590','msg007591'],
 ['ConfigChangeSchedule','Schedule Configuration Changes*',40,\&textinput,'','(file:.+|)','configChangeConfigSched',
@@ -5313,7 +5313,7 @@ if ($printVars) {
     }
 }
 
-if (open my $ADV,'>' , "$base/ASSP_DEF_VARS.pm") {    # write the module to disk
+if (open my $ADV,'>' , "$base/SPAMBOX_DEF_VARS.pm") {    # write the module to disk
 print $ADV <<'EOT';
 package ASSP_DEF_VARS;
 
@@ -5424,12 +5424,12 @@ sub unimport {
 EOT
 close $ADV;
 } else {
- writeExceptionLog("Abort: unable to create $base/ASSP_DEF_VARS.pm - $!");
- die "\n\nAbort: unable to create $base/ASSP_DEF_VARS.pm - $!\n\n";
+ writeExceptionLog("Abort: unable to create $base/SPAMBOX_DEF_VARS.pm - $!");
+ die "\n\nAbort: unable to create $base/SPAMBOX_DEF_VARS.pm - $!\n\n";
 }
-if (! -e "$base/ASSP_DEF_VARS.pm") {
- writeExceptionLog("Abort: unable to find $base/ASSP_DEF_VARS.pm");
- die "\n\nAbort: unable to find $base/ASSP_DEF_VARS.pm\n\n";
+if (! -e "$base/SPAMBOX_DEF_VARS.pm") {
+ writeExceptionLog("Abort: unable to find $base/SPAMBOX_DEF_VARS.pm");
+ die "\n\nAbort: unable to find $base/SPAMBOX_DEF_VARS.pm\n\n";
 }
 
 if ( $^O eq 'MSWin32' ) {
@@ -49595,7 +49595,7 @@ sub SaveConfig {
  unlink("$base/spambox.cfg.bak.bak.bak") or mlog(0,"error: unable to delete file $base/spambox.cfg.bak.bak.bak - $!");
  rename("$base/spambox.cfg.bak.bak","$base/spambox.cfg.bak.bak.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg.bak.bak to $base/spambox.cfg.bak.bak.bak - $!");
  rename("$base/spambox.cfg.bak","$base/spambox.cfg.bak.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg.bak to $base/spambox.cfg.bak.bak - $!");
- $FileUpdate{"$base/spambox.cfgasspCfg"} = 0;
+ $FileUpdate{"$base/spambox.cfgspamboxCfg"} = 0;
 
  open($SC,'>',"$base/spambox.cfg.tmp");
  print $SC $content;
@@ -49604,7 +49604,7 @@ sub SaveConfig {
  
  rename("$base/spambox.cfg","$base/spambox.cfg.bak") or mlog(0,"error: unable to rename file $base/spambox.cfg to $base/spambox.cfg.bak - $!");
  rename("$base/spambox.cfg.tmp","$base/spambox.cfg") or mlog(0,"error: unable to rename file $base/spambox.cfg.tmp to $base/spambox.cfg - $!");
- $asspCFGTime = $FileUpdate{"$base/spambox.cfgasspCfg"} = ftime("$base/spambox.cfg");
+ $asspCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
  mlog( 0, "finished saving config" ,1);
 }
 
@@ -50657,7 +50657,7 @@ sub fixConfigSettings {
     foreach (keys %Config) {${$_}=$Config{$_};}
 
     # set the date/time for spambox.cfg
-    $asspCFGTime = $FileUpdate{"$base/spambox.cfgasspCfg"} = ftime("$base/spambox.cfg");
+    $asspCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
 
     my ($logdir, $logdirfile) = $logfile =~ /^(.*[\/\\])?(.*?)$/o;
     $blogfile = "$logdir" . "b$logdirfile";
@@ -51174,7 +51174,7 @@ sub ThreadCompileAllRE {
     
     for my $idx (0...$#PossibleOptionFiles) {
         my $f = $PossibleOptionFiles[$idx];
-        next if ($f->[0] eq 'asspCfg');
+        next if ($f->[0] eq 'spamboxCfg');
         if ($init || (((exists $ComWorker{$WorkerNumber} && $ComWorker{$WorkerNumber}->{recompileAllRe}) || $recompileAllRe) && $f->[2] eq 'ConfigCompileRe')) {
             $f->[2]->($f->[0],'',$Config{$f->[0]},'Initializing',$f->[1]);
         } else {
@@ -51198,7 +51198,7 @@ sub optionFilesReload {
  # check if options files have been updated and need to be re-read
     for my $idx (0...$#PossibleOptionFiles) {
         my $f = $PossibleOptionFiles[$idx];
-        if($f->[0] ne 'asspCfg' or ($f->[0] eq 'asspCfg' && $AutoReloadCfg)) {
+        if($f->[0] ne 'spamboxCfg' or ($f->[0] eq 'spamboxCfg' && $AutoReloadCfg)) {
             if ($Config{$f->[0]}=~/^ *file: *(.+)/io && fileUpdated($1,$f->[0]) ) {
                 $f->[2]->($f->[0],$Config{$f->[0]},$Config{$f->[0]},'',$f->[1]);
                 &syncConfigDetect($f->[0]);
@@ -55159,7 +55159,7 @@ sub configChangeAutoReloadCfg {
     mlog(0,"AdminUpdate: $name changed from '$old' to '$new'") unless $init || $new eq $old;
     return '' if($init or $old eq $new);
     if ($new) {
-        $asspCFGTime = $FileUpdate{"$base/spambox.cfgasspCfg"} = ftime("$base/spambox.cfg");
+        $asspCFGTime = $FileUpdate{"$base/spambox.cfgspamboxCfg"} = ftime("$base/spambox.cfg");
     }
     $Config{AutoReloadCfg} = $AutoReloadCfg = $new;
     return '';
@@ -57347,7 +57347,7 @@ sub reloadConfigFile {
     }
     for my $idx (0...$#PossibleOptionFiles) {
         my $f = $PossibleOptionFiles[$idx];
-        if($f->[0] ne 'asspCfg') {
+        if($f->[0] ne 'spamboxCfg') {
             if (($Config{$f->[0]} =~ /^ *file: *(.+)/io && fileUpdated($1,$f->[0])) or
                  $Config{$f->[0]} !~ /^ *file: *(.+)/io)
             {
@@ -59412,7 +59412,7 @@ sub downASSP {
     &removeLeftCrashFile();
     mlog(0,'info: shutdown reason was: '.$text) if $text;
     mlog(0,'info: shutdown - got no reason ?') if ! $text;
-    mlog(0,'ASSP finished work');
+    mlog(0,'SPAMBOX finished work');
     &RemovePid;
     mlogWrite();
     &printVars();
@@ -61034,14 +61034,14 @@ sub ThreadMaintMain {
          ScheduleMapSet('ReloadOptionFiles','nextOptionCheck');
          for my $idx (0...$#PossibleOptionFiles) {
           my $f = $PossibleOptionFiles[$idx];
-          if($f->[0] ne 'asspCfg' || ($f->[0] eq 'asspCfg' && $AutoReloadCfg)) {
+          if($f->[0] ne 'spamboxCfg' || ($f->[0] eq 'spamboxCfg' && $AutoReloadCfg)) {
               if ($Config{$f->[0]}=~/^ *file: *(.+)/io && fileUpdated($1,$f->[0])) {
                 my $fl = $1;
-                if ($f->[0] eq 'asspCfg' && $asspCFGTime > $FileUpdate{"$base/spambox.cfgasspCfg"}) {
-                    $FileUpdate{"$base/spambox.cfgasspCfg"} = $asspCFGTime;
+                if ($f->[0] eq 'spamboxCfg' && $asspCFGTime > $FileUpdate{"$base/spambox.cfgspamboxCfg"}) {
+                    $FileUpdate{"$base/spambox.cfgspamboxCfg"} = $asspCFGTime;
                     next;
                 }
-                $ConfigChanged = $f->[0] eq 'asspCfg' ? 2 : 1;
+                $ConfigChanged = $f->[0] eq 'spamboxCfg' ? 2 : 1;
                 d("file $f->[0] - changed");
                 $wasrun = 1;
                 last;

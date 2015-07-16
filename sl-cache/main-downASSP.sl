@@ -39,7 +39,7 @@ package main; sub downASSP {
     &removeLeftCrashFile();
     mlog(0,'info: shutdown reason was: '.$text) if $text;
     mlog(0,'info: shutdown - got no reason ?') if ! $text;
-    mlog(0,'ASSP finished work');
+    mlog(0,'SPAMBOX finished work');
     &RemovePid;
     mlogWrite();
     &printVars();

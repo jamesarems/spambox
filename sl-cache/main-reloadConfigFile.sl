@@ -55,7 +55,7 @@ package main; sub reloadConfigFile {
     }
     for my $idx (0...$#PossibleOptionFiles) {
         my $f = $PossibleOptionFiles[$idx];
-        if($f->[0] ne 'asspCfg') {
+        if($f->[0] ne 'spamboxCfg') {
             if (($Config{$f->[0]} =~ /^ *file: *(.+)/io && fileUpdated($1,$f->[0])) or
                  $Config{$f->[0]} !~ /^ *file: *(.+)/io)
             {

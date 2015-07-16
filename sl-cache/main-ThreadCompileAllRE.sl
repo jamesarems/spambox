@@ -93,7 +93,7 @@ package main; sub ThreadCompileAllRE {
     
     for my $idx (0...$#PossibleOptionFiles) {
         my $f = $PossibleOptionFiles[$idx];
-        next if ($f->[0] eq 'asspCfg');
+        next if ($f->[0] eq 'spamboxCfg');
         if ($init || (((exists $ComWorker{$WorkerNumber} && $ComWorker{$WorkerNumber}->{recompileAllRe}) || $recompileAllRe) && $f->[2] eq 'ConfigCompileRe')) {
             $f->[2]->($f->[0],'',$Config{$f->[0]},'Initializing',$f->[1]);
         } else {

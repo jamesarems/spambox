@@ -317,14 +317,14 @@ package main; sub ThreadMaintMain {
          ScheduleMapSet('ReloadOptionFiles','nextOptionCheck');
          for my $idx (0...$#PossibleOptionFiles) {
           my $f = $PossibleOptionFiles[$idx];
-          if($f->[0] ne 'asspCfg' || ($f->[0] eq 'asspCfg' && $AutoReloadCfg)) {
+          if($f->[0] ne 'spamboxCfg' || ($f->[0] eq 'spamboxCfg' && $AutoReloadCfg)) {
               if ($Config{$f->[0]}=~/^ *file: *(.+)/io && fileUpdated($1,$f->[0])) {
                 my $fl = $1;
-                if ($f->[0] eq 'asspCfg' && $asspCFGTime > $FileUpdate{"$base/spambox.cfgasspCfg"}) {
-                    $FileUpdate{"$base/spambox.cfgasspCfg"} = $asspCFGTime;
+                if ($f->[0] eq 'spamboxCfg' && $asspCFGTime > $FileUpdate{"$base/spambox.cfgspamboxCfg"}) {
+                    $FileUpdate{"$base/spambox.cfgspamboxCfg"} = $asspCFGTime;
                     next;
                 }
-                $ConfigChanged = $f->[0] eq 'asspCfg' ? 2 : 1;
+                $ConfigChanged = $f->[0] eq 'spamboxCfg' ? 2 : 1;
                 d("file $f->[0] - changed");
                 $wasrun = 1;
                 last;

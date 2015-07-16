@@ -6,8 +6,8 @@ msg009171=<hr><b>Read all positions in this section carefully (multiple times is
   If set, the configuration value and option files synchronization will be enabled. This synchronization belong to the configuration values, to the file that is possibly defined in a value and to the include files that are possibly defined in the configured file. If you don't want a specific configuration file or include file to be synchronized (send and receive), write<br />
   # assp-no-sync<br />
   as a comment anywhere in the file. A possible reason could be for example 'localDomains' - if ASSP1 is hosting DOMAIN1 and DOMAIN2 but ASSP2 is hosting only DOMAIN2 - so the entry for DOMAIN2 could be put in a not synchronized include file on ASSP1 and the synchronized main config file contains the entry for DOMAIN1.<br />
-  If the configuration of all values in this section is valid, the synchronization status will be shown in the GUI for each config value that is, or <b>could be shared</b>. There are several configuration values, that could not be shared. The list of all shareable values could be found in the distributed file assp_sync.cfg<br /><br />
-  For an initial synchronization setup set the following config values in this order: setup syncServer, syncConfigFile, syncTestMode and as last syncCFGPass (leave isShareSlave and isShareMaster off). Use the default (distributed syncConfigFile assp_sync.cfg) file and configure all values to your needs - do this on all peers by removing lines or setting the general sync flag to 0 or 1 (see the description of syncConfigFile ).<br />
+  If the configuration of all values in this section is valid, the synchronization status will be shown in the GUI for each config value that is, or <b>could be shared</b>. There are several configuration values, that could not be shared. The list of all shareable values could be found in the distributed file spambox_sync.cfg<br /><br />
+  For an initial synchronization setup set the following config values in this order: setup syncServer, syncConfigFile, syncTestMode and as last syncCFGPass (leave isShareSlave and isShareMaster off). Use the default (distributed syncConfigFile spambox_sync.cfg) file and configure all values to your needs - do this on all peers by removing lines or setting the general sync flag to 0 or 1 (see the description of syncConfigFile ).<br />
   If you have finished this initial setup, enable isShareMaster or isShareSlave - now assp will setup all entries in the configuration file for all sync peers to the configured default values (to 1 if isShareMaster or to 3 if isShareSlave is selected). Do this on all peers. Now you can configure the synchronization behavior for each single configuration value for each peer, if it should differ from the default setup.<br />
   For the initial synchronization, configure only one ASSP installation as master (all others as slave). If the initial synchronization has finished, which will take up to one hour, you can configure all or some assp as master and slave. On the initial master simply switch on isShareSlave. On the inital slaves, switch on isShareMaster and change all values in the sync config file that should be bidirectional shared from 3 to 1. As last action enable enableCFGShare on the SyncSlaves first and then on the SyncMaster.<br />
   After such an initial setup, any changes of the peers (syncServer) will have no effect to the configuration file (syncConfigFile)! To add or remove a sync peer after an initial setup, you have to configure syncServer and you have to edit the sync config file manually.<br /><br />
@@ -40,7 +40,7 @@ msg009211=If selected, a master (isShareMaster) will process all steps to send c
 
 # variable - syncConfigFile
 msg009220=Configuration File for Config Sync*
-msg009221=Define the synchronization configuration file here (default is file:assp_sync.cfg).<br />
+msg009221=Define the synchronization configuration file here (default is file:spambox_sync.cfg).<br />
  This file holds the configuration and the current status of all synchronized assp configuration values.<br />
  The format of an initial value is:  "varname:=syncflag" - where syncflag could be 0 -not shared and 1 -is shared - for example: HeaderMaxLength:=1 . The syncflag is a general sign, which means, a value of 0 disables the synchronization of the config value for all peers. A value of 1, enables the peer configuration that possibly follows.<br />
  The format after an initial setup is: "varname:=syncflag,syncServer1=status,syncServer2=status,......". The "status" could be one of the following:<br /><br />
@@ -4631,7 +4631,7 @@ msg009831=Replace any of these information ( ip=127.0.0.1 helo=anyhost.local ) i
 msg010260=Override the Server SMTP Greeting
 msg010261=Send this SMTP greeting (eg. 220 MYNAME is ready - using ASSP VERSION) instead of your MTA's SMTP greeting to the client. If not defined (default), the MTA's greeting will be sent to the client. The literal MYNAME will be replaced with myName and the literal VERSION will be replaced by the full version string of assp. If the starting '220 ' is not defined, assp will add it to the greeting.
 
-# variable - asspCfg
+# variable - spamboxCfg
 msg007570=spambox.cfg*
 msg007571=For internal use only - it is spambox.cfg file. Do not change this value.
 

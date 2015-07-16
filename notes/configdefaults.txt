@@ -64,5 +64,8 @@ doDKIMConv -- convert DKIM mails: Off (Default: Off)
 # SNMP Configuration #
 # POP3 Collecting #
 # Module Setup  #
+useConvertTNEF -- Use Module Convert::TNEF: Off (Default: Off) 
 useDB_File -- Use Module DB_File: Off (Default: Off) 
+useMailSRS -- Use Module Mail::SRS: Off (Default: Off) 
+useNetSNMPagent -- Use Module NetSNMP::agent: Off (Default: Off) 
 useWin32APIOutputDebugString -- Use Module Win32::API::OutputDebugString: Off (Default: Off) 
