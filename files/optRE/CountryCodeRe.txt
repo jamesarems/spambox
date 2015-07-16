@@ -1,0 +1,1 @@
+(?^:(?^:(?is:(?:P[EHLT]|C[LNZ]|I[DEN]|T[HRW]|[BGK]R|R[OU]|[SU]A|HU|JP|LT|MD))))

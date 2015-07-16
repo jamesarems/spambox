@@ -1,0 +1,17 @@
+
+BlockReportSchedule1437033697
+CleanCacheEvery1437033697
+CleanDelayDBInterval1437033697
+CleanPBInterval1437033697
+GroupsReloadEvery1437040897
+LDAPcrossCheckInterval1437033697
+MaxFileAgeSchedule1437033697
+MaxLogAgeSchedule1437033697
+MemoryUsageCheckSchedule1437033697
+POP3Interval1437034346
+QueueSchedule1437033697
+ReloadOptionFiles1437034346
+SaveStatsEvery1437037300
+UpdateWhitelist1437033697
+backupDBInterval1437033697
+exportInterval1437033697

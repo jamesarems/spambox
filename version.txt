@@ -1,1 +1,4 @@
 2.4.5(15162)
+versionURL:http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/version.txt
+NewAsspURL:http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/autoupdate/assp.pl.gz
+ChangeLogURL:http://downloads.sourceforge.net/project/assp/ASSP%20V2%20multithreading/changelog.txt

@@ -1,0 +1,1 @@
+(?^:(?^:(?i:^(?:(?:(?:hotmail|yahoo)\.com|gm(?:ail\.com|x\.de)|t-online\.de)))))

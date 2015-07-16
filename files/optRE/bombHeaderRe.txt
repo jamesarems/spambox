@@ -1,0 +1,1 @@
+(?^:(?^:(?is:\d\s+(?:(?:J(?:u[ln]|an)|A(?:pr|ug)|Ma[ry]|Dec|Feb|Nov|Oct|Sep))\s+\d\d\d\d\s+\d\d:\d\d(?::\d\d)?\s+[+\-]\d\d[6-9]\d)))
