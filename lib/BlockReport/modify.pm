@@ -1,7 +1,7 @@
 #!/usr/local/bin/perl
 
-# If located in a lib path, this module will be loaded and called by ASSP before sending BlockReports.
-# ASSP will call the sub modify of this module.
+# If located in a lib path, this module will be loaded and called by SPAMBOX before sending BlockReports.
+# SPAMBOX will call the sub modify of this module.
 # The complete BlockReport mail will be in 'shift' or $_[0]. The module has to return the new contents.
 
 package BlockReport::modify;
@@ -17,8 +17,8 @@ sub modify {
     return unless $bl;
     
     my %toReplace = (       # define what is to be replaced
-#                     &makeRe('powered by ASSP') =>  'Powered by Synergy',
-#                     &makeRe("request ASSP on $main::myName to resend") =>  'Request Synergy Spam Filtering to resend',
+#                     &makeRe('powered by SPAMBOX') =>  'Powered by Synergy',
+#                     &makeRe("request SPAMBOX on $main::myName to resend") =>  'Request Synergy Spam Filtering to resend',
 );
 
     while (my ($k,$v) = each %toReplace) {

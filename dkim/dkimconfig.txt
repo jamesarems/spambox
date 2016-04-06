@@ -5,11 +5,11 @@
 # To generate DKIM or Domainkey (old style not recommended) mails,
 # you have to install Mail::DKIM. This installation must be free of any errors!
 #
-# You need a privat and public key pair. If you have installed OpenSSL, ASSP will have already done this - look in to dir /certs. 
+# You need a privat and public key pair. If you have installed OpenSSL, SPAMBOX will have already done this - look in to dir /certs. 
 # If so, there should also a file dkim-pub.txt that contains a string like this one:
 # "k=rsa; t=y; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNA...........UP8IlP5zNgDfwIDAQAB;"
 # This string contains the algorythm (k=..;), test or no test mode (t=..;) and the public key (p=..;)
-# You need to configure the nameserver(s) of the domains, for which you want ASSP to create DKIM signatures, with a TXT record
+# You need to configure the nameserver(s) of the domains, for which you want SPAMBOX to create DKIM signatures, with a TXT record
 # for each 'Selector' with one of these strings - like.
 #
 # [selector]._domainkey.[your sub domains].[your domain].[top level] TXT=[the string]
@@ -18,7 +18,7 @@
 #
 # _adsp._domainkey.[your sub domains].[your domain].[top level] TXT=[dkim=all , discardable , unknown]
 #
-# If the Mode tag is not defined ASSP will create DKIM messages. To create the older (not recommended) Domainkey messages define the Mode-tag as:
+# If the Mode tag is not defined SPAMBOX will create DKIM messages. To create the older (not recommended) Domainkey messages define the Mode-tag as:
 # ...
 #    Mode=Domainkey
 # ...
@@ -36,7 +36,7 @@
 #    Algorithm=rsa-sha1
 #    Method=relaxed/relaxed
 #    Headers=Message-ID:From:Subject:To:MIME-Version:Content-Type
-#    KeyFile=c:/assp/certs/server-key.pem
+#    KeyFile=c:/spambox/certs/server-key.pem
 #    Mode=DKIM
 #  </selector name>
 # </your domain>
@@ -49,7 +49,7 @@
 #    Algorithm=rsa-sha1
 #    Method=nofws
 #    Headers=Message-ID:From:Subject:To:MIME-Version:Content-Type
-#    KeyFile=c:/assp/certs/server-key.pem
+#    KeyFile=c:/spambox/certs/server-key.pem
 #    Mode=Domainkey
 #  </selector name>
 # </your domain>
@@ -58,18 +58,18 @@
 # Insite the selector section you can define any supported value. Please read RFC 4871 or the documentation of the Perl module
 # Mail::DKIM to findout what values are for!
 # You can define as many domains as you want. You can also define as many selectors inside a domain as you want. If there are
-# more than one selectors defined inside a domain, ASSP will use the selectors randomly, but only one per mail (one signature per mail).
+# more than one selectors defined inside a domain, SPAMBOX will use the selectors randomly, but only one per mail (one signature per mail).
 #
 # If you want to create a large configuration (ISP) - it is recommended to create a subdirectory for every domain and selector
 # inside the /dkim directory for the keys. For example:
 #
-# /opt/assp/dkim/dom1
-# /opt/assp/dkim/dom1/sel1
-# /opt/assp/dkim/dom1/sel2
-# /opt/assp/dkim/dom2
-# /opt/assp/dkim/dom2/sel1
-# /opt/assp/dkim/dom3
-# /opt/assp/dkim/dom3/sel1
-# /opt/assp/dkim/dom3/sel2
-# /opt/assp/dkim/dom3/sel3
+# /opt/spambox/dkim/dom1
+# /opt/spambox/dkim/dom1/sel1
+# /opt/spambox/dkim/dom1/sel2
+# /opt/spambox/dkim/dom2
+# /opt/spambox/dkim/dom2/sel1
+# /opt/spambox/dkim/dom3
+# /opt/spambox/dkim/dom3/sel1
+# /opt/spambox/dkim/dom3/sel2
+# /opt/spambox/dkim/dom3/sel3
 

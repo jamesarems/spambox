@@ -1,0 +1,62 @@
+#!/bin/bash
+	#
+	# chkconfig: 2345 80 05
+	# Description: spambox init.d script
+	# Hacked by : How2CentOS - http://www.how2centos.com
+	#           : T.Eckardt 2010/08/07
+	# 
+
+        # set the spambox base directory to your needs
+	spamboxbase=/opt/spambox
+
+	# Get function from functions library
+	. /etc/init.d/functions
+
+	# Start the service spambox
+	start() {
+	        echo -n "Starting spambox server: "
+	        cd $spamboxbase
+	        /usr/local/bin/perl spambox.pl 2>&1 > /dev/null &
+	        ### Create the lock file ###
+	        touch /var/lock/subsys/spambox
+	        success $"spambox server startup"
+	        echo
+	}
+	 
+	# Stop the service spambox
+	stop() {
+	        echo -n "Stopping spambox server: "
+		killproc -p $spamboxbase/pid
+		sleep 5
+	        ### Now, delete the lock file ###
+	        rm -f /var/lock/subsys/spambox
+	        success $"spambox server shutdown"
+	        echo
+	}
+	
+	# restart the service
+	restart() {
+		stop
+		start
+	}
+
+	### main logic ###
+	case "$1" in
+	  start)
+	        start
+	        ;;
+	  stop)
+	        stop
+	        ;;
+	  restart)
+		restart
+		;;        
+	  status)
+	        status -p $spamboxbase/pid spambox
+	        ;;
+	  *)
+	        echo $"Usage: $0 {start|stop|restart|status}"
+	        exit 1
+	esac
+	 
+	exit 0

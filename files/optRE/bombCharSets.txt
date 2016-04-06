@@ -1,1 +1,0 @@
-(?^:(?^:(?is:charset=(?:(?:ISO-2022-(?:CN|JP|KR)|C(?:HINESEBIG|P1251)|K(?:S_C_5601|OI8-R)|UNKNOWN|EUC-KR|GB2312|BIG5)))))

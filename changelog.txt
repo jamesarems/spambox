@@ -1,5 +1,959 @@
+2016-02-05
+fixed in spambox 2.4.7 build 16036:
+
+- using 'ChangeRoot' caused unexpected behavior of spambox
+  notice: it is not recommended to use this feature, as long as you do not really know what you do
+  (e.g.: spambox possibly needs to load libs, binaries and perl modules at runtime - also several
+  restart setups will not work, if this feature is used)
+
+- the folder defined in 'viruslog' was not created by spambox
+  
+
+2016-02-03
+fixed in spambox 2.4.7 build 16034:
+
+- searching for an empty string (^$) in any bomb regular expression caused multiple matches
+
+
+2016-01-25
+fixed in spambox 2.4.7 build 16025:
+
+- the synchronization configuration was not set, if a plugin was installed
+  all sync states are now set to default values in this case
+  An upgrade to this version will correct this misbehavior one time.
+
+- the SSL transport engine got an update to be solid rock against hidden mistakes in the
+  underlying used perl modules (older versions)
+
+- in case spambox was waiting for a shutdown/restart and the SMTP-workers were already terminated
+  it was possible that a POP3 collection was started and failed
+
+
+changed:
+
+- the GUI configration of the 'Relaying' section is move below the 'Network Setup' section
+
+
+added:
+
+- 'runAsGroupSupplementary','Run with supplementary groups'
+'The *nix supplementary groups to assume after startup (*nix only) - requires runAsGroup to be configured
+ Examples: group1|group2
+ requires SPAMBOX restart'
+  
+
+- a new plugin 'SPAMBOX_FakeMX.pm'is available (version 1.01)
+
+'DoSPAMBOX_FakeMX','Do the SPAMBOX_FakeMX Plugin','0:disabled|1:block|2:monitor'
+'To explain it , let's say you have a domain "example.com" and
+let's also say that the domain has a single MX
+
+example.com IN MX 10 mail.example.com
+
+now, to adopt the "MX sandwich" (or Fake MX, as we call it) approach
+you'll need to add a couple MX records so, that the DNS will contain
+something like
+
+example.com IN MX 10 mx00.example.com
+example.com IN MX 20 mail.example.com
+example.com IN MX 90 mx99.example.com
+
+Now comes the trick, the "mx00" will point to an IP address on which
+there isn't (and will NEVER be) a listener on 25/tcp; this means that
+any connection attempted to mx00.example.com:25 will result into a TCP
+timeout error. The MX mail record (mail.example.com) will point to the real listenPort (and
+there may be more by the way) and the mx99, that is the last MX will
+point to another listenPort and to SPAMBOX_FakeMXFakeMX
+
+SPAMBOX will answer connections on "mx99" *ALWAYS* with a reply of
+
+421 Service temporarily unavailable, closing transmission channel.
+
+Now the question - how will such a construct (the MX sandwitch) prevent spam?
+Real mail servers will try to connect to mx00.example.com first. This will fail and they will next
+try mail.example.com , because it is the next MX in order, where they can connect and deliver the mail.
+Some spam bots may also try to connect to mx00.example.com. This will also fail. But most
+spam bots never try a second MX - this is what we want - no bot - no spam.
+A second type of spam bots are connecting to MX records in revers order. They connect
+to mx99.example.com first - which is a fault. The IP will get the configured score ( SPAMBOX_FakeMXValencePB ).
+Future connections (even at the right MX records) from this IP can be blocked by the PenaltyBox or DelayIP.
+
+NoProcessing IP's and senders can use the FakeMX without any blocking.
+Whitelisted IP's and senders can use the FakeMX without any blocking as long as procWhiteSPAMBOX_FakeMX is not set.
+ISP IP's can use the FakeMX without any blocking.
+IP's listed in acceptAllMail can use the FakeMX without any blocking.
+NOTICE: If you set this option to "block" and TestSPAMBOX_FakeMX is switched "OFF" - YOU NEED to 
+switch "OFF" EnableDelaying FIRST !
+
+This Plugin is designed for- and running in call/run level 'SMTP-handshake'! 
+
+
+
+2016-01-21
+fixed in spambox 2.4.7 build 16021:
+
+
+changed:
+
+- The upload of the GRIPLIST data was only done, if a rebuildspamdb was scheduled.
+  The upload of the GRIPLIST data is now done once a day, if a rebuildspamdb is not scheduled.
+  Otherwise the rebuildspamdb task will do the upload (the same way until now).
+
+- The default location of the databases, failover files, backup files (.bak) and BerkeleyDB files for
+  
+  pbdb, spamdb, whitelistdb, redlistdb, persblackdb, griplist, delaydb, ldaplistdb, adminusersdb
+  
+  is changed to the folder 'spambox/database' , for all NEW installations.
+  
+  You can change your existing installation to follow these new settings.
+  This task is NOT REQUIRED ! You can use spambox the old way!
+  Notice, that this task is a 'ONE WAY' task, there is no way back (except manually actions) !
+  To do this (first read all):
+  - >>>> !!! DO NOT CREATE THE 'spambox/database' folder !!! <<<<  ( never ever !)
+  - logon (or su) to the OS as user, that has permission to manage spambox
+    ! this account is used to create folders and to move files !
+  - stop spambox (and possibly all watchdogs)
+  - make a backup of all databases and the spambox.cfg file
+
+  - start spambox from the commandline using the --moveDB:=1 option (case sensitive !)
+    $> perl spambox.pl /your/path/to/spambox --moveDB:=1
+
+  - spambox will do a nearly complete start (wait !)
+  - spambox will move all files to there new location and will change the related configuration parameters if required
+  - the actions are logged to the console
+  - spambox will do a shutdown after all actions are done
+  - check the output for errors - correct them manually if an action is required
+  - it is recommended to check the permission of the 'spambox/database' folder and the moved files
+  - spambox can now be normaly started
+  
+  Don't forget to change all scripts and applications that externaly uses any spambox database!
+  
+
+
+2016-01-18
+fixed in spambox 2.4.7 build 16018:
+
+- the GRIPLIST upload failed on several systems
+
+- a syntax error in lib/CorrectSPAMBOXcfg.pm caused the to be not loaded silently
+
+- changing the lib/CorrectSPAMBOXcfg.pm module in a wrong way (syntax error for example), caused exceptions in spambox
+
+- the STATS upload failed on some systems
+
+
+
+changed:
+
+- the 'spambox/tmp' folder is now cleaned at startup
+
+
+
+2016-01-14
+fixed in spambox 2.4.7 build 16014:
+
+
+changed:
+
+- 'wildcardUser' is removed - it was without any function
+old V1 wildcard entries in the whitelistdb are exported in to "spambox/whitelistdb.removed.wildcard.entries.txt"
+and can be added to the whitelistedDomains list
+
+- unicode block, unicode script and unicode character will now match in regular expression
+
+Using Perl 5.12 or higher, spambox supports the usage of unicode block, unicode script and unicode character 
+definitions in regular expressions, llke: \P{Balinese} \p{Script:Greek} \P{Hebrew} \p{script=katakana}
+\N{greek:Sigma} \x{263a}
+It is recommended to switch off the regular expression optimization, if a unicode regular expression
+definitions is used (at least for the line, where it is used)!
+
+
+
+2016-01-13
+fixed in spambox 2.4.7 build 16013:
+
+- 'MaxRealSizeAdr','MaxSizeAdr','MaxRealSizeExternalAdr' and 'MaxSizeExternalAdr' were not working like expected
+
+- some wrong formated outputs in the analyzer are corrected
+
+
+changed:
+
+- wildcards in I addresses are no longer accepted in 'MaxRealSizeAdr','MaxSizeAdr','MaxRealSizeExternalAdr' 
+  and 'MaxSizeExternalAdr'
+
+
+2016-01-09
+fixed in spambox 2.4.7 build 16009:
+
+- SSL-connections (SMTP and HTTPS) may caused hanging workers or destroyed mail data
+
+- if VRFY was configured to be used for local sender and/or recipient verification
+  and a reply code 252 (only the address syntax is OK) was returned from the MTA
+  the address was processed as a "valid address" - this no longer the case,
+  if the reply '252 ...' is returned by the MTA, the address is stated to be invalid 
+ 
+ 
+ 2016-01-04
+fixed in spambox 2.4.7 build 16004:
+
+- Under some conditions it was possible that outgoing bounce mails caused an automatic whitelisting of the
+  recipient. This is no longer the case.
+  An upgrade to this version initiates a repair of the whitelistdb, which removes entries caused by this issue.
+
+- If the mailog.txt or the bmailog.txt were in use while spambox tried to rotate the maillog, the rotation failed.
+  In this case the rotation is retried up to 10 times with a delay of around two minutes beween the trys. 
+
+changed:
+
+'BounceSenders','Bounce Senders*'
+....
+ Automatic whitelist addition is skipped for mails from all bounce senders, the same way like redlisted mails 
+ are skipped from automatic whitelist addition.
+ If the list of bounce sender addresses is changed, a repair operation for the whitelistdb will be started.
+ This task removes all whitelist entries, which are related to any local bounce sender.
+....
+
+
+
+
+2015-12-31
+fixed in spambox 2.4.5 build 15365:
+
+- 'baysTestModeUserAddresses' was no used for HMM (only for Bayesian)
+
+- improved SSL-renegotiation detection and handling
+
+changed:
+
+- expanded 'ConnectionLog' in verbose and diagnostic mode to log SSL-renegotiation and receive- and send- states
+
+
+2015-12-28
+fixed in spambox 2.4.5 build 15362:
+
+- The sent data in SSL/TLS connections were incomplete under certain conditions, because of incomplete
+  SSL-rehandshake. Those connetions were running in to the SMTP-timeout. If a SSL-rehandshake is in progress,
+  spambox now waits until the rehandshake is done and writes the pending data again to the SSL-socket, 
+  even the socket handler reported the data as written in the last transaction.
+  
+- RBL,RWL and URIBL queries were not answered correctly by the DNS-server, if any of the last versions
+  of Net::DNS was installed, because the RD (recursion) flag was no longer set in DNS packet header.
+  
+
+2015-12-20
+fixed in spambox 2.4.5 build 15354:
+
+- Perl 5.22 has warned, that '\C' in regular expressions is depricated, if a DKIM signature was created
+  the code is corrected
+  
+- if a message has reached the 'lowlimit' state before the MSGID-signature check was done, the mail
+  was not blocked, even 'DoMSGIDsig' was set to block
+  
+- if 'Back250OKISP' was set to 'ON' and 'DoMSGIDsig' was set to block, an ISP-mail was not blocked
+  if the message scrore has reached the penaltybox limit
+
+
+
+2015-12-17
+fixed in spambox 2.4.5 build 15351:
+
+- 'VRFYforceRCPTTO' was no longer working for MTA definition with an appended port number
+
+- the email address crosscheck (LDAPCrossCheck) was not working using VRFY if more than one MTA
+  was defined, or a MTA definition included the port number
+  
+- messages larger than 16kB caused timeouts on some systems, if SSL or TLS was used
+  the maximum size of data sent to the socket at one time, is now limited to 16kB, which is the maximum
+  possible for SSL sockets
+  
+- 'MaxRealSizeAdr','MaxSizeAdr','MaxRealSizeExternalAdr' and 'MaxSizeExternalAdr' were ignored,
+  if the sender announced the size of the mail in the 'MAIL FROM:' command
+
+
+- the SPAMBOX_AFC Plugin 3.19 and 4.11 fixing an issue related to the 'SPAMBOX_AFCMaxZIPLevel' setting,
+  which was ignored after processing several messages
+
+
+
+2015-11-30
+fixed in spambox 2.4.5 build 15334:
+
+
+changed:
+
+- improved LDAP/VRFY caching
+
+- improved binary and 8BITMIME content processing
+
+
+
+2015-11-29
+fixed in spambox 2.4.5 build 15333:
+
+- The MTA definition in 'LocalAddresses_Flat' (VRFY) has not accepted IPv6 addresses
+
+changed:
+
+- The VRFY extension for 'locaDomains' and 'LocalAddresses_Flat' now accepts to prepend 'SSL:' to the
+  MTA definition. In this case a SSL-connection will be used.
+  
+
+2015-11-27
+fixed in spambox 2.4.5 build 15331:
+
+- the 'SSLfailed Cache' edit button was destroyed in the GUI
+
+
+changed:
+
+- the GUI part for 'ProxyConf' is moved to the 'Network Setup' section of the GUI
+
+- the GUI description for 'LocalAdreeses_Flat' and 'localDomains' is changed
+...
+ If the port :465 is defined for VRFY-MTA, a SSL connection will be used ( read DoVRFY ).
+...
+
+- the GUI description for 'DoVRFY' is changed, because SSL and TLS are available now
+...
+ If the SMTP-SSL port :465 is defined with a MTA and the module IO::Socket::SSL is available, a SSL connection 
+ will be used for the SMTP-VRFY-session.
+
+- the default value for 'SSL_version' is changed
+from: SSLv2/3:!SSLv3:!SSLv2
+to  : SSLv23:!SSLv3:!SSLv2 
+
+added:
+
+'enableTLS4VRFY','Enable STARTTLS for YRFY'
+'If enabled and the module IO::Socket::SSL is available and STARTTLS is supported by the VRFY-MTA and the
+ SMTP-VRFY-session is not in SSL-mode, spambox will try to use the STARTTLS command to secure the SMTP-VRFY-session.
+
+
+
+2015-11-26
+fixed in spambox 2.4.5 build 15330:
+
+- using an entry like 'ALL=>vrfyhost:port' in LocalAddresses_Flat was not working in every case
+
+- the file 'spambox/notes/configdefaults.txt' (Non-Default Settings') has shown secured configuration values in clear text
+  and undecoded HTML-Entities
+
+- if an attachment contained only ASCII characters but in addition any byte in the range 0x00-0x09,0x0B,0x0C,0x0E-0x1F
+  it was possible that the attachment was destroyed by spambox, if the 8BITMIME SMTP feature was not requested by the
+  sending client and a single [LF] (0x0A) was found
+
+
+changed:
+
+'LocalAddresses_Flat','Lookup valid Local Addresses from here*'
+has got an extension
+
+....
+ If you define only one line
+ ALL=>vrfyhost:port
+ here and ldaplistdb is configured and DoVRFY is enabled and LDAPFail is set to ON, local domains will be 
+ additionaly collected in to ldaplistdb from verfied addresses, domains and URL's (eg. DoLocalSenderAddress , 
+ local recipient checks ). The postmaster account must exists for every local domain and subdomain at the MTA!
+ Using such a configuration, you must know what you are doing and have a properly configured MTA! 
+ Be carefull, the URIBL check ( ValidateURIBL ) can lead in to alot of domain lookups and verifications 
+ (possibly several hundred per mail). The same applies to the header recipient address validation ( DoHeaderAddrCheck )!
+
+
+
+
+2015-11-21
+fixed in spambox 2.4.5 build 15325:
+
+- the early SSL-Handshake-Client-HELO detection was not working in every case
+
+changed:
+
+- the recommended version for several perl modules is changed
+
+- the early SSL-Handshake-Client-HELO is only ignored per default (the connection is not closed)
+  this behavior can be controlled using the hidden config parameter 'ignoreEarlySSLClientHelo'
+$ignoreEarlySSLClientHelo = 1; # (0/1) 1 - unexpected early SSLv23/TLS handshake Client-Helo-Frames are ignored , 
+ 0 - unexpected early SSLv23/TLS handshake Client-Helo-Frames are NOT ignored and the connection will be closed 
+
+
+2015-11-18
+fixed in spambox 2.4.5 build 15322:
+
+- it was possible that the DNS-engine caused an unexpected warning
+"Warning: Can't locate object method "data" via package "153" (perhaps you forgot to load "153"?) at sub main::queryDNS line 50."
+  This unecpected condition is now catched and ignored.
+
+
+changed:
+
+- if a client tries to connect to a local NON SSL/TLS IP-address and port using SSL/TLS, by sending a 
+  SSL-Handshake-Client-HELO frame, this frame is ignored and a warning line is written to the maillog.txt
+  like:
+warning: got an unexpected SSLv3/TLS handshake Client-Helo-Frame of version (03.01) 
+from IP '1.1.1.1' at local IP '192.168.0.1' and Port '25' - this frame is ignored and the connection will be closed
+
+
+2015-11-14
+fixed in spambox 2.4.5 build 15318:
+
+- SPFoverride and SPFfallback were unexpected working for domain parts and sub domains.
+
+- fixes a typo that causes an exception "Undefined subroutine main::matchRe at sub main::reply line 37"
+  if 'noAUTHHeloRe' or 'onlyAUTHHeloRe' is used
+
+- the executable detection in compressed files in SPAMBOX_AFC version 3.17 and 4.09(SMIME) were not working in every case
+  SPAMBOX_AFC is upgraded to version 3.18 and 4.10 to solve this problem
+
+
+changed:
+
+- 'AUTHUserIPfrequency' now also works for CRAM-MD5
+
+
+2015-11-11
+fixed in spambox 2.4.5 build 15315:
+
+changed:
+
+- 'AUTHUserIPfrequency' now also works for multiline authentication (LOGIN) 
+
+
+2015-11-10
+fixed in spambox 2.4.5 build 15314:
+
+- a typo caused an exception "unknown subroutine cleancacheAUTHIP" in worker 10000
+
+
+2015-11-09
+fixed in spambox 2.4.5 build 15313:
+
+- 'AUTHUserIPfrequency' blocked every authentication attempt, because of a typo in the code
+
+
+2015-11-08
+fixed in spambox 2.4.5 build 15312:
+
+- if a charcterset conversion setting was changed, the old settings were internaly not removed until the next
+  (re)start of spambox
+
+- disabling the authentication was no longer working in build 15303
+
+- it was possible, that a SSL-connection passed through the transparent proxy (proxyConf) lost data or were
+  unexpected disconnected, because of a too short socket buffer
+
+
+changed:
+
+- the RWL handling is improved (better logging, better handling of list.dnswl.org results)
+
+
+added:
+
+'AUTHUserIPfrequency','Max IP Changes for AUTHentication per User'
+ If the authentication methodes PLAIN or LOGIN are used by clients, two space separated values specify the 
+ number of different IP's and a timeframe in seconds, which should not be exeeded by a user.
+ For example "2 600" - notice these are the minimum values for IP-number and seconds.
+ The example disallows a user to authenticate (using PLAIN or LOGIN) from two or more different IP-addresses within 
+ 600 seconds. In other words - an user is allowed to authenticate from another IP-address, 601 seconds after 
+ the last authentication.
+ Each attempt to authenticate is counted by this feature.
+ MaxAUTHErrors is counted, if a user breakes this rule.
+ Leave this blank to disable this feature.
+
+
+'transparentRecipients','Mails to these Recipients are Handled in Transparent-PROXY Mode*'
+ Mails to any of these recipients or domains are handled transparent immediatly after a possible SRS check, 
+ BATV processing, Recipient-Replacement, RFC822 checks, ORCPT check and a feature match is found in the currently 
+ processed "RCPT TO:" SMTP command (envelope recipient).
+ NOTICE: If a connection is moved in to the transparent proxy mode, this connection will stay in this mode 
+ until "MAIL FROM:" or "RSET" is used or the connection is closed by any peer.
+ What means "transparent handled" ? SPAMBOX acts like a transparent Proxy. No filter actions are taken for the mail. 
+ Nothing is analyzed. Nothing is verfied. Nothing is stored. Nothing is logged (except reply codes if 
+ configured) - only debugging will work.
+ You can list specific addresses (user@mydomain.com), addresses at any local domain (user), or entire domains 
+ (@mydomain.com).  Wildcards are supported (fribo*@domain.com). (|).
+ For example: fribo@thisdomain.com|jhanna|@sillyguys.org or place them in a plain ASCII file one address per 
+ line - file:files/transparentuser.txt.
+
+
+
+2015-10-30
+fixed in spambox 2.4.5 build 15303:
+
+- if the rua or ruf definition of a DMARC-record defined the maximum length of a report like:
+  rua-address@dmarc-domain.com!10m - the extension '!10m' was not removed from the email address
+  and the DMARC-report was not sent, because of a wrong recipient address
+  
+
+changed:
+
+- removeDispositionNotification is changed from a checkbox  (ON|OFF) to a text field
+  a previous setting of 'ON' will be changed to 'Disposition-Notification-To|Return-Receipt-To|ReturnReceipt';
+
+'removeDispositionNotification','Remove Disposition Notification Headers',80,\&textinput,'',
+  'To remove any headers : "ReturnReceipt: , Return-Receipt-To: and Disposition-Notification-To:" from not 
+  whitelisted and not noprocessing incoming mails, define the unwanted headers as regular expression.
+  for example: Disposition-Notification-To
+  or: Disposition-Notification-To|Return-Receipt-To
+  or: Disposition-Notification-To|Return-Receipt-To|ReturnReceipt
+  or any other possible combination. Notice: do NOT define the trailing ":"!
+  Define this to prevent unwanted whitelisting of spammers that request a Disposition Notification.
+  Another way to prevent autowhitelisting because of an autoresponder is to use redRe .'
+
+- the WHOIS-IP registrar redirection detection from ARIN to RIPE is improved
+
+- if 'DBdriver is not set to 'BerkeleyDB' and 'spamdb' is changed to 'DB:' but HMMusesBDB is still set to 'ON'
+  a warning is written to the maillog.txt - for example:
+Warning: DBdriver is set to 'mysql' and spamdb is set to 'DB:' , but HMMusesBDB is still set to 'ON' - 
+is this really what you want? It is recommended to set HMMusesBDB to 'OFF'!
+
+
+
+2015-10-26
+fixed in spambox 2.4.5 build 15299:
+
+- the command in the external command queue (cmdqueue) were not processed, if the file spambox/cmdqueue has
+  not exist at startup and the system was on havy workload
+
+
+changed:
+
+- The SpamProbConfidence value calculation is changed for the Bayesian- and the HMM- check. For the default
+  processing, this code change make no difference. But for very small/short mails the SpamProbConfidence
+  calculation is improved.
+  The changed algorythm is described in the GUI under 'baysConf'.
+
+- In case of a database connection error, the output of the internal errorcode and errortext is improved.
+   
+
+added:
+
+'noAUTHHeloRe','Disable AUTH for these HELO\'s*'
+'If configured and a helo matches this regular expression, the AUTH offer will be removed from the EHLO reply and 
+ the AUTH command will be disallowed.
+ For example:  ^\w+\.noauthdomain\.com$,'
+
+
+'onlyAUTHHeloRe','Allow AUTH Only for these HELO\'s*'
+'If configured and a helo does not match this regular expression, the AUTH offer will be removed from the EHLO 
+ reply and the AUTH command will be disallowed.
+ For example:  ^\w+\.onlyauthdomain\.com$,'
+
+
+'ResetMaxAUTHErrorIPs','Reset the MaxAUTHErrors Counter for these IP\'s*'
+ 'List of IP\'s for which MaxAUTHErrors counter should be cleared immediatly after a successfull login. 
+ For example: 145.145.145.145|145.146.
+ It is not recommended to use this option for security reasons, but it may required for client networks behind 
+ a NAT.'
+
+'noDMARCDomain','Don't Check DMARC for these Addresses/Domains*'
+ 'Put any sender domain (or address) in to this list, for which you want to disable the DMARC check - for example 
+ if an invalid DMARC record is published.
+ Use 'noDMARCReportDomain' if you only want to disable DMARC reports.
+ Accepts entire domains (@example.com) (specific addresses (user@example.com) and user parts (user) are accepted,
+ but not usefull!). Wildcards are supported (@*example.com or @*.example.com).'
+
+
+
+
+2015-10-14
+fixed in spambox 2.4.5 build 15287:
+
+- Because of the major changes in Net::DNS 1.02_02 (pre 2.00) and higher, the background DNS-queries
+  were no longer working. Regular DNS-queries may caused exceptions. On some systems, DNS was completely
+  unavailable. Build 15287 is able to work with the old and the new calling convensions of Net::DNS.
+
+
+2015-10-13
+fixed in spambox 2.4.5 build 15286:
+
+- Net::DNS module version 1.02_02 (pre 2.00) and higher causes exceptions and DNS-timeouts
+  spambox.pl DNS engine is changed to work together with the redesigned Net::DNS modules
+
+
+2015-10-10
+fixed in spambox 2.4.5 build 15283:
+
+- some outdated corpus files were not removed by the rebuildspamdb task
+
+- in some cases, the rebuildspamdb report email was wrong encoded and filenames were unreadable
+
+- under rare conditions compiling build 15272 has thrown an exception
+  Bareword "Socket::IPV6_V6ONLY" not allowed while "strict subs" in use at spambox.pl line 8930
+
+- sending an empty attached zip file in a spam/ham report caused an exception
+
+- disabling 'MaxBytesReports' (set to zero) was not working like expected
+
+
+
+added:
+
+'signedSenders','Senders need to SMIME or PGP Sign All Mail*'
+  'Domains and addresses which have to SMIME or PGP sign or encrypt all mail. 
+  If a match is found for a sender and the email is not signed or encryped, the mail will be rejected!
+  If configured, this check is done regardless any other spambox setting - it will affect all incoming mails!
+  If a match is found and the mails is signed or encrypted, the mail will be processed as whitelisted mail!
+  Note this matches the end of the address, so if you don't want to match subdomains then include the @. 
+  Note that example.com would also match spamexample.com but .example.com won't match example.com. 
+  Wildcards are supported. For example: sourceforge.net|group*@google.com|.example.com
+  It is possible to make the senders signing requirement recipient dependend 
+  (eg: on a set of local domains and/or local users). Use wildcards (* and ?) to define domains.
+  
+  Use the following syntax to do this:
+  *@anydomain=>*@any_local_domain - for domain to domain
+  *@*.anydomain=>*@any_local_domain - for any sub-domain to domain
+  user@anydomain=>*@*.any_local_domain - for user to any sub-domain
+  
+  It is possible to define more than one entry at the left and the right side of the definition (=>), like:
+  *@anydomain|*@other_domain=>*@any_local_domain|*@other_local_domain - always separate multiple entries by pipes
+  It is also possible to use a GroupDefinition in any or both sides, like:
+  [sendergroup]=>[recipientgroup]
+  [sendergroup1]|[sendergroup2]|*@domain=>[recipientgroup1]|[recipientgroup2]|user@local_domain
+  NOTICE - that the local email addresses and domains are not checked to be local once',
+
+ 
+ 2015-09-29
+fixed in spambox 2.4.5 build 15272:
+
+
+changed:
+
+- the NOTSPAMTAG was provided for HELO checks, this is no longer the case
+
+- redRe, whiteRe, contentonlyRe and npRe are now working using the MIME decoded header
+
+- the GUI description of 'DBdriver' is enhanced
+
+- the default value of 'enable8BITMIME' is changed to '1'
+
+- the default value of 'useDB4Rebuild' is changed to '1'
+
+
+
+2015-09-23
+fixed in spambox 2.4.5 build 15266:
+
+- If DMARC was configured, received DMARC-reports caused new created DMARC-reports for the reporting
+  domain. This was leading in a DMARC-report queue. DMARC checks are now disabled for received
+  DMARC reports and no DMARC-reports will be sent by spambox for such emails..
+
+
+added:
+
+- The file defined in 'exportExtremeBlack' can now be retrieved via the Web-STATS-Interface. This makes it
+  possible for firewalls or IP-filters to download and implement the file frequently.
+  The URL to download the file looks like: http://spambox.domain:55553/extremeblack
+  notice the appended '/extremeblack'
+
+
+changed:
+
+- the GUI description for 'exportExtremeBlack' is changed
+- the GUI description for 'webStatPort' is changed
+
+
+2015-09-18
+fixed in spambox 2.4.5 build 15261:
+
+
+- The RBL, RWL, URIBL engine stored possibly a wrong state of the DNS-servers , if some or all were failed.
+
+changed:
+
+- memory usage improvement for the case where both, the HMM- and Bayesian engine were used
+
+- the default value for 'DoDamping' is changed from '0' to '5'
+ 
+
+
+2015-09-14
+fixed in spambox 2.4.5 build 15257:
+
+- encrypted include files (# include file) were some times not processed correctly
+
+
+
+2015-09-12
+fixed in spambox 2.4.5 build 15255:
+
+- under some conditions, the analyze-report email stripped out the Bayesian- and HMM-part
+- the analyze-report email contained a wrong HTML tag at the end
+
+- the entries '0.0.0.0/0' and '0::0/0' were ignored in all IP-list definitions
+
+- the GUI description for 'spamLovers' was wrong
+
+- the MIME-body line ending correction ([CR][LF]) was also done for mails with binary content (8bit - encoding)
+  this caused some times destroyed mails / attachments
+ 
+
+
+changed:
+
+- The processing for IP lists with the privacy option ('whiteListedIPs', 'noDelay', 'noProcessingIPs',
+  'denySMTPConnectionsFrom', 'noBlockingIPs') is changed.
+  Until now, if multiple user/domain based entries were defined in overlapping IP-ranges, only the one
+  with the lowest bit mask value was used and the privacy setting was some times ignored!
+  Since this version all entries are used, but only the first match (IP + user/domain) is processed
+  The IP-matching code and concept is new designed! 
+
+
+
+2015-09-04
+fixed in spambox 2.4.5 build 15247:
+
+- Some jump targets in the 'RecipientReplacement' rules were ignored, which was possibly leading in to wrong
+  recipient addresses
+  
+- the registration of the internal license failed on darwin  
+
+
+
+2015-08-20
+fixed in spambox 2.4.5 build 15232:
+
+- IP addresses from 'Received:' headerlines were not detected, if the connecting port was noted after the IP
+like: Received from host.domain.tld ([1.1.1.1:34567], helo=......
+
+- The 'NOTSPAMTAG' was generated and submitted with the reply, if the mail was addressed to 'spamaddresses' or
+  penalty TRAP addresses. The 'NOTSPAMTAG' is no longer provided for such mails.
+
+- a message score bonus for a check was ignored, if the according IP score was set to zero
+
+
+
+changed:
+
+'enhancedOriginIPDetect','Do an Enhanced Origin IP Address Detection in the Mail Header',
+'0:disabled|1:all|2:all but most origin'
+....
+Default setting is 'all but most origin', which ignores the first public IP address, that was involved 
+in the mail transport (possibly a user device).'
+
+
+
+added:
+
+experimental fast learning from honeypotts
+hidden variable - $reportBadDetectedSpam
+If a mail to 'spamaddresses' is not detected as spam by any other check - the mail is signed for the rebuildspamdb
+task, to be processed as reported SPAM immediatly.
+our $reportBadDetectedSpam = 1; # (0/1) report mails to spamaddresses that are not detected as SPAM,
+                                        to the rebuild process
+
+ 2015-08-17
+fixed in spambox 2.4.5 build 15229:
+
+- public release
+
+
+2015-08-14
+fixed in spambox 2.4.5 build 15226:
+
+- if a message was blocked by the message score within the header check and the mail was sent to a 
+  PenaltyBox-Spamlover and the spamlover score was reached, the mail body was not collected and the 
+  mail was incomplete forwarded
+  
+- if a rebuildspamdb task was aborted for any reason, the BerkeleyDB cache for next rebuildspamdb was set
+  too less, which leads some times in a incomplete population of the spamDB and HMMdb
+  
+- the 'Worker & Database' status screen has not shows all the recommendations recorded at startup
+
+
+changed:
+
+GUI - main description:
+
+If you define any SMTP-reply-code (like for example SpamError) as a temporary reply code (starting with 4 
+like 452 instead of the default 5 like 550), the connection will be dropped at it's current state, regardless 
+any collection or forwarding setting. These actions may finished incomplete in this case!
+
+- the SPAMBOX-MIB file has got an update
+
+added:
+
+The in version 2.2.1 removed support for the SMTP 8BITMIME extension is introduced again in an experimental state.
+
+'enable8BITMIME','Enable the 8BITMIME SMTP Extension'
+ 'If enabled spambox offers and supports the 8BITMIME SMTP extension, if the connected peers offers and supports 
+ 8BITMIME. (This feature is still experimental!)'
+  
+
+
+2015-08-10
+fixed in spambox 2.4.5 build 15222:
+
+- It was possible that a local privat ip network was blocked from sending mails, if a single SMTP authentication
+  from this network has been failed.
+
+- The failed authentication cache was not cleanup, if 'MaxAUTHErrors' was set to zero and back to a value > 0.
+
+
+2015-08-09
+fixed in spambox 2.4.5 build 15221:
+
+- if a mail larger than 'maxBytes' was sent to a address defined 'spamaddresses' and 'DoNotBlockCollect' was set to
+  ON - the connection was running to SMTP-timeout
+
+changed:
+
+- the GUI description for 'SSL_version' is enhanced
+
+- the version of Net::SSLeay and the used OpenSSL version is shown in the startup LOG
+
+- improved pre-initialization of the Net::SSLeay module
+
+- the minimum version for the module IO::Socket::SSL is changed to 2.006 - but lower version are accepted
+
+- the minimum version for the module Net::SSLeay is changed to 1.46 - but lower version are accepted
+
+
+2015-08-06
+fixed in spambox 2.4.5 build 15218:
+
+
+changed:
+
+- the 'Worker & Database' status screen now shows also the recommendations recorded at startup
+
+- a link to the spambox ticket system was added at the bottom of the GUI
+
+
+
+2015-08-02
+fixed in spambox 2.4.5 build 15214:
+
+- in some cases the output of the analyzer for bayesian word pairs and HMM sequences was wrong
+
+changed:
+
+- the count of the calculated bayesian word pairs is increased to improve the correctness of the bayesian check
+
+
+
+2015-07-16
+fixed in spambox 2.4.5 build 15197:
+
+
+changed:
+
+- a file 'notes/loaded_perl_modules.txt' is created at startup, which shows all loaded modules and there
+  version (if available)
+  a link is added to the module status page, which shows the file
+
+- the XML-stats output (http://spambox:55553/xml) got a new design  
+
+- if the runlevel priority of two Plugins overlaps, a detail report and the actions taken to solve the overlap,
+  are written to the log.
+  The check is done at startup and at every Plugin call.
+  
+  
+
+2015-07-13
+fixed in spambox 2.4.5 build 15194:
+
+- If 'DoPrivatSpamdb' was used, the analyzer has shown more bad and good Bayesian and HMM word combinations, than
+  both engines have used for the spam probability and confidence calculation.
+
+changed:
+
+- If 'AUTHrequireTLS' is set and a server tries to use AUTH without using SSL/STARTTLS, the connection is
+  damped for 5 seconds to prevent DDoS attacks. The value for the seconds can be configured using the
+  hidden variable 'AUTHrequireTLSDelay'
+  
+our $AUTHrequireTLSDelay = 5; # (number) seconds to damp connections that used AUTH without using SSL 
+   (to prevent DoS)
+  
+  
+- SPAMBOX has used the port defined in the hidden configuration variable 'IPv6TestPort' to test the posibility
+  of an IPv6 listener at startup. SPAMBOX now first tries to use the first free highport (provided by the OS).
+  Only if this attempt failes, the fixed 'IPv6TestPort' is used.
+
+- In addition to the literals 'SESSIONID', 'NOTSPAMTAG' and 'MYNAME', it is now possible to use the literals
+  'IPCONNECTED' and 'IPORIGIN' in any configurable SMTP reply text.
+  
+The literal 'SESSIONID' will be replaced by the unique message logging ID in every SMTP error reply.
+The literal 'IPCONNECTED' will be replaced by the connected IP address in every SMTP error reply.
+The literal 'IPORIGIN' will be replaced by the origin IP address in every SMTP error reply.
+The literal 'NOTSPAMTAG' will be replaced by a random calculated TAG using, in every SMTP permanent (5xx) error reply.
+The literal 'MYNAME' will be replaced by the configuration value defined in 'myName' in every SMTP error reply.
+  
+- The math to calculate the spam/ham probability and confidence is improved. It prevents now the usage of too
+  small numbers.
+
+- The spam/ham confidence graph calculation is improved by switching from the natural logarithm to the base 10 log
+
+- SPAMBOX_AFC version 3.17: spam is detected, if an attachment or a compressed file has an extension, but
+  the extemsion does not match the real file type (content based)
+
+
+2015-06-29
+fixed in spambox 2.4.5 build 15180:
+
+- SPAMBOX_ARC.pm was unable to compress (gzip) files with unicode filenames
+  The Plugin is not changed, the fix is in spambox.pl.
+
+- the DNS-server query order was (under certain conditions) unexpected changed
+
+
+changed:
+
+- The mechanism to bind to universal IP-addresses (port only defintion) for IPv6 enabled systems is changed.
+
+the issue:
+  Binding a listener to both universal IP addresses (0.0.0.0 and [::]) on a system with a disabled 
+  'IPV6_V6ONLY' flag, the IPv6 bind has been failed on certain systems.
+
+general changes:
+  The bind order for those listeners (port definition only) is changed from 1.IPv4 - 2.IPv6 to 1.IPv6 - 2.IPv4.
+
+system dependend changed behavior:
+(1)
+  If the system 'IPV6_V6ONLY' IP-flag is available and it is set to zero and it can be set/changed per socket,
+  spambox will set the flag to '1' for each universal IPv6 listener. In this case in addition an IPv4 universal
+  listener can/will be created.
+(2)
+  If the 'IPV6_V6ONLY' flag is available and it is set to zero and it can NOT be set/changed per socket,
+  spambox will create the IPv6 listener [::] only. This listener is than used by the system for IPv6 and IPv4 
+  connections.
+(3)
+  Systems where the 'IPV6_V6ONLY' flag is available and it is set to '1' are not affected by this change.
+(4)
+  If the 'IPV6_V6ONLY' IP-flag cannot be detected on a system (some windows versions for example), spambox acts the
+  same way, as the flag is available and set to '1' - (see 3).
+
+
+
+2015-06-25
+fixed in spambox 2.4.5 build 15176:
+
+- If an spambox installation was migrated from a 32Bit to a 64Bit system, or from a little-endian to a big-endian
+  system (or visa versa), several check results were unexpected, unexpected exceptions happened or the script was
+  dying unexpected.
+
+
+- after a exception in the Maintenance Worker (10000) and its restart, it was possible that several maintenance
+  functions were no longer working until spambox was restarted
+  
+
+- rereading the configuration on an idle system caused some times an unexpected high CPU load for some seconds
+
+- if the RBL engine detected a DNS-socket error, it returned no result even other sockets were OK
+  failed DNS-sockets are now ignored and a warning is shown in the maillog.txt 
+
+
+changed:
+
+- 'maxDNSRespDist' now also accepts an empty or zero value. Both disable the feature.
+
+- sponsors are shown at the GUI->donation page
+
+
+
 2015-06-11
-fixed in assp 2.4.5 build 15162:
+fixed in spambox 2.4.5 build 15162:
 
 - calculating log(0) caused an exception
 
@@ -8,13 +962,13 @@ fixed in assp 2.4.5 build 15162:
 
 
 2015-06-08
-fixed in assp 2.4.5 build 15159:
+fixed in spambox 2.4.5 build 15159:
 
 - changing 'DNSServerLimit' in the GUI, caused an unexpected error 'invalid DNSServerLimit ....'
 
 
 2015-05-28
-fixed in assp 2.4.5 build 15148:
+fixed in spambox 2.4.5 build 15148:
 
 - analyzing outlook *.msg attached mails faíled
 
@@ -35,13 +989,13 @@ added:
 
 
 2015-05-27
-fixed in assp 2.4.5 build 15147:
+fixed in spambox 2.4.5 build 15147:
 
 released, changed and added files:
 
 'images/confidence.gplot' is added
 'images/svg.js' is changed and got the version number '1.03'
-'lib/ASSP_SVG.pm' version 1.03 is released
+'lib/SPAMBOX_SVG.pm' version 1.03 is released
 
 fixed:
 
@@ -60,7 +1014,7 @@ changed:
 
 'enableGraphStats','Enable Graphical Statistics Collection'
  .....
- If baysConf is configured, assp will also collect statistical data about the Bayesian and HMM confidence distribution - 
+ If baysConf is configured, spambox will also collect statistical data about the Bayesian and HMM confidence distribution - 
  the file names are confidenceGraphStats-YYYY-MM.txt.
 
 
@@ -68,12 +1022,12 @@ changed:
 added:
 
 'DNSServerLimit','Limit the Number of used DNS-Servers'
- 'If set to a number > zero, assp will use the defined number of fastest responding nameservers (DNSServers) for DNS queries.
+ 'If set to a number > zero, spambox will use the defined number of fastest responding nameservers (DNSServers) for DNS queries.
  Otherwise, all nameserver are used every time.
  Notice: This value is not checked against the number of defined DNSServers - don't set nonsense here!'
 
 
-- If 'enableGraphStats' and 'baysConf' are enabled, assp will collect statistical data about the Bayesian 
+- If 'enableGraphStats' and 'baysConf' are enabled, spambox will collect statistical data about the Bayesian 
   and HMM confidence distribution. Collected are only data, if the confidence of a mail is between baysConf/100 and baysConf*100
   
 
@@ -82,22 +1036,22 @@ added:
 
 
 2015-05-21
-fixed in assp 2.4.3 build 15141:
+fixed in spambox 2.4.3 build 15141:
 
 - if 'DoRFC822' was enabled, in rare cases a missing name-server registration was detected for a domain
   even the domain registation was OK
   
-- in build 15140, assp was waiting until the DNSTimeout was reached, if 'NXDOMAIN' was returned by DNS-server
+- in build 15140, spambox was waiting until the DNSTimeout was reached, if 'NXDOMAIN' was returned by DNS-server
 
 
 2015-05-20
-fixed in assp 2.4.3 build 15140:
+fixed in spambox 2.4.3 build 15140:
 
 - if 'DNSReuseSocket' was enabled, some DNS-queries failed because of ignored DNS-header sequences
 
 changed:
 
-- the 'Received:' headerline added by assp now contains 'unknown' instead of the received 'HELO' if no
+- the 'Received:' headerline added by spambox now contains 'unknown' instead of the received 'HELO' if no
   PTR-record is available for the connected IP
 
 - enhanced debugging output for DNS
@@ -116,7 +1070,7 @@ added:
 
 
 2015-05-15
-fixed in assp 2.4.3 build 15135:
+fixed in spambox 2.4.3 build 15135:
 
 
 - the replacement of hostnames with it's IP addresses in IP address lists was not working in rare cases
@@ -127,15 +1081,15 @@ changed:
 - the email address parsing is improved for the 'resend mail' function to prevent resend errors
 
 - The 'resend mail' function keeps the 'From' headerline untouched, if this is possible,
-  until now the address from the 'X-Assp-Envelope-From:' headerline was copied in to the 'From'
-  headerline, if the 'X-Assp-Envelope-From:' headerline was found.
+  until now the address from the 'X-Spambox-Envelope-From:' headerline was copied in to the 'From'
+  headerline, if the 'X-Spambox-Envelope-From:' headerline was found.
 
-- if the module 'lib/CorrectASSPcfg.pm' is changed while assp is running - all threads will reload the changed
-  module - an assp restart is no longer required
+- if the module 'lib/CorrectSPAMBOXcfg.pm' is changed while spambox is running - all threads will reload the changed
+  module - an spambox restart is no longer required
   
 
 2015-05-14
-fixed in assp 2.4.3 build 15134:
+fixed in spambox 2.4.3 build 15134:
 
 - the 'missing MX or A record' fix in build 15133 has not fixed all possible cases
 
@@ -150,7 +1104,7 @@ changed:
 
 
 2015-05-13
-fixed in assp 2.4.3 build 15133:
+fixed in spambox 2.4.3 build 15133:
 
 - since build 15130 - if more than one PTR-record was registered for an IP address, all the records were added
   to the Received: header, which destroyed the MIME header structure
@@ -158,9 +1112,9 @@ fixed in assp 2.4.3 build 15133:
 - it was possible that a missing MX or A record was reported, even both records could be found using dig or
   nslookup
     
-- IPv6 PTR-records were ignored by ASSP in several features
+- IPv6 PTR-records were ignored by SPAMBOX in several features
 
-- IPv6 AAAA-records were ignored by ASSP in several features
+- IPv6 AAAA-records were ignored by SPAMBOX in several features
 
 
 changed:
@@ -176,7 +1130,7 @@ will NOT be added to the white organizations!
 
 
 2015-05-12
-fixed in assp 2.4.3 build 15132:
+fixed in spambox 2.4.3 build 15132:
 
 - defining a value without a leading zero was not accepted by 'baysConf'
 
@@ -208,17 +1162,17 @@ added:
 
 the new hidden variable 'enableBRtoggleButton' can be used to control the 'toggle view' button in BlockReports
 
-in assp.pl
+in spambox.pl
 $enableBRtoggleButton = 1;           # (0/1) show the "toggle view" button in HTML BlockReports
 
 (recommended)
-in lib/CorrectASSPcfg.pm
+in lib/CorrectSPAMBOXcfg.pm
 $main::enableBRtoggleButton = 1;  # (0/1) show the "toggle view" button in HTML BlockReports
 
 
 
 2015-05-10
-fixed in assp 2.4.3 build 15130:
+fixed in spambox 2.4.3 build 15130:
 
 - SPF records splitted in to multiple TXT-records caused an exception in the Mail::SPF module
 
@@ -247,41 +1201,41 @@ changed:
 
 
 2015-05-03
-fixed in assp 2.4.3 build 15123:
+fixed in spambox 2.4.3 build 15123:
 
 
 - typo corrections
 
 
 2015-05-01
-fixed in assp 2.4.3 build 15121:
+fixed in spambox 2.4.3 build 15121:
 
 
 - the left menu and the alpha index were not working in the 'MaillogTail' screen with some browsers
 
 
 2015-04-30
-fixed in assp 2.4.3 build 15120:
+fixed in spambox 2.4.3 build 15120:
 
 
 - it was possible that a bulk import of a database table failed unexpected on some systems
 
 - for newer MSSQL versions the column size of 'pkey' and 'pvalue' were set to the wrong default value of 30
-  assp_db_import.cfg 2.4.3(15119) is released to fix this
-  NOTICE: at least build 15119 of assp.pl is required to use this version of assp_db_import.cfg
+  spambox_db_import.cfg 2.4.3(15119) is released to fix this
+  NOTICE: at least build 15119 of spambox.pl is required to use this version of spambox_db_import.cfg
 
 - virus reports contained also the body of the infected mail, if 'EmailVirusReportsHeader' was enabled 
 
-- ASSP_AFC plugin has not replaced the literal 'FILENAME' with any content, if a virus was detected outside an 
-  attachment. ASSP_AFC.pm version 3.14 fixes this.
+- SPAMBOX_AFC plugin has not replaced the literal 'FILENAME' with any content, if a virus was detected outside an 
+  attachment. SPAMBOX_AFC.pm version 3.14 fixes this.
   
 
 
 2015-04-27
-fixed in assp 2.4.3 build 15117:
+fixed in spambox 2.4.3 build 15117:
 
 
-- it was possible that the ASSP_AFC plugin removed files from the assp base folder and subfolders, 
+- it was possible that the SPAMBOX_AFC plugin removed files from the spambox base folder and subfolders, 
   if the 'ZIP' analyzing was configured
   
 
@@ -306,7 +1260,7 @@ changed:
 
 
 2015-04-16
-fixed in assp 2.4.3 build 15106:
+fixed in spambox 2.4.3 build 15106:
 
 
 - 'poTestMode' was not working like expected
@@ -336,7 +1290,7 @@ is changed:   This setting is ignored for all privat IP addresses (localhost, RF
   Still defined values (0-3) will be converted to the new syntax automaticaly.
 
 'myHelo','My Helo',
- 'How ASSP will identify itself when connecting to the target MTA.
+ 'How SPAMBOX will identify itself when connecting to the target MTA.
   The values used for incoming and outgoing/local mails are separated by "|" - for example:
   
   SENDERHELO - IP - MYNAME - FQDN | MYNAME
@@ -360,12 +1314,12 @@ is changed:   This setting is ignored for all privat IP addresses (localhost, RF
 
 
 2015-04-05
-fixed in assp 2.4.3 build 15095:
+fixed in spambox 2.4.3 build 15095:
 
 
-- in some cases, if the ASSP_AFC plugin has blocked a mail, there was no logline written to the maillog.txt
+- in some cases, if the SPAMBOX_AFC plugin has blocked a mail, there was no logline written to the maillog.txt
   which contained the file name
-  ASSP_AFC.pm is updated to version 3.12
+  SPAMBOX_AFC.pm is updated to version 3.12
 
 - if 'RelayOnlyLocalSender' and/or 'RelayOnlyLocalDomains' was set, local bounces from NULL-sender could not be sent
 
@@ -375,7 +1329,7 @@ fixed in assp 2.4.3 build 15095:
 
 added:
 
-- If assp has injected STARTTLS for the MTA, client were able to use the SMTP AUTH command without securing the
+- If spambox has injected STARTTLS for the MTA, client were able to use the SMTP AUTH command without securing the
   connection with STARTTLS. The new configuration parameter 'AUTHrequireTLS' can now be used to prevent this.
 
 'AUTHrequireTLS','SMTP AUTH requires SSL/TLS','0:NO|1:PLAIN|2:LOGIN|3:PLAIN and LOGIN|4:ALL'
@@ -387,7 +1341,7 @@ added:
 
  
 2015-03-16
-fixed in assp 2.4.3 build 15075:
+fixed in spambox 2.4.3 build 15075:
 
 - fixes several Internet Explorer problems in the GUI
 
@@ -397,7 +1351,7 @@ fixed in assp 2.4.3 build 15075:
 
 
 2015-03-08
-fixed in assp 2.4.3 build 15067:
+fixed in spambox 2.4.3 build 15067:
 
 - on some windows systems 'Win32::Unicode' was detected as unavailable, even it was correctly installed
 
@@ -408,12 +1362,12 @@ fixed in assp 2.4.3 build 15067:
 
 added:
 
-- This build contains experimental code to setup assp in very large ISP environments, with a very high workload
+- This build contains experimental code to setup spambox in very large ISP environments, with a very high workload
   caused by HMM, Bayesian and DNS.
   Such a setup requires an enormous and expensive amount of hardware resources, a very high knowledge in
   system design and OS scripting.
   minimum requirements: 
-      - assp: 64Bit OS, all SSD, 16GB RAM, 8 CPU cores, 64Bit Perl (multiple larger systems expected)
+      - spambox: 64Bit OS, all SSD, 16GB RAM, 8 CPU cores, 64Bit Perl (multiple larger systems expected)
       - external high available enterprise database server
       - high available and very fast DNS-servers
   
@@ -423,9 +1377,9 @@ added:
  
 
 2015-02-28
-fixed in assp 2.4.3 build 15059:
+fixed in spambox 2.4.3 build 15059:
 
-- assp has accepted incorrect port definitions in the GUI (port > 65535)
+- spambox has accepted incorrect port definitions in the GUI (port > 65535)
 
 - it was not possible to define an instance name for MSSQL in 'myhost' like SQL-SERVER/MSSQL
   it is recommended to define the complete ADO or ODBC connection string in 'DBdriver' and to
@@ -433,15 +1387,15 @@ fixed in assp 2.4.3 build 15059:
 
 - if an address was matching 'processOnlyAddresses', no passing reason was given in the log
 
-- defining an compressed IPv6 address (aaaa::bbbb) without a given port as DNS-Server, caused assp to throw an error
+- defining an compressed IPv6 address (aaaa::bbbb) without a given port as DNS-Server, caused spambox to throw an error
   and DNS was not working
 
 
 
 2015-02-21
-fixed in assp 2.4.3 build 15052:
+fixed in spambox 2.4.3 build 15052:
 
-- it was possible that the Perl module autoupdate function has removed unrelated files from the assp folder
+- it was possible that the Perl module autoupdate function has removed unrelated files from the spambox folder
 
 - the GUI index and the left menu were working only in the main configuration view since several releases
 
@@ -459,14 +1413,14 @@ changed:
   'myhost' configuration is set, this value is now used in the connection string to the database
 
 - the trailing IPv4 OIP detection for privat IPv6 addresses is now skipped
-  if such a notation is found in public IPv6 addresses, assp will detect the normalized IPv6 and 
+  if such a notation is found in public IPv6 addresses, spambox will detect the normalized IPv6 and 
   the trailing IPv4 and will use both in the IP address checks
 
 
 
 
 2015-01-25
-fixed in assp 2.4.3 build 15025:
+fixed in spambox 2.4.3 build 15025:
 
 - improved regex match logging
 
@@ -495,19 +1449,19 @@ changed:
   noprocessing and whitelisting! Only noBombScript is observed in every case.
   To change this behavior, use the enhanced regular expression syntax (NWIL) described at the bottom of the GUI!'
 
-- if remote support is enabled it keeps now enabled after a restart of assp
+- if remote support is enabled it keeps now enabled after a restart of spambox
 
 - the UUID is reported to the GPB server
 
 
 
 2015-01-05
-fixed in assp 2.4.3 build 15004:
+fixed in spambox 2.4.3 build 15004:
 
 - the GUI has not accepted the values SSL23, TLSv1_1 and TLSv1_2 for 'SSL_version' 
   as described in the POD of IO::Socket::SSL
 
-- the link to the ASSP forums was wrong in the GUI
+- the link to the SPAMBOX forums was wrong in the GUI
 
 
 changed:
@@ -535,7 +1489,7 @@ added:
   *.domain.com => 10.1.1.1       # domain
   * => 172.16.1.1                # default - if not defined, the system default is used
   
-  NOTICE: assp will NOT check, that the local IP address is available and bound to a local interface! 
+  NOTICE: spambox will NOT check, that the local IP address is available and bound to a local interface! 
   It will also NOT check the system routing table! YOU SHOULD KNOW WHAT YOU DO!
 
 
@@ -550,14 +1504,14 @@ The same description applies also to the following three added parameters.
 
 
 2014-12-21
-fixed in assp 2.4.3 build 14355:
+fixed in spambox 2.4.3 build 14355:
 
 - the 'Received:' header line parser in the analyzer code was not working correct in every case
 
 
 
 2014-12-15
-fixed in assp 2.4.3 build 14349:
+fixed in spambox 2.4.3 build 14349:
 
 - whitelist detection was wrong in the HELO checks in some cases
 
@@ -571,16 +1525,16 @@ fixed in assp 2.4.3 build 14349:
 
 
 2014-12-09
-fixed in assp 2.4.3 build 14343:
+fixed in spambox 2.4.3 build 14343:
 
 - removed repeated useless calls to check for 'noCollecting'
 
 added:
 
 - introduces a license API for Plugin and feature vendors
-  all published assp and Plugin code will remain under the GNU GPL license
+  all published spambox and Plugin code will remain under the GNU GPL license
 
-- every assp installation will get an UUID
+- every spambox installation will get an UUID
 
 
 changed:
@@ -590,7 +1544,7 @@ changed:
 
 
 2014-12-01
-fixed in assp 2.4.3 build 14336:
+fixed in spambox 2.4.3 build 14336:
 
 - if 'SessionLog' was set to verbose, the maillog.txt was filled with 
   'Maillog - no log - log-condition is zero' lines
@@ -602,7 +1556,7 @@ changed:
 
 
 2014-11-30
-fixed in assp 2.4.3 build 14334:
+fixed in spambox 2.4.3 build 14334:
 
 - improved DNS handling and debug
 
@@ -613,8 +1567,8 @@ fixed in assp 2.4.3 build 14334:
 
 changed:
 
-- the rebuild spamdb report contains some information about assp/tmpDB
-  more information are available if ASSP_FC.pm is installed
+- the rebuild spamdb report contains some information about spambox/tmpDB
+  more information are available if SPAMBOX_FC.pm is installed
  
  
 - the default value for DoRFC822 is changed from 'recipient' to  'sender'
@@ -631,9 +1585,9 @@ added:
 
 
 2014-11-27
-fixed in assp 2.4.3 build 14331:
+fixed in spambox 2.4.3 build 14331:
 
-- some DNS queries (mostly SenderBase) failed, becauses assp was a bit too impatently while waiting for a 
+- some DNS queries (mostly SenderBase) failed, becauses spambox was a bit too impatently while waiting for a 
   second answer
 
 - if 'Sessionlog' is set to at least 'verbose', the reason why a mail is not collected is shown in the maillog.txt
@@ -641,7 +1595,7 @@ fixed in assp 2.4.3 build 14331:
 
 
 2014-11-23
-fixed in assp 2.4.3 build 14327:
+fixed in spambox 2.4.3 build 14327:
 
 - after an upgrade of the Perl module Net::SMTP to version 3.xx , it was possible that reporting and
   resend functions were no longer working - IF THE perl module IO::Socket::IP was not installed
@@ -653,14 +1607,14 @@ fixed in assp 2.4.3 build 14327:
 
 changed:
 
-- assp now corrects malformed line termination (eg. single [LF]) in the mail header per default
+- spambox now corrects malformed line termination (eg. single [LF]) in the mail header per default
 
-- empty encrypted configuration parameters are now empty in the assp.cfg file insead of (00000e0000)
+- empty encrypted configuration parameters are now empty in the spambox.cfg file insead of (00000e0000)
 
 
 
 2014-11-21
-fixed in assp 2.4.3 build 14325:
+fixed in spambox 2.4.3 build 14325:
 
 
 - after an upgrade of the Perl module Net::SMTP to version 3.xx , it was possible that reporting and
@@ -679,9 +1633,9 @@ changed:
 
 
 2014-11-20
-fixed in assp 2.4.3 build 14324:
+fixed in spambox 2.4.3 build 14324:
 
-- assp used the unicode version 6.1.0 even Perl had a higher level available
+- spambox used the unicode version 6.1.0 even Perl had a higher level available
 
 - 'RememberGUIPos' was not working like expected if the 'apply' botton was pressed
 
@@ -694,7 +1648,7 @@ added:
 'normalizeUnicode','Normalize Unicode to NFKC',
  'If set (which is the default and recommended), all regular expressions and both, the Bayesian and the HMM engine, 
  are normalizing all characters in there setup and the checked content, according to unicode NFKC.
- In addition some extended (assp unique) unicode normalization is done for the unicode blocks 
+ In addition some extended (spambox unique) unicode normalization is done for the unicode blocks 
  "Enclosed Alphanumerics", "Enclosed Alphanumeric Supplement" , "Enclosed CJK Letters And Months" and 
  "Enclosed Ideographic Supplement" - like: &#9312; &#9313; &#9331; &#9332; &#9352; &#9451; &#9461; &#9424; 
  &#9398; &#127280; &#12809; &#12853; &#13003; &#127559;. Those characters are decomposed by compatibility, 
@@ -707,13 +1661,13 @@ added:
 
 
 2014-11-09
-fixed in assp 2.4.3 build 14313:
+fixed in spambox 2.4.3 build 14313:
 
 - corrected a wrong output about the required time while importing HBBdb after a rebuildspamdb in to a database table
 
 
 2014-11-07
-fixed in assp 2.4.3 build 14311:
+fixed in spambox 2.4.3 build 14311:
 
 - if 'DBCacheMaxAge' was configured > 0 the livetime of a cached record was somes times too long
   which causes data inconsistency
@@ -728,19 +1682,19 @@ added:
 
 'DoDMARC','Enable DMARC Check'
  'If enabled and ValidateSPF and DoDKIM are enabled and the sending domain has published a DMARC-record/policy, 
-  assp will act on the mail according to the senders DMARC-policy using the results of the SPF and DKIM check. 
+  spambox will act on the mail according to the senders DMARC-policy using the results of the SPF and DKIM check. 
   It is save to leave this feature ON, it will not produce false positives!'
 
 
 
 2014-11-09
-fixed in assp 2.4.3 build 14313:
+fixed in spambox 2.4.3 build 14313:
 
 - corrected a wrong output about the required time while importing HBBdb after a rebuildspamdb in to a database table
 
 
 2014-11-07
-fixed in assp 2.4.3 build 14311:
+fixed in spambox 2.4.3 build 14311:
 
 - if 'DBCacheMaxAge' was configured > 0 the livetime of a cached record was somes times too long
   which caused data inconsistency
@@ -755,24 +1709,24 @@ added:
 
 'DoDMARC','Enable DMARC Check'
  'If enabled and ValidateSPF and DoDKIM are enabled and the sending domain has published a DMARC-record/policy, 
-  assp will act on the mail according to the senders DMARC-policy using the results of the SPF and DKIM check. 
+  spambox will act on the mail according to the senders DMARC-policy using the results of the SPF and DKIM check. 
   It is save to leave this feature ON, it will not produce false positives!'
 
 
 
 2014-11-03
-fixed in assp 2.4.3 build 14307:
+fixed in spambox 2.4.3 build 14307:
 
 
-- If the MTA behind assp replied to the DATA command with a permanent error (5XX, assp has closed the connection.
-  ASSP now waits for the next (right) SMTP command from the connected peer.
+- If the MTA behind spambox replied to the DATA command with a permanent error (5XX, spambox has closed the connection.
+  SPAMBOX now waits for the next (right) SMTP command from the connected peer.
 
 
 added:
 
-- ASSP now has a 'Remote Support' feature, which makes it possible, that support stuff can access the GUI
+- SPAMBOX now has a 'Remote Support' feature, which makes it possible, that support stuff can access the GUI
   even the weblistener is not available outside your local network.
-  To start assp accepting remote support connections, click at the related link at the bottom of the GUI web page. 
+  To start spambox accepting remote support connections, click at the related link at the bottom of the GUI web page. 
   
 
 GUI description:
@@ -784,22 +1738,22 @@ GUI description:
   NOTICE: the remote support remains active, if you close this windows in active state! To stop the remote support
   open this windows again and click OFF.
   
-  The remote support will only work, if assp is connected to the internet (directly or NAT). Tell the support stuff
-  the public IP address or hostname (eg. the MX) and the SMTP port, assp is listening to. 
+  The remote support will only work, if spambox is connected to the internet (directly or NAT). Tell the support stuff
+  the public IP address or hostname (eg. the MX) and the SMTP port, spambox is listening to. 
   The support stuff will also need login data to access the GUI and the information if SSL is required (or not) 
   to access the GUI.
   
   Keep in mind, that nobody else than root will be able to login to the GUI, if you are still logged on using 
   the root account!
   
-  ASSP will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.
+  SPAMBOX will write a warning to the maillog.txt every 15 minutes, if the remote support is enabled.
   
   ALSO NOTICE: you will not be able to receive any email from the remote support IP address, while the remote
   support is enabled!
   
 
 2014-10-28
-fixed in assp 2.4.3 build 14301:
+fixed in spambox 2.4.3 build 14301:
 
 - the MX/A check has been failed in case of a DNS-server timeout and wrong cache entries were created
 
@@ -816,10 +1770,10 @@ fixed in assp 2.4.3 build 14301:
   
 
 2014-10-23
-fixed in assp 2.4.3 build 14296:
+fixed in spambox 2.4.3 build 14296:
 
 - if 'MaxBytesReports' was set to '0' (no limit) and a very large mail was reported as spam or ham,
-  it was possible that assp has done an unexpected restart
+  it was possible that spambox has done an unexpected restart
 
 changed:
 
@@ -833,7 +1787,7 @@ changed:
 
 
 2014-10-22
-fixed in assp 2.4.3 build 14295:
+fixed in spambox 2.4.3 build 14295:
 
 changed:
 
@@ -846,7 +1800,7 @@ changed:
  Infected collected files are moved in to the SpamVirusLog folder.
  If enabled (default for security reasons), it could be possible, that the virus scanner (clamd) forces a 
  very high system workload.
- Under normal conditions the scan will be done by the SMTP-worker, if assp is under a havy workload, the 
+ Under normal conditions the scan will be done by the SMTP-worker, if spambox is under a havy workload, the 
  scan request will be transfered to the High-Workers (10000/10001).'
 
 'FileLogScan','Scan Stored Files for Virus with FileScan'
@@ -856,20 +1810,20 @@ changed:
  Infected collected files are moved in to the SpamVirusLog folder.
  If enabled (default for security reasons), it could be possible, that the virus scanner ( FileScanCMD ) forces a 
  very high system workload.
- Under normal conditions the scan will be done by the SMTP-worker, if assp is under a havy workload, the 
+ Under normal conditions the scan will be done by the SMTP-worker, if spambox is under a havy workload, the 
  scan request will be transfered to the High-Workers (10000/10001).'
 
 
 2014-10-20
-fixed in assp 2.4.3 build 14292:
+fixed in spambox 2.4.3 build 14292:
 
 
-- without using the ASSP_AFC plugin, user based attachment checks were processed case sensitive
+- without using the SPAMBOX_AFC plugin, user based attachment checks were processed case sensitive
 
 
 
 2014-10-20
-fixed in assp 2.4.3 build 14291:
+fixed in spambox 2.4.3 build 14291:
 
 
 - attachment LEVEL processing was not working correct
@@ -901,12 +1855,12 @@ $FileLogScan = 1;                    # (0/1) scan stored files for virus with Fi
 
 added:
 
-- if the age of the running assp.pl script is outdated, a warning is written in to the maillog.txt  
+- if the age of the running spambox.pl script is outdated, a warning is written in to the maillog.txt  
 
 
 
 2014-09-30
-fixed in assp 2.4.3 build 14273:
+fixed in spambox 2.4.3 build 14273:
 
 - removed some double outputs about trap addresses from the maillog.txt
 
@@ -915,7 +1869,7 @@ changed:
 
 - the PBExtreme check is now skipped for IP's on the mail routing way for noprocessing mails
 
-- there was a change in 'assp 2.1.2 build 11328'
+- there was a change in 'spambox 2.1.2 build 11328'
 ... In case a resend of a blocked mail from inside a BlockReport, it is now possible to prevent auto whitelisting 
 and file movement by adding a tag behind the file name definition: ### file name ### nowhite, nomove ...
 
@@ -924,11 +1878,11 @@ Now, if the right resend link is used, the tag could be written to the mail body
 
 
 2014-09-21
-fixed in assp 2.4.3 build 14264:
+fixed in spambox 2.4.3 build 14264:
 
 - the mail loop detection was not working if 'myNameAlso' was defined
 
-- 'DoScriptRe' was permanently overwritten by the ASSP_OCR Plugin in the Workers
+- 'DoScriptRe' was permanently overwritten by the SPAMBOX_OCR Plugin in the Workers
 
 
 changed:
@@ -946,7 +1900,7 @@ changed:
 
 
 2014-09-15
-fixed in assp 2.4.3 build 14258:
+fixed in spambox 2.4.3 build 14258:
 
 changed:
 
@@ -957,7 +1911,7 @@ is removed - it was without any function
 
 
 2014-09-11
-fixed in assp 2.4.3 build 14254:
+fixed in spambox 2.4.3 build 14254:
 
 - setting 'DBdriver' to 'BerkeleyDB' was not possible on some systems - and the value was not changed: 
   "*** incorrect: 'BerkeleyDB' - driver BerkeleyDB is not available!"
@@ -970,7 +1924,7 @@ changed:
 
 
 2014-09-09
-fixed in assp 2.4.3 build 14250:
+fixed in spambox 2.4.3 build 14250:
 
 - SenderBase Cache for IPv4 addresses is switched on again
 
@@ -984,19 +1938,19 @@ fixed in assp 2.4.3 build 14250:
 
 
 2014-09-03
-fixed in assp 2.4.3 build 14246:
+fixed in spambox 2.4.3 build 14246:
 
 - in build 14245 it was no longer possible to change a config value to empty - or to deselect a checkbox 
 
 
 2014-09-02
-fixed in assp 2.4.3 build 14245:
+fixed in spambox 2.4.3 build 14245:
 
 - the left resend link in block reports were not working, if the .eml filename contained UTF8 characters
 
 
 2014-08-29
-fixed in assp 2.4.3 build 14241:
+fixed in spambox 2.4.3 build 14241:
 
 changed:
 
@@ -1004,14 +1958,14 @@ changed:
 
 
 2014-08-25
-fixed in assp 2.4.1 build 14237:
+fixed in spambox 2.4.1 build 14237:
 
 - in some cases the 'whitelisted' flag was wrong set to ON for local/relayed mails
   (the fix in build 14235 was not working for all configurations)
 
 
 2014-08-23
-fixed in assp 2.4.1 build 14235:
+fixed in spambox 2.4.1 build 14235:
 
 
 - The memory preallocation for the internal content store was not working.
@@ -1053,14 +2007,14 @@ added:
 ['RelayOnlyLocalSender','Allow Relaying Only for Local Sender'
  'If set, the envelope sender (MAIL FROM:) is immediatly checked after the DATA command is received (to be valid). 
   If the sender address could not be validated, the connection is droped.
-  The connection will be droped regardless any other assp setting ( except EmailSenderOK ).
+  The connection will be droped regardless any other spambox setting ( except EmailSenderOK ).
   It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch 
   this ( or RelayOnlyLocalDomains ) to ON in every case'
 
 ['RelayOnlyLocalDomains','Allow Relaying Only for Local Domains'
  'If set, the envelope sender domain (MAIL FROM:) is immediatly checked after the DATA command is received 
   (to be a local domain). If the sender domain could not be validated, the connection is droped.
-  The connection will be droped regardless any other assp setting ( except EmailSenderOK ).
+  The connection will be droped regardless any other spambox setting ( except EmailSenderOK ).
   It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch 
   this ( or RelayOnlyLocalSender ) to ON in every case'
 
@@ -1070,7 +2024,7 @@ added:
 
 
 2014-08-21
-fixed in assp 2.4.1 build 14233:
+fixed in spambox 2.4.1 build 14233:
 
 
 - If a 'BlockReportForwardHost' was not available at the BlockReport request time, the request was lost.
@@ -1113,7 +2067,7 @@ changed:
 
 
 2014-08-10
-fixed in assp 2.4.1 build 14222:
+fixed in spambox 2.4.1 build 14222:
 
 
 - IPv6 loopback address detection was not working in every case
@@ -1130,9 +2084,9 @@ fixed in assp 2.4.1 build 14222:
 changed:
 
 - If an info/warning/error line is generated multiple times, only the first and last occurrence are written to the
-  maillog.txt or on line is written within 120 seconds. This prevents assp from filling up the disk.
+  maillog.txt or on line is written within 120 seconds. This prevents spambox from filling up the disk.
 
-- assp now also detects foreign customized BATV tags
+- spambox now also detects foreign customized BATV tags
 
 - bitcoin donations to  15ekjW9grtT7WTUFMcfbmokwoomZCYeMKr  are now possible
 
@@ -1149,13 +2103,13 @@ added:
 
 'EmailInterfaceDomains','Accept Mails (Reports) for these local domains only*'
   'Enable the EmailInterface and BlockReports for these local domains ONLY (NOT RECOMMENDED). If used, you have 
-  also to define '@assp.local' (if required). If not used, all localdomains and '@assp.local' take place 
+  also to define '@spambox.local' (if required). If not used, all localdomains and '@spambox.local' take place 
   ( see EmailInterfaceOk ). Accepts entire domains (@domain.com|domain.com)'
 
 
 
 2014-07-23
-fixed in assp 2.4.1 build 14204:
+fixed in spambox 2.4.1 build 14204:
 
 
 - the loopback IP addresses were not detected correctly in every case
@@ -1169,14 +2123,14 @@ fixed in assp 2.4.1 build 14204:
 
 
 2014-07-17
-fixed in assp 2.4.1 build 14198:
+fixed in spambox 2.4.1 build 14198:
 
 - SSL_handshake on SSL listeners has not retried according to 'SSLRetryOnError'
 
 
 
 2014-07-15
-fixed in assp 2.4.1 build 14196:
+fixed in spambox 2.4.1 build 14196:
 
 - if the character conversion feature was used, also SMIME (digitaly signed mails) were converted,
   which caused the signature to become invalid
@@ -1195,11 +2149,11 @@ changed:
 added:
 
 - the hidden configuration variable 'DisableSyslogKeepAlive' (0/1) now controls the sending of the keepalive
-  string '***assp&is%alive$$$' to the syslog server
+  string '***spambox&is%alive$$$' to the syslog server
 
 
 2014-07-09
-fixed in assp 2.4.1 build 14190:
+fixed in spambox 2.4.1 build 14190:
 
 
 - RBL scoring for cache results was some times incorrect
@@ -1215,13 +2169,13 @@ changed:
 
 
 2014-07-07
-fixed in assp 2.4.1 build 14188:
+fixed in spambox 2.4.1 build 14188:
 
-- if a syslog server via IP was configured but it was unreachable by assp, the MainThread was possibly stucking for
+- if a syslog server via IP was configured but it was unreachable by spambox, the MainThread was possibly stucking for
   one second on each written log line
   
 - dependend on the OS-version,Perl-version/distro,OpenSSL-version,IO::Socket::SSL-version,Net::SSLeay-version and some 
-  settings - it was possible that the assp startup has taken very long. This was caused by the first SSL-context
+  settings - it was possible that the spambox startup has taken very long. This was caused by the first SSL-context
   creation, at the first SSL-listener creation. The first SSL-context creation is now moved to an earlier code state,
   were it is running fast in every case.
   
@@ -1232,9 +2186,9 @@ fixed in assp 2.4.1 build 14188:
 
 
 2014-06-30
-fixed in assp 2.4.1 build 14181:
+fixed in spambox 2.4.1 build 14181:
 
-- mails archived by ASSP_ARC.pm had an additionaly trailing '.'
+- mails archived by SPAMBOX_ARC.pm had an additionaly trailing '.'
 
 - for some mails an exception 'Odd number of elements in hash assignment at
   ...Perl/site/lib/Mail/SPF/Server.pm line 210.' was thrown
@@ -1277,12 +2231,12 @@ added:
 
 
 2014-06-26
-fixed in assp 2.4.1 build 14177:
+fixed in spambox 2.4.1 build 14177:
 
 - if a Plugin has blocked a mail, or a mail was blocked by the penaltybox after processing any Plugin, the
   resend link was missing for this mail in the BlockReport
   
-- in some cases the ARCHIVE routine (in ASSP_ARC.pm) was called too early for some mails, which caused an
+- in some cases the ARCHIVE routine (in SPAMBOX_ARC.pm) was called too early for some mails, which caused an
   unable to find file exception
 
 - if a mailbody was encoded in UTF-16,UTF32, UCS-2 or UCS-4 and the encoding was defined without an endianess
@@ -1291,10 +2245,10 @@ fixed in assp 2.4.1 build 14177:
   
   Warning: message MIME processing failed - UTF-16:Unrecognised BOM XXX at C:/Perl/lib/Encode.pm line XXX.
   
-  Now, if those malformed mails are detected by assp, it will try to detect little endianess (LE) for the body.
+  Now, if those malformed mails are detected by spambox, it will try to detect little endianess (LE) for the body.
   If this is not possible for any reason, BigEndian (BE) is assumed for the body (follows RFC 2781)   
 
-- on some systems the setting for 'UseLocalDNS' was not working correctly - assp now forces the Net::DNS module
+- on some systems the setting for 'UseLocalDNS' was not working correctly - spambox now forces the Net::DNS module
   on every DNS-server check, to read out the defined DNS-servers from the OS
 
 
@@ -1336,7 +2290,7 @@ changed:
 
 
 2014-06-16
-fixed in assp 2.4.1 build 14167:
+fixed in spambox 2.4.1 build 14167:
 
 - some reporting mails were running in to a SMTP-timeout because of a missing "\r\n.\r\n" at the data end
 
@@ -1349,7 +2303,7 @@ fixed in assp 2.4.1 build 14167:
     
 
 2014-06-12
-fixed in assp 2.4.1 build 14163:
+fixed in spambox 2.4.1 build 14163:
 
 - the DNS distance calculation was not working on Perl 5.20.0
 
@@ -1360,7 +2314,7 @@ changed:
 
 
 2014-06-09
-fixed in assp 2.4.1 build 14160:
+fixed in spambox 2.4.1 build 14160:
 
 added:
 
@@ -1381,42 +2335,42 @@ added:
 
 
 2014-06-02
-fixed in assp 2.4.1 build 14153:
+fixed in spambox 2.4.1 build 14153:
 
-- ASSP_AFC.pm version 3.09 released - fixes a memory leak
+- SPAMBOX_AFC.pm version 3.09 released - fixes a memory leak
 
 - analyzing attached zip files via emailinterface was not working like expected, because the mail
   was uncompressed one zip level too deep
 
-- 2.4.1 build 14151 possibly caused a thread or main exception, if ASSP_AFC was less than 3.08
+- 2.4.1 build 14151 possibly caused a thread or main exception, if SPAMBOX_AFC was less than 3.08
 
 
 2014-05-31
-fixed in assp 2.4.1 build 14151:
+fixed in spambox 2.4.1 build 14151:
 
 
 changed:
 
-- ASSP_AFC.pm version 3.08 released - better attachment detection
-- ASSP_OCR.pm version 2.17 released - better attachment detection
+- SPAMBOX_AFC.pm version 3.08 released - better attachment detection
+- SPAMBOX_OCR.pm version 2.17 released - better attachment detection
 
 - the analyzer is now able to detect virus infections, to analyze compressed files and to detect
-  executables if ASSP_AFC is installed , enabled and comfigured
+  executables if SPAMBOX_AFC is installed , enabled and comfigured
 
 
 
 2014-05-30
-fixed in assp 2.4.1 build 14150:
+fixed in spambox 2.4.1 build 14150:
 
 **** ATTENTION ****
 
-this version will make changes to the assp.cfg file, 
+this version will make changes to the spambox.cfg file, 
 which are incompatible to all previouse versions
-ASSP will make a backup copy of the assp.cfg file at startup, 
+SPAMBOX will make a backup copy of the spambox.cfg file at startup, 
 the backup file will be named as:
-assp_version.build.cfg.bak for example assp_2.4.1.14145.cfg.bak
+spambox_version.build.cfg.bak for example spambox_2.4.1.14145.cfg.bak
 
-it is recommended to make a manual backup of the assp.cfg file before starting this version
+it is recommended to make a manual backup of the spambox.cfg file before starting this version
 
 *******************
 
@@ -1427,7 +2381,7 @@ it is recommended to make a manual backup of the assp.cfg file before starting t
   if weights were used. If weights are used, the IPScore is now calculated base on (weight * IPScore / MessageScore)
 
 - This release fixes several security vulnerables. It was possible that an AdminUser could take over system
-  control by adapting the rights of the assp process user, with simple configuration changes.
+  control by adapting the rights of the spambox process user, with simple configuration changes.
   
   1. it was possible to define regular expression that executes embedded perl code
   2. several parameters (like for example FileScanCmd and AutoRestartCmd) could be set to run any system code
@@ -1451,7 +2405,7 @@ changes:
 
 - the IPinHelo missmatch code is improved to prevent wrong 'failed' detections
 
-- if an user or server is authenticated, assp appends now the 'A' to the received mode in our received header line
+- if an user or server is authenticated, spambox appends now the 'A' to the received mode in our received header line
   SMTPA,ESMTPA,SMTPSA,ESMTPSA
 
 - the used SSL-version is now shown in our received header in addition to the still shown SSL-cipher 
@@ -1474,24 +2428,24 @@ added:
 'HMMhamValencePB','Hidden-Makov-Model HAM Bonus, default=0 +',
 'Message/IP scoring bonus (zero or negative value only)
 
-!! scoring stats are updated - a new ASSP_MIB and assp-mrtg.cfg file is released !!
+!! scoring stats are updated - a new SPAMBOX_MIB and spambox-mrtg.cfg file is released !!
 
 
 
 
 2014-05-25
-fixed in assp 2.4.1 build 14145:
+fixed in spambox 2.4.1 build 14145:
 
 
 - the IPinHelo detection was not working correct on every case
 
 - removing an IP address from PTRCache in the GUI was not possible, if the PTR status was zero
 
-- assp.pl failed to compile on Perl 5.10 and Perl 5.12 on some OS
+- spambox.pl failed to compile on Perl 5.10 and Perl 5.12 on some OS
 
 
 2014-05-24
-fixed in assp 2.4.1 build 14144:
+fixed in spambox 2.4.1 build 14144:
 
 
 - large noprocessing mails were destroyed in some cases
@@ -1504,14 +2458,14 @@ changed:
 
 
 2014-05-21
-fixed in assp 2.4.1 build 14141:
+fixed in spambox 2.4.1 build 14141:
 
 - since build 14130 it was possible that the mail content was destroyed if at least one attachment were found
   without any text component in the mail
 
 
 2014-05-19
-fixed in assp 2.4.1 build 14139:
+fixed in spambox 2.4.1 build 14139:
 
 - the RFC822 check for domain validation has been failed, if the DNS query was timed out
 
@@ -1529,7 +2483,7 @@ changed:
 
 
 2014-05-12
-fixed in assp 2.4.1 build 14132:
+fixed in spambox 2.4.1 build 14132:
 
 
 - doRFC822 has blocked if the DNS-server has not answered (timed out) - now the check for NXDOMAIN is done 
@@ -1537,11 +2491,11 @@ fixed in assp 2.4.1 build 14132:
 
 
 2014-05-10
-fixed in assp 2.4.1 build 14130:
+fixed in spambox 2.4.1 build 14130:
 
 - build 14129 has possibly broken the command queue to the Global PenaltyBox server
 
-- the registration/reregistration to the Global PenaltyBox Server was broken, if at any time an assp build less than
+- the registration/reregistration to the Global PenaltyBox Server was broken, if at any time an spambox build less than
   14097 was started on the system and the registration was started the first time
   This problem belongs not to still registered clients !
 
@@ -1566,18 +2520,18 @@ changed:
 
 
 2014-05-09
-fixed in assp 2.4.1 build 14129:
+fixed in spambox 2.4.1 build 14129:
 
-- If the query limit for a WHOIS provider was reached, assp has not stopped querying this provider, which was
-  possibly leading in to a permanent blacklisting of the ASSP IP-address by this provider.
-  If the query limit is now reached, assp stopps querying this provider for the next 6 hours.
+- If the query limit for a WHOIS provider was reached, spambox has not stopped querying this provider, which was
+  possibly leading in to a permanent blacklisting of the SPAMBOX IP-address by this provider.
+  If the query limit is now reached, spambox stopps querying this provider for the next 6 hours.
 
 - An error was shown, if 'ReplaceRecpt' was configured the first time.
 
-- lib/ASSP_WordStem.pm 1.27 fixes an issue, were the error message 'main exception: Malformed UTF-8 character (fatal)'
-  was logged and assp was restarted or the rebuild spamdb task was terminated or stucking
+- lib/SPAMBOX_WordStem.pm 1.27 fixes an issue, were the error message 'main exception: Malformed UTF-8 character (fatal)'
+  was logged and spambox was restarted or the rebuild spamdb task was terminated or stucking
 
-- While word parsing it was possible that assp was dieing on 'Malformed UTF-8 character...', this version should
+- While word parsing it was possible that spambox was dieing on 'Malformed UTF-8 character...', this version should
   prevent the occurence of malformed UTF-8 characters, but how ever if such a character is detected, this exception
   will be captured.
 
@@ -1596,8 +2550,8 @@ An short description and example file 'cmdqueue_example.txt' is published.
 All other advanced uses of the command queue are supported as well - no changes.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!!!! ADVANCED USAGE OF THE COMMAND QUEUE REQUIRES ADVANCED KNOWLEDGE ABOUT PERL AND THE ASSP CODE
-!!!! Writing NONSENSE in to this file could prevent assp from running, could cause assp to die or
+!!!! ADVANCED USAGE OF THE COMMAND QUEUE REQUIRES ADVANCED KNOWLEDGE ABOUT PERL AND THE SPAMBOX CODE
+!!!! Writing NONSENSE in to this file could prevent spambox from running, could cause spambox to die or
 !!!! could damage your complete system  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -1605,7 +2559,7 @@ All other advanced uses of the command queue are supported as well - no changes.
 
 
 2014-05-03
-fixed in assp 2.4.1 build 14123:
+fixed in spambox 2.4.1 build 14123:
 
 changed:
 
@@ -1619,15 +2573,15 @@ added:
 
 
 2014-05-02
-fixed in assp 2.4.1 build 14122:
+fixed in spambox 2.4.1 build 14122:
 
 - workers blocked (stuck) on DNS queries because of incompatible OS select->() calls with timeout set to zero
 
 
 2014-05-01
-fixed in assp 2.4.1 build 14121:
+fixed in spambox 2.4.1 build 14121:
 
-- ASSP_FC 1.05 solves a problem with MS-IE (the GUI was not shown)
+- SPAMBOX_FC 1.05 solves a problem with MS-IE (the GUI was not shown)
 
 - 'lib/BlockReport/modify' can now encode the BlockReport to base64 - this should solve problems with Apple mail APP
   the module has to be manualy changed to enable this function
@@ -1664,7 +2618,7 @@ fixed in assp 2.4.1 build 14121:
 
 changed:
 
-- the file 'ASSP-MIB' has got an update
+- the file 'SPAMBOX-MIB' has got an update
 
 - the default value of the hidden parameter 'BDBMaxCacheSize:shared'   # BDB downward cachesize check starting point 
   in MB
@@ -1682,7 +2636,7 @@ changed:
 - if a 'on the fly' SPF query failes because the  'Maximum DNS-interactive terms limit' is reached
   the current processing is stopped and a full background SPF check is queued to run
   
-- a change of the module 'lib/BlockReport::modify' has required a restart of assp to become active
+- a change of the module 'lib/BlockReport::modify' has required a restart of spambox to become active
   this reatart is no longer required - changes to this module take place with the next Blockreport
 
 
@@ -1711,28 +2665,28 @@ added:
 	
   will be done instead/after/before (WHOIS only/SenderBase first/WHOIS first) the Senderbase queries to CISCO's 
   Ironport servers to get informations about an IP address. ARIN will be the first queried WHOIS server.
-  For the two \'...first\' options, the alternative second check is done, if the first check failes or assp has 
+  For the two \'...first\' options, the alternative second check is done, if the first check failes or spambox has 
   got no result for the county code.
   This is useful, if your DNS-servers don't get answers for senderbase queries or senderbase queries are too slow.
   In most cases WHOIS queries are much more faster than senderbase queries!
-  NOTICE: you must open the WHOIS-port (43) for TCP on your firewall for outgoing traffic from assp 
+  NOTICE: you must open the WHOIS-port (43) for TCP on your firewall for outgoing traffic from spambox 
   (if not already done)!'
   
   
 - it is now possible to override the 220 greeting of the local MTA
 
 'myGreeting','Override the Server SMTP Greeting',
- 'Send this SMTP greeting (eg. 220 MYNAME is ready - using ASSP VERSION) instead of your MTA's SMTP greeting to 
+ 'Send this SMTP greeting (eg. 220 MYNAME is ready - using SPAMBOX VERSION) instead of your MTA's SMTP greeting to 
  the client. If not defined (default), the MTA's greeting will be sent to the client. The literal MYNAME will 
- be replaced with myName and the literal VERSION will be replaced by the full version string of assp. 
- If the starting '220 ' is not defined, assp will add it to the greeting.'
+ be replaced with myName and the literal VERSION will be replaced by the full version string of spambox. 
+ If the starting '220 ' is not defined, spambox will add it to the greeting.'
   
   
 
 
 
 2014-04-07
-fixed in assp 2.4.1 build 14097:
+fixed in spambox 2.4.1 build 14097:
 
 changed:
 
@@ -1757,9 +2711,9 @@ If your domain entries are separated by space - change the separator to comma!
 
 
 2014-04-05
-fixed in assp 2.4.1 build 14095:
+fixed in spambox 2.4.1 build 14095:
 
-- after changing from or to DST, the timezone string in the received headers was not correct, if assp
+- after changing from or to DST, the timezone string in the received headers was not correct, if spambox
   was not restarted
   
 - a wrong set UTF-flag possibly caused a SEGV in regular expressions in sub BayesWordClean  
@@ -1772,11 +2726,11 @@ fixed in assp 2.4.1 build 14095:
 changed:
 
 - the minimum required version of the Perl module 'Encode' is changed from 2.12 to 2.24
-  !!! assp will not start if the version of this module is less than 2.24 !!!!
+  !!! spambox will not start if the version of this module is less than 2.24 !!!!
 
 
 2014-04-02
-fixed in assp 2.4.1 build 14092:
+fixed in spambox 2.4.1 build 14092:
 
 - an exception in an 'eval' closure caused a SEGV exception under certain conditions in Perl 5.12 
   on some OS's (mostly nix)
@@ -1786,10 +2740,10 @@ fixed in assp 2.4.1 build 14092:
   
 
 2014-03-31
-fixed in assp 2.4.1 build 14090:
+fixed in spambox 2.4.1 build 14090:
 
 
-- switching DST caused a restart of assp, because of a code change detection
+- switching DST caused a restart of spambox, because of a code change detection
 
 - unexpected DNS-timeout errors were written to maillog.txt
 
@@ -1809,7 +2763,7 @@ changed:
 
 
 2014-03-26
-fixed in assp 2.4.1 build 14086:
+fixed in spambox 2.4.1 build 14086:
 
 
 - 'ReplaceRecpt' could not be configured in the GUI since build 14058
@@ -1819,12 +2773,12 @@ fixed in assp 2.4.1 build 14086:
 
 changed:
 
-- at startup assp analyzes the maximum possible BerkeleyDB cache size for a single BDB-ENV
+- at startup spambox analyzes the maximum possible BerkeleyDB cache size for a single BDB-ENV
 
 
 
 2014-03-25
-fixed in assp 2.4.1 build 14085:
+fixed in spambox 2.4.1 build 14085:
 
 
 - some regular expressions were not correct optimized and not working
@@ -1837,7 +2791,7 @@ fixed in assp 2.4.1 build 14085:
 
 
 2014-03-22
-fixed in assp 2.4.1 build 14081:
+fixed in spambox 2.4.1 build 14081:
 
 - rolling the logfile was not working if the MainThread was too busy for more than 15 seconds after midnight
 
@@ -1862,22 +2816,22 @@ added:
 
 
 2014-03-13
-fixed in assp 2.4.1 build 14072:
+fixed in spambox 2.4.1 build 14072:
 
 - signal logging was not working like described in the GUI
-  If 'SignalLog' is set to off and unexpected signals are detected, assp will write a warning every 10 minutes in to the log.
+  If 'SignalLog' is set to off and unexpected signals are detected, spambox will write a warning every 10 minutes in to the log.
   
 - the settings for 'ConfigChangeSchedule' were only working, after the file was editied in the GUI
 
 - the module stats screen has shown the installed version of Net::SMTP::TLS in the row of Net::SMTP::SSL
 
-- partial debugging was unexpected started if assp was unable to close the debug file
+- partial debugging was unexpected started if spambox was unable to close the debug file
 
-- STARTTLS was not working for the assp reporting and resend functions
+- STARTTLS was not working for the spambox reporting and resend functions
 
-- SSL connection were some times not working for the assp reporting and resend functions
+- SSL connection were some times not working for the spambox reporting and resend functions
 
-- SMTP authentication were some times not working for the assp reporting and resend functions
+- SMTP authentication were some times not working for the spambox reporting and resend functions
 
 - depending on the setting of 'LogDateFormat' and 'LogDateLang' , BlockReports were not working
 
@@ -1901,7 +2855,7 @@ added:
 
 
 2014-03-09
-fixed in assp 2.4.1 build 14068:
+fixed in spambox 2.4.1 build 14068:
 
 - the DMARC logging is now reduced to a normal state
 
@@ -1917,7 +2871,7 @@ The following text has been added to the following configuration descriptions:
 If you need to connect to the SMTP destination host using native SSL, write 'SSL:' in front of the IP/host definition. 
 In this case the Perl module IO::Socket::SSL must be installed and enabled ( useIOSocketSSL ).
 
-An new ASSP-MIB file is released for this version.
+An new SPAMBOX-MIB file is released for this version.
 
 
 added:
@@ -1942,10 +2896,10 @@ added:
   NOTICE: This option will not work if you use any self signed certificate!
 
 'SSLWEBCertVerifyCB','CallBack to Verify Client Certificates for GUI Connections'
-  'If used, assp will call the defined subroutine as SSL->SSL_verify_callback in an eval closure submitting 
+  'If used, spambox will call the defined subroutine as SSL->SSL_verify_callback in an eval closure submitting 
   the original ARRAY of parameters (see the IO::Socket::SSL documentation).
   The subroutine has to return 1 on certificate verification success - otherwise 0.
-  You can use/modify the module lib/CorrectASSPcfg.pm to implement your code. For example
+  You can use/modify the module lib/CorrectSPAMBOXcfg.pm to implement your code. For example
   
   sub checkWebSSLCert {
       my ($OpenSSLSays,$CertStackPtr,$DN,$OpenSSLError, $Cert)=@_;
@@ -1961,8 +2915,8 @@ added:
       return $success;
   }
   
-  Now, if you set this parameter to 'CorrectASSPcfg::checkWebSSLCert' - assp will call
-  CorrectASSPcfg::checkWebSSLCert->(@_);
+  Now, if you set this parameter to 'CorrectSPAMBOXcfg::checkWebSSLCert' - spambox will call
+  CorrectSPAMBOXcfg::checkWebSSLCert->(@_);
   The variable '@main::ExtWebAuth' could be used to authenticate the user to the GUI related to the used certificate. 
   The username must be provided as first element of the array. The password could be provided as second element 
   of the array - this is not recommended and it is not required! If the used certificate is valid and a known 
@@ -1971,22 +2925,22 @@ added:
   NOTICE: This option will not work if you use any self signed certificate!
 
 'SSLWEBConfigure','Call to Configure SSL-Listener-Parameters for GUI Connections'
-  'If used, assp will call the defined subroutine in an eval closure submitting a reference to the assp predefined 
+  'If used, spambox will call the defined subroutine in an eval closure submitting a reference to the spambox predefined 
   SSL-Socket-Configuration-HASH.
   The HASH could be modified in place to your needs - please read the documentation of IO::Socket::SSL, 
   Net::SSLeay and OpenSSL. Return values are ignored.
-  You can use/modify the module lib/CorrectASSPcfg.pm to implement your code. For example
+  You can use/modify the module lib/CorrectSPAMBOXcfg.pm to implement your code. For example
   
   sub configWebSSL {
       my $parms = shift;
       $parms->{timeout} = 10;
       $parms->{SSL_check_crl} = 1;
-      $parms->{SSL_crl_file} = '/assp/certs/crl/crllist.pem';
+      $parms->{SSL_crl_file} = '/spambox/certs/crl/crllist.pem';
       return;
   }
   
-  Now, if you set this parameter to 'CorrectASSPcfg::configWebSSL' - assp will call
-  CorrectASSPcfg::configWebSSL->(\%sslparms);
+  Now, if you set this parameter to 'CorrectSPAMBOXcfg::configWebSSL' - spambox will call
+  CorrectSPAMBOXcfg::configWebSSL->(\%sslparms);
   NOTICE: This option will not work if you use any self signed certificate!
 
 'statSSLRequireClientCert','Client requires valid SSL Certificate for STAT Requests'
@@ -2001,7 +2955,7 @@ added:
   NOTICE: This option will not work if you use any self signed certificate!
 
 'SSLSTATConfigure','Call to Configure SSL-Listener-Parameters for STAT Connections'
-  'If used, assp will call the defined subroutine in an eval closure submitting a reference to the assp predefined 
+  'If used, spambox will call the defined subroutine in an eval closure submitting a reference to the spambox predefined 
   SSL-Socket-Configuration-HASH.
    Please follow the description for SSLWEBConfigure .
    NOTICE: This option will not work if you use any self signed certificate!
@@ -2018,7 +2972,7 @@ added:
   NOTICE: This option will not work if you use any self signed certificate!
 
 'SSLSMTPConfigure','Call to Configure SSL-Listener-Parameters for SMTP Connections'
-  'If used, assp will call the defined subroutine in an eval closure submitting a reference to the assp predefined 
+  'If used, spambox will call the defined subroutine in an eval closure submitting a reference to the spambox predefined 
    SSL-Socket-Configuration-HASH.
    Please follow the description for SSLWEBConfigure .
    NOTICE: This option will not work if you use any self signed certificate!
@@ -2029,7 +2983,7 @@ added:
 
 
 2014-02-27
-fixed in assp 2.4.1 build 14058:
+fixed in spambox 2.4.1 build 14058:
 
 - the SMTP AUTH error replies 534 and 538 were not registered for MaxAUTHerrors - they were only counted for
   MaxErrors
@@ -2037,5 +2991,5 @@ fixed in assp 2.4.1 build 14058:
 - if MaxAUTHErrors was disabled, authetication errors were not counted for MaxErrors
 
 - if a recipient replacement rule was changed (ReplaceRecpt) , a configuration file change was continuously 
-  detected by the MaintThread (10000) until the next assp restart
+  detected by the MaintThread (10000) until the next spambox restart
    

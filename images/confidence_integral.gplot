@@ -1,0 +1,23 @@
+############################
+# Display the ASSP Bayesian/HMM confidence.distribution - Integral view
+# to use the integral view - rename this file to confidence.gplot
+
+set terminal png transparent size <SIZE> crop
+#set xdata confidence
+#set timefmt "%Y-%m-%d_%H:%M:%S"
+set xlabel "confidence"
+set ytics nomirror
+set title '<L1>'
+set grid xtics ytics
+
+set ylabel message count
+
+plot \
+  "< awk '/<BH>/{print $1, $4}' <IN>"\
+     using 1:2 ls l1fill axes x1y1 title '<BH>' with lines,\
+  "< awk '/<BS>/{print $1, $4}' <IN>"\
+     using 1:2 ls l0fill axes x1y1 title '<BS>' with lines,\
+  "< awk '/<HH>/{print $1, $4}' <IN>"\
+     using 1:2 ls l2fill axes x1y1 title '<HH>' with lines,\
+  "< awk '/<HS>/{print $1, $4}' <IN>"\
+     using 1:2 ls l5fill axes x1y1 title '<HS>' with lines,\

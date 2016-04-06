@@ -1,5 +1,5 @@
 How do I use the email interface?
- ASSP's email interface is an easy way to add/remove addresses to the
+ SPAMBOX's email interface is an easy way to add/remove addresses to the
  whitelist/redlist, report spam, or false-positives.
  To use it you must have it enabeled in the configuration, and have
  names set for the addresses.
@@ -7,32 +7,32 @@ How do I use the email interface?
  your localdomains, and only from "Accept All Mail" hosts, or
  authenticated SMTP connections.
 
-  assp-white   -- for whitelist additions
-  assp-notwhite   -- for whitelist removals
-  assp-spam    -- to report spam that got through
-  assp-notspam -- to report miscategorized spam
+  spambox-white   -- for whitelist additions
+  spambox-notwhite   -- for whitelist removals
+  spambox-spam    -- to report spam that got through
+  spambox-notspam -- to report miscategorized spam
 
 There are basically two different mailflows for outgoing mails possible:
-- User -> ASSP -> Mailserver -> Internet
-- User -> Mailserver -> ASSP -> Additional SMTP Server -> Internet
+- User -> SPAMBOX -> Mailserver -> Internet
+- User -> Mailserver -> SPAMBOX -> Additional SMTP Server -> Internet
 
-A: User -> ASSP -> Mailserver -> Internet
+A: User -> SPAMBOX -> Mailserver -> Internet
  Assuming that your local-domain is mydomain.com, to add addresses to
- the whitelist, create a message to assp-white@mydomain.com. You can
+ the whitelist, create a message to spambox-white@mydomain.com. You can
  either put the addresses in the body of the message, or as
  recipients of the message. For example, if you wanted to add all the
  addresses in your address book to the whitelist, create a message to
- assp-white@mydomain.com and then add your entire address book to the
+ spambox-white@mydomain.com and then add your entire address book to the
  BCC part of the message and click send. Note that no mail will be
- delivered to any address except assp-white@mydomain.com (and that
+ delivered to any address except spambox-white@mydomain.com (and that
  won't actually be passed to your mail transport). Within a short
  time (depends on your mail server) you'll receive a response from
- ASSP showing the results of your mail.
- To report a spam that got through, simply forward the mail to assp-
+ SPAMBOX showing the results of your mail.
+ To report a spam that got through, simply forward the mail to spambox-
  spam@mydomain.com. It's best to forward it as an attachment, but you
  can just forward it normally if you must. In a short time you
  will receive a confirmation.  The process is the same to report a
- miscategorized spam, but send it to assp-notspam@mydomain.com.
+ miscategorized spam, but send it to spambox-notspam@mydomain.com.
  Of course all these addresses can be changed to suit your sites
  preferences.
 
@@ -44,29 +44,29 @@ A: User -> ASSP -> Mailserver -> Internet
  4) mail approved for relaying by popb4smtp
  5) addresses in EmailSenderOK
 
-B: User -> Mailserver -> ASSP -> Additional SMTP Server -> Internet
-ASSP's email interface allows you to send messages to the ASSP server
+B: User -> Mailserver -> SPAMBOX -> Additional SMTP Server -> Internet
+SPAMBOX's email interface allows you to send messages to the SPAMBOX server
  to add addresses to the whitelist, report spam, or report a false-positive.
  If your clients use Exchange, Notes, and/or a RelayHost / RelayPort setup, this feature becomes more complicated.
-ASSP is looking for it's command addresses at one of its localdomains. 
-However your mail server will not accept mail for ASSP's addresses (and if it does, it will never be passed to ASSP). 
+SPAMBOX is looking for it's command addresses at one of its localdomains. 
+However your mail server will not accept mail for SPAMBOX's addresses (and if it does, it will never be passed to SPAMBOX). 
 The work-around is to find a domain you never expect to actually send mail to,
- tell ASSP it is local, and use that domain for ASSP commands. 
-So you could add spamreport.gov to ASSP's localdomains, and direct whitelist additions to assp-white@spamreport.gov.
+ tell SPAMBOX it is local, and use that domain for SPAMBOX commands. 
+So you could add spamreport.gov to SPAMBOX's localdomains, and direct whitelist additions to spambox-white@spamreport.gov.
 
-Please note that the assp-white address cannot see bcc addresses this way, and cannot prevent delivery to people.
+Please note that the spambox-white address cannot see bcc addresses this way, and cannot prevent delivery to people.
  Consequently if you use this configuration, be sure you only put addresses in the body of your mail message.
  Don't include them in the delivery part of the message. 
 
-1) invent a "dummy" domain, like "assp-nospam.org" (seems to be an available domain name)
-2) tell ASSP that this domain is one of your "local" domains
-3) tell your users to send their spam to "assp-spam@assp-nospam.org"; 
-instead of "assp-spam@yourdomain.com"; or tell your Exchange-server to forward the later to the former.
+1) invent a "dummy" domain, like "spambox-nospam.org" (seems to be an available domain name)
+2) tell SPAMBOX that this domain is one of your "local" domains
+3) tell your users to send their spam to "spambox-spam@spambox-nospam.org"; 
+instead of "spambox-spam@yourdomain.com"; or tell your Exchange-server to forward the later to the former.
  If yu prefer the "forwarding" approach,
  you can pick a dummy domain name that is more unlikely to be ever registered (like foo123blob.tac), 
 as nobody has to remember the name.
 
-IF you have ASSP on the outbound channel - as you should for the auto-whitelist function to work 
-- and your Exchange is using the ASSP-relay-Port to deliever external mails, 
+IF you have SPAMBOX on the outbound channel - as you should for the auto-whitelist function to work 
+- and your Exchange is using the SPAMBOX-relay-Port to deliever external mails, 
 then the server thinks it is "external" and hands it over to delivery. 
-ASSP thinks it's "local" and processes the magic-names as expected.
+SPAMBOX thinks it's "local" and processes the magic-names as expected.

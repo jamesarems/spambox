@@ -1,6 +1,6 @@
 The "Local Domains" are the  domain names that your mail
 system considers local. 
-A MX record will usually point to ASSP for this domains.
+A MX record will usually point to SPAMBOX for this domains.
 Messages to "Local Domains" are also called "Incoming".
 Messages to domains not in "Local Domains" are also called "Outgoing".
 
@@ -19,9 +19,9 @@ If your clients dialup or are dynamically assigned from an untrusted
 pool, then the only reliable way to allow relaying is through
 AUTHENTICATED smtp, and your mail handler must support this type of
 authentication, and you must enable it in your clients. 
-ASSP recognizes authenticated connections and allows them to relay.
+SPAMBOX recognizes authenticated connections and allows them to relay.
 
 Not all ISPs will allow their customers to connect to your SMTP
 port. Many block connections to port 25 (except to their own mail
 server) to prevent spam. 
-ASSP therefore provides a "Second SMTP Listen Port" ( listenPort2 ). 
+SPAMBOX therefore provides a "Second SMTP Listen Port" ( listenPort2 ). 

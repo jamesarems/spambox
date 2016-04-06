@@ -16,12 +16,12 @@
 ## It is possible to define more than one of these regexes in one file.
 ## Notice, that if you define single words between two of these regexes,
 ## these regexes will processed first (before any single words outside the regexes).
-## Doing this, could lead in confusing output of the assp-analyzing tools.
+## Doing this, could lead in confusing output of the spambox-analyzing tools.
 #
 ## It is possible to define such complex regex in a include file.
 #
-# the next line prevents assp from optimizing this complex regex
-;assp-do-not-optimize-regex
+# the next line prevents spambox from optimizing this complex regex
+;spambox-do-not-optimize-regex
 # if it is possible and you want to weigth the regex (**)
 # write the needed ~ in front of the next line
 ;^(?=.*?(((?!)   

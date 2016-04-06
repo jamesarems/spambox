@@ -1,11 +1,11 @@
-ASSP Bayesan Filter - Theory of Operation
+SPAMBOX Bayesan Filter - Theory of Operation
 
 Every time a message passes through your SMTP server it has a from address and one or more to addresses. 
 Your SMTP server also knows if the message is being sent from your local network (and to allow relaying for that message), 
 or if itís coming from outside (and must be delivered to a local address). 
 Your local users do not send unsolicited email (right?) and the people they correspond with would only send you solicited email.
 In fact the people they email would also be unlikely to send UCE.
-By monitoring these addresses ASSP builds a web of trust .
+By monitoring these addresses SPAMBOX builds a web of trust .
 Local users are trusted, the addresses in their TO or CC fields are trusted. 
 Any email from these people is considered not-spam without further checking. 
 (Note this is not a good strategy for virus containment, but it is a good strategy for UCE.)

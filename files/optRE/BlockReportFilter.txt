@@ -1,1 +1,0 @@
-(?^:(?^:(?is:(?:BlackDomain|Virus))))

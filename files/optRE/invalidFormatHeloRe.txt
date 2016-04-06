@@ -1,1 +1,0 @@
-(?^:(?^:(?is:(?:\.(?:(?:(?:l(?:ocaldomai|a)|veloxzo)n|priv(?:ate)?|online|intra)$|user)|^(?:\d+\.\d+\.\d+\.\d+|[^\.]+\.\?)$|\d{1,3}[-x.]\d{1,3}[-x.]\d{1,3}))))

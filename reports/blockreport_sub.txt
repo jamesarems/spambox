@@ -7,7 +7,7 @@
 # The following case sensitive literals will be replaced:
 #
 # REPORTDAYS   - with the number of days for which the report is generated
-# ASSPNAME     - with the ASSP-hostname config: 'myName'
+# SPAMBOXNAME     - with the SPAMBOX-hostname config: 'myName'
 # EMAILADDRESS - with the emailaddress for which the report is generated
 # NUMBER       - the number of found blocked emails
 #
@@ -40,5 +40,5 @@
 # <ALL> + <USERS> or <ADMINS> + <email-address> or <domain-name>
  
 <ALL>
-ASSP-Block-Report
+SPAMBOX-Block-Report
 </ALL>

@@ -12,8 +12,8 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License (http://www.gnu.org/licenses/) for more details.
 # SPAMBOX founded and developed to Version 1.0.12 by John Hanna
-# SPAMBOX development since 1.0.12 by John Calvi
-# SPAMBOX development since 1.2.0 by Fritz Borgstedt
+# SPAMBOX development since 1.0.12 to 1.2.0 by John Calvi
+# SPAMBOX development since 1.2.0 to 1.9.9 by Fritz Borgstedt
 #
 # SPAMBOX V2 pro development since 2.0.0 by
 # Thomas Eckardt - DB Support, Conversions, Transparent SMTP Proxy, SSL/TLS support,
@@ -27,7 +27,7 @@
 #                  delay queuing, LDAPS, global penaltybox , regex optimization,
 #                  POP3 collector, config sync , SNMP, group management ,IPv6 support,
 #                  Crash Analyzer , Perl module update, (Win32)Unicode support, DMARC,
-#                  private Whitelist, WHOIS
+#                  private Whitelist, WHOIS, SMIME signing
 #
 # Misc. contributions:
 # AJ, Robert Orso, Nigel Barling, Mark Pizzolato, Przemek Czerkas, Craig Schmitt,
@@ -38,6 +38,8 @@
 # thank you to the following sponsors:
 # several features sponsored by "ITprime Services GmbH (Marco Rauchenstein)"
 # AUTHrequireTLS sponsored by "AllWorldIT.com (Nigel Kukard)"
+# ISP mode setup sponsored by DuoCircle LLC (Masood Rahim)
+# compressed attachment handling in SPAMBOX_AFC.pm is sponsored by the International Bridge, Inc. and the Devonshire Networking Group (Peter Hinman)
 #
 # Thank you to all, who donated to the spambox project!
 #
@@ -56,8 +58,7 @@ sub check_iThreads {
 use Config qw(myconfig);
 
 my $iThreads = myconfig();
-$iThreads =~ /useithreads\s*=\s*([^\s\r\n]+)/gio;
-$iThreads = lc($1);
+$iThreads = lc($1) if $iThreads =~ /useithreads\s*=\s*([^\s\r\n]+)/gio;
 {
     my $i = 0;
     foreach (split(/\s+/o, $Config::Config{sig_name})) {
@@ -134,20 +135,22 @@ our $versionAge;
 our $maxAge;
 our $availversion:shared;
 our $versionURL;
-our $NewAsspURL;
+our $NewSpamboxURL;
 our $ChangeLogURL;
 our $requiredSelfLoaderVersion;
 our %requiredDBVersion:shared;
 our $codename;
 our $perl = $^X;
 our $spambox = $0;
+$spambox =~ s/\\/\//og;
+$spambox =~ s/\/+/\//og;
 our $allIdle:shared = 0;
 our $islendian = (unpack("h*", pack("s", 1)) =~ /^1/) ;
 
 #
 sub setVersion {
-$version='2.4.5';
-$build = '15162';
+$version='2.4.7';
+$build = '16036';
 $modversion="($build)";    #appended in version display (YYDDD[.subver]).
 $MAINVERSION = $version . $modversion;
 $MajorVersion = substr($version,0,1);
@@ -205,13 +208,13 @@ disableUnicode();
 if ($subversion % 2) {
 # stable published version download
     $versionURL = 'http://downloads.sourceforge.net/project/spambox/SPAMBOX%20V2%20multithreading/autoupdate/version.txt';
-    $NewAsspURL = 'http://downloads.sourceforge.net/project/spambox/SPAMBOX%20V2%20multithreading/autoupdate/spambox.pl.gz';
+    $NewSpamboxURL = 'http://downloads.sourceforge.net/project/spambox/SPAMBOX%20V2%20multithreading/autoupdate/spambox.pl.gz';
     $ChangeLogURL = 'http://downloads.sourceforge.net/project/spambox/SPAMBOX%20V2%20multithreading/changelog.txt';
     $maxAge = 365 * 24 * 3600;
 } else {
 # stable development (beta) version download
     $versionURL = 'http://spambox.cvs.sourceforge.net/viewvc/*checkout*/spambox/spambox2/version.txt';
-    $NewAsspURL = 'http://spambox.cvs.sourceforge.net/viewvc/*checkout*/spambox/spambox2/spambox.pl.gz';
+    $NewSpamboxURL = 'http://spambox.cvs.sourceforge.net/viewvc/*checkout*/spambox/spambox2/spambox.pl.gz';
     $ChangeLogURL = 'http://spambox.cvs.sourceforge.net/viewvc/*checkout*/spambox/spambox2/changelog.txt';
     $maxAge = 90 * 24 * 3600;
 }
@@ -282,6 +285,9 @@ our $RBLobj;
 our $UUID;
 our %ModuleWatch;
 our $BDBMaxCacheSize:shared = 0;   # BDB downward cachesize check starting point in MB
+our $moveDB;   # do not change !!! instead start spambox one time with the --movedb:=1  option
+our $newDB;    # do never change - for internal use only !!
+
 $Storable::Deparse = 1;
 $Storable::Eval = 1;
 
@@ -308,6 +314,7 @@ our $HMMDBWords = 600;                   # (number > 0) number of words used per
 our $BayesDomainPrior = 2;               # (number > 0) Bayesian/HMM domain entry priority (1 = lowest)
 our $BayesPrivatPrior = 3;               # (number > 0) Bayesian/HMM private/user entry priority (1 = lowest)
 our $debugWordEncoding = 0;              # (0/1) write/debug suspect word encodings to debug/_enc_susp.txt
+our $reportBadDetectedSpam = 1;          # (0/1) report mails to spamaddresses that are not detected as SPAM, to the rebuild process
 
 # logging related
 our $AUTHLogUser = 0;                    # (0/1) write the username for AUTH (PLAIN/LOGIN) to maillog.txt
@@ -340,16 +347,23 @@ our $BlockReportAdminPassword = {};      # the password must be anywhere startin
 # some more
 our $SPF_max_dns_interactive_terms = 15; # (number > 0) max_dns_interactive_terms max number of SPF-mechanism per domain (defaults to 10)
 our $neverQueueSize = 12000000;          # (number > 0) never queue mails larger than these number of bytes
+our $disableEarlyTalker;                 # (0/1) disable the EarlyTalker check
+our $ignoreEarlySSLClientHelo = 1;       # (0/1) 1 - unexpected early SSLv23/TLS handshake Client-Helo-Frames are ignored , 0 - unexpected early SSLv23/TLS handshake Client-Helo-Frames are NOT ignored and the connection will be closed
 our $SpamCountNormCorrection = 0;        # (+/- number in percent) correct the required by X% higher
 our $FileScanCMDbuild_API;               # called if defined in FileScanOK with - $FileScanCMDbuild_API->(\$cmd,$this) - $cmd in place modification
 our $WebTrafficTimeout = 60;             # Transmission timeout in seconds for WebGUI and STATS connections
 our $DisableSyslogKeepAlive = 0;         # disable sending the keep alive '***spambox&is%alive$$$' to the Syslog-Server
 our $noRelayNotSpamTag = 1;              # (0/1) do per default the NOTSPAMTAG for outgoing mails
+our $maxTCPRCVbuf;                       # value to define the maximum amount of bytes spambox tries to read from the TCP receive buffer
+                                         # if not set (default) the size of the system TCP receive buffer is used
+our $maxTCPSNDbuf;                       # value to define the maximum amount of bytes spambox tries to write to the TCP send buffer
+                                         # if not set (default) the size of the system TCP send buffer is used
 
 our $WorkerScanConLimit = 1;             # (number >= 0) connection count limit in SMTP threads before move the file scan to high threads
 
 our $fakeAUTHsuccess = 0;                # (0/1/2) fake a 235 reply for AUTH success - move the connection to NULL - collect the mail in spam - used for honeypots - 2=with damping
 our $fakeAUTHsuccessSendFake = 0;        # (0/1) send the faked mails from the honeypot - make the spammers believe of success - attention: moves spambox in to something like an open relay for these mails
+our $AUTHrequireTLSDelay = 5;            # (number) seconds to damp connections that used AUTH without using SSL (to prevent DoS)
 
 our $protectSPAMBOX = 1;                    # (0/1) rmtree will only remove files and folders in base/t[e]mp...
 
@@ -376,9 +390,9 @@ our $threadReloadConfigDelay = 15;  # seconds to wait for each thread before rel
 
 ########################
 
-our $threadCheckConfig = 0;
+our $threadCheckConfig = 0;  # set to 1 - all threads will check the spambox.cfg file
 
-our $PBscoreNoDelay = 1;
+our $PBscoreNoDelay = 1;     # score noDelay messages
 
 our %NotifyFreqTF:shared = (     # one notification per timeframe in seconds per tag per worker
     'info'    => 60,
@@ -511,6 +525,7 @@ our $complexREEnd;
 our $dot;
 our $UriDot;
 our $NONPRINT;
+our $NONASCII;
 our $HamTagRE;
 our $SpamTagRE;
 our $ValencePBRE;
@@ -519,7 +534,9 @@ our $NonSymLangRE;
 our $SymLangRE;
 our $enclosedCharsRE;
 our $notAllowedSMTP;
+our $BIT8:shared = 'XNONOXNONOX';
 our $skipAddrListRE;
+our $vrfyOKRE = qr/^25[01]$/;
 
 # IP Address representations
 our $IPprivate;
@@ -545,6 +562,9 @@ our $HostPortRe;
 
 # for GUI check
 our $GUIHostPort;
+
+# the global Plugin config ARRAY
+our @PlCfg;
 
 # some special variables to DEBUG IO and Poll Errors and to reduce memory usage
 our $CloseHandleOnPollError = 1;
@@ -611,6 +631,7 @@ our %cryptConfigVars:shared = (
     'SPAMBOX_ARCSelectCode' => 1,
     'runAsUser' => 1,
     'runAsGroup' => 1,
+    'runAsGroupSupplementary' => 1,
     'ChangeRoot' => 1,
     'ConfigChangeSchedule' => 1,
     'UUID' => 1
@@ -631,6 +652,9 @@ our $licmap = {
     '08' => 'expiration date',
     '09' => 'hostname',
     '10' => 'license number',
+    '11' => 'usage limit',
+    '12' => 'usage limit description',
+    '13' => 'current usage',
 };
 # Plugin and feature license registering HASH
 our $reglic = {};
@@ -647,7 +671,7 @@ our @UnicodeBlocks;
 our @UnicodeScripts;
 our $UnicodeVersion;
 
-BEGIN { if($] ge '5.012000') {
+BEGIN { if ($] ge '5.012000') {
 my $charscripts = sub {
     my %s;
     my $list = do "unicore/To/Sc.pl";
@@ -757,6 +781,7 @@ $UTF8BOM = "\xEF\xBB\xBF";
 $UTFBOMRE = qr/(?:\x00\x00\xFE\xFF|\xFF\xFE\x00\x00|\xFE\xFF|\xFF\xFE|$UTF8BOM)/o;
 $UTF8BOMRE = qr/(?:$UTF8BOM)/o;
 $NONPRINT = qr/[\x00-\x1F\x7F-\xFF]/o;
+$NONASCII = qr/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\xFF]/o;
 $complexREStart = '^(?=.*?(((?!)';
 $complexREEnd = '(?!)).*?(?!\g{-1})){';
 $notAllowedSMTP = qr/CHUNKING|PIPELINING|XEXCH50|
@@ -768,7 +793,7 @@ $notAllowedSMTP = qr/CHUNKING|PIPELINING|XEXCH50|
                      SEND|SOML|SAML|EMAL|ESAM|ESND|ESOM|
                      XAUTH|XQUE|XREMOTEQUEUE|
                      X-EXPS|X-ADAT|X-DRCP|X-ERCP|EVFY|
-                     8BITMIME|BINARYMIME|BDAT|
+                     BINARYMIME|BDAT|
                      AUTH GSSAPI|AUTH NTLM|X-LINK2STATE
                   /oix;
 
@@ -957,7 +982,7 @@ $RFC822RE = qr/^$RFC822RE$/;
 $SpamTagRE = qr/(?:
                   \[
                   (?:
-                   Attachment | AUTHError
+                   Attachment | AUTHError | AUTHUserIP
 
                    Backscatter | BATV | Bayesian |
                    BlackDomain | BlackHELO | BombBlack |
@@ -980,7 +1005,7 @@ $SpamTagRE = qr/(?:
                    MailLoop | MalformedAddress | Max-Equal-X-Header |
                    MaxAUTHErrors | MaxErrors | MessageScore |
                    messageSize | MaxRealMessageSize | MaxMessageSize |
-                   MissingMXA? | MsgID | MSGID-sig |
+                   MissingMXA? | MsgID | MSGID-sig | missingSignature |
 
                    Organization | OversizedHeader |
 
@@ -992,7 +1017,7 @@ $SpamTagRE = qr/(?:
                    SuspiciousHelo |
 
                    Trap |
-                   UnknownLocalSender | URIBL |
+                   UnknownLocalSender | unsupported[a-zA-Z0-9_]+ | URIBL |
                    VIRUS | ValidHELO |
 
                    WhitelistOnly
@@ -1134,7 +1159,7 @@ sub loadModuleVars {
       'Regexp::Optimizer' => 1,
       'NetSNMP::agent' => 0,
       'Time::Hi::Res' => 1,
-      'AsspSelfLoader' => 1,
+      'SpamboxSelfLoader' => 1,
       'SPAMBOX_WordStem' => 1,
       'SPAMBOX_FC' => 1,
       'SPAMBOX_SVG' => 1,
@@ -1215,7 +1240,7 @@ sub spambox_socket_blocking {
 }
 
 sub defConfigArray {
- # last used msg number 010501
+ # last used msg number 010591
 
  # still unused msg numbers
  #
@@ -1286,7 +1311,7 @@ sub defConfigArray {
   <hr /><div class="menuLevel1">Notes Config Sync</div>
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/configsync.txt\',3);" />',undef,undef,'msg009250','msg009251'],
 
-[ 0, 0, 0, 'heading', 'Network Setup <a href="http://sourceforge.net/p/spambox/wiki/SPAMBOX_Advanced_Workflow/" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a>' ],
+[ 0, 0, 0, 'heading', 'Network Setup / Incoming Mail<a href="http://sourceforge.net/p/spambox/wiki/SPAMBOX_Advanced_Workflow/" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a>' ],
 ['DisableSMTPNetworking',"Disable all new SMTP and Proxy Network Connections",0,\&checkbox,0,'(.*)','configUpdateSMTPNet',
   'If selected, SPAMBOX will not answer to new SMTP and Proxy connections on \'listenPort , listenPort2 , listenPortSSL , relayPort and ProxyConf\'. Currently existing SMTP and Proxy connections are not affected! Web and Stat connection are also not affected.',undef,undef,'msg000010','msg000011'],
 ['enableINET6','Enable IPv6 support',0,\&checkbox,'','(.*)','ConfigChangeIPv6','For IPv6 network support to be enabled, check this box. Default is disabled. IO::Socket::INET6 is able to handle both IPv4 and IPv6. NOTE: This option requires an installed <a href="http://search.cpan.org/search?query=IO::Socket::INET6" rel="external">IO::Socket::INET6</a> module in PERL and your system should support IPv6 sockets to give enabling this option a sense!<br />
@@ -1301,10 +1326,10 @@ sub defConfigArray {
   <br /><small><i>Examples:</i> 125,  127.0.0.1:125, 127.0.0.1:125|127.0.0.5:125|SSL:127.0.0.1:465, INBOUND:125</small>','Basic',undef,'msg000030','msg000031'],
 ['smtpDestinationRT','SMTP Destination Routing Table*',80,\&textinput,'','^((?:(?:\s*'.$HostRe.'\s*=>\s*'.$HostPortRe.'\s*)(?:\|\s*'.$HostRe.'\s*=>\s*'.$HostPortRe.'\s*)*)|\s*file\s*:\s*.+|)$','configChangeRT',
   'If INBOUND is used in the SMTP Destination field, the rules specified here are used to route the inbound IP address to a different outbound IP address. You must specify a port number with the outbound IP address. <p><small><i>Example:</i>141.120.110.1=>141.120.110.129:25|141.120.110.2=>141.120.110.130:125|141.120.110.3=>SSL:141.120.110.130:125</small></p>',undef,undef,'msg000040','msg000041'],
-['smtpLocalIPAddress','SMTP - Destination to Local IP-address Mapping*',40,\&textinput,'','^(\s*file\s*:\s*.+|)$','configChangeLocalIPMap',
+['smtpLocalIPAddress','SMTP and Proxy - Destination to Local IP-address Mapping*',40,\&textinput,'','^(\s*file\s*:\s*.+|)$','configChangeLocalIPMap',
   'You need to use the "file: ..." option for this parameter!<br />
   On windows systems at least Vista/2008 is required!<br />
-  On multihomed systems with multiple default gateways, it could be required to define the local IP address (source) used for outgoing SMTP connections.<br />
+  On multihomed systems with multiple default gateways, it could be required to define the local IP address (source) used for outgoing SMTP and Transparent Proxy ( ProxyConf ) connections.<br />
   This parameter allows to define local IP addresses used for specific targets (IP\'s or hosts) - based on the local address, the system will use the right gateway/interface.<br />
   Define one entry per line, comments (#) are allowed. The syntax for an entry is \'target=>local-IP\'.<br />
   target could be any of: IP(4/6) network, IP(4/6) address, hostname, domain-name with wildcard (*).<br /><br />
@@ -1329,18 +1354,101 @@ sub defConfigArray {
   'The IP address and port number to connect to when mail is received on the second SMTP listen port. If the field is blank, the primary SMTP destination will be used. The purpose of this setting is to allow remote users to make authenticated connections and transmit their email without encountering SPF failures.
   If you need to connect to the second SMTP destination host using native SSL, write \'SSL:\' in front of the IP/host definition. In this case the Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed and enabled ( useIOSocketSSL ).<br />
   <p><small><i>Examples:</i> 587, 127.0.0.1:587, SSL:127.0.0.1:465</small></p>',undef,undef,'msg000080','msg000081'],
+['ProxyConf','Transparent TCP Proxy Table*',80,\&textinput,'','(\S*)','configChangeProxy',
+ 'Define any transparent TCP Port Proxy here. SPAMBOX will proxy/forward (NOT route !) incoming TCP packets to a specific destination.<br />
+  For example: if you want incoming TCP connections on port 465 (SMTP-SSL) to be forwarded to your email server.<br /><br />
+  <p><small><i>Example:</i>10.1.1.1:22=&gt;172.16.22.33:22|0.0.0.0:465=&gt;192.168.1.25:465&lt;=12.1.1.3,34.5.6.0/16,67.23.2.1-67.23.2.5|10.1.1.1:1477=&gt;192.168.1.23:1234&lt;=120.5.1.3,134.5.19.7,[allow_proxy_1234]</small></p><br /><br />
+  Those connection are not especially SMTP related and they are not inspected by spambox. Any application that uses the TCP layer, can use such a proxy (eg. SSH, RDP, VNC, POP3, HTTP, LDAP, Notes ...).<br />
+  Proxy connections can be define in any direction: privat&lt;-&gt;privat , privat&lt;-&gt;public , public&lt;-&gt;privat and public&lt;-&gt;public<br /><br />
+  The syntax is: localIP:localPORT=&gt;forwardIP:forwardPORT[&lt;=AllowfromIP1,AllowfromIP2,...]|next Proxy configuration|....<br /><br />
+  The file-option (eg. file:files/proxy_conf.txt) is supported - if used, define one proxy configuration per line.<br />
+  You have to configure the IP-address and IP-port for both - local and forward values! The optional AllowfromIP extension are comma separated values of IP-addresses (eg. 192.168.1.1), IP-networks (eg. 10.1.1.0/24) and IP-address ranges (172.16.1.3-172.16.1.10) from where connections are allowed. Groups definitions (eg. [allow_ssh_proxy]) may be used in AllowfromIP. If there is no allow value defined, all source IP addresses will be accepted!',undef,undef,'msg008300','msg008301'],
 ['NoAUTHlistenPorts','Disable AUTH support on listenPorts',80,\&textinput,'','(.*)','ConfigChangeNoAUTHPorts',
   'This disables the SMTP AUTH command on the defined listenPorts independent from any other setting. This option works for listenPort , listenPort2 and listenPortSSL . The listener definition here has to be the same like in the port definitions. Separate multiple entries by "|".<p><small><i>Examples:</i> 25, 127.0.0.1:25, 127.0.0.1:25|127.0.0.2:25 </small></p>',undef,undef,'msg008060','msg008061'],
 ['DisableExtAUTH','Disable SMTP AUTH for External Clients',0,\&checkbox,'','(.*)',undef,'If you do not want external clients (IP not in acceptAllMail or relayPort is not used) to use SMTP AUTH - for example to prevent address and password harvesting - check this option.<br />
   The "AUTH" offer in the EHLO and HELP reply will be stripped out, if set to on.<br />
   Notice: setting this option to ON could prevent roaming users (dynamic IP) from being able to authenticate!',undef,undef,'msg010250','msg010251'],
+['noAUTHHeloRe','Disable AUTH for these HELO\'s*',80,\&textinput,'','(.*)','ConfigCompileRe',
+'If configured and a helo matches this regular expression, the AUTH offer will be removed from the EHLO reply and the AUTH command will be disallowed.
+ For example:  ^\w+\.noauthdomain\.com$,',undef,undef,'msg010550','msg010551'],
+['onlyAUTHHeloRe','Allow AUTH Only for these HELO\'s*',80,\&textinput,'','(.*)','ConfigCompileRe',
+'If configured and a helo does not match this regular expression, the AUTH offer will be removed from the EHLO reply and the AUTH command will be disallowed.
+ For example:  ^\w+\.onlyauthdomain\.com$,',undef,undef,'msg010560','msg010561'],
 ['AUTHrequireTLS','SMTP AUTH requires SSL/TLS','0:NO|1:PLAIN|2:LOGIN|3:PLAIN and LOGIN|4:ALL',\&listbox,0,'(\d)',undef,
   'An SSL listener or STARTTLS is required before the SMTP AUTH command can be used.<br />
   This setting is ignored for all private IP addresses (localhost, RFC 1918, RFC 4193)!<br />
-  In case of a mistake \'538 5.7.11 encryption required for requested authentication mechanism\' is replied to the client.<br />
+  In case of a mistake \'538 5.7.11 transport layer encryption (SSL/TLS) required for requested authentication mechanism\' is replied to the client.<br />
   \'NO\' is the default setting, but \'ALL\' is recommended!',undef,undef,'msg010470','msg010471'],
 ['EnforceAuth',"Force SMTP AUTH on Second SMTP Listen Port",0,\&checkbox,0,'(.*)',undef,
   'Force clients connecting to the second listen port to authenticate before transferring mail. To use this setting, both listenPort2 (Second SMTP Listen Port) and smtpAuthServer (Second SMTP Destination) must be configured.<hr /><div class="menuLevel1">Notes On Network Setup</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/network.txt\',3);" />',undef,undef,'msg000090','msg000091'],
+
+[0,0,0,'heading','Relaying / Outgoing and Local Mail<a href="http://sourceforge.net/p/spambox/wiki/Relaying" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="relaying not allowed" /></a>'],
+['acceptAllMail','Accept All Mail*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Relaying is allowed for these IPs. They contribute also to the whitelist. Before setting this option, please read the complete section - it is recommended to configure relayPort to send mails from your LAN to the Internet. This can take either a directly entered list of IP\'s separated by pipes or a file \'file:files/acceptall.txt\'.<br />For example: 145.145.145.145|146.145.','Basic','7','msg001040','msg001041'],
+['DoLocalSenderDomain','Do Local Domain Check for Local Sender',0,\&checkbox,'','(.*)',undef,
+  'If activated, each local sender address must have a valid Local Domain. acceptAllMail and redlisted mails breaks this rule.',undef,undef,'msg001050','msg001051'],
+['DoLocalSenderAddress','Do Local Address Check for Local Sender',0,\&checkbox,'','(.*)',undef,
+  'If activated, each local sender address must have a valid Local Address. acceptAllMail and redlisted mails breaks this rule.',undef,undef,'msg001060','msg001061'],
+['nolocalDomains','Skip Local Domain Check',0,\&checkbox,'','(.*)',undef,'Do not check relaying based on localDomains. Let the mailserver do it. <b>NOT RECOMMENDED</b>.',undef,undef,'msg001070','msg001071'],
+['ldLDAP','Do LDAP lookup for local domains',0,\&checkbox,'','(.*)',undef,'Check local domains against an LDAP database.<br />Note: Checking this requires filling in LDAP DomainFilter ( ldLDAPFilter ) in the LDAP section.<br />This requires an installed <a href="http://search.cpan.org/~gbarr/perl-ldap-0.31/lib/Net/LDAP.pod" rel="external">NET::LDAP</a> module in Perl.',undef,undef,'msg001080','msg001081'],
+['ispip','ISP/Secondary MX Servers*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter any addresses that are your ISP or backup MX servers, separated by pipes (|). <br />These addresses will (necessarily) bypass Griplist, IP Limiting, Delaying, Penalty Box, SPF, DNSBL &amp; SRS checks unless the IP can be determined by (ispHostnames) ISP/Secondary Hostnames. For example: 127.0.0.1|172.16..','Basic','7','msg001090','msg001091'],
+['contentOnlyRe', 'Regular Expression to Identify Forwarded Messages*',80,\&textinput,'','(.*)','ConfigCompileRe',
+ 'Put anything here to identify messages which should bypass the PenaltyBox, Sender Validation, Griplist, IP Limiting, Delaying, SPF, DNSBL &amp; SRS checks. For example:  email addresses of people who are forwarding from other accounts to their mailbox on your server.',undef,undef,'msg001100','msg001101'],
+['ispHostnames','Regular Expression to Identify ISP/Secondary Hostnames*',80,\&textinput, '','(.*)', 'ConfigCompileRe', 'Hostnames (regular expression) to lookup the IP that connected to the ISP/Secondary server.<br />If found, this address is used to perform IP-based checks on forwarded messages. <br />For example: mx1\.yourisp\.com or mx1\.yourisp\.net|mx2\.yoursecondary\.com . <i>This hostnames are found in the \'Received:\' header, like  \'Received: from ...123.123.123.123... by <b>mx1.yourisp.com</b>\'</i>. Leave this blank to disable the feature. ',undef,undef,'msg001110','msg001111'],
+['send250OKISP','Send 250 OK To ISP/Secondary MX Servers',0,\&checkbox,'1','(.*)',undef,
+ 'Set this checkbox if you want SPAMBOX to reply to IP\'s in ISPIP with \'250 OK\' instead of SMTP error code \'554 5.7.1\'.',undef,undef,'msg001120','msg001121'],
+['ispgripvalue','ISP/Secondary MX Grip Value',5,\&textinput,'0.5','^(0\.?\d*|)$',undef,'It is recommended to set it to 0.5 (Completely GReyIP) for ISP and Secondary MX servers. If left blank the Griplist X value is used (percentage of spam messages in relation to total). <br />Note: value has to be greater than 0 and less than 1, where 0 = never spam and 1 = always spam',undef,undef,'msg001130','msg001131'],
+
+['BounceSenders','Bounce Senders*',80,\&textinput,'postmaster|mailer-daemon','(.*)','ConfigMakeRe',
+'Envelope sender addresses treated as bounce origins. Null sender (&lt;&gt;) is always included.<br />
+ Accepts specific addresses (postmaster@domain.com), usernames (mailer-daemon), or entire domains (@bounces.domain.com)<br />
+ Automatic whitelist addition is skipped for mails from all bounce senders, the same way like redlisted mails are skipped from automatic whitelist addition.<br />
+ If the list of bounce sender addresses is changed, a repair operation for the whitelistdb will be started. This task removes all whitelist entries, which are related to any local bounce sender.<br />
+ Separate entries with pipes: |. For example: postmaster|mailer-daemon',undef,undef,'msg001140','msg001141'],
+['PopB4SMTPFile','Pop Before SMTP DB File',40,\&textinput,'','(.*)',undef,'Enter the DB database filename of your POP before SMTP implementation with records stored for dotted-quad IP addresses.<br />For example: /etc/mail/popip.db',undef,undef,'msg001150','msg001151'],
+['PopB4SMTPMerak','Pop Before SMTP Merak Style',0,\&checkbox,'','(.*)',undef,'If set Merak 7.5.2 is supported.',undef,undef,'msg001160','msg001161'],
+['relayHost','Relay Host',80,\&textinput,'',$GUIHostPort,undef,
+ 'Your isp\'s mail relayhost (smarthost). For example: mail.isp.com:25<br />If you run Exchange/Notes and you want spambox to update the nonspam database and the whitelist, then enter your isp\'s smtp relay host here. Blank means no relayhost and the smtpDestination will be used. Separate multiple entries by "|".<br />
+  If you need to connect to the relay host using native SSL, write \'SSL:\' in front of the IP/host definition. In this case the Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed and enabled ( useIOSocketSSL ).<br />
+  Examples: your_ISP_Server:25, 149.1.1.1:25, SSL:149.1.1.2:465|any_other_host:25 !','Basic',undef,'msg001170','msg001171'],
+['relayAuthUser','User to Authenticate to Relay Host',80,\&passinput,'','(.*)',undef,'The username used for SMTP AUTH authentication to the relayhost  - for example, if your ISP need authentication on the SMTP port! Supported authentication methods are PLAIN, LOGIN, CRAM-MD5 and DIGEST-MD5 . If the relayhost offers multiple methods, the one with highest security option will be used. The Perl module <a href="http://search.cpan.org/search?query=Authen::SASL" rel="external">Authen::SASL</a> must be installed to use this feature! The usage of this feature will be skipped, if the sending MTA uses the AUTH command. Leave this blank, if you do not want use this feature.','Basic',undef,'msg009040','msg009041'],
+['relayAuthPass','Password to Authenticate to Relay Host',80,\&passinput,'','(.*)',undef,'The password used for SMTP AUTH authentication to the relayhost ! Leave this blank, if you do not want use this feature.','Basic',undef,'msg009050','msg009051'],
+['relayPort','Relay Port',80,\&textinput,'',$GUIHostPort,'ConfigChangeRelayPort','Tell your mail server to connect to this IP/port as its smarthost / relayhost. For example: 225<br />
+ Note that you\'ll want to keep the relayPort protected from external access by your firewall. To restrict access to the relayPort per IP address or network, use allowRelayCon .<br />
+ You can supply an interface:port to limit connections. Separate multiple entries by "|".<p><small><i>Examples:</i> 225, 127.0.0.1:225, 192.168.1.1:225|192.168.2.1:225 !</small></p>',undef,undef,'msg001180','msg001181'],
+['allowRelayCon','Allow Relay Connection from these IP\'s*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter any addresses that are allowed to use the relayPort , separated by pipes (|). If empty, any ip address is allowed to connect to the relayPort. If this option is defined, keep in mind : Addresses defined in acceptAllMail are <b>NOT</b> automatically included and have to be also defined here, if them should allow to use the relayPort. For example: 127.0.0.1|172.16..<br />
+ If you use MS Office 365, you should define the <a href="http://technet.microsoft.com/en-us/library/dn163583(v=exchg.150).aspx" target="_blank">EOP IP addresses</a> here and you should configure your firewall to redirect connection from the hosted Exchange server to the relayPort .','Basic','7','msg008830','msg008831'],
+['RelayOnlyLocalSender','Allow Relaying Only for Local Sender',0,\&checkbox,'','(.*)',undef,'If set, the envelope sender (MAIL FROM:) is immediately checked after the DATA command is received (to be valid). If the sender address could not be validated, the connection is dropped.<br />
+  This setting is ignored for BounceSenders, which can relay at any time. <br />
+  The connection will be dropped regardless any other spambox setting ( except EmailSenderOK ).<br />
+  It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch this ( or RelayOnlyLocalDomains ) to ON in every case',undef,undef,'msg010380','msg010381'],
+['RelayOnlyLocalDomains','Allow Relaying Only for Local Domains',0,\&checkbox,'','(.*)',undef,'If set, the envelope sender domain (MAIL FROM:) is immediately checked after the DATA command is received (to be a local domain). If the sender domain could not be validated, the connection is dropped.<br />
+  This setting is ignored for BounceSenders, which can relay at any time. <br />
+  The connection will be dropped regardless any other spambox setting ( except EmailSenderOK ).<br />
+  It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch this ( or RelayOnlyLocalSender ) to ON in every case',undef,undef,'msg010390','msg010391'],
+['NoRelaying','No Relaying Error <a href="http://sourceforge.net/p/spambox/wiki/Relaying" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a>',80,\&textinput,'530 Relaying not allowed','([25]\d\d .*)',undef,'SMTP error message to deny relaying.',undef,undef,'msg001190','msg001191'],
+['defaultLocalHost','Default Local Host',40,\&textinput,'spambox.local','('.$EmailDomainRe.')?',undef,'If you want to be able to send mail to local users without a domain name then put the default local domain here.<br /> Blank disables this feature. For example: mydomain.com .',undef,undef,'msg001200','msg001201'],
+
+['LocalFrequencyInt','Local Frequency Interval',40,\&textinput,'0','(\d*)',undef,'The time interval in seconds in which the number of envelope recipients per sending address has not to exceed a specific number ( LocalFrequencyNumRcpt ).<br />
+  Use this in combination with LocalFrequencyNumRcpt to limit the number of recipients in a given interval, to prevent local abuse - for example from hijacked local accounts. A value of 0 (default) will disable this feature and clean the cache within five minutes. It is recommended to enable DoLocalSenderAddress and/or DoLocalSenderDomain, if you want to use this feature. To give users the chance to inform an admin about such blocked mails, local mails to EmailAdmins are never blocked because of that feature.<br />
+  <input type="button" value="edit local Frequency Cache" onclick="javascript:popFileEditor(\'DB-localFrequencyCache\',\'1h\');" />',undef,undef,'msg008720','msg008721'],
+['LocalFrequencyNumRcpt','Local Frequency Recipient Number',40,\&textinput,'0','(\d*)',undef,'The number of envelope recipients per sending address that has not to exceed in a specific time interval ( LocalFrequencyInt ).<br />
+  Use this in combination with LocalFrequencyInt to limit the number of recipients in a given interval, to prevent local abuse - for example from hijacked local accounts. A value of 0 (default) will disable this feature and clean the cache within five minutes. It is recommended to enable DoLocalSenderAddress and/or DoLocalSenderDomain, if you want to use this feature. To give users the chance to inform an admin about such blocked mails, local mails to EmailAdmins are never blocked because of that feature. <br />
+  <input type="button" value="edit local Frequency Cache" onclick="javascript:popFileEditor(\'DB-localFrequencyCache\',\'1h\');" />',undef,undef,'msg008730','msg008731'],
+['LocalFrequencyOnly','Check local Frequency for this Users only*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
+ 'A list of local addresses, for which the \'local frequency check\' should be done. Leave this field blank (default), to do the check for every address.<br />
+  Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br />
+  For example: fribo*@thisdomain.com|jhanna|@sillyguys.org ',undef,undef,'msg008740','msg008741'],
+['NoLocalFrequency','Check local Frequency NOT for this Users*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
+ 'A list of local addresses, for which the \'local frequency check\' should not be done. Noprocessing messages will skip this check.<br />
+  Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br />
+  For example: fribo*@thisdomain.com|jhanna|@sillyguys.org ',undef,undef,'msg008750','msg008751'],
+['NoLocalFrequencyIP','Check local Frequency NOT for this IP\'s*',60,\&textinput,'','(.*)','ConfigMakeIPRe',
+ 'A list of local IP-addresses, for which the \'local frequency check\' should not be done.<br />
+  For example: 145.145.145.145|145.146. ',undef,undef,'msg010110','msg010111'],
+
+['genDKIM','Generate and Add DKIM <a href="http://en.wikipedia.org/wiki/DomainKeys_Identified_Mail" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a> signatures to relayed messages',0,\&checkbox,'','(.*)',undef,'If selected, SPAMBOX will add DKIM signatures to relayed messages if it finds a valid DKIM configuration in DKIMgenConfig for the sending domain. This will also be done for noprocessing mails. This requires an installed <a href="http://search.cpan.org/search?query=Mail::DKIM" rel="external">Mail::DKIM</a> module in PERL.',undef,undef,'msg001210','msg001211'],
+['DKIMgenConfig','The File with the DKIM configurations*',40,\&textinput,'file:dkim/dkimconfig.txt','(file:\S*)','configUpdateDKIMConf','The file that contains the DKIM configuration. A description how to configure DKIM could be found in the default file dkim/dkimconfig.txt.<br />
+<hr /><div class="menuLevel1">Notes On Relaying</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/relaying.txt\',3);" />',undef,undef,'msg001220','msg001221'],
 
 [0,0,0,'heading','SMTP Session Limits '],
 ['MaxErrors','Maximum Errors Per Session',5,\&textinput,'5','(\d+)',undef,
@@ -1367,27 +1475,27 @@ sub defConfigArray {
  'If the value of (number of [rcpt to] * [message size]) exceeds maxRealSize in bytes the transmission of the local message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.',undef,undef,'msg000140','msg000141'],
 ['MaxRealSizeAdr','Max Real Size of Local Message Addresses*',40,\&textinput,'file:files/MaxRealSize.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxRealSize values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
-Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
+Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (IP-ranges and CIDR notation like 123.1.101/32 and IPv6 shortening like FE80::1 is here <b>NOT</b> supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?) except for IP addresses. A second parameter separated by "=>" specifies the size limit in byte. <br />
 For example:<br />
 fribo*@thisdomain.co?=&gt;1000000<br />
 jhanna=&gt;0<br />
 @sillyguys.org=&gt;500000<br />
-101.1.2.*=&gt;0<br />
+101.1.2.16=&gt;0<br />
 [admins]=&gt;0 <br />
-If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxRealSize will take place.'
+If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxRealSize will take place. NoProcessing (except npsize) will skip this check.'
 ,undef,undef,'msg009490','msg009491'],
 ['maxRealSizeExternal','Max Real Size of External Message',10,\&textinput,'','(\d*)',undef,
  'If the value of (number of [rcpt to] * [message size]) exceeds maxRealSizeExternal in bytes the transmission of the external message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the total transmit size.',undef,undef,'msg000150','msg000151'],
 ['MaxRealSizeExternalAdr','Max Real Size of External Message Addresses*',40,\&textinput,'file:files/MaxRealSizeExt.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxRealSizeExternal values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
-Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
+Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (IP-ranges and CIDR notation like 123.1.101/32 and IPv6 shortening like FE80::1 is here <b>NOT</b> supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?) except for IP addresses. A second parameter separated by "=>" specifies the size limit in byte. <br />
 For example:<br />
 fribo*@thisdomain.co?=&gt;1000000<br />
 jhanna=&gt;0<br />
 @sillyguys.org=&gt;500000<br />
-101.1.2.*=&gt;0<br />
+101.1.2.16=&gt;0<br />
 [admins]=&gt;0 <br />
-If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxRealSizeExternal will take place.'
+If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxRealSizeExternal will take place. NoProcessing (except npsize) will skip this check.'
 ,undef,undef,'msg009500','msg009501'],
 ['maxRealSizeError','max real message size Error',80,\&textinput,'552 message exceeds MAXREALSIZE byte (size * rcpt)','(552 .*)',undef,'SMTP error message to reject maxRealSize / maxRealSizeExternal exceeding mails. For example:552 message exceeds MAXREALSIZE byte (size * rcpt)! MAXREALSIZE will be replaced by the value of maxRealSize / maxRealSizeExternal.',undef,undef,'msg000160','msg000161'],
 
@@ -1395,34 +1503,46 @@ If multiple matches (values) are found in a mail for any IP address in the trans
  'If the value of ([message size]) exceeds maxSize in bytes the transmission of the local message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the transmit size.',undef,undef,'msg008620','msg008621'],
 ['MaxSizeAdr','Max Size of Local Message Addresses*',40,\&textinput,'file:files/MaxSize.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxSize values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
-Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
+Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (IP-ranges and CIDR notation like 123.1.101/32 and IPv6 shortening like FE80::1 is here <b>NOT</b> supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?) except for IP addresses. A second parameter separated by "=>" specifies the size limit in byte. <br />
 For example:<br />
 fribo*@thisdomain.co?=&gt;1000000<br />
 jhanna=&gt;0<br />
 @sillyguys.org=&gt;500000<br />
-101.1.2.*=&gt;0<br />
+101.1.2.16=&gt;0<br />
 [admins]=&gt;0 <br />
-If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxSize will take place.'
+If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxSize will take place. NoProcessing (except npsize) will skip this check.'
 ,undef,undef,'msg009510','msg009511'],
 ['maxSizeExternal','Max Size of External Message',10,\&textinput,'','(\d*)',undef,
  'If the value of ([message size]) exceeds maxSizeExternal in bytes the transmission of the external message will be canceled. No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to limit useless bandwidth wasting based on the transmit size.',undef,undef,'msg008630','msg008631'],
 ['MaxSizeExternalAdr','Max Size of External Message Addresses*',40,\&textinput,'file:files/MaxSizeExt.txt','(\s*file\s*:\s*.+|)','configUpdateMaxSize',
 'Use this parameter to set individual maxSizeExternal values for email addresses, domains, user names and IP addresses. A file must be specified if used.<br />
-Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (CIDR notation like 123.1.101/32 is here not supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?). A second parameter separated by "=>" specifies the size limit. <br />
+Accepts specific addresses (user@domain.com), user parts (user), entire domains (@domain.com) and IP addresses (IP-ranges and CIDR notation like 123.1.101/32 and IPv6 shortening like FE80::1 is here <b>NOT</b> supported!) - group definitions could be used. Use one entry per line. Wildcards are supported (fribo*@domain.co?) except for IP addresses. A second parameter separated by "=>" specifies the size limit in byte. <br />
 For example:<br />
 fribo*@thisdomain.co?=&gt;1000000<br />
 jhanna=&gt;0<br />
 @sillyguys.org=&gt;500000<br />
-101.1.2.*=&gt;0<br />
+101.1.2.16=&gt;0<br />
 [admins]=&gt;0 <br />
-If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxSizeExternal will take place.',undef,undef,'msg009520','msg009521'],
+If multiple matches (values) are found in a mail for any IP address in the transport mail chain, any envelope recipient and the envelope sender, the highest value or 0 (no limit) will be used! If no match (value) is found in a mail, the definition in maxSizeExternal will take place. NoProcessing (except npsize) will skip this check.',undef,undef,'msg009520','msg009521'],
 ['maxSizeError','max message size Error',80,\&textinput,'552 message exceeds MAXSIZE byte (size)','(552 .*)',undef,'SMTP error message to reject maxSize / maxSizeExternal exceeding mails. For example:552 message exceeds MAXSIZE byte (size)! MAXSIZE will be replaced by the value of maxSize / maxSizeExternal.',undef,undef,'msg008640','msg008641'],
 
-['MaxAUTHErrors','Max Number of AUTHentication Errors',10,\&textinput,'','(\d*)',undef,
- 'If an IP (/24 network is used) exceeds this number of authentication errors (535 or 530) the transmission of the current message will be canceled and any new connection from that IP will be blocked for 5-10 minutes.<br />
+['MaxAUTHErrors','Max Number of AUTHentication Errors',10,\&textinput,'','(\d*)','ConfigChangeMaxAUTH',
+ 'If an IP (/24 network is used for incoming mails) exceeds this number of authentication errors (535 or 530) the transmission of the current message will be canceled and any new connection from that IP will be blocked for 5-10 minutes.<br />
   Every 5 Minutes the \'AUTHError\' -counter of the IP will be decreased by one. autValencePB is used for the penalty box.<br />
-  No limit is imposed by SPAMBOX if the field is left blank or set to 0. This option allows admins to prevent external bruteforce or dictionary attacks via AUTH command. Whitelisted, noBlockingIPs and NoProcessing IP\'s are ignored like any relayed connection.',undef,undef,'msg009310','msg009311'],
-['noMaxAUTHErrorIPs','Do not check MaxAUTHErrors for these IP\'s*',40,\&textinput,'','(\S*)','ConfigMakeIPRe','List of IP\'s which should not be checked for MaxAUTHErrors .  For example: 145.145.145.145|145.146.',undef,undef,'msg009580','msg009581'],
+  No limit is imposed by SPAMBOX, if the field is left blank or set to zero (zero cleans the related cache \'AUTHError\'). This option allows admins to prevent external bruteforce or dictionary attacks via AUTH command. Whitelisted, noBlockingIPs , noMaxAUTHErrorIPs and NoProcessing IP\'s are ignored like any relayed connection.',undef,undef,'msg009310','msg009311'],
+['ResetMaxAUTHErrorIPs','Reset the MaxAUTHErrors Counter for these IP\'s*',40,\&textinput,'','(\S*)','ConfigMakeIPRe',
+ 'List of IP\'s for which MaxAUTHErrors counter should be cleared immediatly after a successful login.  For example: 145.145.145.145|145.146.<br />
+ It is not recommended to use this option for security reasons, but it may required for client networks behind a NAT.',undef,undef,'msg010540','msg010541'],
+['noMaxAUTHErrorIPs','Do not check MaxAUTHErrors for these IP\'s*',40,\&textinput,'','(\S*)','ConfigMakeIPRe',
+ 'List of IP\'s which should not be checked for MaxAUTHErrors .  For example: 145.145.145.145|145.146.',undef,undef,'msg009580','msg009581'],
+['AUTHUserIPfrequency','Max IP Changes for AUTHentication per User',20,\&textinput,'','((?:[2-9]|\d{2,})\s+(?:[6-9]\d{2}|\d{4,})|)','ConfigChangeMaxAUTHIP',
+ 'If the authentication methodes PLAIN, LOGIN or CRAM-MD5 are used by clients, two space separated values specify the number of different IP\'s and a timeframe in seconds, which should not be exeeded by a user.<br />
+ For example "2 600" - notice these are the minimum values for IP-number and seconds.<br />
+ The example disallows a user to authenticate (using PLAIN or LOGIN) from two or more different IP-addresses within 600 seconds. In other words - an user is allowed to authenticate from another IP-address, 601 seconds after the last authentication.<br />
+ Each attempt to authenticate is counted by this feature.<br />
+ MaxAUTHErrors is counted, if a user breakes this rule.<br />
+ Leave this blank to disable this feature.<br />
+ <input type="button" value="AUTHIP Cache" onclick="javascript:popFileEditor(\'DB-AUTHIP\',\'1h\');" /><br />',undef,undef,'msg010570','msg010571'],
 
 ['DoSameSubject','Check Same Subjects','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(.*)',undef,
  'If activated, spambox will check the mail subjects for equality using the config parameters below. Scoring is done with \'isValencePB\'.',undef,undef,'msg010040','msg010041'],
@@ -1458,7 +1578,7 @@ If multiple matches (values) are found in a mail for any IP address in the trans
  'The number of counts a session is allowed send "NOOP" commands following on each other, before being forcibly disconnected. The default is 0. No limit is imposed by SPAMBOX if the field is left blank or set to 0.<br />
   This in cooperation with "smtpNOOPIdleTimeout" should prevent hackers to hold and block connections by sending repeatedly "NOOP" commands short before the "smtpNOOPIdleTimeout" is reached. If "smtpNOOPIdleTimeout" is not defined or 0, this value will be ignored!<hr /><div class="menuLevel1">Notes On SMTP Session Limits</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/sessionlimits.txt\',3);" />',undef,undef,'msg000190','msg000191'],
 
-[0,0,0,'heading','Group definition'],
+[0,0,0,'heading','Group Definition for IP\'s , Users and Domains'],
 ['Groups','Address and Domain Groups*',80,\&textinput,'','(\s*file\s*:\s*.+|)','ConfigMakeGroupRe','
  If you don\'t want to use group definitions, leave this field blank otherwise a file definition like \'file:files/groups.txt\' is required.<br/>
  Group definitions could be used in any other configuration value where multiple user names, email addresses or domain names or IP addresses could be defined.<br />
@@ -1477,6 +1597,7 @@ If multiple matches (values) are found in a mail for any IP address in the trans
  [admins]<br />
  ldap:{host=&gt;domino1.mydomain.com:389,base=&gt;(sep)DC=domain,DC=tld(sep),user=&gt;(sep)Administrator(sep),password=&gt;(sep)pass(sep),timeout=&gt;2,scheme=&gt;ldap,STARTTLS=&gt;1,version=&gt;3},{(CN=LocalDomainAdmins)}{member},{(CN=%USERID%)}{mailaddress}<br />
  entry<br />
+ # include files/other.file.txt
  entry<br />
  ...<br />
  <br />
@@ -1491,6 +1612,7 @@ If multiple matches (values) are found in a mail for any IP address in the trans
  To import entries via a system command like (eg. cat|grep or find or your self made shell script), write a single line that begins with exec: followed by the command to be executed - like:<br />
  exec:cat /etc/anydir/*.txt|grep \'@\'<br />
  The executed system command has to write a comma(,) or pipe(|) or linefeed(LF,CRLF) separated list of entries to STDOUT, that should become part of that group, where this line is used. There could be multiple and any combination of entry types in one group definition.<br />
+ Be carefull! The external script should never BLOCK, DIE or RUN longer than some seconds. It is may be better, to schedule the script by a system cron job, write the output of the script to a file and to include this file here.<br />
  <br />
  If you are familar with the usage of LDAP, you can define LDAP queries to import entries from one or more LDAP server. This is done, defining one query per line. The syntax of such a line is:<br />
  <br />
@@ -1551,35 +1673,49 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'If set addresses which are removed from Whitelist via email-interface will automatically be added to the Redlist. The address can only be added again to the Whitelist after it is removed from the Redlist.',undef,undef,'msg000210','msg000211'],
 ['SpamError','Spam Error',80,\&textinput,'554 5.7.1 Mail appears to be unsolicited -- send error reports to postmaster@LOCALDOMAIN','([245]\d\d .*)',undef,'SMTP error message to reject spam. The literal LOCALDOMAIN will be replaced by the recipient domain. The literal LOCALUSER will be replaced by the recipient user part. For example:554 5.7.1 Mail appears to be unsolicited -- send error reports to postmaster@LOCALDOMAIN. ',undef,undef,'msg000220','msg000221'],
 
-['NotSpamTag','Ham Password SALT',80,\&textinput,'','(.{12,}|)',undef,'If an incoming email subject contains the TAG generated based on this value, it will be considered as defined in NotSpamTagProc . The literal \'NOTSPAMTAG\' (will be replaced by a 10 digit not-spam-tag) can be used in any 5xx error reply (SpamError , RBLError , scriptError , URIBLerror ....) to ask for resending the mail with the TAG in the subject.<br />
+['NotSpamTag','Ham Password SALT',80,\&textinput,'','(.{12,}|)',undef,
+'If an incoming email subject contains the TAG generated based on this value, it will be considered as defined in NotSpamTagProc . The literal \'NOTSPAMTAG\' (will be replaced by a 10 digit not-spam-tag) can be used in any 5xx error Reply of:<br /><br />
+ SpamError <br />
+ SenderInvalidError <br />
+ PenaltyError <br />
+ SPFError <br />
+ RBLError <br />
+ URIBLError <br />
+ UuencodedError <br />
+ bombError <br />
+ scriptError <br /><br />
+ to ask the sender for resending the mail with the TAG in the subject.<br />
+ For example: SpamError may be set to:<br />
+ 554 5.7.1 ERROR mail appears to be unsolicited - send the mail again and append \'NOTSPAMTAG\' to the mail subject - or send error reports to postmaster@LOCALDOMAIN<br /><br />
  Randomly picked up bit sequences of the text defined here, are used as "SALT" to calculate a 10 digit not-spam-tag. This value must be at least 12 characters long. Leave this value empty to disable this feature.<br />
  Every generated TAG can be used by the sender exactly one time. Every additional usage of a TAG will be ignored, and the sender may get a new generated TAG.<br />
  To define your own static TAGs, use whiteRe and/or npRe and change the error reply definitions accordingly.<br />
- To generate a random 80 character string, run \'perl -e "print chr(int(rand(94))+33)for(0...79);"\' from command line and copy and paste the result to here.',undef,undef,'msg010310','msg010311'],
-['NotSpamTagProc','Not-Spam-Tag will consider the mail as','0:only monitor|1:whitelisted|2:noprocessing|3:both',\&listbox,1,'(.*)',undef,'If a sender uses the Not-Spam-Tag , how should the mail be processed. Regardless of this setting, the IP address of the sender will not be penalized if a NotSpamTag is found.',undef,undef,'msg010320','msg010321'],
+ To generate a random 80 character string, run \'perl -e "print chr(int(rand(94))+33)for(0...79);"\' from command line and copy and paste the result to here.<br />
+ All spambox (eg. backup MX), that are processing mails for the same domains, have to used the same value for this parameter!',undef,undef,'msg010310','msg010311'],
+['NotSpamTagProc','Not-Spam-Tag will consider the mail as','0:only monitor|1:whitelisted|2:noprocessing|3:both',\&listbox,1,'(.*)',undef,'If a sender uses the Not-Spam-Tag , how should the mail be processed. Regardless of this setting, the IP address of the sender will not be penalized, if a NotSpamTag is found.',undef,undef,'msg010320','msg010321'],
 
 ['noGriplistUpload','Don\'t Upload Griplist Stats',0,\&checkbox,'','(.*)',undef,
- 'Check this to disable the Griplist upload when rebuildspamdb runs. The Griplist contains IPs and their value between 0 and 1, lower is less spammy, higher is more spammy. This value is called the grip value. ',undef,undef,'msg000230','msg000231'],
+ 'Check this to disable the Griplist upload. The Griplist contains IPs and their value between 0 and 1, lower is less spammy, higher is more spammy. This value is called the grip value. ',undef,undef,'msg000230','msg000231'],
 ['noGriplistDownload','Don\'t auto-download the Griplist file',0,\&checkbox,'','(.*)',undef,
  'Set this checkbox, if you don\'t use the Griplist. You have to disable also noGriplistUpload to download the Griplist.',undef,undef,'msg000240','msg000241'],
 
-['StoreSPAMBOXHeader','Store Assp-Header into Spam Collection',0,\&checkbox,'','(.*)',undef,
- 'Add "X-Assp-" to the collected spam-mails.',undef,undef,'msg008770','msg008771'],
+['StoreSPAMBOXHeader','Store Spambox-Header into Spam Collection',0,\&checkbox,'','(.*)',undef,
+ 'Add "X-Spambox-" to the collected spam-mails.',undef,undef,'msg008770','msg008771'],
 ['AddIntendedForHeader','Add Envelope-Recipient Header',0,\&checkbox,1,'(.*)',undef,
- 'Adds two lines to the email header: "X-Assp-Intended-For: user@domain" and "X-Assp-Envelope-From: user@domain".',undef,undef,'msg000250','msg000251'],
+ 'Adds two lines to the email header: "X-Spambox-Intended-For: user@domain" and "X-Spambox-Envelope-From: user@domain".',undef,undef,'msg000250','msg000251'],
 ['NoExternalSpamProb','Block Outgoing Spam-Prob header',0,\&checkbox,1,'(.*)',undef,
-'Check this box if you don\'t want your X-Assp-Spam-Prob header on external mail<br />
+'Check this box if you don\'t want your X-Spambox-Spam-Prob header on external mail<br />
  Note this means mail from local users to local users will also be missing the header.',undef,undef,'msg000260','msg000261'],
 ['AddSpamHeader','Add Spam Header',0,\&checkbox,1,'(.*)',undef,
- 'Adds a line to the email header "X-Assp-Spam: YES" if the message is spam, or "X-Assp-Spam: YES (Probably)" if it is possibly spam.',undef,undef,'msg000270','msg000271'],
+ 'Adds a line to the email header "X-Spambox-Spam: YES" if the message is spam, or "X-Spambox-Spam: YES (Probably)" if it is possibly spam.',undef,undef,'msg000270','msg000271'],
 ['AddCustomHeader','Add Custom Header',80,\&textinput,'X-Spam-Status:yes','^(|X\-[A-Za-z0-9_.-]+?:.*)$',undef,
  'Adds a line to the email header if the message is spam. For example: <a href="http://exchangepedia.com/blog/2008/01/assigning-scl-to-messages-scanned-by.html">X-Spam-Status:yes<img src="' . $wikiinfo . '" alt="Assigning SCL to messages scanned by 3rd-party antispam filters" /></a>',undef,undef,'msg000280','msg000281'],
 ['AddLevelHeader','Add Graphical Level Header',0,\&checkbox,1,'(.*)',undef,
- 'Adds a line to the email header "X-Assp-Spam-Level: **** " showing the total message score represented by stars (1 - 20), every star represents five scoring points.',undef,undef,'msg000290','msg000291'],
+ 'Adds a line to the email header "X-Spambox-Spam-Level: **** " showing the total message score represented by stars (1 - 20), every star represents five scoring points.',undef,undef,'msg000290','msg000291'],
 ['AddSubjectHeader','Add X-SPAMBOX-Original-Subject Header',1,\&checkbox,'','(.*)',undef,
  'Adds a line to the email header "X-SPAMBOX-Original-Subject: the subject".',undef,undef,'msg000300','msg000301'],
 ['AddSpamReasonHeader','Add Spam Reason Header',0,\&checkbox,1,'(.*)',undef,
- 'Adds a line to the email header "X-Assp-Spam-Reason: " explaining why the message is spam.<br /><hr /><div class="menuLevel1">Notes On Spam Control</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/spamcontrol.txt\',3);" />',undef,undef,'msg000310','msg000311'],
+ 'Adds a line to the email header "X-Spambox-Spam-Reason: " explaining why the message is spam.<br /><hr /><div class="menuLevel1">Notes On Spam Control</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/spamcontrol.txt\',3);" />',undef,undef,'msg000310','msg000311'],
 
 [0,0,0,'heading','Copy Spam &amp; Ham'],
 ['sendAllSpam','Copy Spam and Send to this Address',80,\&textinput,'','(.*)',undef,
@@ -1632,9 +1768,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  If there are multiple possible matches for a recipient address found, the generic longest match (and assigned value) will be used.<br />
  SPAMBOX will use the highest found value for all envelope recipients of an email.<br />
  The according low limit is calculated as:<br />
- for outgoing mails: value - ( PenaltyMessageLimit - PenaltyMessageLow )<br />
+ for incoming mails: value - ( PenaltyMessageLimit - PenaltyMessageLow )<br />
  or<br />
- for incoming and local mails: value - ( LocalPenaltyMessageLimit - LocalPenaltyMessageLow )',undef,undef,'msg000490','msg000491'],
+ for outgoing and local mails: value - ( LocalPenaltyMessageLimit - LocalPenaltyMessageLow )',undef,undef,'msg000490','msg000491'],
 ['SpamLoversRe','Regular Expression to Identify Spam-Lover*',60,\&textinput,'','(.*)','ConfigCompileRe',
 'If a message matches this regular expression it will be considered a Spam-Lover message.',undef,undef,'msg000500','msg000501'],
 ['baysSpamLovers','Bayesian Spam-Lover*',60,\&textinput,'','(.*)','ConfigMakeSLReSL','',undef,undef,'msg000510','msg000511'],
@@ -1677,8 +1813,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   [ipgroup]=>[usergroup]|user@mydomain<br /><br />
   NOTICE: the following combination of two entries, will lead in to a user/domain based matching - the global entry will be ignored!<br />
   145.146.0.0/16 # comment<br />
-  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br />
-  If multiple user/domain based entries are defined for the same IP, only the last one will be used!<br /><br />
+  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br /><br />
  <span class="positive"> All fields marked by \'*\' accept  a filepath/filename : \'file:files/ipnp.txt\'.</span>',undef,'7','msg000740','msg000741'],
 ['noProcessing','No Processing Addresses*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
  'Mail solely to or from any of these addresses are proxied without processing. The envelope sender and recipients are checked. Like a more efficient version of Spam-Lovers &amp; redlist combined. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com). If you register TO addresses here, all recipients for a single mail must be marked as noprocessing to flag the mail as "noprocessing".',undef,undef,'msg000750','msg000751'],
@@ -1688,9 +1823,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'Domains from which you want to receive all mail and  proxy without processing. Your ISP, domain registration, mail list servers, stock broker, or other key business partners might be good candidates. Note this matches the end of the address, so if you don\'t want to match subdomains then include the @. Note that buy.com would also match spambuy.com but .buy.com won\'t match buy.com. For example: sourceforge.net|@google.com|.buy.com',undef,undef,'msg000770','msg000771'],
 ['npRe','Regular Expression to Identify No Processing Mail*',60,\&textinput,'','(.*)','ConfigCompileRe',
  'If a message matches this Perl regular expression SPAMBOX will treat the message as a \'No Processing\' mail. For example: 169\.254\.122\.|172\.16\.|\\[autoreply\\].',undef,undef,'msg000780','msg000781'],
-['npSize','Message Size Limit',10,\&textinput,'500000','(.*)',undef,'SPAMBOX will treat incoming messages larger than this SIZE (in bytes) as \'No Processing\' mail, after the header part of the mail is received without any error. Empty or 0 disables the feature.',undef,undef,'msg000790','msg000791'],
-['npSizeOut','Message Size Limit Outgoing',10,\&textinput,'500000','(.*)',undef,'SPAMBOX will treat outgoing messages larger than this SIZE (in bytes) as \'No Processing\' mail. Empty or 0 disables the feature. ',undef,undef,'msg000800','msg000801'],
-['processOnlyAddresses','Process Only These Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','If the Enable Process Only Addresses check box is checked, mail solely to or from any of the addresses in this list  (envelope only) will be processed by SPAMBOX. All others will be proxied without processing. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br /> Note that if an address matches both the NoProcessing and the OnlyTheseProcessing lists, the NoProcessing rules take precedence.',undef,undef,'msg000810','msg000811'],
+['npSize','Message Size Limit',10,\&textinput,'500000','(.*)',undef,'SPAMBOX will treat incoming messages larger than this SIZE (in bytes) as \'No Processing\' mail, after the header part of the mail and MaxBytes of the mail body are received. IP-, handshake- and header- checks will be done regardless the noprocessing flag (which is in this case ignored for these checks), all actions that require the full mail are skipped. Empty or 0 disables the feature.',undef,undef,'msg000790','msg000791'],
+['npSizeOut','Message Size Limit Outgoing',10,\&textinput,'500000','(.*)',undef,'SPAMBOX will treat outgoing messages larger than this SIZE (in bytes) as \'No Processing\' mail, after the header part of the mail and MaxBytes of the mail body are received without any error. Empty or 0 disables the feature. ',undef,undef,'msg000800','msg000801'],
+['processOnlyAddresses','Process Only These Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','If the Enable Process Only Addresses check box is checked, mail solely to or from any of the addresses in this list (envelope only) will be processed by SPAMBOX. All others will be proxied without processing. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br /> Note that if an address matches both the NoProcessing and the OnlyTheseProcessing lists, the NoProcessing rules take precedence.',undef,undef,'msg000810','msg000811'],
 ['poTestMode','Enable Process Only Addresses',0,\&checkbox,'','(.*)',undef,'<br /><hr /><div class="menuLevel1">Notes On No Processing</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/noprocessing.txt\',3);" />',,undef,undef,'msg000820','msg000821'],
 
 [0,0,0,'heading','Whitelisting'],
@@ -1703,8 +1838,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   [ipgroup]=>[usergroup]|user@mydomain<br /><br />
   NOTICE: the following combination of two entries, will lead in to a user/domain based matching - the global entry will be ignored!<br />
   145.146.0.0/16 # comment<br />
-  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br />
-  If multiple user/domain based entries are defined for the same IP, only the last one will be used!<br /><br />
+  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br /><br />
   <span class="positive"> All fields marked by \'*\' accept  a filepath/filename : \'file:files/ipwl.txt\'.</span>',undef,'7','msg000830','msg000831'],
 ['whiteRe','Regular Expression to Identify Non-Spam*',80,\&textinput,'','(.*)','ConfigCompileRe','If an incoming email matches this Perl regular expression, it will be considered whitelisted.<br />For example: Secret Ham Password|307\D{0,3}730\D{0,3}4[12]\d\d<br />For help writing regular expressions click <a href="http://www.perlmonks.org/index.pl?node=perlre" rel="external">here</a>.<br />IMPORTANT: The body is scanned in a later stage  AFTER all sender related checks are performed. So a white regular expression here might not prevent the message to be blocked by eg. invalid PTR. Set the sender related checks to score only if you want to make sure that the white regular expression will be seen. Some things you might include here are your office phone number or street address, spam rarely includes these details.  .',undef,undef,'msg000840','msg000841'],
 ['whiteListedDomains','Whitelisted Domains and Addresses*',80,\&textinput,'file:files/whitedomains.txt','(.*)','ConfigMakePrivatRe','Domains and addresses from which you want to receive all mail. Your ISP, domain registration, mail list servers, stock broker, or other key business partners might be good candidates. Be careful not to put widely used or local domains here like google.com or hotmail.com or mydomain.com. Note this matches the end of the address, so if you don\'t want to match subdomains then include the @. Note that example.com would also match spamexample.com but .example.com won\'t match example.com. Wildcards are supported. For example: sourceforge.net|group*@google.com|.example.com<br /><br />
@@ -1719,7 +1853,6 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   [sendergroup]=>[recipientgroup]<br />
   [sendergroup1]|[sendergroup2]|*@domain=>[recipientgroup1]|[recipientgroup2]|user@local_domain<br /><br />
   NOTICE - that the local email addresses and domains are not checked to be local once',undef,undef,'msg000850','msg000851'],
-['wildcardUser','Wildcard User for White Domain ',20,\&textinput,'*','(.*)',undef,'If you add this user via email-interface(eg: *@domain.com), the whole domain will be whitelisted. For example: \'*\'',undef,undef,'msg000860','msg000861'],
 ['ValidateRWL','Enable Realtime Whitelist Validation',0,\&checkbox,'','(.*)','configUpdateRWL','RWL: Real-time white list. These are lists of IP addresses that have
  somehow been verified to be from a known good host. Senders that pass RWL validation will pass IP-based filters. This requires an installed <a href="http://search.cpan.org/search?query=Net::DNS" rel="external">Net::DNS</a> module in PERL. ',undef,undef,'msg000870','msg000871'],
 ['RWLwhitelisting','Whitelist all RWL Validated Addresses',0,\&checkbox,'','(.*)',undef,'If set, the message will also pass Bayesian Filter and URIBL.',undef,undef,'msg000880','msg000881'],
@@ -1730,7 +1863,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['RWLminhits','Minimum Hits',5,\&textinput,1,'(\d*)','configUpdateRWLMH','A hit is an affirmative response from a RWL. The RWL module will check all of the RWLs listed under Service Provider, and flag the email with a RWL pass flag if equal to or more than this number of RWLs return a positive whitelisted response. This number should be less than or equal to Maximum Replies above and greater than 0',undef,undef,'msg000910','msg000911'],
 ['RWLmaxtime','Maximum Time',5,\&textinput,10,'(\d*)',undef,'This sets the maximum time to spend on each message performing RWL checks',undef,undef,'msg000920','msg000921'],
 ['noRWL','Don\'t Validate RWL for these IPs*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP addresses that you don\'t want to be RWL validated, separated by pipes (|). For example: 145.145.145.145|146.145.',undef,'7','msg000930','msg000931'],
-['AddRWLHeader','Add X-Assp-Received-RWL Header',0,\&checkbox,1,'(.*)',undef,'Add X-Assp-Received-RWL header to header of all mails processed by RWL.',undef,undef,'msg000940','msg000941'],
+['AddRWLHeader','Add X-Spambox-Received-RWL Header',0,\&checkbox,1,'(.*)',undef,'Add X-Spambox-Received-RWL header to header of all mails processed by RWL.',undef,undef,'msg000940','msg000941'],
 ['RWLCacheInterval','RWL Cache Refresh Interval',4,\&textinput,7,'(\d+\.?\d*|)','configUpdateRWLCR','IP\'s in cache will be removed after this interval in days. 0 will disable the cache. <input type="button" value=" Show RWL Cache" onclick="javascript:popFileEditor(\'pb/pbdb.rwl.db\',5);" />',undef,undef,'msg000950','msg000951'],
 ['WhitelistPrivacyLevel','PrivacyLevel of the Whitelist','0:global &amp; private(legacy)|1:domain &amp; private|2:private only',\&listbox,0,'(.*)',undef,
  'Sets the privacy level of the whitelistdb . If a (local) user adds an email address to the whitelist:<br /><br />
@@ -1761,69 +1894,14 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['UpdateWhitelist','Save Whitelist <sup>s</sup>',40,\&textinput,3600,$ScheduleGUIRe,'configChangeSched','Save a copy of the white list every this many seconds. Empty or Zero will prevent any saving and the cleanup of old records.<br />
   <hr /><div class="menuLevel1">Notes On Whitelist</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/whitelist.txt\',3);" />',undef,undef,'msg001030','msg001031'],
 
-[0,0,0,'heading','Relaying <a href="http://sourceforge.net/p/spambox/wiki/Relaying" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="relaying not allowed" /></a>'],
-['acceptAllMail','Accept All Mail*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Relaying is allowed for these IPs. They contribute also to the whitelist. Before setting this option, please read the complete section - it is recommended to configure relayPort to send mails from your LAN to the Internet. This can take either a directly entered list of IP\'s separated by pipes or a file \'file:files/acceptall.txt\'.<br />For example: 145.145.145.145|146.145.','Basic','7','msg001040','msg001041'],
-['DoLocalSenderDomain','Do Local Domain Check for Local Sender',0,\&checkbox,'','(.*)',undef,
-  'If activated, each local sender address must have a valid Local Domain. acceptAllMail and redlisted mails breaks this rule.',undef,undef,'msg001050','msg001051'],
-['DoLocalSenderAddress','Do Local Address Check for Local Sender',0,\&checkbox,'','(.*)',undef,
-  'If activated, each local sender address must have a valid Local Address. acceptAllMail and redlisted mails breaks this rule.',undef,undef,'msg001060','msg001061'],
-['nolocalDomains','Skip Local Domain Check',0,\&checkbox,'','(.*)',undef,'Do not check relaying based on localDomains. Let the mailserver do it. <b>NOT RECOMMENDED</b>.',undef,undef,'msg001070','msg001071'],
-['ldLDAP','Do LDAP lookup for local domains',0,\&checkbox,'','(.*)',undef,'Check local domains against an LDAP database.<br />Note: Checking this requires filling in LDAP DomainFilter ( ldLDAPFilter ) in the LDAP section.<br />This requires an installed <a href="http://search.cpan.org/~gbarr/perl-ldap-0.31/lib/Net/LDAP.pod" rel="external">NET::LDAP</a> module in Perl.',undef,undef,'msg001080','msg001081'],
-['ispip','ISP/Secondary MX Servers*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter any addresses that are your ISP or backup MX servers, separated by pipes (|). <br />These addresses will (necessarily) bypass Griplist, IP Limiting, Delaying, Penalty Box, SPF, DNSBL &amp; SRS checks unless the IP can be determined by (ispHostnames) ISP/Secondary Hostnames. For example: 127.0.0.1|172.16..','Basic','7','msg001090','msg001091'],
-['contentOnlyRe', 'Regular Expression to Identify Forwarded Messages*',80,\&textinput,'','(.*)','ConfigCompileRe',
- "Put anything here to identify messages which should bypass PB, Sender Validation, Griplist, IP Limiting, Delaying, SPF, DNSBL &amp; SRS checks. For example:  email addresses of people who are forwarding from other accounts to their mailbox on your server.",undef,undef,'msg001100','msg001101'],
-['ispHostnames','Regular Expression to Identify ISP/Secondary Hostnames*',80,\&textinput, '','(.*)', 'ConfigCompileRe', 'Hostnames (regular expression) to lookup the IP that connected to the ISP/Secondary server.<br />If found, this address is used to perform IP-based checks on forwarded messages. <br />For example: mx1\.yourisp\.com or mx1\.yourisp\.net|mx2\.yoursecondary\.com . <i>This hostnames are found in the \'Received:\' header, like  \'Received: from ...123.123.123.123... by <b>mx1.yourisp.com</b>\'</i>. Leave this blank to disable the feature. ',undef,undef,'msg001110','msg001111'],
-['send250OKISP','Send 250 OK To ISP/Secondary MX Servers',0,\&checkbox,'1','(.*)',undef,
- 'Set this checkbox if you want SPAMBOX to reply to IP\'s in ISPIP with \'250 OK\' instead of SMTP error code \'554 5.7.1\'.',undef,undef,'msg001120','msg001121'],
-['ispgripvalue','ISP/Secondary MX Grip Value',5,\&textinput,'0.5','^(0\.?\d*|)$',undef,'It is recommended  to set it to 0.5 (Completely GReyIP) for ISP and Secondary MX servers. If left blank the Griplist X value is used (percentage of spam messages in relation to total). <br />Note: value has to be greater than 0 and less than 1, where 0 = never spam and 1 = always spam',undef,undef,'msg001130','msg001131'],
+[0,0,0,'heading','Recipients/Local Domains/Transparent Recipients and Domains'],
+['transparentRecipients','Mails to these Recipients are Handled in Transparent-PROXY Mode*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
+'Mails to any of these recipients or domains are handled transparent immediatly <b>after</b> a possible SRS check, BATV processing, Recipient-Replacement, RFC822 checks, ORCPT check and a feature match is found in the currently processed "RCPT TO:" SMTP command (envelope recipient).<br />
+ What means "transparent handled" ? SPAMBOX acts like a transparent Proxy. No filter actions are taken for the mail. Nothing is analyzed. Nothing is verfied. Nothing is stored. Nothing is logged (except reply codes if configured) - only debugging will work.<br />
+ NOTICE: If a connection is moved in to the transparent proxy mode, this connection will stay in this mode until "MAIL FROM:" or "RSET" is used or the connection is closed by any peer.<br />
+ You can list specific addresses (user@mydomain.com), addresses at any local domain (user), or entire domains (@mydomain.com).  Wildcards are supported (fribo*@domain.com). (|).<br />
+ For example: fribo@thisdomain.com|jhanna|@sillyguys.org or place them in a plain ASCII file one address per line - file:files/transparentuser.txt.','Basic',undef,'msg010580','msg010581'],
 
-['BounceSenders','Bounce Senders*',80,\&textinput,'postmaster|mailer-daemon','(.*)','ConfigMakeRe','Envelope sender addresses treated as bounce origins. Null sender (&lt;&gt;) is always included.<br />
- Accepts specific addresses (postmaster@domain.com), usernames (mailer-daemon), or entire domains (@bounces.domain.com)<br />Separate entries with pipes: |. For example: postmaster|mailer-daemon',undef,undef,'msg001140','msg001141'],
-['PopB4SMTPFile','Pop Before SMTP DB File',40,\&textinput,'','(.*)',undef,'Enter the DB database filename of your POP before SMTP implementation with records stored for dotted-quad IP addresses.<br />For example: /etc/mail/popip.db',undef,undef,'msg001150','msg001151'],
-['PopB4SMTPMerak','Pop Before SMTP Merak Style',0,\&checkbox,'','(.*)',undef,'If set Merak 7.5.2 is supported.',undef,undef,'msg001160','msg001161'],
-['relayHost','Relay Host',80,\&textinput,'',$GUIHostPort,undef,
- 'Your isp\'s mail relayhost (smarthost). For example: mail.isp.com:25<br />If you run Exchange/Notes and you want spambox to update the nonspam database and the whitelist, then enter your isp\'s smtp relay host here. Blank means no relayhost. Only required if clients don\'t deliver through SMTP. Separate multiple entries by "|".<br />
-  If you need to connect to the relay host using native SSL, write \'SSL:\' in front of the IP/host definition. In this case the Perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> must be installed and enabled ( useIOSocketSSL ).<br />
-  Examples: your_ISP_Server:25, 149.1.1.1:25, SSL:149.1.1.2:465|any_other_host:25 !','Basic',undef,'msg001170','msg001171'],
-['relayAuthUser','User to Authenticate to Relay Host',80,\&passinput,'','(.*)',undef,'The username used for SMTP AUTH authentication to the relayhost  - for example, if your ISP need authentication on the SMTP port! Supported authentication methods are PLAIN, LOGIN, CRAM-MD5 and DIGEST-MD5 . If the relayhost offers multiple methods, the one with highest security option will be used. The Perl module <a href="http://search.cpan.org/search?query=Authen::SASL" rel="external">Authen::SASL</a> must be installed to use this feature! The usage of this feature will be skipped, if the sending MTA uses the AUTH command. Leave this blank, if you do not want use this feature.','Basic',undef,'msg009040','msg009041'],
-['relayAuthPass','Password to Authenticate to Relay Host',80,\&passinput,'','(.*)',undef,'The password used for SMTP AUTH authentication to the relayhost ! Leave this blank, if you do not want use this feature.','Basic',undef,'msg009050','msg009051'],
-['relayPort','Relay Port',80,\&textinput,'',$GUIHostPort,'ConfigChangeRelayPort','Tell your mail server to connect to this IP/port as its smarthost / relayhost. For example: 225<br /> Note that you\'ll want to keep the relayPort protected from external access by your firewall.<br />You can supply an interface:port to limit connections. Separate multiple entries by "|".<p><small><i>Examples:</i> 225, 127.0.0.1:225, 192.168.1.1:225|192.168.2.1:225 </small></p>!',undef,undef,'msg001180','msg001181'],
-['allowRelayCon','Allow Relay Connection from these IP\'s*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter any addresses that are allowed to use the relayPort , separated by pipes (|). If empty, any ip address is allowed to connect to the relayPort. If this option is defined, keep in mind : Addresses defined in acceptAllMail are <b>NOT</b> automatically included and have to be also defined here, if them should allow to use the relayPort. For example: 127.0.0.1|172.16..<br />
- If you use MS Office 365, you should define the <a href="http://technet.microsoft.com/en-us/library/dn163583(v=exchg.150).aspx" target="_blank">EOP IP addresses</a> here and you should configure your firewall to redirect connection from the hosted Exchange server to the relayPort .','Basic','7','msg008830','msg008831'],
-['RelayOnlyLocalSender','Allow Relaying Only for Local Sender',0,\&checkbox,'','(.*)',undef,'If set, the envelope sender (MAIL FROM:) is immediately checked after the DATA command is received (to be valid). If the sender address could not be validated, the connection is dropped.<br />
-  This setting is ignored for BounceSenders, which can relay at any time . <br />
-  The connection will be dropped regardless any other spambox setting ( except EmailSenderOK ).<br />
-  It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch this ( or RelayOnlyLocalDomains ) to ON in every case',undef,undef,'msg010380','msg010381'],
-['RelayOnlyLocalDomains','Allow Relaying Only for Local Domains',0,\&checkbox,'','(.*)',undef,'If set, the envelope sender domain (MAIL FROM:) is immediately checked after the DATA command is received (to be a local domain). If the sender domain could not be validated, the connection is dropped.<br />
-  This setting is ignored for BounceSenders, which can relay at any time . <br />
-  The connection will be dropped regardless any other spambox setting ( except EmailSenderOK ).<br />
-  It is recommended to switch this to ON, if you use for example MS Office 365. At least, it is wise, to switch this ( or RelayOnlyLocalSender ) to ON in every case',undef,undef,'msg010390','msg010391'],
-['NoRelaying','No Relaying Error <a href="http://sourceforge.net/p/spambox/wiki/Relaying" target="SPAMBOXHELP"><img src="' . $wikiinfo . '" alt="wiki" /></a>',80,\&textinput,'530 Relaying not allowed','([25]\d\d .*)',undef,'SMTP error message to deny relaying.',undef,undef,'msg001190','msg001191'],
-['defaultLocalHost','Default Local Host',40,\&textinput,'spambox.local','('.$EmailDomainRe.')?',undef,'If you want to be able to send mail to local users without a domain name then put the default local domain here.<br /> Blank disables this feature. For example: mydomain.com .',undef,undef,'msg001200','msg001201'],
-
-['LocalFrequencyInt','Local Frequency Interval',40,\&textinput,'0','(\d*)',undef,'The time interval in seconds in which the number of envelope recipients per sending address has not to exceed a specific number ( LocalFrequencyNumRcpt ).<br />
-  Use this in combination with LocalFrequencyNumRcpt to limit the number of recipients in a given interval, to prevent local abuse - for example from hijacked local accounts. A value of 0 (default) will disable this feature and clean the cache within five minutes. It is recommended to enable DoLocalSenderAddress and/or DoLocalSenderDomain, if you want to use this feature. To give users the chance to inform an admin about such blocked mails, local mails to EmailAdmins are never blocked because of that feature.<br />
-  <input type="button" value="edit local Frequency Cache" onclick="javascript:popFileEditor(\'DB-localFrequencyCache\',\'1h\');" />',undef,undef,'msg008720','msg008721'],
-['LocalFrequencyNumRcpt','Local Frequency Recipient Number',40,\&textinput,'0','(\d*)',undef,'The number of envelope recipients per sending address that has not to exceed in a specific time interval ( LocalFrequencyInt ).<br />
-  Use this in combination with LocalFrequencyInt to limit the number of recipients in a given interval, to prevent local abuse - for example from hijacked local accounts. A value of 0 (default) will disable this feature and clean the cache within five minutes. It is recommended to enable DoLocalSenderAddress and/or DoLocalSenderDomain, if you want to use this feature. To give users the chance to inform an admin about such blocked mails, local mails to EmailAdmins are never blocked because of that feature. <br />
-  <input type="button" value="edit local Frequency Cache" onclick="javascript:popFileEditor(\'DB-localFrequencyCache\',\'1h\');" />',undef,undef,'msg008730','msg008731'],
-['LocalFrequencyOnly','Check local Frequency for this Users only*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
- 'A list of local addresses, for which the \'local frequency check\' should be done. Leave this field blank (default), to do the check for every address.<br />
-  Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br />
-  For example: fribo*@thisdomain.com|jhanna|@sillyguys.org ',undef,undef,'msg008740','msg008741'],
-['NoLocalFrequency','Check local Frequency NOT for this Users*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
- 'A list of local addresses, for which the \'local frequency check\' should not be done. Noprocessing messages will skip this check.<br />
-  Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).  Wildcards are supported (fribo*@domain.com).<br />
-  For example: fribo*@thisdomain.com|jhanna|@sillyguys.org ',undef,undef,'msg008750','msg008751'],
-['NoLocalFrequencyIP','Check local Frequency NOT for this IP\'s*',60,\&textinput,'','(.*)','ConfigMakeIPRe',
- 'A list of local IP-addresses, for which the \'local frequency check\' should not be done.<br />
-  For example: 145.145.145.145|145.146. ',undef,undef,'msg010110','msg010111'],
-
-['genDKIM','Generate and Add DKIM <a href="http://en.wikipedia.org/wiki/DomainKeys_Identified_Mail" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="Network Flow" /></a> signatures to relayed messages',0,\&checkbox,'','(.*)',undef,'If selected, SPAMBOX will add DKIM signatures to relayed messages if it finds a valid DKIM configuration in DKIMgenConfig for the sending domain. This will also be done for noprocessing mails. This requires an installed <a href="http://search.cpan.org/search?query=Mail::DKIM" rel="external">Mail::DKIM</a> module in PERL.',undef,undef,'msg001210','msg001211'],
-['DKIMgenConfig','The File with the DKIM configurations*',40,\&textinput,'file:dkim/dkimconfig.txt','(file:\S*)','configUpdateDKIMConf','The file that contains the DKIM configuration. A description how to configure DKIM could be found in the default file dkim/dkimconfig.txt.<br />
-<hr /><div class="menuLevel1">Notes On Relaying</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/relaying.txt\',3);" />',undef,undef,'msg001220','msg001221'],
-
-[0,0,0,'heading','Recipients/Local Domains'],
 ['removeForeignBCC','remove Foreign BCC',0,\&checkbox,'','(.*)',undef,'Remove foreign BCC: header lines from the mail header. The remove is done before the DoHeaderAddrCheck is done!',undef,undef,'msg009780','msg009781'],
 
 ['DoHeaderAddrCheck','Check TO,CC and BCC headers',0,\&checkbox,'','(.*)',undef,'If enabled TO: , CC: and BCC: header lines are checked the following way:<br /><br />
@@ -1834,7 +1912,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  5. a RelayAttempt will be detected if a BCC address is not local - scored with rlValencePB - <b>mail is blocked</b><br />
  The check 3 and 4 honors whitelisting , noprocessing and noBlockingIPs<br />
  Enable this check only, if spambox is configured to validate local domains and email addresses!<br />
- NOTICE: that removeForeignBCC take place before this check is done - step 5 will be never reached if removeForeignBCC is enabled!',undef,undef,'msg010010','msg010011'],
+ NOTICE: that removeForeignBCC take place before this check is done - step 5 will be never reached if removeForeignBCC is enabled!<br />
+ Using this feature can lead in to alot of address lookups. LDAP or VRFY address verifications may take a very long (possibly too long) time!',undef,undef,'msg010010','msg010011'],
 
 ['sendAllPostmaster','Catchall Address for Messages to Postmaster',20,\&textinput,'','(.*)',undef,'SPAMBOX will deliver messages addressed to all postmasters of your local domains to this address. For example: postmaster@mydomain.com',undef,undef,'msg001250','msg001251'],
 ['sendAllPostmasterNP','Skip Spam Checks for Postmaster Catchall',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg001260','msg001261'],
@@ -1843,21 +1922,33 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['DoRFC822','Validate addresses to conform with RFC 822','0:disabled|1:recipients|2:sender|3:both',\&listbox,2,'(.*)',undef,'If activated, the envelope sender and/or each envelope recipient is checked to conform with the email format defined in RFC 822. For an invalid sender address \'nofromValencePB\' is used for scoring - for invalid recipient addresses, each is scored with irValencePB .<br />
   For the sender address in addition a top level domain existence and DNS name server registration check is done.<br />
   The default setting is \'sender\' - recommended settings are \'sender\' or \'both\'!',undef,undef,'msg001290','msg001291'],
-['LocalAddresses_Flat','Lookup valid Local Addresses from here*',80,\&textinput,'','(.*)','ConfigMakeSLRe','These email addresses are the list of your local addresses. You can list specific addresses (user@mydomain.com), addresses at any local domain (user), or entire domains (@mydomain.com).  Wildcards are supported (fribo*@domain.com). (|).<br />For example: fribo@thisdomain.com|jhanna|@sillyguys.org or place them in a plain ASCII file one address per line:file:files/localuser.txt. You can use entries like @mydomain.com=>vrfyhost:port to VRFY users on your MTA, for more information read localDomains. You can use an entry like ALL=>vrfyhost:port to define a VRFY host for all domain entries ( better use Groups ).','Basic',undef,'msg001300','msg001301'],
+['LocalAddresses_Flat','Lookup valid Local Addresses from here*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
+ 'These email addresses are the list of your local addresses. You can list specific addresses (user@mydomain.com), addresses at any local domain (user), or entire domains (@mydomain.com).  Wildcards are supported (fribo*@domain.com). (|).<br />
+ For example: fribo@thisdomain.com|jhanna|@sillyguys.org or place them in a plain ASCII file one address per line - file:files/localuser.txt. You can use entries like @mydomain.com=>[SSL:]vrfyhost:port to VRFY users on your MTA, for more information read localDomains. You can use an entry like ALL=>vrfyhost:port to define a VRFY host for all domain entries ( better use Groups ).<br />
+ If the port :465 is defined for VRFY-MTA, or "SSL:" is prepended to the VRFY-MTA, a SSL connection will be used ( read DoVRFY ).<br />
+ Notice: if an equal domain entry is defined in localDomains , the entry in localDomains will be used!<br />
+ If you define <b>only one domain definition line - using ALL</b><br />
+ <b>ALL=>[SSL:]vrfyhost:port</b><br />
+ here and ldaplistdb is configured and DoVRFY is enabled and LDAPFail is set to ON, local domains will be additionaly collected in to ldaplistdb from verfied addresses, domains and URL\'s (eg. DoLocalSenderAddress , local recipient checks ). The postmaster account must exists for every local domain and subdomain at the MTA!<br />
+ <b>Using such a configuration, you must know what you are doing and have a properly configured MTA! Be carefull, the URIBL check ( ValidateURIBL ) can lead in to alot of domain lookups and verifications (possibly several hundred per mail). The same applies to the header recipient address validation ( DoHeaderAddrCheck )!</b>','Basic',undef,'msg001300','msg001301'],
 ['LocalAddresses_Flat_Domains','Use Addresses without \'@\' as Domains',0,\&checkbox,0,'([01]?)',undef,'Will handle entries without \'@\' as full domains',undef,undef,'msg001310','msg001311'],
 ['RejectTheseLocalAddresses','Reject These Local Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
 'If ANY recipient is on reject list, message will not be delivered. Used for disabled legitimate accounts, where a user may have left the company. This stops wildcard mailboxes from getting these messages.',undef,undef,'msg001320','msg001321'],
 ['localDomains','Local Domains*',80,\&textinput,'putYourDomains.com|here.org','(.*)','ConfigMakeLocalDomainsRe',
  'Check local domains against these addresses. Add a fake domain like \'spambox-nospam.org\' for the email interface if you run MS Exchange. When mailing to eg. \'spam@spambox-nospam.org\' MS Exchange forwards it outbound to SPAMBOX who handles the different options. As in every field marked by \'*\' separate addresses with | or use file \'file:files/localdomains.txt\'. Wildcards are supported.<br /> For example: *mydomain.com|*.mydomain.com|here.org <br />
- Use the syntax: *mydomain.com=>smtp.mydomain.com|other.com=>mx.other.com:port|other2.com=>mx.other.com:port,mx2.other.com:port to verify the recipient addresses with the SMTP-VRFY (if VRFY is not supported \'MAIL FROM:\' and \'RCPT TO:\' will be used) command on other SMTP servers. The entry behind => must be the hostname:port or ip-address:port of the MTA which is used to verify \'RCPT TO\' addresses with a VRFY command! If :port is not defined, port :25 will be used. You can use an entry like ALL=>vrfyhost:port to define a VRFY host for all local domain entries that don\'t have a MTA defined ( better use Groups ). Separate multiple VRFY hosts for failover by comma ",". You have to enable the SMTP \'VRFY\' command on your MTA - the \'EXPN\' command should be enabled! This requires an installed <a href="http://search.cpan.org/search?query=Net::SMTP" rel="external">Net::SMTP</a> module in PERL. <br />
+ Use the syntax: *mydomain.com=>smtp.mydomain.com|other.com=>SSL:mx.other.com:port|other2.com=>mx.other.com:port,mx2.other.com:port to verify the recipient addresses with the SMTP-VRFY (if VRFY is not supported \'MAIL FROM:\' and \'RCPT TO:\' will be used) command on other SMTP servers. The entry behind => must be the hostname:port or ip-address:port of the MTA which is used to verify \'RCPT TO\' addresses with a VRFY command! If :port is not defined, port :25 or :465 (in case SSL: is defined) will be used. You can use an entry like ALL=>vrfyhost:port to define a VRFY host for all local domain entries that don\'t have a MTA defined ( better use Groups ). Separate multiple VRFY hosts for failover by comma ",". You have to enable the SMTP \'VRFY\' command on your MTA - the \'EXPN\' command should be enabled! This requires an installed <a href="http://search.cpan.org/search?query=Net::SMTP" rel="external">Net::SMTP</a> module in PERL. <br />
+ If the port :465 is defined for VRFY-MTA, or "SSL:" is prepended to the VRFY-MTA, a SSL connection will be used ( read DoVRFY ).<br />
  If you have configured LDAP and enabled DoLDAP and SPAMBOX finds a VRFY entry for a domain, LDAP search will be done first and if this fails, the VRFY will be used. So VRFY could be used for LDAP backup/fallback/failover!<br />
- It is recommended to configure \'ldaplistdb\' in the \'File Paths and Database\' section when using this verify extension - so SPAMBOX will store all verified recipients addresses there to minimize the queries on MTA\'s. There is no need to configure LDAP, but both VRFY and LDAP are using ldaplistdb. Please go to the \'LDAP setup\' section to configure MaxLDAPlistDays and LDAPcrossCheckInterval or start a crosscheck now with forceLDAPcrossCheck. This three parameters belong also to VRFY.','Basic',undef,'msg001330','msg001331'],
-['DoVRFY','Verify Recipients with SMTP-VRFY',0,\&checkbox,1,'(.*)',undef,  'If activated and the format \'Domain=>MTA\' is encountered in
- localDomains recipient addresses will be verified with SMTP-VRFY (if VRFY is not supported \'MAIL FROM:\' and \'RCPT TO:\' will be used).
- If you know that VRFY is not supported with a MTA, you may put the MTA into VRFYforceRCPTTO. Don\'t forget to configure LDAPFail (belongs also to VRFY) to your needs!', undef,undef,'msg008850','msg008851'],
+ It is recommended to configure \'ldaplistdb\' in the \'File Paths and Database\' section when using this verify extension - so SPAMBOX will store all verified recipients addresses there to minimize the queries on MTA\'s. There is no need to configure LDAP, but both VRFY and LDAP are using ldaplistdb. Please go to the \'LDAP setup\' section to configure MaxLDAPlistDays and LDAPcrossCheckInterval or start a crosscheck now with forceLDAPcrossCheck. This three parameters belong also to VRFY.<br />
+ Notice: if an equal domain entry is defined in LocalAddresses_Flat , the entry in localDomains will be used!','Basic',undef,'msg001330','msg001331'],
+['DoVRFY','Verify Recipients with SMTP-VRFY',0,\&checkbox,1,'(.*)',undef,
+ 'If activated and the format \'Domain=>MTA:Port\' is encountered in localDomains and/or LocalAddresses_Flat, recipient addresses will be verified with SMTP-VRFY (if VRFY is not supported \'MAIL FROM:\' and \'RCPT TO:\' will be used).
+ If you know that VRFY is not supported with a MTA, you may put the MTA into VRFYforceRCPTTO. Don\'t forget to configure LDAPFail (belongs also to VRFY) to your needs!<br />
+ If the SMTP-SSL port :465 is defined with a MTA, or "SSL:" is prepended to the MTA definition and the module IO::Socket::SSL is available, a SSL connection will be used for the SMTP-VRFY-session.', undef,undef,'msg008850','msg008851'],
+['enableTLS4VRFY','Enable STARTTLS for VRFY',0,\&checkbox,0,'([01]?)',undef,'If enabled and the module IO::Socket::SSL is available and STARTTLS is supported by the VRFY-MTA and the SMTP-VRFY-session is not in SSL-mode, spambox will try to use the STARTTLS command to secure the SMTP-VRFY-session.',undef,undef,'msg010590','msg010591'],
 ['VRFYQueryTimeOut','SMTP VRFY-Query Timeout',5,\&textinput,'5','(\d\d?)',undef,
  'The number of seconds SPAMBOX will wait for an answer of the MTA that is queried with the VRFY command to verify a recipient address.',undef,undef,'msg001340','msg001341'],
-['VRFYforceRCPTTO','Force the usage of RCPT TO*',80,\&textinput,'','(.*)','ConfigMakeRe','Define MTA\'s here for which you want SPAMBOX to force the usage of MAIL FROM:,RCPT TO: instead of the VRFY command. The definition of each MTA has to be the same as defined in LocalAddresses_Flat and/or localDomains (after the \'=>\') for example: smtp.mydomain.com|mx.other.com:port|10.1.1.1|10.1.1.2:125 .',undef,undef,'msg001350','msg001351'],
+['VRFYforceRCPTTO','Force the usage of RCPT TO*',80,\&textinput,'','(.*)','ConfigMakeRe','Define MTA\'s here for which you want SPAMBOX to force the usage of MAIL FROM:,RCPT TO: instead of the VRFY command. The definition of each MTA has to be the same as defined in LocalAddresses_Flat and/or localDomains (after the \'=>\') for example: smtp.mydomain.com|SSL:mx.other.com:port|10.1.1.1|10.1.1.2:125 .',undef,undef,'msg001350','msg001351'],
 ['DisableVRFY','Disable VRFY and EXPN for External Clients',0,\&checkbox,'','(.*)',undef,'If you have enabled VRFY and/or EXPN on your MTA to make spambox able to verify addresses and you do not want external clients to use VRFY and EXPN - select this option.',undef,undef,'msg008600','msg008601'],
 ['DoLDAP','Do LDAP lookup for valid local addresses',0,\&checkbox,'','(.*)',undef,'Check local addresses against an LDAP database before accepting the message.<br />Note: Checking this requires filling in the other LDAP parameters below.<br />This requires an installed <a href="http://search.cpan.org/~gbarr/perl-ldap-0.31/lib/Net/LDAP.pod" rel="external">Net::LDAP</a> module in PERL.',undef,undef,'msg001360','msg001361'],
 ['LocalAddressesNP','Do Not  Validate Local Addresses if in NoProcessing List',0,\&checkbox,'','(.*)',undef,'If a recipient is found in NoProcessing, the user validation is skipped. ',undef,undef,'msg001370','msg001371'],
@@ -1904,9 +1995,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Disable "Block Forged Helo\'s" for addresses identified as noprocessing (not recommended).',undef,undef,'msg001550','msg001551'],
 ['myServerRe','Local Domains,IP\'s and Hostnames*',80,\&textinput,'','(.*)','ConfigMakeRe',
   'Local Domains, IP\'s and Hostnames are often use to fake (forge) the Helo. Include all IP addresses and hostnames for your server here, localhost is already included. Include Local Domains of your choice here, if you deactivated the automatic use of the local domain list.  For example: 11.22.33.44|mx.YourDomains.com|here.org','Basic',undef,'msg001560','msg001561'],
-['noHelo','Don\'t Validate HELO for these IP\'s*',60,\&textinput,'','(\S*)','ConfigMakeIPRe',
-  'Enter IP addresses that will be excluded from all HELO checks.<br />
-   For example: 127.0.0.1|192.168.',undef,'7','msg001570','msg001571'],
+['noHelo','Don\'t Validate HELO for these IP\'s*',60,\&textinput,'127.0.0.0/8|::1','(\S*)','ConfigMakeIPRe',
+  'Enter IP addresses that will be excluded from all HELO checks. Default setting is 127.0.0.0/8|::1.<br />
+   For example: 127.0.0.1|::1|192.168.',undef,'7','msg001570','msg001571'],
 ['heloBlacklistIgnore','Don\'t process these HELO\'s*',80,\&textinput,'','(.*)','ConfigMakeRe',
   'HELO / EHLO greetings on this list will be excluded from all HELO checks. For example: host123.isp.com|host456.*.com',undef,undef,'msg001580','msg001581'],
 ['ForceValidateHelo','Enforce Early Helo Checks',0,\&checkbox,1,'(.*)',undef,
@@ -1996,8 +2087,13 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Check for existing From Header for whitelisted addresses.',undef,undef,'msg001900','msg001901'],
 ['DoNoFromNP','Do DoNoFrom for NoProcessing',0,\&checkbox,'1','(.*)',undef,
   'Check for existing From Header for noprocessing addresses.',undef,undef,'msg001910','msg001911'],
-['removeDispositionNotification','Remove Disposition Notification Headers',0,\&checkbox,'','(.*)',undef,
-  'If set, all headers : "ReturnReceipt: , Return-Receipt-To: and Disposition-Notification-To:" will be removed from not whitelisted and not noprocessing incoming mails. Select this to prevent unwanted whitelisting of spammers that request a Disposition Notification. Another way to prevent autowhitelisting because of an autoresponder is to use redRe .',undef,undef,'msg008970','msg008971'],
+['removeDispositionNotification','Remove Disposition Notification Headers',80,\&textinput,'','((?:Disposition-Notification-To|Return-Receipt-To|ReturnReceipt)(?:\|(?:Disposition-Notification-To|Return-Receipt-To|ReturnReceipt)){0,2}|)',undef,
+  'To remove any headers : "ReturnReceipt: , Return-Receipt-To: and Disposition-Notification-To:" from not whitelisted and not noprocessing incoming mails, define the unwanted headers as regular expression.<br />
+  for example: Disposition-Notification-To<br />
+  or: Disposition-Notification-To|Return-Receipt-To<br />
+  or: Disposition-Notification-To|Return-Receipt-To|ReturnReceipt<br />
+  or any other possible combination. Notice: do NOT define the trailing ":"!<br />
+  Define this to prevent unwanted whitelisting of spammers that request a Disposition Notification. Another way to prevent autowhitelisting because of an autoresponder is to use redRe .',undef,undef,'msg008970','msg008971'],
 ['DoDKIM','Validate DomainKeys Identified Mail <a href="http://en.wikipedia.org/wiki/DomainKeys" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="DKIM" /></a>','0:disabled|1:block|2:monitor|3:score',\&listbox,3,'(.*)',undef,
   'If activated, DomainKeys Identified Mails are checked for the right signature and contents. All DKIM parameters belongs also to the old DomainKey specification. This requires an installed <a href="http://search.cpan.org/search?query=Mail::DKIM::Verifier" rel="external">Mail::DKIM::Verifier</a> module in PERL. In addition DKIM is used to process Domain-based Message Authentication, Reporting &amp; Conformance - described in <a href="http://www.dmarc.org/" rel="external">DMARC</a> (DMARC requires also ValidateSPF to be enabled).',undef,undef,'msg001920','msg001921'],
 ['DoStrictDKIM','Validate DomainKeys Identified Mail strictly',0,\&checkbox,0,'(.*)',undef,
@@ -2011,10 +2107,28 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   If SPAMBOX does not find a DKIM-Signature in the mail header, it also checks the DNS records of the sending domain for valid DKIM configurations. If it find such a configuration, the mail is considered spam, because it should have a DKIM-Signature.<br />
   The next mail from a domain that is found in this cache, must have a DKIM-Signature to pass the DKIM-pre-check. How ever, some DNS records are wrong or inaccurate and will cause SPAMBOX to block mails because of this - register such domains and/or IP\'s in noDKIMAddresses and/or noDKIMIP .<br />
   <input type="button" value=" Show DKIM Cache" onclick="javascript:popFileEditor(\'pb/pbdb.dkim.db\',5);" />',undef,undef,'msg001960','msg001961'],
-['AddDKIMHeader','Add X-Assp-DKIM Header',0,\&checkbox,1,'(.*)',undef,
-  'Add X-Assp-DKIM header.',undef,undef,'msg001970','msg001971'],
+['AddDKIMHeader','Add X-Spambox-DKIM Header',0,\&checkbox,1,'(.*)',undef,
+  'Add X-Spambox-DKIM header.',undef,undef,'msg001970','msg001971'],
+
+['signedSenders','Senders need to SMIME or PGP Sign All Mail*',80,\&textinput,'file:files/signedSenders.txt','(.*)','ConfigMakePrivatRe',
+  'Domains and addresses which have to SMIME or PGP sign or encrypt all mail. If a match is found for a sender and the email is not signed or encryped, the mail will be rejected!<br />
+  If configured, this check is done regardless any other spambox setting - it will affect all incoming mails!<br />
+  If a match is found and the mails is signed or encrypted, the mail will be processed as whitelisted mail!<br />
+  Note this matches the end of the address, so if you don\'t want to match subdomains then include the @. Note that example.com would also match spamexample.com but .example.com won\'t match example.com. Wildcards are supported. For example: sourceforge.net|group*@google.com|.example.com<br /><br />
+  It is possible to make the senders signing requirement recipient dependend (eg: on a set of local domains and/or local users). Use wildcards (* and ?) to define domains.<br />
+  Use the following syntax to do this:<br />
+  *@anydomain=>*@any_local_domain - for domain to domain<br />
+  *@*.anydomain=>*@any_local_domain - for any sub-domain to domain<br />
+  user@anydomain=>*@*.any_local_domain - for user to any sub-domain<br /><br />
+  It is possible to define more than one entry at the left and the right side of the definition (=&gt;), like:<br />
+  *@anydomain|*@other_domain=>*@any_local_domain|*@other_local_domain - always separate multiple entries by pipes<br />
+  It is also possible to use a GroupDefinition in any or both sides, like:<br />
+  [sendergroup]=>[recipientgroup]<br />
+  [sendergroup1]|[sendergroup2]|*@domain=>[recipientgroup1]|[recipientgroup2]|user@local_domain<br /><br />
+  NOTICE - that the local email addresses and domains are not checked to be local once',undef,undef,'msg010520','msg010521'],
+
 ['SenderInvalidError','Sender Validation Error',80,\&textinput,'554 5.7.1 REASON .','^([245]\d\d .*)$',undef,
-  'SMTP error message to reject invalid senders. The literal REASON is replaced by (missing MX, missing PTR, invalid Helo, invalid user) depending on the check.<br /><hr />
+  'SMTP error message to reject invalid senders. The literal REASON is replaced by (missing MX, missing PTR, invalid Helo, invalid user, missing signature) depending on the check.<br /><hr />
   <div class="menuLevel1">Notes On Validate Sender</div>
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/validatesender.txt\',3);" />',undef,undef,'msg001980','msg001981'],
 
@@ -2033,8 +2147,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   [ipgroup]=>[usergroup]|user@mydomain<br /><br />
   NOTICE: the following combination of two entries, will lead in to a user/domain based matching - the global entry will be ignored!<br />
   145.146.0.0/16 # comment<br />
-  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br />
-  If multiple user/domain based entries are defined for the same IP, only the last one will be used!',undef,'7','msg002000','msg002001'],
+  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment',undef,'7','msg002000','msg002001'],
 ['noBlockingIPs','Do not block Connections from these IP\'s*',40,\&textinput,'','(\S*)','ConfigMakeIPRe','Manually maintained list of IP\'s which should not be blocked.  For example: 145.145.145.145|145.146.<br />
   To define IP\'s only for specific email addresses or domains (recipients) you must use the file:... option<br />
   An entry (line) may look as follows:<br />
@@ -2043,8 +2156,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   [ipgroup]=>[usergroup]|user@mydomain<br /><br />
   NOTICE: the following combination of two entries, will lead in to a user/domain based matching - the global entry will be ignored!<br />
   145.146.0.0/16 # comment<br />
-  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br />
-  If multiple user/domain based entries are defined for the same IP, only the last one will be used!',undef,'7','msg002010','msg002011'],
+  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment',undef,'7','msg002010','msg002011'],
 ['DoDenySMTPstrict','Do Deny Connections from these IP\'s Strictly','0:disabled|1:block|2:monitor',\&listbox,1,'(\d*)',undef,
  'If activated, the IP is checked against (\'denySMTPConnectionsFromAlways\') Deny Connections from these IP\'s Strictly.',undef,undef,'msg002020','msg002021'],
 ['denySMTPConnectionsFromAlways','Deny Connections from these IP\'s Strictly*',40,\&textinput,'file:files/denyalways.txt','(\S*)','ConfigMakeIPRe',
@@ -2053,12 +2165,13 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'If activated, the IP is checked against the Droplist in addition to \'denySMTPConnectionsFromAlways\' and/or \'denySMTPConnectionsFrom\'. The droplist is downloaded if a new one is available and contains the Spamhaus DROP List. See "http://www.spamhaus.org/drop/drop.lasso".',undef,undef,'msg002040','msg002041'],
 ['denySMTPstrictEarly','Do Strictly Deny Connections Early',0,\&checkbox,'','(.*)',undef,
   'IP\'s in <b>denySMTPConnectionsFromAlways</b> will be denied right away.',undef,undef,'msg002050','msg002051'],
-['enhancedOriginIPDetect','Do an Enhanced Origin IP Address Detection in the Mail Header',0,\&checkbox,'1','(.*)',undef,
+['enhancedOriginIPDetect','Do an Enhanced Origin IP Address Detection in the Mail Header','0:disabled|1:all|2:all but most origin',\&listbox,2,'(.*)',undef,
   'If selected, SPAMBOX will analyze the mail headers "RECEIVED:" lines for IP\'s on the mail routing way to detect spam bots, that uses open relay or hijacked mail servers for mail delivery.<br />
   Local and private IP\'s, and IP\'s listed in ispip, acceptAllMail, whiteListedIPs, noProcessingIPs, noDelay and noPB will be ignored.<br />
-  The detected IP\'s will be additionally checked for IP-Blocking, DNSBL and IP-Frequency - the same way like the connected IP. These IP\'s are also additionally used for the maximum mail size calculation in MaxRealSizeAdr and MaxRealSizeExternalAdr.',undef,undef,'msg009590','msg009591'],
+  The detected IP\'s will be additionally checked for IP-Blocking, DNSBL and IP-Frequency - the same way like the connected IP. These IP\'s are also additionally used for the maximum mail size calculation in MaxRealSizeAdr and MaxRealSizeExternalAdr.<br />
+  Default setting is \'all but most origin\', which ignores the first of multiple detected public IP address, that was involved in the mail transport (possibly a user device).',undef,undef,'msg009590','msg009591'],
 ['DoFrequencyIP','Check Frequency - Maximum Connections Per IP','0:disabled|1:block|2:monitor|3:score|4:testmode',\&listbox,0,'(\d*)',undef,
- '',undef,undef,'msg002060','msg002061'],
+ 'Select the action, if maxSMTPipConnects is reached.',undef,undef,'msg002060','msg002061'],
 ['maxSMTPipConnects','Maximum Frequency of Connections Per IP ',3,\&textinput,'10','(\d?\d?\d?)',undef,
  'The maximum number of SMTP connections an IP Address can make during the <a href="./#maxSMTPipDuration">IP Address Frequency Duration</a>. If a server makes more than this many connections to SPAMBOX within the (maxSMTPipDuration) IP Address Frequency Duration it will be banned from future connections until the (maxSMTPipExpiration) IP Address Frequency Expiration is reached. This can be used to prevent server overloading and DoS attacks. 10 connections are typically enough. If left blank or 0, there is no limit imposed by SPAMBOX. IP\'s in noPB, noDelay, acceptAllMail, ispip, whiteListedIPs, noProcessingIPs, whitebox (PBWhite) are excluded from SMTP session limiting, whitelisted and noprocessing addresses are honored',undef,undef,'msg002070','msg002071'],
 ['maxSMTPipDuration','Maximum Frequency of Connections Per IP Duration',5,\&textinput,'90','(\d?\d?\d?\d?)',undef,
@@ -2130,8 +2243,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['LocalPenaltyMessageLow','Low MessageLimit for Local and Outgoing Mails',3,\&textinput,40,'(\d*)',undef,'MessageMode will not block local and outgoing messages whose score exceeds this threshold during the message but will tag them.  For example: 40',undef,undef,'msg010340','msg010341'],
 ['PenaltyMessageLimit','High MessageLimit',3,\&textinput,50,'(\d*)',undef,'MessageMode will block messages whose score exceeds this threshold during the message.  For example: 50',undef,undef,'msg002310','msg002311'],
 ['LocalPenaltyMessageLimit','High MessageLimit for Local and Outgoing Mails',3,\&textinput,50,'(\d*)',undef,'MessageMode will block local and outgoing messages whose score exceeds this threshold during the message.  For example: 50',undef,undef,'msg010350','msg010351'],
-['AddScoringHeader','Add IP/Message Scoring Header',0,\&checkbox,1,'(.*)',undef,'Adds a line to the email header "X-Assp-XXX-Score: ", where XXX may be IP, Message or both.',undef,undef,'msg002320','msg002321'],
-['pbdb','PenaltyBox Database',40,\&textinput,'pb/pbdb','(\S*)','configChangeDB','The directory/file with the penaltybox database files. For removal of entries from BlackBox (PBBlack) use noPB .
+['AddScoringHeader','Add IP/Message Scoring Header',0,\&checkbox,1,'(.*)',undef,'Adds a line to the email header "X-Spambox-XXX-Score: ", where XXX may be IP, Message or both.',undef,undef,'msg002320','msg002321'],
+['pbdb','PenaltyBox Database',40,\&textinput,$newDB.'pb/pbdb','(\S*)','configChangeDB','The directory/file with the penaltybox database files. For removal of entries from BlackBox (PBBlack) use noPB .
  For removal of entries from WhiteBox (PBWhite) use noPBwhite. For whitelisting IP\'s use whiteListedIPs or noProcessingIPs . For blacklisting use denySMTPConnectionsFrom and denySMTPConnectionsFromAlways .<br />Write only "DB:" to use a database table instead of a local file. <br />
  <input type="button" value=" Show BlackBox" onclick="javascript:popFileEditor(\'pb/pbdb.black.db\',4);" /><input type="button" value="Show White Box" onclick="javascript:popFileEditor(\'pb/pbdb.white.db\',4);" />',undef,undef,'msg002330','msg002331'],
 ['noPB','Don\'t do Profiling for these IP\'s*',80,\&textinput,'','(\S*)','ConfigMakeIPRe',
@@ -2140,16 +2253,16 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'Enter IP\'s that you want to be penalized. These IP\'s will also be automatically removed from WhiteBox (PBWhite).',undef,'7','msg002350','msg002351'],
 ['WhiteExpiration','Expiration Time for WhiteBox Entries',4,\&textinput,30,'(\d?\d?\d?\d?)',undef,
   "The WhiteBox (PBWhite) is always activated. The WhiteBox (PBWhite) is similar to the  Whitelist  - but it is not a whitelist: content-related checks like Bayesian, URIBL, Bomb  will be done, IP-related checks will be skipped. WhiteBox (PBWhite) entries will expire after this specified number of days. For example: 30",undef,undef,'msg002360','msg002361'],
-['DoDamping','Do Damping on Messagescore [0...99]',4,\&textinput,'0','(\d{1,2})',undef,'If DoPenalty and DoPenaltyMessage are set not to disabled and DoDamping is not set to 0, SPAMBOX will slowdown the spammers traffic speed proportional to the current message score - because slowing down their speed will reduce spam everywhere.<br />
+['DoDamping','Do Damping on Messagescore [0...99]',4,\&textinput,'5','(\d{1,2})',undef,'If DoPenalty and DoPenaltyMessage are set not to disabled and DoDamping is not set to 0, SPAMBOX will slowdown the spammers traffic speed proportional to the current message score - because slowing down their speed will reduce spam everywhere.<br />
   The delay in seconds per receive/read cycle is calculated by the division [messagescore / DoDamping] . A recommended value is 5 default is 0. In this case the delay for a message score of 50 would be 10 seconds.<br />
   Do not use this option, if you have a highly frequented system, because the spammers connections will stay possibly a long time on your system, and you system could possibly reach the sessions limit ( maxSMTPSessions ).<br />
   Damping is never done for: noprocessing, whitelisted, nodelay, ISP, redlisted, noPB, outgoing/releayed and contentonly addresses, IP\'s, messages.<br />
   Damping may not be done for forced checks, relay attemps, messages reaching maxerrors, spamtrapaddresses and if any block condition is found - because SPAMBOX will no more read from those connections and closes such connections immediately - but SPAMBOX will try to keep the connection open for the calculated time, before it closes the connection.<br />
   Using this option or using a too low value (long delay) could possibly prevent SPAMBOX from receiving spam messages, for example for spamlovers or sendAllSpam . Some Servers could give up sending data, because of too long delays.',undef,undef,'msg002370','msg002371'],
 ['maxDampingTime','Max time Used for Damping',4,\&textinput,30,'(\d?\d?\d?)',undef,
-  "The maximum time in second, that is used for one damping cycle if DoDamping is not set to 0, even if the calculated value caused by DoDamping is higher. For example: 30",undef,undef,'msg002380','msg002381'],
+  'The maximum time in second, that is used for one damping cycle if DoDamping is not set to 0, even if the calculated value caused by DoDamping is higher. For example: 30',undef,undef,'msg002380','msg002381'],
 ['spamtrapaddresses','PenaltyBox Trap Addresses *',80,\&textinput,'put|your@penaltytrap.com|addresses|@here.org','(.*)','ConfigMakeSLRe',
-  'Mail to any of these addresses will be blocked and the scoring value is added. Whitelist and noPenaltyMakeTraps will be ignored. Nothing will be stored in the Spam Collection, if these addresses are not checked for validity. TO: and CC: addresses will be also checked - BCC: addresses only, if \'removeForeignBCC\' is not set. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).',undef,undef,'msg002390','msg002391'],
+  'Mail to any of these addresses will be blocked and the scoring value is added. Whitelist and noPenaltyMakeTraps will be ignored. Nothing will be stored in the Spam Collection, if these addresses are not checked for validity. TO: and CC: addresses will be also checked - BCC: addresses only, if \'removeForeignBCC\' is not set. If you want to use these addresses as permanent honeypott addresses (with collection), it is better to define them in spamaddresses and to enable DoNotBlockCollect . Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com).',undef,undef,'msg002390','msg002391'],
 ['PenaltyTrapPolite','PenaltyTrap Reply',80,\&textinput,'550 5.1.1 User unknown: EMAILADDRESS','^([542]\d\d .+)',undef,'SMTP reply for invalid Users. Default: \'550 5.1.1 User unknown: EMAILADDRESS\' <br /> The literal EMAILADDRESS (case sensitive) is replaced by the fully qualified SMTP recipient (e.g., thisuser@example.com).',undef,undef,'msg002400','msg002401'],
 ['DoPenaltyMakeTraps','Do Heavy Used Invalid Addresses as PenaltyBox Trap Addresses','0:disabled|1:make traps and block them|2:make traps, only collect them|3:do not make them but block',\&listbox,2,'(.*)',undef,
   'If set to \'make traps, only collect them\', the frequency of Invalid Addresses is stored, no other action taken. If set to \'do not make them but block\' or \'make traps and block them\', addresses in heavy use will act like spamtrapaddresses (PenaltyBox Trap Addresses). If UseTrapToCollect is also set they will work like spamaddresses and collect the mails.',undef,undef,'msg002410','msg002411'],
@@ -2165,11 +2278,11 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['PenaltyError','Penalty Reply',80,\&textinput,'','^([245]\d\d .*|)$',undef,
   'If set SMTP reply for Penalty Deny. eg: \'554 5.7.1 Error, send your mail to postmaster@LOCALDOMAIN to ensure delivery\'. The literal LOCALDOMAIN will be replaced by the recipient domain. The literal LOCALUSER will be replaced by the recipient user part. For example:554 5.7.1 Mail appears to be unsolicited -- send error reports to postmaster@LOCALDOMAIN.',undef,undef,'msg002460','msg002461'],
 ['PenaltyDuration','Penalty Interval',4,\&textinput,60,'(\d?\d?\d?\d?)','updatePenaltyDuration',
-  "IP\'s will be kept in the BlackBox (PBBlack) if their score exceeds the Penalty Limit during this interval (minutes).",undef,undef,'msg002470','msg002471'],
+  'IP\'s will be kept in the BlackBox (PBBlack) if their score exceeds the Penalty Limit during this interval (minutes).',undef,undef,'msg002470','msg002471'],
 ['PenaltyLimit','Penalty Limit',4,\&textinput,50,'(\d*)',undef,
   'PB will block IP\'s whose score exceeds this threshold during the Penalty Interval. <br />Successful SPAMBOX checks will increase the internal score per IP. For example: 50',undef,undef,'msg002480','msg002481'],
 ['PenaltyExpiration','Expiration Time',4,\&textinput,360,'(\d?\d?\d?\d?)','updatePenaltyExpiration',
-  "Penalties will expire after this number of minutes. If set to Zero the Penalty BlackBox (PBBlack) will be deleted and started from scratch.",undef,undef,'msg002490','msg002491'],
+  'Penalties will expire after this number of minutes. If set to Zero the Penalty BlackBox (PBBlack) will be deleted and started from scratch.',undef,undef,'msg002490','msg002491'],
 ['CleanPBInterval','Clean Up PB Databases <sup>s</sup>',40,\&textinput,3,$ScheduleGUIRe,'configChangeSched',
   'Delete outdated entries from blackbox (PBBlack) and whitebox (PBWhite) databases every this many hours.<br />
   Defaults to 3 hours.',undef,undef,'msg002500','msg002501'],
@@ -2194,7 +2307,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['exportInterval','Export BlackBox Extreme File Interval <sup>s</sup>',40,\&textinput,6,$ScheduleGUIRe,'configChangeSched',
   ' Exported Penalty Black Box Extreme File every this hours.<br />
   Defaults to 6 hours.',undef,undef,'msg002590','msg002591'],
-['exportExtremeBlack','Exported BlackBox Extreme File ',40,\&textinput,'file:files/exportedextreme.txt','(\S*)',undef, 'IP\'s in Penalty BlackBox (PBBlack) which surpassed the extreme level will be regularly stored into this file. May be used for setting the firewall or similar applications.'  ,undef,undef,'msg002600','msg002601'],
+['exportExtremeBlack','Exported BlackBox Extreme File ',40,\&textinput,'file:files/exportedextreme.txt','(file:\S+|)',undef, 'IP\'s in Penalty BlackBox (PBBlack) which surpassed the extreme level will be regularly stored into this file. This file may be used for setting the firewall or similar applications. The file can be downloaded via the STATS-interface " webStatPort "! The download URL, used by your firewall, should look like: http://spambox.domain.local:55553/extremeblack .'  ,undef,undef,'msg002600','msg002601'],
 ['DoNotPenalizeRed','Do Not Score IP\'s in Redlisted Messages',0,\&checkbox,'','(.*)',undef,
   'IP\'s matching Red Regex or Redlist will not collect scoring values from PenaltyBox.',undef,undef,'msg002610','msg002611'],
 ['DoNotPenalizeNull','Do Not Score IP\'s From Bounce/Null-Senders',0,\&checkbox,'','(.*)',undef,
@@ -2293,8 +2406,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Enable Greylisting for noprocessing mails.',undef,undef,'msg003300','msg003301'],
 ['DelaySL','Spam-Lovers Greylisting',0,\&checkbox,'','(.*)',undef,
   'Enable Greylisting for Spam-Lovers.',undef,undef,'msg003310','msg003311'],
-['DelayAddHeader','Add X-Assp-Delayed Header',0,\&checkbox,1,'(.*)',undef,
-  'Add X-Assp-Delayed header to header of all delayed or whitelisted mails.',undef,undef,'msg003320','msg003321'],
+['DelayAddHeader','Add X-Spambox-Delayed Header',0,\&checkbox,1,'(.*)',undef,
+  'Add X-Spambox-Delayed header to header of all delayed or whitelisted mails.',undef,undef,'msg003320','msg003321'],
 ['DelayEmbargoTime','Embargo Time',5,\&textinput,5,'(\d+)',undef,
   'Enter the number of minutes for which delivery, related with new \'triplet\' (IP address of the sending<br />
   host + mail from + rcpt to), is refused with a temporary failure. Default is 5 minutes.',undef,undef,'msg003330','msg003331'],
@@ -2331,9 +2444,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   [ipgroup]=>[usergroup]|user@mydomain<br /><br />
   NOTICE: the following combination of two entries, will lead in to a user/domain based matching - the global entry will be ignored!<br />
   145.146.0.0/16 # comment<br />
-  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment<br />
-  If multiple user/domain based entries are defined for the same IP, only the last one will be used!',undef,'7','msg003440','msg003441'],
-['noDelayAddresses','Do not Delay these Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','Enter senders email addresses that you don\'t want to be delayed, separated by pipes (|). You can list specific addresses (user@anydomain.com), addresses at any domain (user), or entire domains (@anydomain.com).  Wildcards are supported (fribo*@domain.com). (|).<br />For example: fribo@anydomain.com|jhanna|@sillyguys.org or place them in a plain ASCII file one address per line:file:files/nodelayuser.txt.',undef,undef,'msg008610','msg008611'],
+  145.146.0.0/16=>*@local.domain|user@mydomain|user2@*.mydomain # comment',undef,'7','msg003440','msg003441'],
+['noDelayAddresses','Do not Delay these Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','Enter senders and/or recipient email addresses that you don\'t want to be delayed, separated by pipes (|). You can list specific addresses (user@anydomain.com), addresses at any domain (user), or entire domains (@anydomain.com).  Wildcards are supported (fribo*@domain.com). (|).<br />
+  For example: fribo@anydomain.com|jhanna|@sillyguys.org or place them in a plain ASCII file one address per line:file:files/nodelayuser.txt. Groups definitions are also allowed to be used.',undef,undef,'msg008610','msg008611'],
 ['DelayError','Reply Code to Refuse Delayed Messages',80,\&textinput,'451 4.7.1 Please try again later','(45\d .*)',undef,
   'SMTP reply code to refuse delayed messages. Default: 451 4.7.1 Please try again later
   <br /><hr />
@@ -2410,6 +2523,10 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['DoDMARC','Enable DMARC Check',0,\&checkbox,'1','(.*)',undef,
   'If enabled and ValidateSPF and DoDKIM are enabled and the sending domain has published a DMARC-record/policy, spambox will act on the mail according to the senders DMARC-policy using the results of the SPF and DKIM check. It is save to leave this feature ON, it will not produce false positives!<br />
   If you have published a DMARC-record and you want to collect statisical data, look at <a href="https://dmarcian.com" rel="external">dmarcian.com</a>',undef,undef,'msg010410','msg010411'],
+['noDMARCDomain','Don\'t Check DMARC for these Addresses/Domains*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
+ 'Put any sender domain (or address) in to this list, for which you want to disable the DMARC check - for example if an invalid DMARC record is published.<br />
+ Use \'noDMARCReportDomain\' if you only want to disable DMARC reports.<br />
+ Accepts entire domains (@example.com) (specific addresses (user@example.com) and user parts (user) are accepted, but not usefull!). Wildcards are supported (@*example.com or @*.example.com).',undef,undef,'msg010530','msg010531'],
 ['DMARCReportFrom','From Address for DMARC Reports',40,\&textinput,'','('.$EmailAdrRe.'(?:\@'.$EmailDomainRe.')?|)',undef,
   'The email address to be used as FROM: address to send <a href="http://www.dmarc.org/" rel="external">DMARC</a> reports. If blank, no DMARC reports will be sent! If only the user name is defined, spambox will add the domain name that belongs to the report.',undef,undef,'msg009730','msg009731'],
 ['noDMARCReportDomain','Don\'t send DMARC reports to these Addresses/Domains*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
@@ -2454,8 +2571,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'Enter IP addresses that you don\'t want to be DNSBL validated, separated by pipes (|). For example:  127.0.0.1|172.16..',undef,'7','msg003770','msg003771'],
 ['RBLWL','Whitelisted DNSBL Validation',0,\&checkbox,0,'(.*)',undef,
   'Enable DNSBL for whitelisted users also',undef,undef,'msg003780','msg003781'],
-['AddRBLHeader','Add X-Assp-DNSBL Header',0,\&checkbox,1,'(.*)',undef,
-  'Add X-Assp-DNSBL header to messages with positive reply from DNSBL.',undef,undef,'msg003790','msg003791'],
+['AddRBLHeader','Add X-Spambox-DNSBL Header',0,\&checkbox,1,'(.*)',undef,
+  'Add X-Spambox-DNSBL header to messages with positive reply from DNSBL.',undef,undef,'msg003790','msg003791'],
 ['RBLError','DNSBL Failed Reply',80,\&textinput,'554 5.7.1 DNS Blacklisted by RBLLISTED','(.*)',undef,
   'SMTP reply for DNSBL failed messages. Default: \'554 5.7.1 DNS Blacklisted by RBLLISTED\'<br />
   The literal RBLLISTED (case sensitive) is replaced by the actual service providers(s).',undef,undef,'msg003800','msg003801'],
@@ -2565,10 +2682,10 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  ['URIBLIPRe','Bad URI IP\'s*',80,\&textinput,'','(\S*)','ConfigMakeIPRe',
   'Every IP in a URI and every IP resolved for a hostname in a URI is checked against this list of IP\'s or networks. For example:145.145.145.145|145.146.|1.2.0.0/16<br />
   This high security feature will follow the rules in URIBLWL, URIBLNP, URIBLLocal and URIBLISP - but if a match is found, it will block the email ( ignores scoring, monitoring, testmodes and spamlover ).',undef,undef,'msg009600','msg009601'],
- ['AddURIBLHeader','Add X-Assp-Received-URIBL Header',0,\&checkbox,1,'(.*)',undef,
-  'Add X-Assp-Received-URIBL header to messages with positive reply from URIBL.',undef,undef,'msg004040','msg004041'],
- ['AddURIS2MyHeader','Add X-Assp-Detected-URI Header',0,\&checkbox,'','(.*)',undef,
-  'URI\'s detected with URIBLOK are added to our header lines (X-Assp-Detected-URI:).',undef,undef,'msg009750','msg009751'],
+ ['AddURIBLHeader','Add X-Spambox-Received-URIBL Header',0,\&checkbox,1,'(.*)',undef,
+  'Add X-Spambox-Received-URIBL header to messages with positive reply from URIBL.',undef,undef,'msg004040','msg004041'],
+ ['AddURIS2MyHeader','Add X-Spambox-Detected-URI Header',0,\&checkbox,'','(.*)',undef,
+  'URI\'s detected with URIBLOK are added to our header lines (X-Spambox-Detected-URI:).',undef,undef,'msg009750','msg009751'],
  ['URIBLCacheInterval','URIBL Cache Refresh Interval for Hits',3,\&textinput,1,'(\d+\.?\d*|)','configUpdateURIBLCR',
   'Domains in cache will be removed after this interval in days. Empty or 0 will disable the cache. <input type="button" value=" Show URIBL Cache" onclick="javascript:popFileEditor(\'pb/pbdb.uribl.db\',5);" />',undef,undef,'msg004050','msg004051'],
  ['URIBLCacheIntervalMiss','URIBL Cache Refresh Interval for Misses',3,\&textinput,0.5,'(\d+\.?\d*|)','configUpdateURIBLCR',
@@ -2668,7 +2785,8 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  'Put anything here to identify good messages by the string returned from the FileScanCMD. If defined and this regular expression matches and \'FileScanBad\' does not, the message is consider not infected.<br />
   If both FileScanBad and FileScanGood are defined, FileScanBad has not to match and FileScanGood has to match, to consider a mail not infected!',undef,undef,'msg004350','msg004351'],
 ['FileScanRespRe','FileScan Responds Regex*',60,\&textinput,'','(.*)','ConfigCompileRe',
- 'A regular expression that will be used over the text returned from the FileScanCMD. The result of this regex is used as virus name ($infection) in AvError. For example: infected by .+? \.\&lt;hr \/\&gt;',undef,undef,'msg004360','msg004361'],
+ 'A regular expression that will be used over the text returned from the FileScanCMD. The result of this regex is used as virus name ($infection) in AvError. For example: infected by ([^\r\n]+)
+ <hr />',undef,undef,'msg004360','msg004361'],
 ['FileLogScan','Scan Resent and Stored Files for Virus with FileScan','0:no scan|1:scan resend folder only|2:scan resend folder and collected files',\&listbox,1,'(\d*)',undef,'If virus check is enabled ( DoFileScan ), every file/mail (except reports - eg. n10000123456$maillogExt) in the \'resendmail\' folder and if selected, every collected file is scanned for virus before it is sent or stored.<br />
  If a virus is found, the file/mail is not (re)sent (it will get the extension \'.virus\'). Infected collected files are moved in to the SpamVirusLog folder.<br />
  If \'scan resend folder and collected files\' is selected, it could be possible, that the virus scanner ( FileScanCMD ) forces a very high system workload.<br />
@@ -2803,10 +2921,10 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   <span class=\"negative\">Changing this value requires a restart of spambox. Possibly a forced rebuildspamdb is required after the restart.</span>",undef,undef,'msg001240','msg001241'],
 ['DoPrivatSpamdb','Use also private entries for the Bayesian Spamdb and Hidden Markov Model databases','0:NO|1:for users only|2:for domains only|3:for users and domains',\&listbox,3,'(.*)','ConfigChangeDoPrivatSpamdb','If enabled, private entries (based on the local recipient and/or the report sender email address) will be added to the Bayesian and HMM databases. These private entries have a three times higher priority for users (full email address) and two times higher priority for domains (domain part of the email address) than global entries. To enable this option "spamdb" must be set to use a database "DB:" first!<br />
  <b>Setting this option to ON, will increase the record count for the spamdb and the HMM databases dramaticaly!</b>',undef,undef,'msg009630','msg009631'],
-['BayesMaxProcessTime','Bayesian and HMM Check Timeout ',3,\&textinput,'15','(\d+)',undef,'The Bayesian- and HMM Checks are the most memory and CPU consuming tasks that SPAMBOX is doing on a message. If such tasks running to long on one message, other messages could run in to SMTPIdleTimeout. Define here the maximum time in seconds that SPAMBOX should spend on Bayesian Checks for one message. Default is 60.',undef,undef,'msg004720','msg004721'],
-['BayesWL','Bayesian/HMM Check on Whitelisted NON Local Senders/Messages',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg006120','msg006121'],
-['BayesNP','Bayesian/HMM Check on NoProcessing Messages',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg007420','msg007421'],
-['BayesLocal','Bayesian/HMM Check on Local Senders',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg010360','msg010361'],
+['BayesMaxProcessTime','Bayesian and HMM Check Timeout ',3,\&textinput,'15','(\d+)',undef,'The Bayesian- and HMM checks are the most memory and CPU consuming tasks that SPAMBOX is doing on a message. If such tasks running to long on one message, other messages could run in to SMTPIdleTimeout. Define here the maximum time in seconds that SPAMBOX should spend on Bayesian Checks for one message. Default is 60.',undef,undef,'msg004720','msg004721'],
+['BayesWL','Bayesian/HMM Check on Whitelisted NON Local Senders/Messages',0,\&checkbox,'','(.*)',undef,'If enabled, the Bayesian/HMM check is done on whitelisted NON local senders/messages.',undef,undef,'msg006120','msg006121'],
+['BayesNP','Bayesian/HMM Check on NoProcessing Messages',0,\&checkbox,'','(.*)',undef,'If enabled, the Bayesian/HMM check is done on NoProcessing messages.',undef,undef,'msg007420','msg007421'],
+['BayesLocal','Bayesian/HMM Check on Local Senders',0,\&checkbox,'','(.*)',undef,'If enabled, the Bayesian/HMM check is done on local and outgoing messages',undef,undef,'msg010360','msg010361'],
 ['noBayesian','Skip Bayesian and HMM Check*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
  'Mail from/to any of these addresses are ignored by Bayesian- and HMM check, mails will not be stored in spam/notspam collection. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com)',undef,undef,'msg004730','msg004731'],
 ['noBayesian_local','Skip Bayesian and HMM Check for this local senders*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
@@ -2816,7 +2934,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['maxBayesValues','Maximum most significant results used per mail to calculate Bayesian- and HMM-Probability',3,\&textinput,'60','([3-9]\d|\d{3})',undef,'Maximum count of most significant values used to calculate the Bayesian/HMM-Spam-Probability and the confidence of that probability.<br />
  The Bayesian/HMM Spam probability will be fine with 30 and will get more exact, than higher this value is - until a value of 60.<br />
  The confidence of the Bayesian/HMM Spam probability will get better, than higher this value is.<br />
- Values above 60 are possible, but could lead in to a performance penalty, without getting a better spam detection.
+ Values above 60 are possible, but could lead in to a performance penalty, without getting a better spam detection.<br />
+ If the HMM check gets less than ( maxBayesValues / 3 + 1 ) results, the HMM check is set to scoring for the mail.<br />
+ If the HMM check gets less than ( maxBayesValues / 12 + 1 ) results, the HMM check is set to monitoring for the mail.<br />
  Default is \'60\', minimum is \'30\'.',undef,undef,'msg007890','msg007891'],
 ['baysProbability','Bayesian and HMM Probability Threshold ',3,\&textinput,'0.6','(0\.\d+)',undef,' Messages with spam-probability below or equal this threshold are considered Ham. Recommended \'0.6\'. If you change this value, check your setting of BayesAfterHMM .<br />
  A resulting Spam-Probability above this value is multiplied with baysValencePB_local or baysValencePB to get the penaltybox scoring value for the IP- and message score. In other words, the penaltybox scoring value is weighted by the Spam-Probability in case Spam is detected.<br />
@@ -2833,13 +2953,14 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
  The 0.6 threshold can be set in baysProbability .<br />
  The confidence of the probability value is also used in BayesAfterHMM.<br />
  Carefully set this parameter above 0, if the bayesian corpus norm (shown by the rebuildspamdb log) is less than 0.6 or higher than 1.4 .<br /><br />
- The following math is used to calculate the SpamProbConfidence value for \'n\' found Bayesian-Word-Pairs or HMM-Sequences, each with a spam-weight \'p\' - where 0&lt;p&lt;1 :<br /><br />
+ The following math is used to calculate the SpamProbConfidence value for \'n\' found Bayesian-Word-Pairs or HMM-Sequences doing \'q\' database queries, each result with a spam-weight \'p\' - where 0&lt;p&lt;1 :<br /><br />
  extreme_confidence_count = |(0 &lt; p<sub>1...n</sub> &lt; 0.01)| - |(0.99 &lt; p<sub>1...n</sub> &lt; 1)|<br />
  extreme_confidence_count = 0 - if ( extreme_confidence_count &lt; 0 and SpamProb &gt; 0.5) or ( extreme_confidence_count &gt; 0 and SpamProb &lt;= 0.5) == TRUE; <br />
  extreme_confidence_count = abs( extreme_confidence_count )<br />
- mail_confidence = abs((P<sub>1</sub> * P<sub>2</sub> * ... * P<sub>k</sub>) - ((1 - P<sub>1</sub>) * (1 - P<sub>2</sub> ) * ... * (1 - P<sub>k</sub>))) - for all elements P<sub>1...k</sub> in (0.01 &lt; p<sub>1...n</sub> &lt; 0.99)<br />
+ mail_confidence = abs((P<sub>1</sub> * P<sub>2</sub> * ... * P<sub>k</sub>) - ((1 - P<sub>1</sub>) * ( 1 - P<sub>2</sub> ) * ... * (1 - P<sub>k</sub>))) - for all elements P<sub>1...k</sub> in (0.01 &lt; p<sub>1...n</sub> &lt; 0.99)<br />
  corpus_confidence = 1 / ((abs(1 - corpus_norm) + 1)<sup>int(abs(1 - corpus_norm) * 10)</sup>) - the exponent is limited to a maximum of 4<br />
- SpamProbConfidence = 0.01<sup>extreme_confidence_count</sup> * mail_confidence * corpus_confidence * (n / maxBayesValues)<sup>2</sup><br /><br />
+ q = max( n , min( q , maxBayesValues ))<br />
+ SpamProbConfidence = 0.01<sup>extreme_confidence_count</sup> * mail_confidence * corpus_confidence * ( n / q )<sup>2</sup><br /><br />
  The SpamProbConfidence is limited to a maximum of 1.0 . <br />
  All extreme values \'p\' having a spam weight less than 0.01 or higher than 0.99 with a corresponding extreme value like (0.001 &lt;-&gt; 0.999) are ignored for the mail_confidence calculation.<br /><br />
  <span class="negative"> empty or zero = disabled</span>.<br /><br />
@@ -2847,9 +2968,9 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['baysConfidenceHalfScore','Reduce Scoring for Low Confidence',0,\&checkbox,1,'(.*)',undef,
  'Spam-Mails having a confidence below the threshold, will get half of the normal penalty score for Bayesian and HMM hits.',undef,undef,'msg004760','msg004761'],
 ['AddSpamProbHeader','Add Bayes and HMM Probability Header',0,\&checkbox,'','(.*)',undef,
- 'Adds a line to the email header "X-Assp-Spam-Prob: 0.0123" and/or "X-Assp-HMM-Spam-Prob: 0.0123" Probability ranges from 0 to +1 where &gt; 0.6 = spam.',undef,undef,'msg004780','msg004781'],
+ 'Adds a line to the email header "X-Spambox-Spam-Prob: 0.0123" and/or "X-Spambox-HMM-Spam-Prob: 0.0123" Probability ranges from 0 to +1 where &gt; 0.6 = spam.',undef,undef,'msg004780','msg004781'],
 ['AddConfidenceHeader','Add Bayes and HMM Confidence Header',0,\&checkbox,'','(.*)',undef,
-  'Adds a line to the email header "X-Assp-Bayes-Confidence: 0.0123" and/or "X-Assp-HMM-Confidence: 0.0123".<br /><hr />
+  'Adds a line to the email header "X-Spambox-Bayes-Confidence: 0.0123" and/or "X-Spambox-HMM-Confidence: 0.0123".<br /><hr />
   <div class="menuLevel1">Notes On Bayesian</div>
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/bayesian.txt\',3);" />',undef,undef,'msg004790','msg004791'],
 
@@ -2899,7 +3020,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['spamTag','Prepend Spam Tag',0,\&checkbox,'','(.*)',undef,'If checked, the method(s) SPAMBOX used which caught the spam will be prepended to the subject of the email. For example; [DNSBL]','Basic',undef,'msg004990','msg004991'],
 ['allTestMode','All Test Mode ON',0,\&checkbox,'','(.*)',undef,'Turn all of the individual testmodes on - regardless of the individual test mode settings. ',undef,undef,'msg005000','msg005001'],
 ['baysTestMode','Bayesian/Hidden-Markov-Model Test Mode',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg005010','msg005011'],
-['baysTestModeUserAddresses','Bayesian Test Mode User Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','These users are in test mode / mark subject only for bayesian spam, even with test mode above off','Basic',undef,'msg005020','msg005021'],
+['baysTestModeUserAddresses','Bayesian/HMM Test Mode User Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe','These users are in test mode / mark subject only for bayesian spam, even with test mode above off','Basic',undef,'msg005020','msg005021'],
 ['blTestMode','BlackDomain Test Mode',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg005030','msg005031'],
 ['hlTestMode','Helo Blacklist Test Mode',0,\&checkbox,'','(.*)',undef,'',undef,undef,'msg005040','msg005041'],
 ['flsTestMode','Forged Local Domain Test Mode',0,\&checkbox,'','(.*)','','-> DoNoValidLocalSender',undef,undef,'msg005050','msg005051'],
@@ -2923,7 +3044,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 
 [0,0,0,'heading','Email Interface <a href="http://sourceforge.net/p/spambox/wiki/How_do_i_use_the_e-mail_interface" target=wiki><img height=12 width=12 src="' . $wikiinfo . '" alt="How do I use the e-mail interface" /></a>'],
 ['EmailInterfaceOk','Enable Email Interface',0,\&checkbox,1,'(.*)',undef,
-  'Checked means that you want SPAMBOX to intercept and parse mail to the following usernames at any localdomains. The domain \'@spambox.local\' is automatically a local domain and can be used for the email-interface.
+  'Checked means that you want SPAMBOX to intercept and parse mail to the following usernames at any localdomains. The domains \'@spambox.local\' and \'@spambox-nospam.org\'are automatically a local domain and can be used for the email-interface.
   <hr>
   <b>NOTICE:</b> It is possible to define any MIME-header lines in any report file after the first (subject) line. This makes it possible to define MIME encoding and/or charset settings.<br />
   If a definition of MIME encoding and/or charset is found in a report file, spambox converts the report from UTF-8 in to the defined encodings. <b> Don\'t forget to terminate your MIME-header with an empty line!</b><br /><br />
@@ -2950,11 +3071,11 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Any mail sent by local/authenticated users to this username will be interpreted as a request for help. Do not put the full address here, just the user part. For example: spamboxhelp',undef,undef,'msg005240','msg005241'],
 ['EmailSpam','Report Spam Address',20,\&textinput,'spamboxspam','(.*)@?',undef,
   'Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a spam report. Multiple attachments get truncated to MaxBytesReports. Do not put the full address here, just the user part.<br />
-   For example: spamboxspam . Use a fake domain like @spambox.local when you send the email- so the full address would be then spamboxspam@spambox.local. <br />
+   For example: spamboxspam . Use a fake domain like @spambox.local or @spambox-nospam.org when you send the email- so the full address would be then spamboxspam@spambox.local. <br />
    You can sent multiple mails as attachments and/or zipped file(s). Each attached email-file must have the extension defined in "maillogExt". In this case only the attachments will be processed. To use this multi-attachment-feature an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL is needed. It is also possible to send MS-outlook \'.msg\' files (possibly zipped). To use this MS-outlook-feature in addition an installed <a href="http://search.cpan.org/search?query=Email::Outlook::Message" rel="external">Email::Outlook::Message</a> module in PERL is needed.','Basic',undef,'msg005280','msg005281'],
 ['EmailHam','Report Ham (Not-Spam) Address',20,\&textinput,'spamboxnotspam','(.*)@?',undef,
   'Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a false-positive report. Multiple attachments get truncated to MaxBytesReports. Do not put the full address here, just the user part.<br />
-   For example: spamboxnotspam . Use a fake domain like @spambox.local when you send the email- so the full address would be then spamboxspam@spambox.local. <br />
+   For example: spamboxnotspam . Use a fake domain like @spambox.local or @spambox-nospam.org when you send the email - so the full address would be then spamboxspam@spambox.local. <br />
    You can sent multiple mails as attachments and/or zipped file(s). Each attached email-file must have the extension defined in "maillogExt". In this case only the attachments will be processed. To use this multi-attachment-feature an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL is needed. It is also possible to send MS-outlook \'.msg\' files (possibly zipped). To use this MS-outlook-feature in addition an installed <a href="http://search.cpan.org/search?query=Email::Outlook::Message" rel="external">Email::Outlook::Message</a> module in PERL is needed.','Basic',undef,'msg005290','msg005291'],
 ['EmailForwardReportedTo','Email Interface Forward Reports Destination',20,\&textinput,'','^((?:' . $HostPortRe . '(?:\|' . $HostPortRe . ')*)|)$',undef,
  'Host and Port to forward EmailSpam and EmailHam reports to - eg "10.0.1.3:1025".<br />
@@ -3006,11 +3127,13 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   '',undef,undef,'msg005470','msg005471'],
 ['EmailNoProcessingTo','Send Copy of NoProcessing-Reports TO',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
   'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005480','msg005481'],
-['EmailBlackAdd','Add to BlackListed  Addresses',20,\&textinput,'spambox-black','(.*)@?',undef,
-  'Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the blackListedDomains addresses. Only the users defined in EmailAdmins and EmailAdminReportsTo are able to request an addition. Do not put the full address here, just the user part. <br />For example: spambox-black. To use this option, you have to configure blackListedDomains with "file:..." for example "file:files/blacklisted.txt" !',undef,undef,'msg005490','msg005491'],
+['EmailBlackAdd','Add to BlackListed Addresses',20,\&textinput,'spambox-black','(.*)@?',undef,
+  'Any mail sent by local/authenticated users to this username will be interpreted as a request to add the sender address to the blackListedDomains addresses. Only the users defined in EmailAdmins and EmailAdminReportsTo are able to request an addition. Do not put the full address here, just the user part.<br />
+  For example: spambox-black. To use this option, you have to configure blackListedDomains with "file:..." for example "file:files/blacklisted.txt" !',undef,undef,'msg005490','msg005491'],
 ['EmailBlackRemove','Remove from BlackListed Addresses',20,\&textinput,'spambox-notblack','(.*)@?',undef,
   'Any mail sent by local/authenticated users to this username will be interpreted as a request to remove the sender address from blackListedDomains .<br />
-  Do not put the full address here, just the user part. Only the users defined in EmailAdmins and EmailAdminReportsTo are able to request an addition. <br />For example: spambox-notblack. To use this option, you have to configure blackListedDomains with "file:..." for example "file:files/blacklisted.txt" !',undef,undef,'msg005500','msg005501'],
+  Do not put the full address here, just the user part. Only the users defined in EmailAdmins and EmailAdminReportsTo are able to request a removal.<br />
+  For example: spambox-notblack. To use this option, you have to configure blackListedDomains with "file:..." for example "file:files/blacklisted.txt" !',undef,undef,'msg005500','msg005501'],
 ['EmailErrorsModifyPersBlack','Spam/NotSpam Report will modify Personal Blacklist *',60,\&textinput,'*@*','(.*)','ConfigMakeSLRe',
   'Spam Reports will add email addresses to the Personal Blacklist, NotSpam Reports will remove addresses from the Personal Blacklist, if the report senders address matches.<br />
   Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). Wildcards are supported (fribo*@domain.com).<br />
@@ -3043,7 +3166,7 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
   'Email sent from SPAMBOX acknowledging your submissions will be sent to this address. For example: admin@domain.com',undef,undef,'msg005520','msg005521'],
 ['EmailAnalyze','Request Analyze Report',20,\&textinput,'spamboxanalyze','(.*)@?',undef,
   'Any mail sent or forwarded by local/authenticated users to this username will be interpreted as a request for analyzing the mail. Do not put the full address here, just the user part. For example: spamboxanalyze <br />
-  Use a fake domain like @spambox.local when you send the email- so the full address would be then spamboxanalyze@spambox.local. <br />You can sent multiple mails as attachments and/or zipped file(s). Each attached email-file must have the extension defined in "maillogExt". In this case only the attachments will be processed. To use this multi-attachment-feature an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL is needed. It is also possible to send MS-outlook \'.msg\' files (possibly zipped). To use this MS-outlook-feature in addition an installed <a href="http://search.cpan.org/search?query=Email::Outlook::Message" rel="external">Email::Outlook::Message</a> module in PERL is needed.','Basic',undef,'msg005530','msg005531'],
+  Use a fake domain like @spambox.local or @spambox-nospam.org when you send the email- so the full address would be then spamboxanalyze@spambox.local. <br />You can sent multiple mails as attachments and/or zipped file(s). Each attached email-file must have the extension defined in "maillogExt". In this case only the attachments will be processed. To use this multi-attachment-feature an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL is needed. It is also possible to send MS-outlook \'.msg\' files (possibly zipped). To use this MS-outlook-feature in addition an installed <a href="http://search.cpan.org/search?query=Email::Outlook::Message" rel="external">Email::Outlook::Message</a> module in PERL is needed.','Basic',undef,'msg005530','msg005531'],
 ['EmailAnalyzeReply','Reply to Analyze Request','0:NO REPLY|1:SEND TO SENDER|2:SEND TO EmailAnalyzeTo|3:SEND TO BOTH',\&listbox,1,'(\d*)',undef,'',undef,undef,'msg005540','msg005541'],
 ['EmailAnalyzeTo','Send Copy of Analyze-Reports',40,\&textinput,'','('.$EmailAdrRe.'\@'.$EmailDomainRe.')?',undef,
   'A copy of the Analyze-Report will be sent to this address. For example: admin@domain.com',undef,undef,'msg005550','msg005551'],
@@ -3080,51 +3203,62 @@ a list separated by | or a specified file \'file:files/redre.txt\'. ',undef,unde
 ['maillogExt','Extension for Mail Files',20,\&textinput,'.eml','(\S*)',undef,
   'Enter the file extension (include the period) you want appended to the mail files in the mail collections.<br />
   Leave it blank for no extension - this setting will prevent several features from working. Never use \'.msg\' - this is an extension used by MS-outlook! For Example: .eml',undef,undef,'msg005690','msg005691'],
-['spamdb','Spam/HMM Bayesian Database Files',40,\&textinput,'spamdb','(\S+)','configChangeDB','The output file from rebuildspamdb. Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below. The Hidden Makov Model is only available if this parameter is set to DB: .<br />
- <hr /><span class=\"negative\">It is recommended to use a database for all possible lists and caches for best performance, less memoryusage and stability! If you do not want to install a database engine like MySql or Oracle, use BerkeleyDB! Please read the section DBdriver !</span><br />
+['spamdb','Spam/HMM Bayesian Database Files',40,\&textinput,$newDB.'spamdb','(\S+)','configChangeDB','The output file from rebuildspamdb. Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below. The Hidden Makov Model is only available if this parameter is set to DB: .<br />
+ <hr />It is recommended to use a database for all possible lists and caches for best performance, less memoryusage and stability! If you do not want to install a database engine like MySql or Oracle, use BerkeleyDB! Please read the section DBdriver !<br />
+  If you set this value to "DB:" and you want HMMdb to use the same database backend like spamdb, don\'t forget to disable HMMusesBDB !<br />
  <hr /><div class="menuLevel1">Last Run Rebuildspamdb</div><input type="button" value="Last Run Rebuildspamdb" onclick="javascript:popFileEditor(\'rebuildrun.txt\',5);" />',undef,undef,'msg005700','msg005701'],
-['whitelistdb','E<!--get rid of google autofill-->mail Whitelist Database File',40,\&textinput,'whitelist','(\S+)','configChangeDB','The file with the whitelist.<br />
+['whitelistdb','E<!--get rid of google autofill-->mail Whitelist Database File',40,\&textinput,$newDB.'whitelist','(\S+)','configChangeDB','The file with the whitelist.<br />
   Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005710','msg005711'],
-['redlistdb','E<!--get rid of google autofill-->mail Redlist Database File',40,\&textinput,'redlist','(\S+)','configChangeDB','The file with the redlist.<br />
+['redlistdb','E<!--get rid of google autofill-->mail Redlist Database File',40,\&textinput,$newDB.'redlist','(\S+)','configChangeDB','The file with the redlist.<br />
   Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005720','msg005721'],
-['persblackdb','Personal Blacklist Database File',40,\&textinput,'persblack','(\S+)','configChangeDB','The file with the personal blacklist. The check of the personal black list is done shortly after the RCPT TO: command. This command will be rejected if an entry is found - any other setting except send250OK and send250OKISP will be ignored.<br />
+['persblackdb','Personal Blacklist Database File',40,\&textinput,$newDB.'persblack','(\S+)','configChangeDB','The file with the personal blacklist. The check of the personal black list is done shortly after the RCPT TO: command. This command will be rejected if an entry is found - any other setting except send250OK and send250OKISP will be ignored.<br />
   Each entry is represented by two comma separated values TO,FROM (and an expiration date).<br />
   TO could be any of : email address, [subdomain.]domain.tld, @[subdomain.]domain.tld, *@[subdomain.]domain.tld - the last three entry options could be only added and removed by editing the list in the GUI !<br />
   FROM could be any of : email address or any [@][subdomain.][domain.]TLD variant (wildcards are allowed). All values are supported by the email interface for all local users.<br />
   Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg009100','msg009101'],
-['griplist','GreyIPlist Database',40,\&textinput,'griplist','(\S*)',undef,'The file with the current Grey-IP-List database -- make this blank if you don\'t use it.',undef,undef,'msg005730','msg005731'],
+['griplist','GreyIPlist Database',40,\&textinput,$newDB.'griplist','(\S*)',undef,'The file with the current Grey-IP-List database -- make this blank if you don\'t use it.',undef,undef,'msg005730','msg005731'],
 ['useDB4griplist','Use BerkeleyDB for Griplist',0,\&checkbox,'','(.*)','configChangeDB',
   'If selected SPAMBOX uses \'BerkeleyDB\' instead of \'orderedtie\' for griplist. Depending on your settings for OrderedTieHashTableSize this could spend some memory and/or result in better performance.  The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature.',undef,undef,'msg005740','msg005741'],
 ['droplist','Drop also Connections from these IP\'s*',40,\&textinput,'file:files/droplist.txt','(\s*file\s*:\s*.+|)','ConfigMakeIPRe','Automatically downloaded (http://www.spamhaus.org/drop/drop.lasso) list of IP\'s which should be blocked right away. This list could be used in addition to denySMTPConnectionsFrom and/or denySMTPConnectionsFromAlways!',undef,'7','msg005750','msg005751'],
-['delaydb','Delaying Database',40,\&textinput,'delaydb','(\S*)','configChangeDB','The file with the delay database.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005760','msg005761'],
-['ldaplistdb','LDAP Database',40,\&textinput,'ldaplist','(\S*)','configChangeDB','The file with the LDAP-cache database.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005770','msg005771'],
-['adminusersdb','Admin Users Database',40,\&textinput,'','(\S*)','configChangeDB','The file with the GUI-Admin-Users database - default to set is \'adminusers\'.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below. Before setting this parameter, please set adminusersdbpass to a value of your choice!<br />
+['delaydb','Delaying Database',40,\&textinput,$newDB.'delaydb','(\S*)','configChangeDB','The file with the delay database.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.',undef,undef,'msg005760','msg005761'],
+['ldaplistdb','LDAP Database',40,\&textinput,$newDB.'ldaplist','(\S*)','configChangeDB',
+ 'The file with the LDAP-cache database. Local email addresses and local domains, which are successfully validated using LDAP ( DoLDAP ) or VRFY ( DoVRFY ) are cached in this list, to prevent repeated LDAP and/or VRFY lookups.<br />
+ Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below.<br />
+ If an email address or domain is reported as invalid by LDAP or VRFY, this result is cached for (min) ten to (max) fifteen minutes in the LDAP-Not-Found-Cache <input type="button" value="edit LDAP-Not-Found Cache" onclick="javascript:popFileEditor(\'DB-LDAPNotFound\',\'1h\');" /> , to prevent repeated LDAP and/or VRFY lookups. Those cache entries are not removed from the cache, while the rebuildspamdb task is running!',undef,undef,'msg005770','msg005771'],
+['adminusersdb','Admin Users Database',40,\&textinput,'','(\S*)','configChangeDB','The file with the GUI-Admin-Users database - default to set is \''.$newDB.'adminusers\'.<br />Write only "DB:" to use a database table instead of a local file, in this case you need to edit the database parameters below. Before setting this parameter, please set adminusersdbpass to a value of your choice!<br />
  <hr>To use this database shared between multiple SPAMBOX\'s, set all SPAMBOX to mysqlSlaveMode (except the master) and the adminusersdbpass must be the same on all installations! If you want to change the adminusersdbpass, first change it on the master.<hr>',undef,undef,'msg005780','msg005781'],
 ['adminusersdbNoBIN','Admin Users Database uses no Binary Data (ASCII only)',0,\&checkbox,'','(.*)',undef,'Select this, if adminusersdb is set to "DB:" and your database engine does not accept or has problems with binary data (eg. Postgres). <span class="negative">If you change this value, you have to stop all spambox and to cleanup both tables (adminusers and adminusersright) <b>before</b> restarting spambox!</span>. To keep your data do the following: do an ExportMysqlDB - change this value - stop spambox - drop or clean both tables - start spambox - do an ImportMysqlDB .',undef,undef,'msg005790','msg005791'],
-['adminusersdbpass','Admin Users Database PassPhrase',40,\&passinput,'','(.+)','ConfigChangePassPhrase','The pspamboxhrase that is used to encrypt the adminusersdb. This has to be the same on all SPAMBOX installations that are sharing the adminusersdb. If you want to change it, first change it on the master installation and than on the slaves. Do not forget to configure \'mysqlSlaveMode\' first. An empty value is not valid!',undef,undef,'msg005800','msg005801'],
+['adminusersdbpass','Admin Users Database PassPhrase',40,\&passinput,'','(.*)','ConfigChangePassPhrase','The pspamboxhrase that is used to encrypt the adminusersdb. This has to be the same on all SPAMBOX installations that are sharing the adminusersdb. If you want to change it, first change it on the master installation and than on the slaves. Do not forget to configure \'mysqlSlaveMode\' first. An empty value is not valid!',undef,undef,'msg005800','msg005801'],
 ['myhost','database hostname or IP',40,\&textinput,'','(.*)',undef,
   'You need <a  href="http://search.cpan.org/~lds/Tie-DBI-1.02/lib/Tie/RDBM.pm" rel="external">Tie::RDBM</a> to use a database instead of local files.<br />
-  This way you can share whitelist, delaydb, redlist and penaltybox between servers',undef,undef,'msg005810','msg005811'],
+  This way you can share whitelist, delaydb, redlist, spamdb, HMMdb, ldaplist, adminusersdb, personal blacklist and penaltybox (all that can be set to \'DB:\') between servers',undef,undef,'msg005810','msg005811'],
 ['DBdriver','database driver name',40,\&textinput,'','^([a-zA-Z].+|)$','configChangeDB',
-  'The database driver used to access your database - DBD-driver. The following drivers are available on your system:<br />
+  'The database driver used to access your database - DBD-driver.<br />
+  <span class=\"negative\">Please read this section very carefull!</span><br />
+  The following drivers are available on your system:<br />
   $DBdriversJ<br />
   If you can not find the driver for your database in this list, you should install it via cpan or ppm!<br />
   -  or if you have installed an ODBC-driver for your database and DBD-ODBC, just create a DSN and use ODBC.<br />
   If spambox is running on windows and you want to use a MSSQL server as backend, don\'t use the ODBC driver - use the ADO driver with the DSN definition!<br />
-  Useful are ADO|DB2|Informix|ODBC|Oracle|Pg|Sybase|mysql - but any other SQL compatible database should also work.<br/ ><br />
+  Useful are ADO|DB2|Informix|ODBC|Oracle|Pg|Sybase|mysql|Firebird - but any other SQL compatible database should also work.<br/ ><br />
   syntax examples: driver,option1,option2,...,...<br />
   ADO[,DSN=mydsn[;Provider=sqloledb]]<br />
+  ODBC,DSN=mydsn|driver=\{SQL Server\},Server=server_name<br />
   DB2<br />
   Informix<br />
-  ODBC,DSN=mydsn|driver=\{SQL Server\},Server=server_name<br />
   Oracle,SID=1|INSTANCE_NAME=myinstance|SERVER=myserver|SERVICE_NAME=myservice_name,[PORT=myport]<br />
   Pg[,PORT=myport]<br />
+  Firebird[,PORT=myport]<br />
   Sybase,SERVER=myserver,[PORT=myport]<br />
   mysql[,PORT=myport][,mysql_socket=/path/to/mysql.sock][,AutoCommit=1][,mysql_auto_reconnect=1]<br /><br />
+  Notice: spambox requires permanent database connections. Set database engine parameter like \'client-timeout\' or \'connection-timeout\' to very high values (eg: 1/2 or 1 day)! SPAMBOX requires one database connection per thread (typical 8 connections), plus up to five connection for imports, exports and internal processing. Set the maximum allowed database connection in your database server configuration according!<br /><br />
   <span class="negative">Instead using local files for hashes and lists via shared memory, it is recommended to use <a  href=\"http://search.cpan.org/search?query=berkeleydb\" rel=\"external\">BerkeleyDB</a> (Perl-module) version 0.34 or higher for highest performance and less memory usage.  The BerkeleyDB (engine) version 4.5 or higher is required to use BerkeleyDB.</span><br />
   If you specify BerkeleyDB here, the values for myhost, mydb, myuser and mypassword will be ignored. All possible BerkeleyDB option must be defined here - the option for \'-Filename\' is already set by SPAMBOX! Options could be defined for example:<br />
   BerkeleyDB,-Pagesize=>number,-Env=>[-Cachesize=>number,-Mode=>mode,...,...],...,...<br />
-  If \'-Env=>[-Cachesize=>number]\' (number in bytes) is specified, this cache size will be used at minimum for every single list. This is not recommended, because SPAMBOX does automatically calculate the right cache for every list. You may setup configuration values for any BerkeleyDB, creating a file <a href=http://www.oracle.com/technology/documentation/berkeley-db/db/ref/env/db_config.html>DB_CONFIG</a> (case sensitive) in the corresponding directory ./tmpDB/[list]. Please use the BerkeleyDB documentation if you don\'t know the syntax of this file. Any value defined in that file will overwrite the corresponding internal SPAMBOX configuration for this DB.<br /><br />
+  If \'-Env=>[-Cachesize=>number]\' (number in bytes) is specified, this cache size will be used at minimum for every single list. Setting the cache size is not recommended (as long as do not you really know what you do), because SPAMBOX does automatically calculate the right cache for every list. You may setup configuration values for any BerkeleyDB, creating a file <a href=https://docs.oracle.com/cd/E17275_01/html/programmer_reference/env_db_config.html>DB_CONFIG</a> (case sensitive) in the corresponding directory ./tmpDB/[list]. Please use the BerkeleyDB documentation if you don\'t know the syntax of this file. Any value defined in that file will overwrite the corresponding internal SPAMBOX configuration for this DB.<br />
+  As with each other database engine, you should know how to handle BerkeleyDB large shared BDB-environments (CDB - DB_INIT_CDB and DB_INIT_MPOOL), how to repair database files and all the other important stuff. SPAMBOX has several buildin mechanism to detect and repair corrupt BerkeleyDB files, but they may not work in every case!<br />
+  If you have specified BerkeleyDB here and your system shows unexpected SEGV or SPAMBOX died unexpected, think about the BDB settings. If you can\'t fix such an issue, it may be an good idea to switch over to MySQL or another database engine.<br />
+  <span class=\"negative\">KEEP IN MIND:</span> BerkeleyDB files are shared opened and accessed by all threads using BDB-CDB. The last terminated thread closes the BDB-files (shutdown the BDB-engine) for the systems file system. <span class=\"negative\">It is important</span>, that (especially) linux and unix <span class=\"negative\">system shutdown scripts are waiting until ALL spambox/perl processes are ended</span> (this may take up to one minute - see MaxFinConWaitTime )! Otherwise, the kernel will kill the spambox/perl process at shutdown and the BerkeleyDB DB-files and environment-files <span class=\"negative\">WILL BE DESTROYED</span> and cause to <span class=\"negative\">100%</span> unexpected behavior or crashes at the next start or run! The same applies to Windows systems, if spambox is <span class=\"negative\">not running as system service</span> - the windows system-service-manager will wait until the process is finished.<br /><br />
   The options for all drivers and their possible or required order depends on the DBD driver used, please read the driver\'s documentation, if you do not know the needed option.<br />
   The username, password, host and databasename are always used from this configuration page.',undef,undef,'msg005820','msg005821'],
 ['mydb','database name',40,\&textinput,'','(\S*)',undef,
@@ -3176,7 +3310,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 - restart spambox and wait until all imports are finished
 - restart spambox
 - set DisableSMTPNetworking to off </span>',undef,undef,'msg005870','msg005871'],
-['preventBulkImport','Prevent Bulk Import',0,\&checkbox,'','(.*)',undef,'Do not select, if you are using MySQL! Doing a Bulk-Import of data, SPAMBOX modifies the properties of table columns. This could result in breaking some configured DB features like DB-replication in MSSQL. If selected, SPAMBOX will do a line per line insert/update (which takes much more time) without modifying the tables properties.',undef,undef,'msg005880','msg005881'],
+['preventBulkImport','Prevent Bulk Import',0,\&checkbox,'','(.*)',undef,'Do not select, if you are using MySQL! Doing a Bulk-Import of data, SPAMBOX modifies the properties of table columns. This could result in breaking some configured DB features like DB-replication in MSSQL and possibly other database engines. If selected, SPAMBOX will do a line per line insert/update (which takes much more time) without modifying the tables properties.',undef,undef,'msg005880','msg005881'],
 ['fillUpImportDBDir','Fill the Import Folder',10,\&textinput,'','^([1-9]|L|)$','ConfigChangeRunTaskNow','If set to a value between 1 and 9, the corresponding backup file for any list/hash that configured to use a database will be copied from the backupDBDir to the importDBDir. The resulting file name will has an extension of ".rpl", so a possible import will replace the current table content. If a value of "L" is defined, the last backup will be used. Possible values are L or 1 - 9 or blank. Any configured value will be reset to blank after the copy is finished.',undef,undef,'msg008990','msg008991'],
 ['ImportMysqlDB','import all files from the importDBDir Directory in to the database - now.',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow',
   "All files from the \"importDBDir\" will be imported in to database $mydb. Please define the directory above, before using the import!<br />
@@ -3207,7 +3341,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 
 [0,0,0,'heading','Collecting'],
 ['spamaddresses','Spam Collect Addresses*',80,\&textinput,'','(.*)','ConfigMakeSLRe',
-  'Mail to any of these addresses are always spam and will contribute to the spam-collection unless from someone on the whitelist. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). The addresses are not validated, they  are readdressed to ccallspam, however you can supersede this by putting a valid address into sendAllCollect below.',undef,undef,'msg005990','msg005991'],
+  'Mail to any of these addresses are always spam and will contribute to the spam-collection unless from someone on the whitelist - for example honeypott addresses. Accepts specific addresses (user@domain.com), user parts (user) or entire domains (@domain.com). The addresses are not validated, they  are readdressed to ccallspam, however you can supersede this by putting a valid address into sendAllCollect below.',undef,undef,'msg005990','msg005991'],
 ['sendAllCollect','Catchall Address for Collect Addresses',20,\&textinput,'','(.*)',undef,
   'SPAMBOX will readdress messages addressed to Collect Addresses to this address.<br />
   For example: collect@mydomain.com',undef,undef,'msg006000','msg006001'],
@@ -3369,7 +3503,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
  mm - minute two digits<br />
  ss - second two digits<br /><br />
  <b>NOTICE: If you change this value, BlockReports and Griplist-uploads will not work for log entries in the past (from now)!</b><br />
- <span class="positive">A value has to be defined for every part of the date/time, the date must be the first part. Allowed separators in date part are \'_ -./\' - in time part \'-_.:\' .</span>',undef,undef,'msg008690','msg008691'],
+ <span class="positive">An value has to be defined for every part of the date/time, the date must be the first part. Allowed separators in date part are \'_ -./\' - in time part \'-_.:\' .</span>',undef,undef,'msg008690','msg008691'],
 ['LogDateLang','Date/Time Language','0:English|1:Français|2:Deutsch|3:Español|4:Português|5:Nederlands|6:Italiano|7:Norsk|8:Svenska|9:Dansk|10:suomi|11:Magyar|12:polski|13:Romaneste',\&listbox,0,'(.*)',undef,
   'Select the language for the day and month if LogDateFormat contains DDD and/or MMM.<br />
   <b>NOTICE: If you change this value, BlockReports and Griplist-uploads will not work for log entries in the past (from now)!</b>',undef,undef,'msg008700','msg008701'],
@@ -3526,11 +3660,13 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 ['DNSReuseSocket','Reuse DNS UDP Sockets',0,\&checkbox,1,'(.*)',undef,'If selected, spambox will try to reuse DNS-UDP sockets as long as this is possible. Otherwise each DNS-query will create a new UDP socket for each DNS-Server. It is recommended to set this to on, because spambox could use DNS-queries very extensive, which possibly forces the spambox system and/or your DNS-servers to run out of available UDP sockets.',undef,undef,'msg004770','msg004771'],
 ['DNSResponseLog','Show DNS Name Servers Response Time in Log',0,\&checkbox,0,'(.*)',undef,'You can use this to arrange DNSServers for better performance.',undef,undef,'msg007360','msg007361'],
 ['DNSServers','DNS Name Servers*',80,\&textinput,'208.67.222.222|208.67.220.220','^((?:(?:'.$HostRe.'|'.$HostPortRe.')(?:\|(?:'.$HostRe.'|'.$HostPortRe.'))*)(?:\s*=>\s*'.$HostRe.'\.?)?|(?:\s*=>\s*'.$HostRe.'\.?)|)$','updateDNS',
- 'DNS Name Servers IP\'s to use for DNSBL(RBL), RWL, URIBL, PTR, SPF2, SenderBase, NS, and DMARC lookups. Separate multiple entries by "|" or leave blank to use system defaults. At least TWO DNS-servers should be defined or used by the system!<br /> For example: 208.67.222.222|208.67.220.220 (<a href="http://www.opendns.com/" rel="external">OpenDNS</a>).<br />
-  A DNS-query for the domain \'sourceforge.net\' is used per default to measure the speed of the used DNS-servers. If you want spambox to use another domain or hostname for this, append \'=>domain.tld\' at the end of the line - like: 208.67.222.222|208.67.220.220=>myhost.com<br />
+ 'DNS Name Servers IP\'s to use for DNSBL(RBL), RWL, URIBL, PTR, SPF2, SenderBase, NS, and DMARC lookups. Separate multiple entries by "|" or leave blank to use system defaults. At least TWO DNS-servers should be defined or used by the system!<br />
+  For example: 208.67.222.222|208.67.220.220 (<a href="http://www.opendns.com/" rel="external">OpenDNS</a>).<br />
+  An DNS-query for the domain \'sourceforge.net\' is used per default to measure the speed of the used DNS-servers. If you want spambox to use another domain or hostname for this, append \'=>domain.tld\' at the end of the line - like: 208.67.222.222|208.67.220.220=>myhost.com<br />
   To define the domain if you use the local DNS-servers \'UseLocalDNS\' without defining any DNS-servers here, simply write \'=>myhost.com\'.<br />
   To debug the DNS queries, switch on DebugSPF, even you don\'t use the SFF-check.<br />
   NOTICE: don\'t define any public , ISP or open DNS-Servers (eg 208.67.222.222 208.67.220.220 8.8.8.8 8.8.4.4) , if you use any of the following spambox checks: DNSBL(RBL), RWL, URIBL, SenderBase ! It is recommended in EVERY case to install (and to use) at least two local DNS-Servers!<br />
+  NOTICE: the DNS-server order can be changed by spambox. Please read this section completely.<br />
   All configured or local DNS Name Servers will be checked <span class="negative">this may take some time if the servers are responding slow - please wait after apply changes!</span>',undef,undef,'msg007370','msg007371'],
 ['DNSServerLimit','Limit the Number of used DNS-Servers',5,\&textinput,0,'(\d+)','updateDNSServerLimit',
  'If set to a number &gt; zero, spambox will use the defined number of fastest responding nameservers (DNSServers) for DNS queries.<br />
@@ -3553,7 +3689,7 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
   host.domain.com => 192.168.1.1 # host<br />
   * => 172.16.1.1                # default - if not defined, the system default is used<br /><br />
   NOTICE: spambox will NOT check, that the local IP address is available and bound to a local interface! It will also NOT check the system routing table! YOU SHOULD KNOW WHAT YOU DO!',undef,undef,'msg010450','msg010451'],
-['maxDNSRespDist','Maximum DNS Response Time change',3,\&textinput,50,'([1-9]\d*)',undef,'Maximum DNS Server response time change in milliseconds. The query order of the used nameservers is changed, if any responds time exceeds this value.',undef,undef,'msg009800','msg009801'],
+['maxDNSRespDist','Maximum DNS Response Time change',3,\&textinput,50,'([1-9]\d*|0|)',undef,'Maximum DNS Server response time change in milliseconds. The query order of the used nameservers is changed, if any responds time exceeds this value. Set the value to zero or empty to use a fixed DNS-Server order list.',undef,undef,'msg009800','msg009801'],
 ['DNStimeout','DNS Query Timeout',2,\&textinput,2,'(\d+)','updateUseLocalDNS','Global DNS Query Timeout for DNSBL, RWL, URIBL, PTR, SPF, MX and A record lookups. The default is 2 seconds.',undef,undef,'msg007380','msg007381'],
 ['DNSretry','DNS Query Retry',2,\&textinput,1,'(\d+)','updateUseLocalDNS','Global DNS Query Retry. Set the number of times to try the query. The default is 1.',undef,undef,'msg007390','msg007391'],
 ['DNSretrans','DNS Query Retrans',2,\&textinput,1,'(\d+)','updateUseLocalDNS','Global DNS Query Retransmission Interval. Set the retransmission interval. The default is 1.<br /><hr />
@@ -3565,23 +3701,29 @@ Imported files will be renamed to *.OK !<br />For example: mysql/dbimport<br />
 ['normalizeUnicode','Normalize Unicode to NFKC',0,\&checkbox,'1','(.*)','ConfigChangeNormUnicode',
  'If set (which is the default and recommended), all regular expressions and both, the Bayesian and the HMM engine, are normalizing all characters in there setup and the checked content, according to unicode <a href="http://www.unicode.org/reports/tr15/ target=_blank">NFKC</a>.<br />
  In addition some extended (spambox unique) unicode normalization is done for the unicode blocks "Enclosed Alphanumerics", "Enclosed Alphanumeric Supplement" , "Enclosed CJK Letters And Months" and "Enclosed Ideographic Supplement" - like: &#9312; &#9313; &#9331; &#9332; &#9352; &#9451; &#9461; &#9424; &#9398; &#127280; &#12809; &#12853; &#13003; &#127559;. Those characters are decomposed by compatibility, then recomposed by canonical equivalence (eg. to LATIN or CJK).<br />
- If this value is changed, it is recommended to run a rebuildspamdb.<br />
+ If this value is changed, and your system processes alot of NON-Latin mails, it is recommended to run a rebuildspamdb.<br />
  This feature requires a Perl version 5.012000 (5.12.0) or higher.<br />
- NOTICE: the rebuildspamdb task will take up to double the time, if this feature is enabled and non-LATIN mails are processed!',undef,undef,'msg010420','msg010421'],
+ NOTICE: the rebuildspamdb task can take up to double the time, if this feature is enabled and non-LATIN mails are processed!',undef,undef,'msg010420','msg010421'],
+['enable8BITMIME','Enable the 8BITMIME SMTP Extension',0,\&checkbox,'1','(.*)','Config8BitMIME',
+ 'If enabled (default) spambox offers and supports the 8BITMIME SMTP extension, if the connected peers offers and supports 8BITMIME.',undef,undef,'msg010510','msg010511'],
 ['send250OK','Send 250 OK',0,\&checkbox,'','(.*)',undef,
  'Set this checkbox if you want SPAMBOX to reply with \'250 OK\' instead of SMTP error code \'554 5.7.1\'. This will turn SPAMBOX in some form of tarpit. ',undef,undef,'msg007430','msg007431'],
-['AsADaemon','Run SPAMBOX as a Daemon','0:No|1:Yes - externally controlled|2:Yes - run AutoRestartCmd on restart and wait|3:Yes - run AutoRestartCmd on restart and exit',\&listbox,'0','(.*)',undef,'In Linux/BSD/Unix/OSX fork and close file handles. <br />
+['AsADaemon','Run SPAMBOX as a Daemon','0:No|1:Yes - externally controlled|2:Yes - run AutoRestartCmd on restart and wait|3:Yes - run AutoRestartCmd on restart and exit',\&listbox,'0','(.*)',undef,
+'In all NON-Windows OS (eg. Linux/BSD/Unix/OSX...) fork and close STDOUT and STDERR file handles. <br />
  Similar to the command "perl spambox.pl &amp;", but better.<br />
  If "externally controlled" is selected, SPAMBOX simply ends and you have to restart spambox from your daemon or watchdog script<br />
  If "run AutoRestartCmd on restart and wait" is selected, spambox starts the OS command defined in AutoRestartCmd - spambox will <b>NOT !</b> automatically terminate - the started command has to terminate/kill and to (re)start spambox - like "service spambox restart"!<br />
  If "run AutoRestartCmd on restart and exit" is selected, spambox starts the OS command defined in AutoRestartCmd and terminates immediately!<br />
+ <span class=\"negative\">It is important</span>, that (especially) linux and unix <span class=\"negative\">system shutdown scripts are waiting until ALL spambox/perl processes are ended</span> (this may take up to one minute - see MaxFinConWaitTime )! Otherwise, the kernel will kill the spambox/perl process at shutdown and the possibly used BerkeleyDB DB-files and environment-files <span class=\"negative\">WILL BE DESTROYED</span> and cause to <span class=\"negative\">100%</span> unexpected behavior or crashes at the next start or run!<br /><br />
   <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007440','msg007441'],
 ['runAsUser','Run as UID',20,\&textinput,'','(\S*)',undef,'The *nix user name to assume after startup (*nix only). use the autorestart features careful, because any restart from inside SPAMBOX will be done with the permission of this user! <p><small><i>Examples:</i> spambox, nobody</small></p>
   <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007450','msg007451'],
-['runAsGroup','Run as GID',20,\&textinput,'','(\S*)',undef,'The *nix group to assume after startup (*nix only).<p><small><i>Examples:</i> spambox, nobody</small></p>
+['runAsGroup','Run as GID',20,\&textinput,'','(\S*)',undef,'The *nix group to assume after startup (*nix only). If you need to define supplementary groups, configure in addition runAsGroupSupplementary .<p><small><i>Examples:</i> spambox, nobody</small></p>
   <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007460','msg007461'],
-['ChangeRoot','Change Root',40,\&textinput,'','(.*)',undef,'The new root directory to which SPAMBOX should chroot (*nix only). If blank, no chroot jail will be used. Note: if you use this feature, be sure to copy or link the etc/protocols file in your chroot jail.<br />
-  <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg007470','msg007471'],
+['runAsGroupSupplementary','Run with supplementary groups',40,\&textinput,'','(\S*)',undef,'The *nix supplementary groups to assume after startup (*nix only) - requires runAsGroup to be configured.<p><small><i>Examples:</i> group1|group2</small></p>
+  <span class="negative"> requires SPAMBOX restart</span>',undef,undef,'msg000860','msg000861'],
+['ChangeRoot','Change Root',40,\&textinput,'','(.*)',undef,'The new root directory to which SPAMBOX should chroot (*nix only). If blank, no chroot jail will be used. Note: if you use this feature, be sure to copy or link the etc/protocols file in your chroot jail. Think about your automatic restart configuration (eg. perl location) if you use this feature! And think about what happens, if perl requires to load a module on demand or a system call is done by spambox! Leave this blank, if you do not really know what you do!<br />
+  <span class="negative"> requires SPAMBOX restart - in most cases, this feature will not work with all possible configuration setups !</span>',undef,undef,'msg007470','msg007471'],
 ['setFilePermOnStart','Set SPAMBOX File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, SPAMBOX sets the permission of all SPAMBOX- files and directories at startup to full (0777) - without any function on windows systems!',undef,undef,'msg007480','msg007481'],
 ['checkFilePermOnStart','Check SPAMBOX File Permission on Startup',0,\&checkbox,'','(.*)',undef,'If set, SPAMBOX checks the permission of all SPAMBOX- files and directories at startup - all files must be writable for the running job - the minimum permission is 0600 - without any function on windows systems!',undef,undef,'msg007490','msg007491'],
 ['AutoRestart','Automatic Restart after Exception',0,\&checkbox,'','(.*)',undef,'If SPAMBOX detects a main exception and it runs not as service or daemon, it will try to restart it self automatically!  If running as daemon on nix/MAC , SPAMBOX uses the action defined in AsADaemon to restart.',undef,undef,'msg007500','msg007501'],
@@ -3635,7 +3777,7 @@ The time and date fields are (taken mostly from "Vixie" cron):<br />
  "0-4,8-12".<br />
 <br />
  Step  values can  be used  in conjunction  with ranges.
- Following a range with "/<number>" specifies skips of
+ Following a range with "/number" specifies skips of
  the  numbers value  through the  range.   For example,
  "0-23/2" can  be used in  the hours field  to specify
  command execution every other hour (the alternative in
@@ -3725,10 +3867,10 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
   If you do not have valid certificates, you may generate both files online with <a href="http://www.mobilefish.com/services/ssl_certificates/ssl_certificates.php" rel="external">www.mobilefish.com</a> or you may use OpenSSL to generate <a href="http://www.mobilefish.com/developer/openssl/openssl_quickguide_self_certificate.html" rel="external">Self-signed SSL certificates</a>! More configuration options are webSSLRequireCientCert, SSLWEBCertVerifyCB and SSLWEBConfigure .',undef,undef,'msg007640','msg007641'],
 ['webAdminPassword','Web Admin Password - Masterpassword (root)',20,\&passinput,'nospam4me','(.{5,})','ConfigChangePassword',
  # I hate hidden password input, but if you like it, uncomment this line and comment the next one. -- just quit bugging me about it!
- #[webAdminPassword','Web Admin Password - Masterpassword (root)',20,\&textinput,'nospam4me','(.{5,})',ConfigChangePassword,
+ #[webAdminPassword','Web Admin Password - Masterpassword (root)',20,\&textinput,'nospam4me','(.{5,})','ConfigChangePassword',
   'The password for the web administration interface for user root(minimum of 5 characters).<br />
   <span class=\"negative\"><b>DO NOT use the digits "45" as the first two characters of the password or you will be not able to login ever again!</b></span><br />
-  If root is logged on, no other logins are allowed. Always use the "logoff"-button as root to terminate the session - closing the browser without logoff could cause other session to be disallowed.',undef,undef,'msg007650','msg007651'],
+  If root is logged on, no other logins are allowed. Always use the "logoff"-button as root to terminate the session - closing the browser without logoff could cause other session to be disallowed for up to 15 minutes.',undef,undef,'msg007650','msg007651'],
 ['allowAdminConnectionsFrom','Only Allow Admin Connections From*',80,\&textinput,'','(\S*)','ConfigMakeIPRe',
   'An optional list of IP addresses and/or hostnames from which you will accept web admin connections. Blank means accept connections from any IP address.<br /> <span class="negative">Note: if you make a mistake here, you may disable your web administration interface and be forced to manually edit your configuration file to fix it.</span><p><small><i>Examples:</i></small></p>
   127.0.0.1|172.16.',undef,'7','msg007660','msg007661'],
@@ -3742,7 +3884,10 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
   'The port on which SPAMBOX will listen for http or telnet connections to the statistics interface. You may also supply an IP address to limit connections to a specific interface. Only one value is supported!<br />
    The stats are available via browser or telnet (or telnet similar socket). Using telnet, press ENTER two times to get the healthy state (\' $webStatHealthyResp [CRLF]\' or \' $webStatNotHealthyResp [CRLF]\' in a single line), this is the recommended methods to get the \'UP\'-state of spambox from nagios or any other external script.<br />
    Type \'stat[ENTER][ENTER]\' to get the STATS in raw text where each line is terminated with \'[CR]LF\' (CR is send in any case, if the request contains CR).<br />
-   The HTML output are LF terminated STAT lines.<p><small><i>Examples:</i> 55553, 192.168.0.5:12345</small></p>',undef,undef,'msg007670','msg007671'],
+   The HTML/browser output are LF terminated STAT lines.<br />
+   If you have configured " exportExtremeBlack ", your firewall (pfsense/pfBlockerNG or snort) may download the extreme black IP list using this interface - append "/extremeblack" to the URL.<br />
+   The download URL, used by your firewall, should look like: http://spambox.domain.local:55553/extremeblack<br />
+   <p><small><i>Examples:</i> 55553, 192.168.0.5:12345</small></p>',undef,undef,'msg007670','msg007671'],
 ['enableWebStatSSL','Use https instead of http',0,\&checkbox,'','(.*)','ConfigChangeEnableStatSSL',
  'The web stat interface will be only accessible via https.
   This requires an installed <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a> module in PERL.<br />
@@ -3787,7 +3932,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg007
 ['SaveStatsEvery','Statistics Save Interval <sup>s</sup>',40,\&textinput,'30',$ScheduleGUIRe,'configChangeSched',
   'This period (in minutes) determines how frequently SPAMBOX statistics are written to a local file.',undef,undef,'msg007790','msg007791'],
 ['totalizeSpamStats','Upload Consolidated Spam Statistics',0,\&checkbox,1,'(.*)',undef,
- 'SPAMBOX will upload its statistics to be consolidated with the <a href="http://spambox.sourceforge.net/cgi-bin/spambox_stats?stats" rel="external">global SPAMBOX totals</a>. This is a great marketing tool for the SPAMBOX project &mdash; please do not disable it unless you have a good reason to do so. No private information is being disclosed by this upload.',undef,undef,'msg007800','msg007801'],
+ 'SPAMBOX will upload its statistics to be consolidated with the <a href="http://spambox.sourceforge.net/cgi-bin/spambox_stats" rel="external">global SPAMBOX totals</a>. This is a great marketing tool for the SPAMBOX project &mdash; please do not disable it unless you have a good reason to do so. No private information is being disclosed by this upload.',undef,undef,'msg007800','msg007801'],
 ['enableGraphStats','Enable Graphical Statistics Collection',0,\&checkbox,0,'(.*)',undef,
  'SPAMBOX will collect statistical data in files located in the \'/logs\' folder (scoreGraphStats-YYYY-MM.txt , statGraphStats-YYYY-MM.txt). If data are collected and the module lib/SPAMBOX_SVG.pm is installed and the files images/stat.gplot, images/svg_style.css, images/svg_defs.svg and images/svg.js are installed and your browser supports SVG, spambox will show graphical statistic data, if you click on a line in the \'Info and Stats\' view.<br />
  If baysConf is configured, spambox will also collect statistical data about the Bayesian and HMM confidence distribution - the file names are confidenceGraphStats-YYYY-MM.txt.<br />
@@ -3869,7 +4014,7 @@ The time and date fields are (taken mostly from "Vixie" cron):<br />
  "0-4,8-12".<br />
 <br />
  Step  values can  be used  in conjunction  with ranges.
- Following a range with "/<number>" specifies skips of
+ Following a range with "/number" specifies skips of
  the  numbers value  through the  range.   For example,
  "0-23/2" can  be used in  the hours field  to specify
  command execution every  other hour (the alternative in
@@ -3902,13 +4047,13 @@ Examples:<br />
 <br />
 In addition, ranges or lists of names are allowed.<br />
 If you want to define multiple entries separate them by "|"',undef,undef,'msg008070','msg008071'],
-['useDB4Rebuild','Use BerkeleyDB/DB_File or orderedtie for the RebuildSpamDB Internal Caches',0,\&checkbox,'','(.*)','configChangeDB',
-  'The RebuildSpamDB thread uses some internal caches that could grow to a large number of entries. Switch this on, if you want this thread to use less memory and be a little slower.<br />
-   Adjust RebuildThreadCycleTime to a lower value (between 0 and 30) to speed up the RebuildSpamDB thread.<br />
-   The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature. DB_File (Berkeley V1) will be used if BerkeleyDB is not available. If both BerkeleyDB and DB_File are not available, the rebuild thread will use the internal \'orderedtie\' which is up to 1000 times slower than BerkeleyDB.',undef,undef,'msg008080','msg008081'],
+['useDB4Rebuild','Use BerkeleyDB/DB_File or orderedtie for the RebuildSpamDB Internal Caches',0,\&checkbox,'1','(.*)','configChangeDB',
+ 'The RebuildSpamDB thread creates some internal temprary caches, which can grow to a very large number of entries. Switch this on (default), if you want this thread to use less memory and be possibly a little slower.<br />
+ Adjust RebuildThreadCycleTime to a lower value (between 0 and 30) to speed up the RebuildSpamDB thread.<br />
+ The perl module <a href="http://search.cpan.org/dist/BerkeleyDB/" rel="external">BerkeleyDB</a> version 0.34 or higher and BerkeleyDB version 4.5 or higher is required to use this feature. DB_File (Berkeley V1) will be used if BerkeleyDB is not available - this is not recommended! If both BerkeleyDB and DB_File are not available, the rebuild thread will hold all temporary data in RAM - the same way, this option were set to "OFF".',undef,undef,'msg008080','msg008081'],
 ['ReplaceOldSpamdb','Replace the old Records in Spamdb and Spamdb.helo',0,\&checkbox,'1','(.*)',undef,
-  'If selected, the new created records for Spamdb and Spamdb.helo will replace the old (belongs not to HMM, which is replaced every time). If not seleted, the new records will be added to Spamdb and Spamdb.helo . Default is on.',undef,undef,'msg008090','msg008091'],
-['doMove2Num','Do move2num Before Rebuild',0,\&checkbox,'','(.*)',undef,'Renames files to numbers before the rebuild is started. If this is done, some other features like \'MailLogTail\' and \'Block-Report\' will be unable to find the files!',undef,undef,'msg008100','msg008101'],
+  'If selected (default), the new created records for Spamdb and Spamdb.helo will replace the old (belongs not to HMM, which is replaced every time). If not seleted, the new records will be added to Spamdb and Spamdb.helo .',undef,undef,'msg008090','msg008091'],
+['doMove2Num','Do move2num Before Rebuild',0,\&checkbox,'','(.*)',undef,'Renames files to numbers before the rebuild is started. If this is done, some other features like \'MailLogTail\' and \'Block-Report\' will be unable to find the files! Setting this option to "ON" is not recommended!',undef,undef,'msg008100','msg008101'],
 ['newReportedInterval','Interval for processing new Reported Mails',30,\&textinput,'10 5','(\d+\s+\d+)',undef,
  'File count and interval definition (count minutes) for processing new reported mails (correctedspam , correctednotspam) - process if at least \'first value\' mails are reported but every \'second value\' minutes. defaults to \'10 5\'<br />
  Set the first value to zero to disable this feature.<br />
@@ -3930,17 +4075,17 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 ['RunRebuildNow','Run RebuildSpamdb now',0,\&checkbox,'','(.*)','ConfigChangeRunTaskNow',
   'If selected, RebuildSpamdb will be started immediately.<br />' . "<input type=button value=\"Apply Changes and Run Rebuild SpamDB Now (if checked)\" onclick=\"document.forms['SPAMBOXconfig'].theButtonX.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />&nbsp;<input type=button value=\"Refresh Browser\" onclick=\"document.forms['SPAMBOXconfig'].theButtonRefresh.value='Apply Changes';document.forms['SPAMBOXconfig'].submit();WaitDiv();return false;\" />" .
   '<hr /><div class="menuLevel1">Last Result Of Rebuildspamdb</div><input type="button" value="Last Run Rebuildspamdb" onclick="javascript:popFileEditor(\'rebuildrun.txt\',5);" />
-  <hr /><div class="menuLevel1">Rebuildspamdb-debug-output - create the file to enable the debug mode - delete the file to stop the debug mode for the rebuildspamdb task</div><input type="button" value="Rebuildspamdb-debug-output" onclick="javascript:popFileEditor(\'rebuilddebug.txt\',3);" />
+  <hr /><div class="menuLevel1">Rebuildspamdb-debug-output - create the file \'rebuilddebug.txt\' to enable the debug mode - delete the file to stop the debug mode for the rebuildspamdb task</div><input type="button" value="Rebuildspamdb-debug-output" onclick="javascript:popFileEditor(\'rebuilddebug.txt\',3);" />
   <hr /><div class="menuLevel1">normfile - shows current:<br />
   Corpus-Norm , Corrected-SpamFiles , Corrected-NotSpamFiles , Spamlog-Files , NotSpamlog-Files , SpamWords/File , Hamwords/File , Spamwords , Hamwords</div><input type="button" value="normfile" onclick="javascript:popFileEditor(\'normfile\',3);" />
   <hr /><div class="menuLevel1">Notes On RebuildSpamdb</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/rebuildspamdb.txt\',3);" />',undef,undef,'msg008120','msg008121'],
 
 [0,0,0,'heading','Char Conversions / TNEF'],
-['inChrSetConv','inbound charset conversion table*',80,\&textinput,'','(\S*)','configChangeIC',
+['inChrSetConv','inbound charset conversion table*',80,\&textinput,'','(\S*)','configChangeCV',
   'If defined, characterset conversion for inbound mails will be done. For example: if your email server does not understand UTF-8, SPAMBOX will convert the mail parts to the characterset of your choice. The rules specified here are used to convert text parts of inbound mails from one to another characterset.<p><small><i>Example:</i>UTF-8=>ISO-8859-1|ISO-8859-15=>ISO-8859-1</small></p>
  This requires an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL.<br />
  This conversions are done for all (inbound,CC,report ..) mails except relayed mails. The converted mail will be not available on disk except DEBUG.',undef,undef,'msg008130','msg008131'],
-['outChrSetConv','outbound charset conversion table*',80,\&textinput,'','(\S*)','configChangeOC',
+['outChrSetConv','outbound charset conversion table*',80,\&textinput,'','(\S*)','configChangeCV',
   'If defined, characterset conversion for outbound mails will be done. For example: if your email server is unable to send mails in UTF-8, SPAMBOX will convert the mail parts to UTF-8. The rules specified here are used to convert text parts of outbound mails from one to another characterset.<p><small><i>Example:</i>ISO-8859-1=>UTF-8|ISO-8859-2=>UTF-8|windows-1250=>UTF-8</small></p>
  This requires an installed <a href="http://search.cpan.org/search?query=Email::MIME" rel="external">Email::MIME</a> module in PERL.<br />
  This conversions are done only for relayed mails!',undef,undef,'msg008140','msg008141'],
@@ -3968,12 +4113,33 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   If set to "do TLS", SPAMBOX will be the "man in the middle". SPAMBOX will try to move both connections in to TLS. All data will be readable to SPAMBOX - so all checks could be done. If any of the peers does not support TLS, SPAMBOX will fake this (250-STARTTLS) to the other peer. So it could be possible, that the connection to the client is going in to TLS mode, even if TLS is not supported by the server. If a client does not request TLS (STARTTLS) even it has got the (250-STARTTLS), SPAMBOX tries to start a TLS session to server, if he has sent (250-STARTTLS)! This behavior belongs to incoming and outgoing messages. This option requires the installed perl module <a href="http://search.cpan.org/search?query=IO::Socket::SSL" rel="external">IO::Socket::SSL</a>!<br />
   For "do TLS" a server-certificate-file " SSLCertFile " and a server-key-file " SSLKeyFile " must exist and must be valid!<br />
   If you do not have valid certificates, you may generate both files online with <a href="http://www.mobilefish.com/services/ssl_certificates/ssl_certificates.php" rel="external">www.mobilefish.com</a> or you may use OpenSSL to generate <a href="http://www.mobilefish.com/developer/openssl/openssl_quickguide_self_certificate.html" rel="external">Self-signed SSL certificates</a>! If you have installed OpenSSL (must be in PATH) and installed and enabled IO::Socket::SSL and SPAMBOX is unable to find valid certificates - SPAMBOX will try to create them at startup!<br />
-  <input type="button" value="SSLfailed Cache" onclick="javascript:popFileEditor(\'DB-SSLfailed\',\'1h\');" /><br />',undef,undef,'msg008210','msg008211'],
-['SSL_version','SSL version used for transmission',20,\&textinput,'SSLv2/3','(\!?(?:SSLv2\/?3|SSLv2|SSLv3|TLSv1(_?[12])?)(?:\:\!?(SSLv2\/?3|SSLv2|SSLv3|TLSv1(_?[12])?))*)','ConfigChangeSSL',
-  'Sets the version of the SSL protocol used to transmit data. The default is SSLv2/3,<br />
-  which auto-negotiates between SSLv2 and SSLv3. You may specify \'SSLv2\', \'SSLv3\', \'TLSv1\', \'TLSv1_1\', \'TLSv1_2\' (case-insensitive) combined with \':\' and negated with \'!\' (example: \'SSLv2/3:!SSLv2\') if you do not want this behavior.',undef,undef,'msg009660','msg009661'],
+  <input type="button" value="SSL-failed-Cache" onclick="javascript:popFileEditor(\'DB-SSLfailed\',\'1h\');" /><br />',undef,undef,'msg008210','msg008211'],
+['SSL_version','SSL version used for transmission',80,\&textinput,'SSLv23:!SSLv3:!SSLv2','(\!?(?:SSLv2\/?3|SSLv2|SSLv3|TLSv1(_?[12])?)(?:\:\!?(SSLv2\/?3|SSLv2|SSLv3|TLSv1(_?[12])?))*)','ConfigChangeSSL',
+  'Sets the version of the SSL protocol used to transmit data. The default is SSLv2/3:!SSLv3:!SSLv2.<br />
+  The IO::Socket::SSL POD explains:<br />
+  Sets the version of the SSL protocol used to transmit data.<br />
+  \'SSLv23\' and the older definition \'SSLv2/3\' (of the same) uses a handshake compatible with SSL2.0, SSL3.0 and TLS1.x, while
+  \'SSLv2\', \'SSLv3\', \'TLSv1\', \'TLSv1_1\' or \'TLSv1_2\' restrict handshake and
+  protocol to the specified version.<br />
+  All values are case-insensitive.  Instead of \'TLSv1_1\' and \'TLSv1_2\' one can
+  also use \'TLSv11\' and \'TLSv12\'.  Support for \'TLSv1_1\' and \'TLSv1_2\' requires
+  recent versions of Net::SSLeay and openssl.<br /><br />
+  Independent from the handshake format you can limit to set of accepted SSL
+  versions by adding !version separated by \':\'. <br /><br />
+  The default SSL_version is \'SSLv23:!SSLv3:!SSLv2\' which means, that the
+  handshake format is compatible to SSL2.0 and higher, but that the successful
+  handshake is limited to TLS1.0 and higher, that is no SSL2.0 or SSL3.0 because
+  both of these versions have serious security issues and should not be used
+  anymore.<br />
+  You can also use !TLSv1_1 and !TLSv1_2 to disable TLS versions 1.1 and 1.2 while
+  still allowing TLS version 1.0.<br /><br />
+  Setting the version instead to \'TLSv1\' might break interaction with older
+  clients, which need a SSL2.0 compatible handshake. On the other
+  side, some clients just close the connection when they receive a TLS version 1.1
+  request. In this case setting the version to
+  \'SSLv23:!SSLv2:!SSLv3:!TLSv1_1:!TLSv1_2\' might help.',undef,undef,'msg009660','msg009661'],
 ['SSL_cipher_list','SSL key cipher list',80,\&textinput,'','(.*)','ConfigChangeSSL',
- 'If this option is set, the cipher list for the connection will be set to the given value, e.g. something like \'ALL:!LOW:!EXP:!ADH\'. Look into the OpenSSL documentation (<a href="http://www.openssl.org/docs/apps/ciphers.html#CIPHER_STRINGS" rel="external">http://www.openssl.org/docs/apps/ciphers.html#CIPHER_STRINGS</a>) for more details. Setting this value causes the \'SSL_honor_cipher_order\' flag to be switched on (BEAST vulnerable)<br />
+ 'If this option is set, the cipher list for the connection will be set to the given value, e.g. something like \'ALL:!LOW:!EXP:!ADH\' or \'DEFAULT:!aNULL:!RC4:!MD5\'. Look into the OpenSSL documentation (<a href="http://www.openssl.org/docs/apps/ciphers.html#CIPHER_STRINGS" rel="external">http://www.openssl.org/docs/apps/ciphers.html#CIPHER_STRINGS</a>) for more details. Setting this value causes the \'SSL_honor_cipher_order\' flag to be switched on (BEAST vulnerable)<br />
  If this option is not used (default) the openssl builtin default is used which is suitable for most cases.',undef,undef,'msg009670','msg009671'],
 ['NoTLSlistenPorts','Disable SSL support on listenPorts',80,\&textinput,'','(.*)','ConfigChangeTLSPorts',
   'This disables TLS/SSL on the defined listenPorts, if DoTLS is set to "do TLS". All other SMTP listeners will support TLS/SSL, if DoTLS is set to "do TLS". This option works for listenPort , listenPort2 and relayPort . The listener definition here has to be the same like in the port definitions. Separate multiple entries by "|".<p><small><i>Examples:</i> 25, 127.0.0.1:25, 127.0.0.1:25|127.0.0.2:25 </small></p>',undef,undef,'msg008220','msg008221'],
@@ -3987,18 +4153,18 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   "Optional parameter. If your private key ' SSLKeyFile ' is password protected, spambox will need this password to decrypt the server\'s SSL private key file.",undef,undef,'msg009540','msg009541'],
 ['SSLCaFile','SSL Certificate Authority File',48,\&textinput,'','(.*)','ConfigChangeSSL',
   "Optional parameter to enable chained certificate validation at the client side. Full path to the file containing the server's SSL certificate authority. If you provide the ca-certificate or certificate-chain together with the certificate file in the SSLCertFile parameter, leave this field blank. For example : /usr/local/etc/ssl/certs/spambox-ca.crt or c:/spambox/certs/server-ca.crt. A general ca.crt file is already provided in '$dftCaFile'. The default value is empty and leave it empty as long as you don't know, how this parameter works.",undef,undef,'msg009530','msg009531'],
-['noTLSIP','Exclude these IP\'s from TLS*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from starting SSL/TLS, separated by pipes (|). For example, put all IP\'s here, that making trouble to switch to TLS every time, what will prevent SPAMBOX from getting mails from this hosts.',undef,undef,'msg008250','msg008251'],
+['noTLSIP','Exclude these IP\'s from TLS*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from starting SSL/TLS, separated by pipes (|). For example, put all IP\'s here, that making trouble to switch to TLS every time, what will prevent SPAMBOX from getting mails from or sending mails to this hosts.',undef,undef,'msg008250','msg008251'],
 ['banFailedSSLIP','Ban Failed SSL IP','0:disable|1:private only|2:public only|3:both',\&listbox,3,'(\d*)',undef,
  'If set (recommended is \'both\'), an IP that fails to connect via SSL/TLS will be banned for 12 hour from using SSL/TLS.<br />
-  Privat IP\'s and IP addresses listed in \'acceptAllMail\' will get one more try to correct the mistake.<br />
+  Privat IP\'s and IP addresses listed in acceptAllMail will get one more try to correct the mistake.<br />
   This is done per default (\'both\'), to prevent possible DoS attacks via SSL/TLS.<br />
-  Those IP\'s are stored in the SSLfailed cache. This cache is cleaned up at startup.<br />
+  Those IP\'s are stored in the SSL-failed-Cache. This cache is cleaned up at startup.<br />
   disable - disables this feature, which is highly NOT recommended<br />
   private only - only private IP\'s and IP\'s in acceptAllMail will be banned (they have two tries)<br />
   public only - only public IP\'s will be banned<br />
   both - private and public IP\'s will be banned<br />
-  <input type="button" value="edit SSLfailed Cache" onclick="javascript:popFileEditor(\'DB-SSLfailed\',\'1h\');" />',undef,undef,'msg010100','msg010101'],
-['noBanFailedSSLIP','Exclude these IP\'s from SSLfailed Cache*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from being added to the SSLfailed-Cache, separated by pipes (|).',undef,undef,'msg010280','msg010281'],
+  <input type="button" value="edit SSL-failed-Cache" onclick="javascript:popFileEditor(\'DB-SSLfailed\',\'1h\');" />',undef,undef,'msg010100','msg010101'],
+['noBanFailedSSLIP','Exclude these IP\'s from SSL-failed-Cache*',80,\&textinput,'','(\S*)','ConfigMakeIPRe','Enter IP\'s that you want to exclude from being added to the SSL-failed-Cache, separated by pipes (|).',undef,undef,'msg010280','msg010281'],
 ['sendEHLO','Send EHLO',0,\&checkbox,'','(.*)',undef,
   'If selected, SPAMBOX sends an EHLO even if the client has sent only a HELO. This is useful to force the usage of TLS to the server or to satisfy XCLIENT/XFORWARD helo offers, because EHLO is needed before STARTTLS or XCLIENT/XFORWARD could be used.',undef,undef,'msg008260','msg008261'],
 ['SSLRetryOnError','Retry SSL on "SSL want a read first" error',0,\&checkbox,'','(.*)',undef,
@@ -4013,7 +4179,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   openssl pkcs12 -export -clcerts -in client.pem -inkey client.key -out client.p12<br />
   The file client.p12 could now be imported in to your browser.<br />
   <b>!!! Install a valid certificate in to your browser BEFORE you enable this option - otherwise the GUI will get inaccessible !!!</b><br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010150','msg010151'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010150','msg010151'],
 ['SSLWEBCertVerifyCB','CallBack to Verify Client Certificates for GUI Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'If used, spambox will call the defined subroutine as SSL->SSL_verify_callback in an eval closure submitting the original ARRAY of parameters (see the IO::Socket::SSL documentation).<br />
   The subroutine has to return 1 on certificate verification success - otherwise 0.<br />
@@ -4034,13 +4200,13 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   Now, if you set this parameter to \'CorrectSPAMBOXcfg::checkWebSSLCert\' - spambox will call<br />
   CorrectSPAMBOXcfg::checkWebSSLCert->(@_);<br />
   The variable \'@main::ExtWebAuth\' could be used to authenticate the user to the GUI related to the used certificate. The username must be provided as first element of the array. The password could be provided as second element of the array - this is not recommended and it is not required! If the used certificate is valid and a known adminusername (root is provided) is stored as first element in \'@main::ExtWebAuth\', the user will be automatically logged on to the GUI.<br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010160','msg010161'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010160','msg010161'],
 ['SSLWEBConfigure','Call to Configure SSL-Listener-Parameters for GUI Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'If used, spambox will call the defined subroutine in an eval closure submitting a reference to the spambox predefined SSL-Socket-Configuration-HASH.<br />
   The HASH could be modified in place to your needs - please read the documentation of IO::Socket::SSL, Net::SSLeay and OpenSSL. Return values are ignored.<br />
   You can use/modify the module lib/CorrectSPAMBOXcfg.pm to implement your code. For example<br /><br />
   sub configWebSSL {<br />
-  &nbsp;&nbsp;&nbsp;&nbsp;my \$parms = shift;<br />
+  &nbsp;&nbsp;&nbsp;&nbsp;$parms = shift;<br />
   &nbsp;&nbsp;&nbsp;&nbsp;$parms->{timeout} = 10;<br />
   &nbsp;&nbsp;&nbsp;&nbsp;$parms->{\'SSL_check_crl\'} = 1;<br />
   &nbsp;&nbsp;&nbsp;&nbsp;$parms->{\'SSL_crl_file\'} = \'/spambox/certs/crl/crllist.pem\';<br />
@@ -4048,44 +4214,37 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   }<br /><br />
   Now, if you set this parameter to \'CorrectSPAMBOXcfg::configWebSSL\' - spambox will call<br />
   CorrectSPAMBOXcfg::configWebSSL->(\%sslparms);<br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010170','msg010171'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010170','msg010171'],
 
 ['statSSLRequireClientCert','Client requires valid SSL Certificate for STAT Requests',0,\&checkbox,'','(.*)','ConfigChangeSSL',
   'If enabled and enableWebStatSSL is set to ON, each session is forced to provide a valid SSL client certificate. If no certificate is provided by the client, the connection will fail! To extend the verification of the certificate, use SSLSTATCertVerifyCB . Per default are used \'SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE\'<br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010180','msg010181'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010180','msg010181'],
 ['SSLSTATCertVerifyCB','CallBack to Verify Client Certificates for STAT Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'Please read the description of SSLWEBCertVerifyCB .<br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010190','msg010191'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010190','msg010191'],
 ['SSLSTATConfigure','Call to Configure SSL-Listener-Parameters for STAT Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'If used, spambox will call the defined subroutine in an eval closure submitting a reference to the spambox predefined SSL-Socket-Configuration-HASH.<br />
    Please follow the description for SSLWEBConfigure .<br />
-   <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010200','msg010201'],
+   <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010200','msg010201'],
 
 ['smtpSSLRequireClientCert','Client requires valid SSL Certificate for SMTP SSL Connections',0,\&checkbox,'','(.*)','ConfigChangeSSL',
   'If enabled, each client or server requesting a connection at the listenPortSSL requires a valid SSL client certificate. If no certificate is provided by the client, the connection will fail! To extend the verification of the certificate, use SSLSMTPCertVerifyCB . Per default are used \'SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT | SSL_VERIFY_CLIENT_ONCE\'<br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010210','msg010211'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010210','msg010211'],
 ['SSLSMTPCertVerifyCB','CallBack to Verify Client Certificates for SMTP Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'Please read the description of SSLWEBCertVerifyCB .<br />
-  <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010220','msg010221'],
+  <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>',undef,undef,'msg010220','msg010221'],
 ['SSLSMTPConfigure','Call to Configure SSL-Listener-Parameters for SMTP Connections',80,\&textinput,'','(.*)','ConfigChangeSSL',
   'If used, spambox will call the defined subroutine in an eval closure submitting a reference to the spambox predefined SSL-Socket-Configuration-HASH.<br />
    Please follow the description for SSLWEBConfigure .<br />
-   <b>NOTICE: This option will not work if you use any self signed certificate!</b>',undef,undef,'msg010230','msg010231'],
-
-['ProxyConf','Transparent TCP Proxy Table*',80,\&textinput,'','(\S*)','configChangeProxy',
-  'Define transparent Port Proxy here. SPAMBOX will forward incoming packets to a specific destination.<br />
-   For example: if you want incoming connections on port 465 (SMTP-SSL) to be forwarded to your email server.<br />
-   <p><small><i>Example:</i>0.0.0.0:465=>192.168.1.25:465<=12.1.1.3,34.5.6.7,67.23.2.1|<br />
-   10.1.1.1:1477=>192.168.1.23:25<=120.5.1.3,134.5.19.7,67.123.221.11</small></p><br />
- The syntax is: localIP:localPORT=>forwardIP:forwardPORT<=allowfromIP1,allowfromIP2,...|next Proxy configuration|....<br />
- You have to configure the IP-address and IP-port for both - local and forward  values. AllowfromIP are comma separated values of IP-addresses from where connections are allowed. If there is no allow value defined, all connections will be allowed!<hr />
-  <div class="menuLevel1">SSL Proxy and TLS support</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/ssl_and_proxy.txt\',3);" />',undef,undef,'msg008300','msg008301'],
+   <b>NOTICE: This option will possibly not work if you use any self signed certificate!</b>
+   <hr />
+  <div class="menuLevel1">SSL and TLS support</div><input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/ssl_and_proxy.txt\',3);" />',undef,undef,'msg010230','msg010231'],
 
 [0,0,0,'heading','Global PenaltyBox'],
 ['globalClientName','client registration name',60,\&textinput,'','(.*)','configUpdateGlobalClient',
  'The Name of this global-client for registration on the global-server. This entry has to be the full qualified DNS-Name of the IP-address over which SPAMBOX is doing HTTP-requests! If you are using a HTTP-Proxy, this should be the public IP-address of the last Proxy in chain! This DNS-Name has to be resolvable worldwide and the resolved IP-address has to match the SPAMBOX-HTTP-connection-IP-address. It is not possible to use an IP-address in this field! Dynamic DNS-Names like "yourdomain.dyndns.org" are supported!<br />
  To become a member of the exclusive global-penalty-box-users, you will need a subscription and you will have to pay a yearly maintenance fee. To get registered and/or to get more information, please send an email with your personal/company details and the globalClientName to "spambox.globalpb@thockar.com".<br />
- The name of this client has to be known by the global server before it could be registered from here. Please wait until you have confirmation that your client name is known by the global server.<br />
+ The name of this client has to be known by the global server before it can be registered from here. Please wait until you have confirmation that your client name is known by the global server.<br />
  In addition to <a href="http://search.cpan.org/search?query=Compress::Zlib" rel="external">Compress::Zlib</a> this requires an installed <a href="http://search.cpan.org/search?query=LWP::UserAgent" rel="external">LWP::UserAgent</a> module in PERL.',undef,undef,'msg008310','msg008311'],
 ['globalClientPass','client registration password',20,\&passnoinput,'','(.*)','configUpdateGlobalHidden','If the global client is registered on the global-server, you will see a number of "*" in this field. This field is readonly.',undef,undef,'msg008320','msg008321'],
 ['globalClientLicDate','client subscription expiration date',20,\&textnoinput,'','(.*)','configUpdateGlobalHidden','The date of license/subscription expiration for this global client. If this date is exceeded, no upload and download of global PB will be done! This field is readonly.',undef,undef,'msg008330','msg008331'],
@@ -4174,7 +4333,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
 ['EmailResendRequester','Blocked Email Resend Requester*',60,\&textinput,'','(.*)','ConfigMakeSLRe',
  'A list of local addresses, which are allowed to request a resend of blocked emails for other users, even they are not EmailAdmins or BlockReportAdmins . Leave this field blank (default), to disable this feature.<br />
   This is useful, if a user gets automatic generated BlockReports (e.g via BlockReportFile ) for a group of users and should be able to manage resends for them. Added here, the user is not allowed to request BlockReports for other users - in this case use EmailAdmins, BlockReportAdmins and EmailAdminDomains instead.<br />
-  The resend is done to the recipient stored in the X-Assp-Intended-For: ( requires AddIntendedForHeader ) header field and the requester, if the address was found in a TO: header field. <br />
+  The resend is done to the recipient stored in the X-Spambox-Intended-For: ( requires AddIntendedForHeader ) header field and the requester, if the address was found in a TO: header field. <br />
   Accepts specific addresses (user@domain.com), user parts (user).  Wildcards are supported (fribo*@domain.com).<br />
   For example: fribo*@thisdomain.com|jhanna ',undef,undef,'msg010120','msg010121'],
 ['BlockReportFile','File for Blockreportrequest',40,\&textinput,'','(file:.+)|','initMaintScheduler','A file with BlockReport requests. SPAMBOX will generate a block report for every line in this file (file:files/blockreportlist.txt - file: is required if defined!) every day at midnight for the last day. The perl modules <a href="http://search.cpan.org/search?query=Net::SMTP/" rel="external">Net::SMTP</a> and <a href="http://search.cpan.org/search?query=Email::MIME /" rel="external">Email::MIME </a> are required to use this feature. A report will be only created, if there is at least one blocked email found! The syntax is: <br />
@@ -4207,7 +4366,7 @@ If you want to define multiple entries separate them by "|"',undef,undef,'msg008
   'The maximum time in seconds, the Blockreport feature spends on searching in one log file. If this value is reached, the next log file will be processed. Default is 0. A value of 0 disables this feature and all needed log files will be fully processed.',undef,undef,'msg008500','msg008501'],
 ['BlockReportFormat','The format of the Report Email','0:text and html|1:text only|2:html only',\&listbox,0,'(\d*)',undef,
   'Block reports will be sent as multipart/alternative MIME messages. They normally contains two parts, a plain text part and a html part. Select "text only" or "html only" if you want to skip any of this parts.<br />
-  To make it possible to detect a resent email, SPAMBOX will add a header line "X-Assp-Resend-Blocked: myName" to each email!',undef,undef,'msg008510','msg008511'],
+  To make it possible to detect a resent email, SPAMBOX will add a header line "X-Spambox-Resend-Blocked: myName" to each email!',undef,undef,'msg008510','msg008511'],
 ['BlockReportHTTPName','My HTTP Name',40,\&textinput,'','(.*)',undef,'The hostname for HTTP(S) links in AdminUsers Blockreports. If not defined the local hostname will be used.',undef,undef,'msg008760','msg008761'],
 ['BlockReportFilter', 'Regular Expression to Skip Log Records*',80,\&textinput,'Virus|BlackDomain','(.*)','ConfigCompileRe',
  'Put anything here to identify messages which should not be reported in any Block Report. For example:  Virus|BlackDomain.<br />
@@ -4378,7 +4537,7 @@ The following OIDs (relative to the SNMPBaseOID) are available for SNMP-queries.
   <input type="button" value="Notes" onclick="javascript:popFileEditor(\'notes/pop3collect.txt\',3);" />',undef,undef,'msg009090','msg009091']
 );
 
- # last used msg number 010501
+ # last used msg number 010591
 
  &loadModuleVars;
  -d "$base/language" or mkdir "$base/language",0755;
@@ -4436,18 +4595,18 @@ use Win32::Daemon;
 my $p;
 my $p2;
 
-if(lc $_[0] eq '-u') {
+if (lc $_[0] eq '-u') {
     system('cmd.exe /C net stop SPAMBOXSMTP');
     sleep(1);
     Win32::Daemon::DeleteService('','SPAMBOXSMTP') ||
       print "Failed to remove SPAMBOX service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n" & return;
     print "Service SPAMBOXSMTP successful removed\n";
-} elsif( lc $_[0] eq '-i') {
+} elsif ( lc $_[0] eq '-i') {
     unless($p=$_[1]) {
         $p=$spambox;
         $p=~s/\w+\.pl/spambox.pl/o;
     }
-    if($p2=$_[2]) {
+    if ($p2=$_[2]) {
         $p2=~s/[\\\/]$//o;
     } else {
         $p2=$p; $p2=~s/[\\\/]spambox\.pl//io;
@@ -4460,7 +4619,7 @@ if(lc $_[0] eq '-u') {
         pwd     =>  '',
         parameters => "\"$p\" \"$p2\"",
       );
-    if( Win32::Daemon::CreateService( \%Hash ) ) {
+    if ( Win32::Daemon::CreateService( \%Hash ) ) {
         print "SPAMBOX service successfully added.\n";
     } else {
         print "Failed to add SPAMBOX service: " . Win32::FormatMessage( Win32::Daemon::GetLastError() ) . "\n";
@@ -4831,6 +4990,7 @@ sub setMakeREVars {
 
  $MakeRE{whiteListedDomains}=\&setWhiteListedDomainsRE;
  $MakeRE{blackListedDomains}=\&setBlackListedDomainsRE;
+ $MakeRE{signedSenders}=\&setSigSendersRE;
  $MakeRE{noProcessingDomains}=\&setNPDRE;
  $MakeRE{heloBlacklistIgnore}=\&setHBIRE;
  $MakeRE{URIBLCCTLDS}=\&setURIBLCCTLDSRE;
@@ -4920,6 +5080,7 @@ sub setMakeREVars {
     'noScanIP'                      => 'NSIPRE',
     'noMaxSMTPSessions'             => 'NMIPRE',
     'noMaxAUTHErrorIPs'             => 'NMAERE',
+    'ResetMaxAUTHErrorIPs'          => 'RMAERE',
     'NoSubjectFrequencyIP'          => 'NSFIPRE',
     'URIBLIPRe'                     => 'URIBLIPRE',
     'NoLocalFrequencyIP'            => 'NLFIPRE'
@@ -4984,6 +5145,7 @@ sub setMakeREVars {
     'InternalAndWhiteAddresses' => 'IAWRE',
     'NullAddresses'        => 'NARE',
     'LocalAddresses_Flat'  => 'LAFRE',
+    'transparentRecipients'  => 'TRRERE',
     'noBombScript'         => 'NBSRE',
     'SRSno'         	   => 'SRSNRE',
     'noURIBL'              => 'NURIBLRE',
@@ -5002,7 +5164,8 @@ sub setMakeREVars {
     'subjectFrequencyOnly' => 'SFRO',
     'NoSubjectFrequency'   => 'NSFR',
     'noExtremePBAddresses' => 'NEXPBARE',
-    'noDMARCReportDomain'  => 'NDMARCRE',
+    'noDMARCDomain'        => 'NDMARCRE',
+    'noDMARCReportDomain'  => 'NDMARCRPTRE',
     'EmailErrorsModifyPersBlack' => 'EMEMPB',
     'EmailSenderNoReply'   => 'ESNR'
 );
@@ -5010,7 +5173,8 @@ sub setMakeREVars {
 # changes here require coding in ConfigAnalyze for $lastREmatch!
 %MakePrivatDomRE = (
     'whiteListedDomains' => 1,
-    'blackListedDomains' => 1
+    'blackListedDomains' => 1,
+    'signedSenders'      => 1
 );
 
 %preMakeRE = (          # all RE that are not in %MakeIPRE and %MakeSLRE
@@ -5039,6 +5203,7 @@ sub setMakeREVars {
     'URIBLWLDRE' => 'URIBLwhitelist',
     'VFRTRE' => 'VRFYforceRCPTTO',
     'whiteListedDomainsRE' => 'whiteListedDomains',
+    'signedSendersRE' => 'signedSenders',
     'allLogReRE' => 1,
     'badattachL1RE' => 1,
     'badattachL2RE' => 1,
@@ -5081,6 +5246,8 @@ sub setMakeREVars {
     'noMSGIDsigReRE' => 1,
     'noCollectReRE' => 1,
     'noBackSctrReRE' => 1,
+    'noAUTHHeloReRE' => 1,
+    'onlyAUTHHeloReRE' => 1,
     'SPAMBOX_AFCDetectSpamAttachReRE' => 1
 );
 
@@ -5124,6 +5291,7 @@ foreach my $k (values %MakeSLRE) {
 );
 %tempDBvars = (
     'AUTHErrors' => 1,
+    'AUTHIP' => 1,
     'BackDNS2' => 1,
     'DelayIPPB' => 1,
     'EmergencyBlock' => 1,
@@ -5193,6 +5361,28 @@ sub Stem_Clone_Skip {
     0;
 }
 
+sub nixChroot {
+  if ($Config{ChangeRoot}) {
+    my $chroot;
+    eval('$chroot=chroot($Config{ChangeRoot})');
+    if ($@) {
+      my $msg="request to change root to '$Config{ChangeRoot}' failed: $@";
+      die($msg."\n");
+      exit(1);
+    } elsif (! $chroot) {
+      my $msg="request to change root to '$Config{ChangeRoot}' did not succeed: $!";
+      die($msg."\n");
+      exit(1);
+    } else {
+      $chroot=$Config{ChangeRoot}; $chroot=~s/(\W)/\\$1/go;
+      $base=~s/^$chroot//o;
+      $base = '' if $base eq '/';
+      chdir("/");
+      print "\nsuccessfully changed root to '$Config{ChangeRoot}' -- new base is '$base'  [OK]\n";
+    }
+  }
+}
+
 sub checkConfigFile {
     my ($h,$file) = @_;
     $$h = undef;
@@ -5219,21 +5409,33 @@ sub checkConfigFile {
     return 1;
 }
 
+sub Glob {
+    my @g;
+    if ($] !~ /^5\.016/o) {
+        @g = glob("@_");
+    } else {
+        map {push @g , < $_ >;} @_ ;
+    }
+    return @g;
+}
+
 BEGIN {
  $perl = $^X;
  $spambox = $0;
+ $spambox =~ s/\\/\//og;
+ $spambox =~ s/\/+/\//og;
 
  STDOUT->autoflush;
  STDERR->autoflush;
  &check_iThreads();
  &setVersion();
- if($] lt '5.012003') {
+ if ($] lt '5.012003') {
    print "\nPerl version 5.012003 (5.12.3) is at least recommended to run SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl\n";
  }
- if($] lt '5.012000') {
+ if ($] lt '5.012000') {
    print "\nPerl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl\n";
  }
- die "\nPerl version $] is not supported to run SPAMBOX $version $modversion - please downgrade Perl to version 5.1y.x\n" if($] gt '5.999999');
+ die "\nPerl version $] is not supported to run SPAMBOX $version $modversion - please downgrade Perl to version 5.1y.x\n" if ($] gt '5.999999');
  # scan perl for DB drivers to display them in Config
  our @DBdriverNames;
  our $DBdrivers;
@@ -5257,13 +5459,19 @@ BEGIN {
  
  $wikiinfo = 'get?file=images/info.png';
 # load from command line if specified
-if($ARGV[0]) {
+if ($ARGV[0]) {
  $base=$ARGV[0];
+ $base =~ s/\\/\//og;
+ $base =~ s/\/+/\//og;
 } else {
  # the last one is the one used if all else fails
- $base = cwd();
+ $base = cwd();   # try the current folder
  unless (-e "$base/spambox.cfg" || -e "$base/spambox.cfg.tmp") {
-   foreach ('.','/usr/local/spambox','/home/spambox','/etc/spambox','/usr/spambox','/applications/spambox','/spambox','.') {
+   $base = $0;  # try to get the path from the called script eg. /opt from /opt/spambox.pl
+   $base =~ s/\\/\//og;
+   $base =~ s/\/+/\//og;
+   $base = cwd() unless $base =~ s/^(.+)\/[^\/]+$/$1/o;
+   foreach ('.','/usr/local/spambox','/home/spambox','/usr/spambox','/opt/spambox','/applications/spambox','/spambox') {
     if (-e "$_/spambox.cfg" || -e "$base/spambox.cfg.tmp") {
       $base=$_;
       last ;
@@ -5272,6 +5480,7 @@ if($ARGV[0]) {
  }
  $base = cwd() if $base eq '.';
 }
+
 if ( !-e "$base/images/noIcon.png" && lc($ARGV[0]) ne '-u')
 {
  writeExceptionLog("Abort: folder '$base/images' not correctly installed");
@@ -5299,7 +5508,8 @@ $base = cwd();
 
 my ($mv,$sv,$lv) = $] =~ /(\d)\.(\d{3})(\d{3})/o;
 $mv =~ s/^0+//o;$sv =~ s/^0+//o;$lv =~ s/^0+//o; $lv ||= '0';
-print "SPAMBOX $version$modversion is starting in directory $base\non host ". hostname() ."\nusing Perl $perl version $] ($mv.$sv.$lv), all Perl features for $VSTR are enabled\ncompiling code please wait .....\n";
+print "SPAMBOX $version$modversion is starting in directory $base\non host ". hostname() ."\nusing Perl $perl version $] ($mv.$sv.$lv), all Perl features for $VSTR are enabled\n";
+print $^C ? "compiling code and checking syntax - please wait .....\n" : "compiling code - please wait .....\n";
 
 push @INC,$base unless grep(/^\Q$base\E$/o,@INC);
 
@@ -5384,9 +5594,9 @@ sub import {
 
             my $slVer = $main::requiredSelfLoaderVersion;
             my $slok = 0;
-            my $slmod = $main::base . "/lib/AsspSelfLoader.pm";
+            my $slmod = $main::base . "/lib/SpamboxSelfLoader.pm";
             if (! $^C
-                && $main::Config{useAsspSelfLoader}
+                && $main::Config{useSpamboxSelfLoader}
                 && (open(my $fh, '<' , $slmod)))
             {
                 while (<$fh>) {
@@ -5394,9 +5604,9 @@ sub import {
                         if ($1 ge $slVer) {
                             $slok = 1 ;
                         } else {
-                            print "\n\nfound $main::base/lib/AsspSelfLoader.pm version $1 - but at least version $slVer is required\n\n";
+                            print "\n\nfound $main::base/lib/SpamboxSelfLoader.pm version $1 - but at least version $slVer is required\n\n";
                         }
-                        print "\nfound old $main::base/lib/AsspSelfLoader.pm version $1 - please upgrade to the last available version\n\n" if $1 lt '2.00';
+                        print "\nfound old $main::base/lib/SpamboxSelfLoader.pm version $1 - please upgrade to the last available version\n\n" if $1 lt '2.00';
                         last;
                     }
                 }
@@ -5407,8 +5617,8 @@ sub import {
             unless ($status < 0) {
                 s/OURVARS/$defConfVar/;
                 s/#(.*?RBEOT)/$1/go if (! $^C);
-                if (! $^C && $main::Config{useAsspSelfLoader} && $slok) {
-                    s/#\s*(use\s+AsspSelfLoader\s*;)/$1/;
+                if (! $^C && $main::Config{useSpamboxSelfLoader} && $slok) {
+                    s/#\s*(use\s+SpamboxSelfLoader\s*;)/$1/;
                     s/#\s*(__DATA__)/$1/;
                 }
             }
@@ -5434,11 +5644,8 @@ if (! -e "$base/SPAMBOX_DEF_VARS.pm") {
 
 if ( $^O eq 'MSWin32' ) {
     my $spambox = $spambox;
-    $spambox = $base.'\\'.$spambox if ($spambox !~ /\Q$base\E/io);
-    $spambox =~ s/\//\\/go;
-    my $spamboxbase = $base;
-    $spamboxbase =~ s/\\/\//go;
-    $dftrestartcmd = "cmd.exe /C start \"SPAMBOXSMTP restarted\" \"$perl\" \"$spambox\" \"$spamboxbase\"";
+    $spambox = $base.'/'.$spambox if ($spambox !~ /^\Q$base\E/io);
+    $dftrestartcmd = "cmd.exe /C start \"SPAMBOXSMTP restarted\" \"$perl\" \"$spambox\" \"$base\"";
 } else {
     $dftrestartcmd = "\"$perl\" \"$spambox\" \"$base\" \&";
 }
@@ -5450,12 +5657,55 @@ $dftPrivKeyFile =~ s/\\/\//go;
 $dftCaFile = "$base/certs/server-ca.crt";
 $dftCaFile =~ s/\\/\//go;
 
+# setup the default database pathes
+#
+# # the folder not exists - do nothing
+if ( ! -d "$base/database") {
+    $newDB = undef;
+# detect a new installation after 16004 - set the newDB
+} elsif (   -d "$base/database"
+         && ! scalar(Glob("$base/database/*"))
+         && ! -e "$base/moduleLoadErrors.txt"
+         && ! -e "$base/notes/loaded_perl_modules.txt"
+         && ! -e "$base/notes/confighistory.txt"
+         && ! -d "$base/tmp"
+         && ! -d "$base/tmpDB") {
+    $newDB = 'database/';
+# detect an empty not used database folder - unset the newDB
+} elsif (   -d "$base/database"
+         && ! scalar(Glob("$base/database/*"))
+         && (   -e "$base/moduleLoadErrors.txt"
+             || -e "$base/notes/loaded_perl_modules.txt"
+             || -e "$base/notes/confighistory.txt"
+             || -d "$base/rebuild_error"
+             || -d "$base/crash_repo"
+             || -d "$base/debug"
+            )
+        ) {
+    $newDB = undef;
+# the newDB is already in use - set the newDB
+} elsif (   -d "$base/database"
+         && scalar(Glob("$base/database/*"))
+         && (   -e "$base/moduleLoadErrors.txt"
+             || -e "$base/notes/loaded_perl_modules.txt"
+             || -e "$base/notes/confighistory.txt"
+             || -d "$base/rebuild_error"
+             || -d "$base/crash_repo"
+             || -d "$base/debug"
+            )
+        ) {
+    $newDB = 'database/';
+# in any other case - unset newDB
+} else {
+    $newDB = undef;
+}
+
 # vars needed in @Config
  &defConfigArray();
  # allow override for default web admin port
- if($ARGV[1] && $ARGV[1]=~/^\d+$/o) {
+ if ($ARGV[1] && $ARGV[1]=~/^\d+$/o) {
   for my $idx (0...$#ConfigArray) {
-   if($ConfigArray[$idx]->[0] eq 'webAdminPort' ) {
+   if ($ConfigArray[$idx]->[0] eq 'webAdminPort' ) {
     $ConfigArray[$idx]->[4]=$ARGV[1];
     last;
    }
@@ -5497,9 +5747,19 @@ $dftCaFile =~ s/\\/\//go;
      while (<$CFG>) {
          s/\r|\n//go;
          s/^$UTFBOMRE//o;
+         next if /^\s*#/o;
          my ($k,$v) = split(/:=/o,$_,2);
          next unless $k;
          $Config{$k} = $v;
+
+         # if newDB is used and an old spambox.cfg is used - set the config values to the right path
+         next unless $newDB;
+         if ($k =~ /^(?:pbdb|spamdb|whitelistdb|redlistdb|persblackdb|griplist|delaydb|ldaplistdb|adminusersdb)$/o) {
+             next if $v =~ /^DB:/o;
+             next if $v =~ /^\Q$newDB\E/o;
+             $Config{$k} = $newDB . $v;
+             print "new database location - changed value for '$k' from '$v' to '$newDB$v'\n";
+         }
      }
      close $CFG;
  }
@@ -5511,8 +5771,8 @@ $dftCaFile =~ s/\\/\//go;
      if (exists $Config{$k}) {
          $Config{$k} = $v;
          print "\ninfo: config parameter '$k' is set to '$v' - save the configuration to make the change permanent\n";
-     } elsif (defined ${$1}) {
-         ${$1} = $2;
+     } elsif (exists $main::{$k}) {
+         ${$k} = $v;
          print "\ninfo: internal variable '$k' is set to '$v'\n";
      } else {
          print "\nwarning: unknown parameter '$k' used at command line '$_'\n";
@@ -5549,11 +5809,11 @@ $dftCaFile =~ s/\\/\//go;
  }
  %cfgHash = ();
  undef %cfgHash;
- my @plcfg = loadPluginCfgBegin();           # load Configuration from Plugins to @ConfigArray
+ @PlCfg = loadPluginCfgBegin();           # load Configuration from Plugins to @ConfigArray
  open my $DEF ,'>>',"$base/language/default_en_msg.txt";
  binmode $DEF;
- for my $idx (0...$#plcfg) {
-    my $c = $plcfg[$idx];
+ for my $idx (0...$#PlCfg) {
+    my $c = $PlCfg[$idx];
     if ($c->[3] =~ /heading/io) {
          print $DEF '# heading - ' . $c->[4] . "\n\n";
     }
@@ -5572,9 +5832,12 @@ $dftCaFile =~ s/\\/\//go;
     push (@ConfigArray,$c);
     if ($c->[0] && !(exists $Config{$c->[0]})) {
        $Config{$c->[0]}=$c->[4];
+       $newConfig{$c->[0]} = 1;
     }
  }
  close $DEF;
+ $base =~ s/\\/\//og;
+ $base =~ s/\/+/\//og;
  unlink("$base/language/default_en_msg_".$version.'_'.$modversion.'.txt');
  rename("$base/language/default_en_msg.txt","$base/language/default_en_msg_".$version.'_'.$modversion.'.txt');
  my %Msg = ();
@@ -5624,10 +5887,30 @@ $dftCaFile =~ s/\\/\//go;
          $c->[7] = $Msg{$c->[11]} if $c->[11] && exists $Msg{$c->[11]};
      }
  }
+
+ if ( $^O ne 'MSWin32' && ! $^C && $Config{ChangeRoot}) {
+    shift @INC if $INC[0] =~ /^\Q$base\E\/lib$/o;
+
+    my $rembase = $spambox =~ s/^\Q$base\E//o;
+
+    nixChroot();
+
+    unshift @INC, "$base/lib" unless grep(/^\Q$base\E\/lib$/o,@INC);
+
+    $dftCertFile = "$base/certs/server-cert.pem";
+    $dftCertFile =~ s/\\/\//go;
+    $dftPrivKeyFile = "$base/certs/server-key.pem";
+    $dftPrivKeyFile =~ s/\\/\//go;
+    $dftCaFile = "$base/certs/server-ca.crt";
+    $dftCaFile =~ s/\\/\//go;
+
+    $spambox = $base.'/'.$spambox if $rembase;
+    $dftrestartcmd = "\"$perl\" \"$spambox\" \"$base\" \&";
+ }
+
  %Msg = ();
  undef %Msg;
  $Config{TLDS} = 'file:files/tlds-alpha-by-domain.txt';
- $base =~ s/\\/\//go;
  $Config{base} = $base;
  $runHMMusesBDB = $Config{HMMusesBDB};
  &setMakeREVars();
@@ -5651,7 +5934,7 @@ if (! $Config{globalClientName}) {
 
 use SPAMBOX_DEF_VARS;
 OURVARS
-#use AsspSelfLoader;
+#use SpamboxSelfLoader;
 
 while (my ($k,$v) = each %Config) {
    $$k = $v;
@@ -5673,9 +5956,9 @@ $lockDatabases = 1 if $DBCacheMaxAge && $DBCacheSize;
 
 our $CanUseCorrectSPAMBOXcfg;
 if (-e "$base/lib/CorrectSPAMBOXcfg.pm") {
-    eval('use CorrectSPAMBOXcfg; &CorrectSPAMBOXcfg::set();');
+    eval('use CorrectSPAMBOXcfg; 1;');
     if ($@) {
-        mlog(0,"error: calling CorrectSPAMBOXcfg.pm returned error - $@") ;
+        mlog(0,"error: loading CorrectSPAMBOXcfg.pm returned an error - $@") ;
         print "\t\t\t\t\t[failed] in lib/CorrectSPAMBOXcfg.pm\ncontinue\t";
     } else {
         $ModuleWatch{CorrectSPAMBOXcfg} = { file => "$base/lib/CorrectSPAMBOXcfg.pm",
@@ -5683,6 +5966,9 @@ if (-e "$base/lib/CorrectSPAMBOXcfg.pm") {
                                          run => 'CorrectSPAMBOXcfg::set'
                                        };
         $CanUseCorrectSPAMBOXcfg = 1;
+        mlog(0,"info: lib/CorrectSPAMBOXcfg.pm loaded");
+        eval('&CorrectSPAMBOXcfg::set();');
+        mlog(0,"error: unable to set configuration values using lib/CorrectSPAMBOXcfg.pm - the call to CorrectSPAMBOXcfg::set failed - $@") if $@;
     }
 }
 
@@ -5697,7 +5983,7 @@ close $DEF;
 
 our $AvailWin32Daemon   :shared = $useWin32Daemon ? eval("use Win32::Daemon; 1") : 0;    # Win32 Daemon module installed
 our $CanUseWin32Daemon  :shared = $AvailWin32Daemon;
-if( $^O eq 'MSWin32' && $CanUseWin32Daemon) {
+if ( $^O eq 'MSWin32' && $CanUseWin32Daemon) {
  print "\t\t\t\t\t[OK]\nservice check";
  eval(<<'EOT');
  use Win32::Daemon;
@@ -5737,7 +6023,7 @@ sub serviceCheck {
      Win32::Daemon::SERVICE_PAUSE_PENDING => defined(*{'yield'}),
      Win32::Daemon::SERVICE_CONTINUE_PENDING => (defined(*{'yield'})-2)
  );
- if( $state == SERVICE_STOP_PENDING ) {
+ if ( $state == SERVICE_STOP_PENDING ) {
   d('service stopping');
   if ($ServiceStopping == 0) {
     $ServiceStopping = 1;
@@ -5880,8 +6166,8 @@ our $AvailAuthenSASL    :shared;
 our $CanUseAuthenSASL   :shared;
 our $AvailRegexpOptimizer   :shared;
 our $CanUseRegexpOptimizer  :shared;
-our $AvailAsspSelfLoader   :shared;
-our $CanUseAsspSelfLoader  :shared;
+our $AvailSpamboxSelfLoader   :shared;
+our $CanUseSpamboxSelfLoader  :shared;
 our $AvailIOSocketINET6   :shared;
 our $CanUseIOSocketINET6  :shared;
 our $SysIOSocketINET6  :shared = -1;
@@ -5935,6 +6221,8 @@ our $GriplistFile;
 our $GriplistLen;
 our $GroupsDynamic:shared;
 our $IOEngineRun = $IOEngine;
+our $IPPROTO_IPV6;
+our $IPV6_V6ONLY;
 our $LDAPoffline;
 our $LOG;
 our $LOGBR;
@@ -5958,6 +6246,7 @@ our $NextCodeChangeCheck:shared = time + 60;
 our $NextConfigReload:shared = 9999999999;
 our $NextDroplistDownload:shared;
 our $NextGriplistDownload:shared;
+our $NextGriplistUpload:shared;
 our $NextGroupsReload:shared;
 our $NextPOP3Collect:shared;
 our $NextSaveStats:shared;
@@ -5965,12 +6254,13 @@ our $NextTLDlistDownload:shared;
 our $NextSyncConfig:shared;
 our $NotifyCount = 1;
 our $PersBlackHasRecords:shared = 1;
+our $RSL_make_query_packet = 'make_query_packet';
 our $ScheduleIsChanged;
 our $SMTPbuf;
-our $SMTPmaxbuf;
 our $SE_RE;             #t
 our $SNMPagent;
 our $StartRebuild;
+our $Sysv6only;
 our $ThreadsWakeUpInterval = 127;
 our $ThreadsWakeUpCheck = 7;
 our $ThreadDebug;
@@ -5993,6 +6283,7 @@ our $bdbcache;
 our $blogfile;
 our $boundaryX;
 our $calledfromThread = 0;
+our $can_enable_v6only;
 our $canNotify:shared = 0;
 our $canSNMPAPI;
 our $canUnicode;
@@ -6045,7 +6336,7 @@ our $maxOID;
 our $minMemUsage:shared = 99999999999;
 our $minSelectTime;
 our $minusIcon;
-our $mlogLastT:shared;
+our $mlogLastT;
 our $mobile;
 our $nextARINcheck:shared;
 our $nextBDBsync:shared;
@@ -6074,6 +6365,7 @@ our $nextMemoryUsageCheckSchedule:shared;
 our $nextNewReported = time + [split(/\s+/o,$newReportedInterval)]->[1] * 60;
 our $nextOptionCheck:shared;
 our $nextQueueSchedule:shared;
+our $nextRepairWhitelist:shared = time + 3600 * 24 * 7;
 our $nextSigCountCheck = time + 600;
 our $nextStatsUpload:shared;
 our $nextThreadMain2;
@@ -6087,6 +6379,7 @@ our $o_EMM_pm = 0;
 our $org_Email_MIME_parts_multipart;
 our $orgNewDNSisSET;
 our $orgNewDNSResolver = sub {};
+our $orgreadbgDNSResolver = sub {};
 our $orgSendDNSResolver = sub {};
 our $pbdir;
 our $plusIcon;
@@ -6097,7 +6390,9 @@ our $recompileAllRe;
 our $refreshWait;             #t
 our $regexMod = 'i';
 our $rootlogin;
+our $rotLogRetry = 10;
 our $saveWhite;
+our $seenRecommends:shared = 0;
 our $shuttingDown:shared;
 our $smtpConcurrentSessions:shared; #is locked
 our $spamSubjectEnc;
@@ -6110,9 +6405,10 @@ our $thread_nolog;
 our $tqueue;
 our $trqueue;
 our $usedCrypt:shared;
+our $wildcardUser = '*';
 our $willSIG:shared;
 our $writable;
-our %AllScoreStats:shared ;
+our %AllScoreStats:shared;
 our %AllStats:shared ;
 our %AttachRules;
 our %AttachZipRules;
@@ -6170,6 +6466,7 @@ our %OldScoreStats:shared;
 our %OldStats:shared;
 our %Proxy;
 our %ProxySocket;
+our %Recommends:shared;
 our %RecRepRegex:shared;
 our %RegexError;
 our %RegExStore:shared;
@@ -6241,6 +6538,7 @@ our %subOIDLastLoad;
 our %tThreadHandler;
 our %webRequests;
 our %webAuthStore;
+our %uniRegex;
 our @AdminGroup;
 our @ARINservers:shared;
 our @changedConfig:shared;
@@ -6260,6 +6558,7 @@ our @backsctrlist:shared;
 our @badattachRE;        #t
 our @batv_secrets;
 our @delayGroup:shared;
+our @definedNameServers:shared;
 our @logCount:shared; # is locked
 our @logFreq:shared;
 our @lsn;
@@ -6283,6 +6582,7 @@ our @spamdbGroup:shared;
 our @sortedOIDs;
 our @uribllist;
 our @whitelistGroup:shared;
+our @I; # the global IP match receiver - unique in every thread
 our @HmmBayWords;
 our @WhitelistResult;
 
@@ -6380,7 +6680,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
     '/shutdown' => \&Shutdown,
     '/shutdown_frame' => \&ShutdownFrame,
     '/shutdown_list' => \&ShutdownList,
-    '/github' => \&GitHUB,
+    '/donations' => \&Donations,
     '/get' => \&GetFile,
     '/top10stats' => \&top10stats,
     '/pwd' => \&ChangeMyPassword,
@@ -6470,7 +6770,7 @@ $ScheduleMap{'MemoryUsageCheckSchedule'} = &share([]); @{$ScheduleMap{'MemoryUsa
 # reply echos server messages to the client
 # reply also looks for a 235 AUTH OK and sets {relayok}=1
 
-if($AsADaemon) {
+if ($AsADaemon) {
  print "\nstarting as daemon\t\t\t[OK]\n";
  fork() && exit 0;
  print "forked a new silent process\t\t[OK]\n";
@@ -6479,7 +6779,7 @@ if($AsADaemon) {
  $silent=1;
 }
 
-if($AsAService)
+if ($AsAService)
 {
  close STDOUT;
  close STDERR;
@@ -6508,6 +6808,9 @@ $SIG{PIPE} = 'IGNORE';
 $lastTimeoutCheck = time;
 $PerfStartTime = time;
 $syncToDo = 1;
+for my $s (sort keys %Recommends) {
+    mlog(0,"$s: $Recommends{$s}");
+}
 $WorkerName = 'Main_Thread';
 unloadMainThreadModules() if $undefMEM;
 &ThreadMonitorMainLoop('MainLoop initialized');
@@ -6539,7 +6842,7 @@ if ($@) {
 sub write_rebuild_module {
 my $curr_version = shift;
 
-my $rb_version = '7.11';
+my $rb_version = '7.30';
 my $keepVersion;
 
 if (open my $ADV, '<',"$base/lib/rebuildspamdb.pm") {
@@ -6616,6 +6919,8 @@ our %SpamHash; keys %SpamHash = $main::MaxFiles;
 our %HMMres;
 our %GpCnt;
 our %GpOK;
+our $HMMIgnored;
+our $bayesIgnored;
 our %Trashlist;
 our $spamObj;
 our $newspamObj;
@@ -6644,6 +6949,7 @@ our $mintime;
 our $movetime;
 our $doattach;
 our $CanUseUnicodeNormalize = $main::CanUseUnicodeNormalize && require Unicode::Normalize;
+our $PortRe = $main::PortRe;
 
 sub rb_run {         ## no critic
 no warnings;
@@ -6651,6 +6957,8 @@ $onlyNewCorrected = shift;
 
 $SpamWordCount = 0;
 $HamWordCount = 0;
+$HMMIgnored = 0;
+$bayesIgnored = 0;
 $processedBytes = 0;
 $starttime = 0;
 $processTime = 0;
@@ -6680,6 +6988,7 @@ if ($RebuildDebug) {
     open($RebuildDebug ,'>',  "$main::base/rebuilddebug.txt" );
     binmode $RebuildDebug;
     $RebuildDebug->autoflush;
+    print $RebuildDebug $main::UTF8BOM;
     rb_mlog("rebuild debug output is enabled to $main::base/rebuilddebug.txt");
     push @dbhint , "-rebuild debug output is enabled to $main::base/rebuilddebug.txt";
 }
@@ -6701,7 +7010,7 @@ EOT
         }
         my $cachesize;
         for (&main::Glob("$DBDir/*.bdb")) { $cachesize += -s $_ }
-        $cachesize = &main::min($main::BDBMaxCacheSize, 200*1024*1024, &main::max($cachesize,($DoHMM ? 41943040 : 20971520)));
+        $cachesize = &main::min(($main::BDBMaxCacheSize || 50*1024*1024), 200*1024*1024, &main::max($cachesize,($DoHMM ? 41943040 : 20971520)));
         rb_mlog("RebuildSpamDB uses BerkeleyDB for temporary hashes");
         push @dbhint , "-RebuildSpamDB uses BerkeleyDB for temporary hashes";
         rb_mlog("RebuildSpamDB uses BerkeleyDB-ENV with ".&main::formatNumDataSize(int($cachesize * 1.25)));
@@ -6947,7 +7256,7 @@ EOT
         if ($havenormfile) {
             $main::bayesnorm = $main::Spamdb{'***bayesnorm***'} = $norm = $HamWordCount ? ( $SpamWordCount / $HamWordCount ) : 100;
             $main::HMMdb{'***bayesnorm***'} = $norm if $DoHMM;
-            &rb_mlog("info: the corpus norm is changed from: $oldnorm - to: $norm") if $oldnorm != $norm;
+            &rb_mlog('info: the corpus norm is changed from: '.sprintf("%.4f",$oldnorm).' - to: '.sprintf("%.4f",$norm)) if sprintf("%.4f",$oldnorm) != sprintf("%.4f",$norm);
             (open( my $normFile, '>', "$main::base/normfile" ));
             if ($normFile) {
                 print { $normFile } "$norm $correctedspamcount $correctednotspamcount $spamlogcount $notspamlogcount $SwordsPfile $HwordsPfile $SpamWordCount $HamWordCount";
@@ -6975,6 +7284,7 @@ EOT
     (open( $RebuildLog, '>', "$rebuildrun" )) or die "unable to open file for logging: $!";
     binmode $RebuildLog;
     $RebuildLog->autoflush;
+    print $RebuildLog $main::UTF8BOM;
     $starttime = time;
     &rb_printlog( "\n\n\nRebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in SPAMBOX version $main::version$main::modversion\n" );
     &rb_mlog( "RebuildSpamDB-thread rebuildspamdb-version ".${'VERSION'}." started in SPAMBOX version $main::version$main::modversion");
@@ -7141,19 +7451,32 @@ EOT
         eval{close $normFile;};
     }
 
+    my ($bayesScores, $HMMScores) = (0,0);
     # Create Bayesian DB
-    &rb_generatescores();
+    $bayesScores = &rb_generatescores();
 
     # Create HMM DB
-    &rb_generateHMM() if $DoHMM;
+    $HMMScores = &rb_generateHMM() if $DoHMM;
 
     # Create HELO blacklist
     &rb_createheloblacklist();
 
     $main::bayesnorm = $main::Spamdb{'***bayesnorm***'} = $norm;
 
-    &rb_printlog("\nSpam Weight:\t   " . &rb_commify($SpamWordCount) . "\n");
-    &rb_printlog("Not-Spam Weight:   " . &rb_commify($HamWordCount) . "\n\n" );
+    &rb_printlog("\nSpam Weight    :   " . &rb_commify($SpamWordCount) . "\n");
+    &rb_printlog(  "Not-Spam Weight:   " . &rb_commify($HamWordCount) . "\n\n" );
+
+    if ($bayesIgnored && $bayesScores && $RebuildDebug) {
+        &rb_printlog("Bayesian pairs are ignored, if they occure only one time or there probability is in the useless range 0.4 < prob < 0.6\n");
+        my $pcent = sprintf("%.2f",(($bayesIgnored / ($bayesIgnored + $bayesScores)) * 100));
+        &rb_printlog("ignored Bayesian pairs:   " . &rb_commify($bayesIgnored) . " - which are $pcent\% of all processed\n\n");
+    }
+    if ($HMMIgnored && $HMMScores && $RebuildDebug) {
+        &rb_printlog("HMM sequences are ignored, if there probability is in the useless range 0.4 < prob < 0.6\n");
+        my $pcent = sprintf("%.2f",(($HMMIgnored / ($HMMIgnored + $HMMScores)) * 100));
+        &rb_printlog("ignored HMM sequences :   " . &rb_commify($HMMIgnored) . " - which are $pcent\% of all processed\n\n" );
+    }
+
     if ( !($norm) ) {    #invalid norm
         &rb_printlog("Warning: Corpus insufficient to calculate normality!\n");
         &rb_mlog("Warning: Corpus insufficient to calculate normality!");
@@ -7453,20 +7776,20 @@ sub rb_populate_Spamdb {
 }
 
 sub rb_Load_Trashlist {
-       my $LH;
-       unless (open($LH, '<',"$main::base/trashlist.db")) {
-           return;
-       }
-       binmode($LH);
-       while (<$LH>) {
-         my ($k,$v) = split/\002/o;
-         chomp $v;
-         $v =~ s/\r|\n//go;
-         if ($k && $v) {
-           $Trashlist{$k}=$v;
-         }
-       }
-       eval{close $LH;};
+    my $LH;
+    unless (open($LH, '<',"$main::base/trashlist.db")) {
+        return;
+    }
+    binmode($LH);
+    while (<$LH>) {
+        my ($k,$v) = split/\002/o;
+        chomp $v;
+        $v =~ s/\r|\n//go;
+        if ($k && $v) {
+            $Trashlist{$k}=$v;
+        }
+    }
+    eval{close $LH;};
 }
 
 sub rb_BDB_getRecordCount {
@@ -7505,23 +7828,33 @@ sub rb_generatescores {
             die "warning: got stop request from MainThread" unless $main::ComWorker{$Iam}->{run};
             $main::lastd{$Iam} = "Generating weighted Bayesian tuplets $count/$totspam";
         }
-        my ($s1, $t1) = ( $s, $t ) = split( q{ }, $v );
-#        $t = ( $t - $s ) * $norm + $s;    # normalize t
-        if ( $t1 > 3 ) {
-
+        ( $s, $t ) = split( q{ }, $v );
+        if ( $t > 1 ) {
             # if token represents all spam or all ham then square its value
-            if ( $s1 == $t1 || $s1 == 0 ) {
+            my $to = $t;
+            if ( $s == $t || $s == 0 ) {
                 $s = $s * $s;
                 $t = $t * $t;
             }
             $v = ( 1 + $s ) / ( $t + 2 );
+            if ($to < 4) {            # low occurence for spam/ham only
+                if ($s == $to) {      # spam only
+                    $v = $to / ($to + 1);
+                } elsif ($s == 0) {   # ham only
+                    $v = 1 - ($to / ($to + 1));
+                }
+            }
             $v = sprintf( "%.7f", $v );
             $v = 0.9999999 if $v >= 1;
             $v = 0.0000001 if $v <= 0;
             if (abs( $v - .5 ) > .09) {
                 $newspam{$pair} = $v;
                 print { $spamdbFile } "$pair\002$v\n" if (! $main::ReplaceOldSpamdb);
+            } else {
+                $bayesIgnored++;
             }
+        } else {
+            $bayesIgnored++;
         }
     }
     my $nowspam = &rb_BDB_getRecordCount('newspam') || scalar keys %newspam;
@@ -7581,7 +7914,7 @@ sub rb_generatescores {
     &rb_mlog("Bayesian Pairs: " . &rb_commify($allpairs) . " now in list");
     $main::currentDBVersion{Spamdb} = $main::Spamdb{'***DB-VERSION***'} = $main::requiredDBVersion{Spamdb};
     %spam = ();
-    return;
+    return $nowspam;
 } ## end sub generatescores
 
 sub rb_generateHMM {
@@ -7611,11 +7944,14 @@ sub rb_generateHMM {
             my $s = $sw / $tot;
 
             my $sp = (1 - $h + $s) / 2 ;
+            $sp = sprintf( "%.7f", $sp );
             $sp = 0.0000001 if $sp <= 0;
             $sp = 0.9999999 if $sp >= 1;
             if (abs( $sp - .5 ) > .09) {
                 $HMMres{$k} = $sp;
                 $rec++;
+            } else {
+                $HMMIgnored++;
             }
         }
         delete ${$hamHMM->{chains}}{$k};
@@ -7635,16 +7971,20 @@ sub rb_generateHMM {
             my $h = $hw / $tot;
 
             my $sp = (1 - $h) / 2 ;
+            $sp = sprintf( "%.7f", $sp );
             $sp = 0.0000001 if $sp <= 0;
             $sp = 0.9999999 if $sp >= 1;
             if (abs( $sp - .5 ) > .09) {
                 $HMMres{$k} = $sp;
                 $rec++;
+            } else {
+                $HMMIgnored++;
             }
         }
     }
     &rb_printlog("HMM sequences: " . &rb_commify($rec) . " now in list\n\n");
     &rb_mlog("HMM sequences: " . &rb_commify($rec) . " now in list");
+    return $rec;
 }
 
 sub rb_createheloblacklist {
@@ -7775,16 +8115,22 @@ sub rb_processNewCorrected {
         my ( $t, $s, $pair, $v );
         while ( ( $pair, $v ) = each(%addspam) ) {
             next if (! $pair);
-            my ($s1, $t1) = ( $s, $t ) = split( q{ }, $v );
-#            $t = ( $t - $s ) * $norm + $s;    # normalize t
-            if ( $t1 > 3 ) {
-
+            ( $s, $t ) = split( q{ }, $v );
+            if ( $t > 1 ) {
                 # if token represents all spam or all ham then square its value
-                if ( $s1 == $t1 || $s1 == 0 ) {
+                my $to = $t;
+                if ( $s == $t || $s == 0 ) {
                     $s = $s * $s;
                     $t = $t * $t;
                 }
                 $v = ( 1 + $s ) / ( $t + 2 );
+                if ($to < 4) {            # low occurence for spam/ham only
+                    if ($s == $to) {      # spam only
+                        $v = $to / ($to + 1);
+                    } elsif ($s == 0) {   # ham only
+                        $v = 1 - ($to / ($to + 1));
+                    }
+                }
                 $v = sprintf( "%.7f", $v );
                 $v = 0.9999999 if $v >= 1;
                 $v = 0.0000001 if $v <= 0;
@@ -7833,6 +8179,7 @@ sub rb_processNewCorrected {
                 my $s = $sw / $tot;
 
                 my $sp = (1 - $h + $s) / 2 ;
+                $sp = sprintf( "%.7f", $sp );
                 $sp = 0.0000001 if $sp <= 0;
                 $sp = 0.9999999 if $sp >= 1;
                 if (abs( $sp - .5 ) > .09) {
@@ -7855,6 +8202,7 @@ sub rb_processNewCorrected {
                 my $h = $hw / $tot;
 
                 my $sp = (1 - $h) / 2 ;
+                $sp = sprintf( "%.7f", $sp );
                 $sp = 0.0000001 if $sp <= 0;
                 $sp = 0.9999999 if $sp >= 1;
                 if (abs( $sp - .5 ) > .09) {
@@ -7930,8 +8278,12 @@ sub rb_processfolder {
         if ( $spt && $dtime > $spt ) {
             $count++;
             if ($main::MaintBayesCollection) {
-                $main::unlink->($file);
-                $deleteCount++;
+                if ($main::unlink->($file)) {
+                    $deleteCount++;
+                    rb_d("removed: $file");
+                } else {
+                    rb_d("unable to delete file $file - $!");
+                }
                 next;
             }
             $ignoreCount++;
@@ -8087,7 +8439,7 @@ sub rb_checkspam {
     if ( defined( $HamHash{ &rb_hash($msgText) } ) ) {
 
 # we've found a message in the spam database that is the same as one in the corrected Ham group
-        &rb_deletefile( $FileName, "corrected ham" );
+        &rb_deletefile( $FileName, ' - same file found in corrected ham' );
         return 1;
     }
     elsif ( $reason = &rb_redlisted( $msgText ) ) {
@@ -8107,7 +8459,7 @@ sub rb_checkham {
     if ( defined( $SpamHash{ &rb_hash($msgText) } ) ) {
 
 # we've found a message in the ham database that is the same as one in the corrected spam group
-        &rb_deletefile( $FileName, "corrected spam" );
+        &rb_deletefile( $FileName, ' - same file found in corrected spam' );
         return 1;
     }
     elsif ( $reason = &rb_redlisted( $msgText ) ) {
@@ -8138,12 +8490,12 @@ sub rb_whitelisted {
     while ( $m =~ /($main::HeaderNameRe):($main::HeaderValueRe)/igos ) {
         my ($h,$s) = ($1,$2);
         die "warning: got stop request from MainThread" unless $main::ComWorker{$Iam}->{run};
-        if ($h =~ /^(?:from|sender|X-Assp-Envelope-From|reply-to|errors-to|list-\w+)$/io) {
+        if ($h =~ /^(?:from|sender|X-Spambox-Envelope-From|reply-to|errors-to|list-\w+)$/io) {
             &main::headerUnwrap($s);
             next unless ($s =~ /($main::EmailAdrRe\@$main::EmailDomainRe)/io);
             push @from , &main::batv_remove_tag(0,lc($1),'');
         }
-        if ($h =~ /^(?:to|X-Assp-Intended-For)$/io) {
+        if ($h =~ /^(?:to|X-Spambox-Intended-For)$/io) {
             &main::headerUnwrap($s);
             next unless ($s =~ /($main::EmailAdrRe\@$main::EmailDomainRe)/io);
             push @to , &main::batv_remove_tag(0,lc($1),'');
@@ -8167,14 +8519,9 @@ sub rb_whitelisted {
                 $WhiteCount++;
                 return ( "WhiteList: '$curaddr,$_'" );
             }
-            if ($main::wildcardUser) {
-                my ( $mfdd, $alldd, $reason );
-                $mfdd = $1 if $curaddr =~ /(\@[^@]*)/o;
-                $alldd = "$main::wildcardUser$mfdd";
-                if ( &main::Whitelist( lc $alldd , $_) ) {
-                    $WhiteCount++;
-                    return ( "WhiteList-Wild: '$curaddr,$_'" );
-                }
+            if ($main::whiteListedDomains && &main::matchRE(["$curaddr,$_"],'whiteListedDomains',1)) {
+                $WhiteCount++;
+                return ( "WhiteListed Domain: $curaddr for $_" );
             }
         }
         %seent = ();
@@ -8184,7 +8531,7 @@ sub rb_whitelisted {
         }
     } ## end while
     return 0;
-} ## end sub whitelisted
+} ## end sub white listed
 
 sub rb_redlisted {
     my $mm = shift;
@@ -8221,16 +8568,17 @@ sub rb_deletefile {
     my ( $fn, $reason, $ignorekeepdeleted ) = @_;
 
     if ( $main::eF->( $fn )) {
-        &rb_printlog( "\nremove " . $fn . q{ } . $reason );
+        &rb_printlog( "\nremove " . $fn . q{ } . $reason ) unless $Trashlist{$fn};
         if (! $main::RebuildTestMode) {
             if ( $main::MaxKeepDeleted && !$ignorekeepdeleted ) {
-                $Trashlist{$fn} = time;
+                $Trashlist{$fn} ||= time;
             } else {
-                $main::unlink->($fn);
+                $main::unlink->($fn) ||
+                rb_printlog("\ncannot delete " . $reason . " message " . $fn . ": $!" );
             }
         }
     } else {
-        rb_printlog("\ncannot delete " . $reason . " message " . $fn . ": $!" );
+        rb_printlog("\ncannot remove " . $reason . " message " . $fn . ": no such file" );
     }
 }
 
@@ -8257,7 +8605,7 @@ sub rb_get {
 #rb_d("rb_get - $fn - read");
     eval{$file->close;};
     if ($count) {
-        my @keep = $message =~ /((?:X-Assp-Reported-By|X-Assp-Intended-For|X-Forwarded-For):$main::HeaderValueRe)/gois;
+        my @keep = $message =~ /((?:X-Spambox-Reported-By|X-Spambox-Intended-For|X-Forwarded-For):$main::HeaderValueRe)/gois;
         $message =~ s/X-SPAMBOX[^:]+:$main::HeaderValueRe//gois;                   # remove all X-SPAMBOX headers
         $message =~ s/(?:DKIM|DomainKey)-Signature:$main::HeaderValueRe//gios;  # remove DKIM/DomainKey signatures
         $message = join('',@keep).$message;
@@ -8310,17 +8658,19 @@ sub rb_add {
     my $header;
     $header = substr($$content,0,$headerlen);
     if ($header) {
-        $reportedBy = lc $1 if ($header =~ /X-Assp-Reported-By:\s*($main::EmailAdrRe\@$main::EmailDomainRe)/io);
-        $reportedBy ||= lc $1 if ($header =~ /X-Assp-Intended-For:\s*($main::EmailAdrRe\@$main::EmailDomainRe)/io);
+        $reportedBy = lc $1 if ($header =~ /X-Spambox-Reported-By:\s*($main::EmailAdrRe\@$main::EmailDomainRe)/io);
+        $reportedBy ||= lc $1 if ($header =~ /X-Spambox-Intended-For:\s*($main::EmailAdrRe\@$main::EmailDomainRe)/io);
         $reportedBy ||= lc $1 if ($header =~ /^to:.*?($main::EmailAdrRe\@$main::EmailDomainRe)/io);
-        ($domain) = $reportedBy =~ /(\@$main::EmailDomainRe)$/o;
-        $reportedBy = '' unless (($main::DoPrivatSpamdb & 1) && &main::localmailaddress(0,$reportedBy));
-        $domain = '' unless ($main::DoPrivatSpamdb > 1 && &main::localdomainsreal($domain));
+        if ($reportedBy) {
+            $domain = $1 if $reportedBy =~ /(\@$main::EmailDomainRe)$/o;
+            $reportedBy = '' unless (($main::DoPrivatSpamdb & 1) && &main::localmailaddress(0,$reportedBy));
+            $domain = '' unless ($main::DoPrivatSpamdb > 1 && &main::localdomainsreal($domain));
+        }
         if ( $header =~ /X-Forwarded-For: ($IPRe)/io) {
             $cip = $1;
     		while ( $header =~ /Received:($main::HeaderValueRe)/gis ) {
                 my $h = $1;
-                if ( $h =~ /\s+from\s+(?:(\S+)\s)?(?:.+?)\Q$cip\E\]?\)(.{1,80})by.{1,20}/gis ) {
+                if ( $h =~ /\s+from\s+(?:(\S+)\s)?(?:.+?)\Q$cip\E(?::$PortRe)?\]?\)(.{1,80})by.{1,20}/gis ) {
                     $cipHelo = $1;
                     $curHelo = $1 if $1;
                     my $rhelo = $2;
@@ -8396,7 +8746,7 @@ sub rb_add {
     $Helo{ $curHelo } += ( $isspam * 999999 + 1 ) * $factor if ( $curHelo );
     return 1 if $heloOnly;
 
-    $$content =~  s/(?:X-Assp-Reported-By|X-Assp-Intended-For|X-Forwarded-For):$main::HeaderValueRe//gois;
+    $$content =~  s/(?:X-Spambox-Reported-By|X-Spambox-Intended-For|X-Forwarded-For):$main::HeaderValueRe//gois;
     my $OK;
     ($content,$OK) = &main::clean($content);
     return if (rb_checkRunTime($startTime,"reached $movetime s after content cleanup on $fn"));
@@ -8541,6 +8891,8 @@ sub rb_d {
 sub rb_uploadgriplist {
     local $/ = "\n";
 
+    $main::NextGriplistUpload = $main::Griplist{'255.255.255.253'} = time + 23 * 3600 + int(rand(7200));
+    
     &main::checkDBCon() if ($main::CanUseTieRDBM && $main::DBisUsed);
 
     &rb_printlog("\nbuilding new GripList records and bounce report\n") if !$main::noGripListUpload;
@@ -8653,7 +9005,7 @@ sub rb_uploadgriplist {
     my ($st6,$st4);
     while (my ($k,$v) = each %GpCnt) {
         next if (!$v);
-        if ($k !~ /:/o) {
+        if ($k =~ /:/o) {
             my $ip = $k;
             $ip =~ s/([0-9a-f]*):/0000$1:/gio;
             $ip =~ s/0*([0-9a-f]{4}):/$1:/gio;
@@ -8672,22 +9024,25 @@ sub rb_uploadgriplist {
         my $user = $main::proxyuser ? "$main::proxyuser:$main::proxypass\@": '';
         $peeraddress = $user . $main::proxyserver;
         $hostaddress = $main::proxyserver;
-        $connect     = "POST $main::gripListUpUrl HTTP/1.0";
+        $connect     = <<"EOF";
+POST $main::gripListUpUrl HTTP/1.0
+User-Agent: SPAMBOX/$main::MAINVERSION ($^O; Perl/$])
+EOF
     } else {
         &rb_printlog("Uploading Griplist via Direct Connection\n");
         $peeraddress = $main::gripListUpHost . ':80';
         $hostaddress = $main::gripListUpHost;
-        my ($url) = $main::gripListUpUrl =~ /http:\/\/[^\/](\/.+)/oi;
+        my ($url) = $main::gripListUpUrl =~ /http:\/\/[^\/]+(\/.+)/oi;
         $connect     = <<"EOF";
 POST $url HTTP/1.1
-User-Agent: SPAMBOX/$main::MAINVERSION ($^O; Perl/$];)
+User-Agent: SPAMBOX/$main::MAINVERSION ($^O; Perl/$])
 Host: $main::gripListUpHost
 EOF
     }
 
     if ($main::RebuildTestMode) {
-        &rb_printlog("unable to connect to $main::gripListUpHost to upload griplist\n");
-        &rb_mlog("unable to connect to $main::gripListUpHost to upload griplist");
+        &rb_printlog("unable to connect to $main::gripListUpHost to upload griplist - in RebuildTestMode\n");
+        &rb_mlog("unable to connect to $main::gripListUpHost to upload griplist - in RebuildTestMode");
         return;
     }
 
@@ -8707,20 +9062,26 @@ EOF
         &main::NoLoopSyswrite( $socket , $connect, 0);
         sleep(1);
         eval{$socket->sysread($main::SMTPbuf, 4096);};
-        $main::SMTPbuf = '';
         eval{$socket->close;};
         $len = &rb_commify($len);
         $n6 = &rb_commify($n6);
         $n4 = &rb_commify($n4);
         &rb_printlog("Submitted $len bytes: $n6 IPv6 addresses, $n4 IPv4 addresses\n");
         &rb_mlog("Submitted $len bytes: $n6 IPv6 addresses, $n4 IPv4 addresses");
+#        my $res = $main::SMTPbuf;
+#        &rb_printlog("result: $res\n");
+#        &rb_mlog("result: $res");
+        $main::SMTPbuf = '';
+#        $res = $1 if $res =~ /(SPAMBOX grey IP list upload accepted.+?Thank you\.)/iso;
+#        &rb_printlog("result: $res\n");
+#        &rb_mlog("result: $res");
     }
     else {
         &rb_printlog("unable to connect to $main::gripListUpHost to upload griplist\n");
         &rb_mlog("unable to connect to $main::gripListUpHost to upload griplist");
     }
     return;
-} ## end sub uploadgriplist
+} ## end sub upload griplist
 
 sub rb_fixPath {
     my ($path) = @_;
@@ -8823,16 +9184,41 @@ sub defineCanUseModules {
     $AvailIOSocketINET6  = ($enableINET6 && $useIOSocketINET6) ? validateModule('IO::Socket::INET6+') : 0; # socket 6 IO module
     $CanUseIOSocketINET6 = $AvailIOSocketINET6 &&
       eval {
-          my $sock = IO::Socket::INET6->new(Domain => AF_INET6, Listen => 1, LocalAddr => '[::]', LocalPort => $IPv6TestPort);
+          my $old_wflag = $^W;
+          $^W = 0;
+          no strict 'subs';   ## no critic
+          # first try an unspecified socket port, if failed a specified (success may differ by OS)
+          my $sock = eval{IO::Socket::INET6->new(Domain => AF_INET6, Listen => 1, LocalAddr => '[::]');} ||
+                     eval{IO::Socket::INET6->new(Domain => AF_INET6, Listen => 1, LocalAddr => '[::]', LocalPort => $IPv6TestPort);};
+          my $canV6sock = eval('$IPPROTO_IPV6 = Socket::IPPROTO_IPV6; $IPV6_V6ONLY = Socket::IPV6_V6ONLY;1;'); # they may not be available on diff platforms
           if ($sock) {
+              eval {
+                  $Sysv6only = $sock->getsockopt($IPPROTO_IPV6, $IPV6_V6ONLY);
+              } if $canV6sock;
+              $Sysv6only = 1 if (! $canV6sock &&  $^O eq 'MSWin32');  # mswin may not have $canV6sock, but it has enabled IPV6_V6ONLY
               close($sock);
+              eval {
+                  socket(my $testsock, Socket::PF_INET6(), SOCK_STREAM, 0);
+                  $can_enable_v6only = setsockopt($testsock, $IPPROTO_IPV6, $IPV6_V6ONLY, 1) ? 1 : 0;
+              } if $canV6sock;
+              $can_enable_v6only ||= 0;
               $SysIOSocketINET6 = 1;
+              $^W = $old_wflag;
               1;
           } else {
               $AvailIOSocketINET6 = $SysIOSocketINET6 = 0;
+              $^W = $old_wflag;
               0;
           }
       };
+    eval <<'EOT' unless $maxTCPRCVbuf;
+    my $sock = IO::Socket::INET->new(Listen => 1, LocalAddr => '0.0.0.0');
+    $maxTCPRCVbuf = unpack("i", getsockopt($sock, SOL_SOCKET, SO_RCVBUF));
+EOT
+    eval <<'EOT' unless $maxTCPSNDbuf;
+    my $sock = IO::Socket::INET->new(Listen => 1, LocalAddr => '0.0.0.0');
+    $maxTCPSNDbuf = unpack("i", getsockopt($sock, SOL_SOCKET, SO_SNDBUF));
+EOT
     $CanUseThreadState   = $useThreadState ? validateModule('Thread::State') : 0;    # change thread priority
     $CanUseAvClamd       = $useFileScanClamAV ? validateModule('File::Scan::ClamAV') : 0;    # ClamAV module installed
     $AvailAvClamd        = $CanUseAvClamd;
@@ -8956,8 +9342,8 @@ sub defineCanUseModules {
     $AvailSPAMBOX_SVG    = $useSPAMBOX_SVG ? validateModule('SPAMBOX_SVG()') : 0;  # SPAMBOX_SVG  module installed
     $CanUseSPAMBOX_SVG   = $AvailSPAMBOX_SVG;
 
-    $AvailAsspSelfLoader   = $useAsspSelfLoader ? defined $AsspSelfLoader::VERSION : 0;  # AsspSelfLoader  module installed
-    $CanUseAsspSelfLoader  = $AvailAsspSelfLoader;
+    $AvailSpamboxSelfLoader   = $useSpamboxSelfLoader ? defined $SpamboxSelfLoader::VERSION : 0;  # SpamboxSelfLoader  module installed
+    $CanUseSpamboxSelfLoader  = $AvailSpamboxSelfLoader;
 
     $AvailUnicodeGCString = $useUnicodeGCString ?  validateModule('Unicode::GCString()') : 0;  # Unicode::GCString  module installed
     $CanUseUnicodeGCString = $AvailUnicodeGCString;
@@ -9099,65 +9485,65 @@ sub changeConfigValue {
 }
 
 sub niceConfigPos {
- my $counterT = -1;
- my $num = 0;
- my $head;
- %ConfigPos = ();
- %ConfigNum = ();
- %glosarIndex = ();
- for my $idx (0...$#ConfigArray) {
-   my $c = $ConfigArray[$idx];
-   if(@{$c} == 5) {
-      $counterT++;
-      $num++;
-      $head = $c->[4];
-      $head =~ s/<a\s+href.*<\/a>//io;
-   } else {
-      $ConfigPos{$c->[0]} = $counterT;
-      $ConfigNum{$c->[0]} = $num++;
-      $glosarIndex{$c->[0]} = $head;
-   }
- }
+    my $counterT = -1;
+    my $num = 0;
+    my $head;
+    %ConfigPos = ();
+    %ConfigNum = ();
+    %glosarIndex = ();
+    for my $idx (0...$#ConfigArray) {
+        my $c = $ConfigArray[$idx];
+        if (@{$c} == 5) {
+            $counterT++;
+            $num++;
+            $head = $c->[4];
+            $head =~ s/<a\s+href.*<\/a>//io;
+        } else {
+            $ConfigPos{$c->[0]} = $counterT;
+            $ConfigNum{$c->[0]} = $num++;
+            $glosarIndex{$c->[0]} = $head;
+        }
+    }
 }
 
 sub niceConfig {
- %ConfigNice = ();
- %ConfigDefault = ();
- %ConfigListBox = ();
- for my $idx (0...$#ConfigArray) {
-      my $c = $ConfigArray[$idx];
-      my $value;
-      next if(@{$c} == 5) ;
-      $ConfigNice{$c->[0]} =  ($c->[10] && $WebIP{$ActWebSess}->{lng}->{$c->[10]})
-                              ? encodeHTMLEntities($WebIP{$ActWebSess}->{lng}->{$c->[10]})
-                              : encodeHTMLEntities($c->[1]);
-      $ConfigNice{$c->[0]} =~ s/<a\s+href.*<\/a>//io;
-      $ConfigNice{$c->[0]} =~ s/'|"|\n//go;
-      $ConfigNice{$c->[0]} =~ s/\\/\\\\/go;
-      $ConfigNice{$c->[0]} = '&nbsp;' unless $ConfigNice{$c->[0]};
-      $ConfigDefault{$c->[0]} = encodeHTMLEntities($c->[4]);
-      $ConfigDefault{$c->[0]} =~ s/'|"|\n//go;
-      $ConfigDefault{$c->[0]} =~ s/\\/\\\\/go;
+    %ConfigNice = ();
+    %ConfigDefault = ();
+    %ConfigListBox = ();
+    for my $idx (0...$#ConfigArray) {
+         my $c = $ConfigArray[$idx];
+         my $value;
+         next if (@{$c} == 5) ;
+         $ConfigNice{$c->[0]} =  ($c->[10] && $WebIP{$ActWebSess}->{lng}->{$c->[10]})
+                                 ? encodeHTMLEntities($WebIP{$ActWebSess}->{lng}->{$c->[10]})
+                                 : encodeHTMLEntities($c->[1]);
+         $ConfigNice{$c->[0]} =~ s/<a\s+href.*<\/a>//io;
+         $ConfigNice{$c->[0]} =~ s/'|"|\n//go;
+         $ConfigNice{$c->[0]} =~ s/\\/\\\\/go;
+         $ConfigNice{$c->[0]} = '&nbsp;' unless $ConfigNice{$c->[0]};
+         $ConfigDefault{$c->[0]} = encodeHTMLEntities($c->[4]);
+         $ConfigDefault{$c->[0]} =~ s/'|"|\n//go;
+         $ConfigDefault{$c->[0]} =~ s/\\/\\\\/go;
 
-      $value = ($qs{theButton} || $qs{theButtonX}) ? $qs{$c->[0]} : $Config{$c->[0]} ;
-      $value = $Config{$c->[0]} if $qs{theButtonRefresh};
+         $value = ($qs{theButton} || $qs{theButtonX}) ? $qs{$c->[0]} : $Config{$c->[0]} ;
+         $value = $Config{$c->[0]} if $qs{theButtonRefresh};
 
-      if ($c->[3] == \&listbox) {
-          $ConfigDefault{$c->[0]} = 0 unless $ConfigDefault{$c->[0]};
-          foreach my $opt ( split( /\|/o, $c->[2] ) ) {
-                my ( $v, $d ) = split( /:/o, $opt, 2 );
-                $ConfigDefault{$c->[0]} = $d if ( $ConfigDefault{$c->[0]} eq $v );
-                $ConfigListBox{$c->[0]} = $d if ( $value eq $v );
-                $ConfigListBoxAll{$c->[0]}{$v} = $d;
-          }
-      } elsif ($c->[3] == \&checkbox) {
-                $ConfigDefault{$c->[0]} = $ConfigDefault{$c->[0]} ? 'On' : 'Off';
-                $ConfigListBox{$c->[0]} = $value ? 'On' : 'Off';
-      } else {
-          $ConfigDefault{$c->[0]} = '&nbsp;' unless $ConfigDefault{$c->[0]};
-          $ConfigListBox{$c->[0]} = $value;
-      }
- }
+         if ($c->[3] == \&listbox) {
+             $ConfigDefault{$c->[0]} = 0 unless $ConfigDefault{$c->[0]};
+             foreach my $opt ( split( /\|/o, $c->[2] ) ) {
+                   my ( $v, $d ) = split( /:/o, $opt, 2 );
+                   $ConfigDefault{$c->[0]} = $d if ( $ConfigDefault{$c->[0]} eq $v );
+                   $ConfigListBox{$c->[0]} = $d if ( $value eq $v );
+                   $ConfigListBoxAll{$c->[0]}{$v} = $d;
+             }
+         } elsif ($c->[3] == \&checkbox) {
+                   $ConfigDefault{$c->[0]} = $ConfigDefault{$c->[0]} ? 'On' : 'Off';
+                   $ConfigListBox{$c->[0]} = $value ? 'On' : 'Off';
+         } else {
+             $ConfigDefault{$c->[0]} = '&nbsp;' unless $ConfigDefault{$c->[0]};
+             $ConfigListBox{$c->[0]} = $value;
+         }
+    }
 }
 
 sub niceLink {
@@ -9231,9 +9617,14 @@ use this regex (+ = only)(- = never) for: N = noprocessing , W = whitelisted , L
 If the third parameter is not set or any of the N,W,L,I is not set, the default configuration for the option will be used unless a default option string is defined anywhere in a single line in the file in the form !!!NWLI!!! (with + or - is possible).<br />
 <span class="negative">If any parameter that allowes the usage of weighted regular expressions is set to "block", but the sum of the resulting weighted penalty value is less than the corresponding "Penalty Box Valence Value" (because of lower weights) - only scoring will be done!</span><br />
 If the regular expression optimization is used - ("perl module Regexp::Optimizer" installed and enabled) - and you want to disable the optimization for a special regular expression (file based), set one line (eg. the first one) to a value of '<span class="positive">spambox-do-not-optimize-regex</span>' or '<span class="positive">a-d-n-o-r</span>' (without the quotes)! To disable the optimization for a specific line/regex, put &lt;&lt;&lt; in front and &gt;&gt;&gt; at the end of the line/regex. To weight such line/regex write for example: <span class="positive">&lt;&lt;&lt;</span>Phishing\\.<span class="positive">&gt;&gt;&gt;</span>=>1.45=>N- or ~<span class="positive">&lt;&lt;&lt;</span>Heuristics|Email<span class="positive">&gt;&gt;&gt;</span>~=>50  or  ~<span class="positive">&lt;&lt;&lt;</span>(Email|HTML|Sanesecurity)\\.(Phishing|Spear|(Spam|Scam)[a-z0-9]?)\\.<span class="positive">&gt;&gt;&gt;</span>~=>4.6 .<br /><br />
+Using Perl 5.12 or higher, spambox supports the usage of unicode block, unicode script and unicode character definitions in regular expressions, llke: \\P{Balinese} \\p{Script:Greek} \\P{Hebrew} \\p{script=katakana} \\N{greek:Sigma} \\x{263a}<br />
+It is recommended to switch off the regular expression optimization, if a unicode regular expression definitions is used (at least for the line, where it is used)!<br /><br />
 The literal 'SESSIONID' will be replaced by the unique message logging ID in every SMTP error reply.<br />
+The literal 'IPCONNECTED' will be replaced by the connected IP address in every SMTP error reply.<br />
+The literal 'IPORIGIN' will be replaced by the origin IP address in every SMTP error reply.<br />
 The literal 'NOTSPAMTAG' will be replaced by a random calculated TAG using <a href="./NotSpamTag">NotSpamTag</a>, in every SMTP permanent (5xx) error reply.<br />
 The literal 'MYNAME' will be replaced by the configuration value defined in 'myName' in every SMTP error reply.<br /><br />
+If you define any SMTP-reply-code (like for example <b>SpamError</b>) as a <b>temporary</b> reply code (starting with <b>4</b> like <b>4</b>52 instead of the default <b>5</b> like <b>5</b>50), the connection will be dropped at it's current state, regardless any <b>collection</b> or <b>forwarding</b> setting. These actions may <b>finished incomplete</b> in this case!<br /><br />
 If the internal name is shown in light blue like <span style="color:#8181F7">(uniqueIDPrefix)</span> , this indicates that the configured value differs from the default value. To show the default value, move the mouse over the internal name. A click on the internal name will reset the value to the default.<br /><br />
 IP ranges are defined as for example 182.82.10.
 EOT
@@ -9423,7 +9814,7 @@ sub renderConfigHTML {
   <a href="shutdown_list?nocache='.time.'" target="_blank"><img src="' . $noIcon . '" alt="this monitor will slow down SPAMBOX dramaticly - use it careful" /> SMTP Connections </a>
   <a href="shutdown_list?nocache='.time.'&forceRefresh=1" target="_blank" onmouseover="showhint(\''.$ConnHint.'\', this, event, \'500px\', \'1\');return false;"><img height=12 width=12 src="' . $wikiinfo . '" /></a><br />
   <a href="shutdown"><img src="' . $noIcon . '" alt="noicon" /> Shutdown/Restart</a><br />
-  <a href="github"><img src="' . $noIcon . '" alt="noicon" /> GitHUB</a><br /></div>';
+  <a href="donations"><img src="' . $noIcon . '" alt="noicon" /> Donations</a><br /></div>';
  $JavaScript = "
 <script type=\"text/javascript\">
 <!--
@@ -9581,7 +9972,7 @@ var configPos = new Array();
 ";
  for my $idx (0...$#ConfigArray) {
    my $c = $ConfigArray[$idx];
-   next if(@{$c} == 5);
+   next if (@{$c} == 5);
    $JavaScript .= "configPos['$c->[0]']='$ConfigPos{$c->[0]}';";
  }
 
@@ -9631,7 +10022,7 @@ function gotoAnchor(aname)
 {
 //    window.location.href = \"#\" + aname;       //
     var currloc = window.location.href.split('#')[0];
-    var re = /\\/(maillog|lists|recprepl|infostats|shutdown|analyze|github)/;
+    var re = /\\/(maillog|lists|recprepl|infostats|shutdown|analyze|donations)/;
     if (re.test(currloc))
     {
         window.location.href = window.location.protocol + '//' + window.location.host + '/#' + aname;
@@ -9988,6 +10379,7 @@ function posLeft() {return typeof window.pageXOffset != \'undefined\' ? window.p
 function posTop() {return typeof window.pageYOffset != \'undefined\' ? window.pageYOffset: document.documentElement.scrollTop?
  document.documentElement.scrollTop: document.body.scrollTop? document.body.scrollTop:0;}
 
+var xxx = 0; var yyy = 0; var dist = distX = distY = 0; var stepx = '.$IndexSlideSpeed.'; var stepy = 0; var mn = \'smenu\';
 
 function disableSlide() {setObjVis(mn,\'hidden\');}
 function enableSlide() {setObjVis(mn,\'visible\');}
@@ -10399,7 +10791,7 @@ foreach (sort keys %Config1) {
   $headers .= '<table id="TopMenu" class="contentFoot" style="margin:0; text-align:left;" CELLSPACING=0 CELLPADDING=4 WIDTH="100%">
   <tr><td rowspan="3" align="left">';
   if (-e "$base/images/logo.gif") {
-      $headers .= "<a href=\"main\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"SPAMBOX\" /></a>";
+      $headers .= "<a href=\"http://spambox.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.gif\" alt=\"SPAMBOX\" /></a>";
   } else {
       $headers .= "<a href=\"http://spambox.sourceforge.net/\" target=\"_blank\"><img src=\"get?file=images/logo.jpg\" alt=\"SPAMBOX\" /></a>";
   }
@@ -10416,7 +10808,7 @@ foreach (sort keys %Config1) {
   $avv =~ s/\s|\(|\)//gio;
   $stv =~ s/\s|\(|\)//gio;
   $stv = 0 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
-  $headers .= "<br /><a href=\"$NewAsspURL\" target=\"_blank\" style=\"color:green;size:-1;\">new available SPAMBOX version $availversion</a>" if $avv gt $stv;
+  $headers .= "<br /><a href=\"$NewSpamboxURL\" target=\"_blank\" style=\"color:green;size:-1;\">new available SPAMBOX version $availversion</a>" if $avv gt $stv;
 
  $headers .= '</td>
   <td><a href="lists">White/Redlist/Tuplets</a></td>
@@ -10435,7 +10827,7 @@ foreach (sort keys %Config1) {
   <td><a href="shutdown_list?nocache='.time.'" target="_blank">SMTP Connections </a>
   <a href="shutdown_list?nocache='.time.'&forceRefresh=1" target="_blank" onmouseover="showhint(\''.$ConnHint.'\', this, event, \'500px\', \'1\');return false;"><img height=12 width=12 src="' . $wikiinfo . '" /></a></td>
   <td><a href="shutdown">Shutdown/Restart</a></td>
-  <td><a href="github">GitHUB</a>'.($codename?'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>'.$codename.'</b>':'').'</td>
+  <td><a href="donations">Donations</a>'.($codename?'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>'.$codename.'</b>':'').'</td>
   </tr>
   </table>
 ';
@@ -10501,7 +10893,7 @@ foreach (sort keys %Config1) {
  my $counter = 0;
  for my $idx (0...$#ConfigArray) {
    my $c = $ConfigArray[$idx];
-   if(@{$c} == 5) {
+   if (@{$c} == 5) {
      $headers .= "</div>\n  <div class=\"menuLevel2\">\n  " .
 #       ($mobile ? '' : "<a onmousedown=\"toggleDisp('$counter');setAnchor('delete');return false;\">") .
        ($mobile ? '' : "<a onmousedown=\"toggleDisp('$counter');return false;\">") .
@@ -10547,6 +10939,7 @@ $headers .= "<hr />
 	<span class=\"negative\"><center><b>internal Caches</b></center></span>
 	<hr />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-AUTHErrors\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> AUTHErrors</a><br />
+	<a href=\"#\" onclick=\"return popFileEditor(\'DB-AUTHIP\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> AUTHIP</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-DelayIPPB\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> DelayIPPB</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-IPNumTries\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> IPNumTries</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-IPNumTriesDuration\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> IPNumTriesDuration</a><br />
@@ -10554,7 +10947,7 @@ $headers .= "<hr />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-SMTPdomainIP\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> SMTPdomainIP</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-SMTPdomainIPTries\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> SMTPdomainIPTries</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-SMTPdomainIPTriesExpiration\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> SMTPdomainIPTriesExp.</a><br />
-	<a href=\"#\" onclick=\"return popFileEditor(\'DB-SSLfailed\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> SSLfailed</a><br />
+	<a href=\"#\" onclick=\"return popFileEditor(\'DB-SSLfailed\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> SSL-failed</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-localTLSfailed\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> localTLSfailed</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-Stats\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> Stats</a><br />
 	<a href=\"#\" onclick=\"return popFileEditor(\'DB-ScoreStats\',\'1h\');\"><img src=\"$noIcon\" alt=\"#\" /> ScoreStats</a><br />
@@ -10614,9 +11007,15 @@ $headers .= "</div>
     $footers = "
 <div class=\"contentFoot\">
 <a href=\"remotesupport\" target=\"_blank\">Remote Support</a> |
-<a href=\"github\">github</a> |
-
- <a id=\"printLink\" href=\"javascript:void(processPrint());\">Print Config/Screen</a>
+<a href=\"donations\">donations</a> |
+<a href=\"http://sourceforge.net/p/spambox/tickets\" rel=\"external\" target=\"_blank\">view,open tickets</a> |
+<a href=\"http://spambox.cvs.sourceforge.net\" rel=\"external\" target=\"_blank\">development</a> |
+<a href=\"http://spambox.sourceforge.net/cgi-bin/spambox_stats\" rel=\"external\" target=\"_blank\">global stats</a> |
+<a href=\"http://sourceforge.net/p/spambox/wiki/SPAMBOX_Documentation\" rel=\"external\" target=\"_blank\">docs</a> |
+<a href=\"http://sourceforge.net/mail/?group_id=69172\" rel=\"external\" target=\"_blank\">email lists</a> |
+<a href=\"http://sourceforge.net/p/spambox/forum/\" rel=\"external\" target=\"_blank\">community forums</a> |
+<a href=\"http://sourceforge.net/p/spambox/wiki/\" rel=\"external\" target=\"_blank\">wiki</a> |
+<a id=\"printLink\" href=\"javascript:void(processPrint());\">Print Config/Screen</a>
 </div>";
 if ($mobile) {
     $footers .= "
@@ -10654,43 +11053,43 @@ if ($mobile) {
 }
 
 sub RemovePid {
- if ($pidfile) {
-  d('RemovePid');
-  close $PIDH;
-  unlink("$base/$pidfile") or mlog(0,"warning: unable to delete $base/$pidfile");
- }
+    if ($pidfile) {
+        d('RemovePid');
+        close $PIDH;
+        unlink("$base/$pidfile") or mlog(0,"warning: unable to delete $base/$pidfile");
+    }
 }
 
 sub d_S {
- my ($Sdebugprint,$Snostep) = @_;
- $lastd{$WorkerNumber} = $Sdebugprint unless $Snostep;
- threads->yield();
- return unless ($debug || $ThreadDebug);
- my $Stime=&timestring();
- $Sdebugprint =~ s/\n/\[LF\]\n/go;
- $Sdebugprint =~ s/\r/\[CR\]/go;
- $Sdebugprint .= "\n" if $Sdebugprint !~ /\n$/o;
- threads->yield();
- $debugQueue->enqueue("$Stime [$WorkerName] <$Sdebugprint>");
- threads->yield();
+    my ($Sdebugprint,$Snostep) = @_;
+    $lastd{$WorkerNumber} = $Sdebugprint unless $Snostep;
+    threads->yield();
+    return unless ($debug || $ThreadDebug);
+    my $Stime=&timestring();
+    $Sdebugprint =~ s/\n/\[LF\]\n/go;
+    $Sdebugprint =~ s/\r/\[CR\]/go;
+    $Sdebugprint .= "\n" if $Sdebugprint !~ /\n$/o;
+    threads->yield();
+    $debugQueue->enqueue("$Stime [$WorkerName] <$Sdebugprint>");
+    threads->yield();
 }
 
 sub d {
- my ($debugprint,$nostep) = @_;
- $lastd{$WorkerNumber} = $debugprint unless $nostep;
- threads->yield();
- return unless ($debug || $ThreadDebug);
- my $time=&timestring();
- $debugprint =~ s/\n/\[LF\]\n/go;
- $debugprint =~ s/\r/\[CR\]/go;
- $debugprint .= "\n" if $debugprint !~ /\n$/o;
- threads->yield();
- $debugQueue->enqueue("$time [$WorkerName] <$debugprint>");
- threads->yield();
+    my ($debugprint,$nostep) = @_;
+    $lastd{$WorkerNumber} = $debugprint unless $nostep;
+    threads->yield();
+    return unless ($debug || $ThreadDebug);
+    my $time=&timestring();
+    $debugprint =~ s/\n/\[LF\]\n/go;
+    $debugprint =~ s/\r/\[CR\]/go;
+    $debugprint .= "\n" if $debugprint !~ /\n$/o;
+    threads->yield();
+    $debugQueue->enqueue("$time [$WorkerName] <$debugprint>");
+    threads->yield();
 }
 
 sub _spambox_try_restart {
-    if($AsAService) {
+    if ($AsAService) {
         exec('cmd.exe /C net stop SPAMBOXSMTP & net start SPAMBOXSMTP');
     } elsif ($AsADaemon == 1) {
         exit 1;
@@ -10866,7 +11265,10 @@ sub BDB_sync {
     d('BDB_sync');
     my $timeout = shift;
     $timeout = 0 unless $timeout;
+    return 0 unless keys %BerkeleyDBHashes;
+    my $done = 0;
     if ($DoSyncBDB) {
+        $done = 1;
         mlog(0,'info: synchronizing all BerkeleyDB hashes to disk') if $MaintenanceLog;
         foreach (keys %BerkeleyDBHashes) {
             d("BDB_sync - $_");
@@ -10875,13 +11277,14 @@ sub BDB_sync {
         mlogWrite() if $WorkerName eq 'Shutdown';
     }
     if ($DoCompactBDB && $WorkerName ne 'Shutdown') {
+        $done = 1;
         mlog(0,'info: compacting all BerkeleyDB hashes on disk') if $MaintenanceLog;
         foreach (keys %BerkeleyDBHashes) {
             d("BDB_compact - $_");
             my $res = BDB_compact_hash($_,$timeout);
         }
     }
-    return 1;
+    return $done;
 }
 
 sub BDB_sync_hash {
@@ -11150,6 +11553,56 @@ sub checkINC {
     }
 }
 
+sub initDBSetup {
+  my $p = shift;
+  $p = $p.'/' if $p && $p !~ /\/$/o;
+#define Cache- and List groups - so have to care about only here
+  @GroupList=('whitelistGroup','PersBlackGroup','redlistGroup','delayGroup','pbdbGroup','spamdbGroup','LDAPGroup','AdminGroup');
+  for (@GroupList) {@{$_} = ();};
+  my $HMMdb = $p.'HMMdb';
+  if ($spamdb !~ /DB:/o && $spamdb =~ /^(.+?\/)[^\/]+$/o) {
+      $HMMdb = $1 . $HMMdb;
+  }
+  my $v;
+# $v =  "KeyName   ,dbConfigVar,CacheObject     ,realFileName  ,mysqlFileName,".$p."FailoverValue,mysqlTable"); remove spaces and push to Group
+#                                                                                                               for dbConfigVar
+  $v = ("Whitelist ,whitelistdb,WhitelistObject ,$whitelistdb  ,whitelist    ,".$p."whitelist  ,whitelist"   ); $v=~s/\s*,/,/go; push(@whitelistGroup,$v);
+
+  $v = ("Redlist   ,redlistdb  ,RedlistObject   ,$redlistdb    ,redlist      ,".$p."redlist    ,redlist"     ); $v=~s/\s*,/,/go; push(@redlistGroup,$v);
+
+  $v = ("Delay     ,delaydb    ,DelayObject     ,$delaydb      ,delaydb      ,".$p."delaydb    ,delaydb"     ); $v=~s/\s*,/,/go; push(@delayGroup,$v);
+  $v = ("DelayWhite,delaydb    ,DelayWhiteObject,$delaydb.white,delaydb.white,".$p."delaydb    ,delaywhitedb"); $v=~s/\s*,/,/go; push(@delayGroup,$v);
+
+  $v = ("Spamdb    ,spamdb     ,SpamdbObject    ,$spamdb       ,spamdb       ,".$p."spamdb     ,spamdb"      ); $v=~s/\s*,/,/go; push(@spamdbGroup,$v);
+  $v = ("HeloBlack ,spamdb     ,HeloBlackObject ,$spamdb.helo  ,spamdb.helo  ,".$p."spamdb     ,spamdbhelo"  ); $v=~s/\s*,/,/go; push(@spamdbGroup,$v);
+
+  if (! $runHMMusesBDB || ! $CanUseBerkeleyDB) {
+      $v = ("HMMdb ,spamdb     ,HMMdbObject     ,$HMMdb        ,HMMdb        ,".$p."HMMdb      ,hmmdb"      ); $v=~s/\s*,/,/go; push(@spamdbGroup,$v);
+      delete $tempDBvars{HMMdb};
+  }
+
+  $v = ("PBWhite   ,pbdb       ,PBWhiteObject   ,$pbdb.white.db,pbdb.white.db,".$p."pb/pbdb    ,PBWhite"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("PBBlack   ,pbdb       ,PBBlackObject   ,$pbdb.black.db,pbdb.black.db,".$p."pb/pbdb    ,PBBlack"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("RBLCache  ,pbdb       ,RBLCacheObject  ,$pbdb.rbl.db  ,pbdb.rbl.db  ,".$p."pb/pbdb    ,RBLCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("URIBLCache,pbdb       ,URIBLCacheObject,$pbdb.uribl.db,pbdb.uribl.db,".$p."pb/pbdb    ,URIBLCache"  ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("PTRCache  ,pbdb       ,PTRCacheObject  ,$pbdb.ptr.db  ,pbdb.ptr.db  ,".$p."pb/pbdb    ,PTRCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("MXACache  ,pbdb       ,MXACacheObject  ,$pbdb.mxa.db  ,pbdb.mxa.db  ,".$p."pb/pbdb    ,MXACache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("RWLCache  ,pbdb       ,RWLCacheObject  ,$pbdb.rwl.db  ,pbdb.rwl.db  ,".$p."pb/pbdb    ,RWLCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("SPFCache  ,pbdb       ,SPFCacheObject  ,$pbdb.spf.db  ,pbdb.spf.db  ,".$p."pb/pbdb    ,SPFCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("SBCache   ,pbdb       ,SBCacheObject   ,$pbdb.sb.db   ,pbdb.sb.db   ,".$p."pb/pbdb    ,SBCache"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("PBTrap    ,pbdb       ,PBTrapObject    ,$pbdb.trap.db ,pbdb.trap.db ,".$p."pb/pbdb    ,PBTrap"      ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("DKIMCache ,pbdb       ,DKIMCacheObject ,$pbdb.dkim.db ,pbdb.dkim.db ,".$p."pb/pbdb    ,DKIMCache"   ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("BATVTag   ,pbdb       ,BATVTagObject   ,$pbdb.batv.db ,pbdb.batv.db ,".$p."pb/pbdb    ,BATVTag"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $v = ("BackDNS   ,pbdb       ,BackDNSObject   ,$pbdb.back.db ,pbdb.back.db ,".$p."pb/pbdb    ,BackDNS"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+
+  $v = ("PersBlack ,persblackdb,PersBlackObject ,$persblackdb  ,persblack    ,".$p."persblack  ,persblack"   ); $v=~s/\s*,/,/go; push(@PersBlackGroup,$v);
+
+  $v = ("LDAPlist  ,ldaplistdb ,LDAPlistObject  ,$ldaplistdb   ,ldaplist     ,".$p."ldaplist   ,ldaplist"    ); $v=~s/\s*,/,/go; push(@LDAPGroup,$v);
+
+  $v = ("AdminUsers,adminusersdb ,AdminUsersObject,$adminusersdb   ,adminusers   ,".$p."adminusers ,AdminUsers"  ); $v=~s/\s*,/,/go; push(@AdminGroup,$v);
+  $v = ("AdminUsersRight,adminusersdb,AdminUsersRightObject,$adminusersdb.right,adminusers.right,".$p."adminusers,AdminUsersRight"   ); $v=~s/\s*,/,/go; push(@AdminGroup,$v);
+}
+
 sub init {
  my $ver;
  my $append;
@@ -11163,11 +11616,13 @@ sub init {
      mlog(0, shift @prelog);
  }
 
- if($] lt '5.012003') {
+ if ($] lt '5.012003') {
    mlog(0, "warning: Perl version 5.012003 (5.12.3) is at least recommended to run SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl");
+   $Recommends{'Perl'} = "Perl version 5.012003 (5.12.3) is at least recommended to run SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl";
  }
- if($] lt '5.012000') {
+ if ($] lt '5.012000') {
    mlog(0, "Perl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl");
+   $Recommends{'Perl'} = "Perl version 5.012000 (5.12.0) is at least required to use the unicode Bayesian/HMM engine of SPAMBOX $version $modversion - you are running Perl version $] - please upgrade Perl";
  }
  my $p;
  $p = '-professional' if ($setpro && $globalClientName && $globalClientPass);
@@ -11190,6 +11645,8 @@ sub init {
 
  checkVersionAge();
 
+ checkReplyRecom();
+ 
  print 'check process env ';
 
  if ($MaintenanceLog > 1) {
@@ -11218,7 +11675,8 @@ sub init {
      if ($HMM4ISP) {
          mlog(0,"info: the HMM4ISP setup is OK");
      } else {
-         mlog(0,"error: the HMM4ISP setup is wrong  - HMM4ISP is now disabled!");
+         mlog(0,"error: the HMM4ISP setup is wrong - HMM4ISP is now disabled!");
+         $Recommends{'HMM4ISP'} = "the HMM4ISP setup is wrong - HMM4ISP is now disabled! Read the startup LOG";
      }
  }
  
@@ -11284,6 +11742,7 @@ sub init {
            $path_to_msvcrt =~ s/[\\|\/]*$//o;
            if (lc $path_to_msvcrt ne lc ($ENV{'SystemRoot'}.'\system32')) {
                mlog(0,"warning: Perl seems to use the C-runtime library 'msvcrt.dll' in directory $path_to_msvcrt, this should be MS-C-runtime library 'msvcrt.dll' in directory ".$ENV{'SystemRoot'}.'\system32. Your environment variable -PATH- is possibly wrong set!');
+               $Recommends{'WinENV'} = "Perl seems to use the C-runtime library 'msvcrt.dll' in directory $path_to_msvcrt, this should be MS-C-runtime library 'msvcrt.dll' in directory ".$ENV{'SystemRoot'}.'\system32. Your environment variable -PATH- is possibly wrong set!';
                print "\t\t\t\t\t[warning]";
            } else {
                mlog(0,'info: windows system environment looks OK');
@@ -11292,6 +11751,7 @@ sub init {
        };
        if ($@) {
            mlog(0,"warning: unable to analyse windows system environment - $@");
+           $Recommends{'WinENV'} = "startup - unable to analyse windows system environment - $@";
            print "\t\t\t\t\t[ERROR]";
        }
   } else {
@@ -11348,23 +11808,23 @@ sub init {
 
   $append = '';
   $ver=threads->VERSION;
-  $append = '- please upgrade to version 1.74 or higher' if ($ver lt '1.74');
+  $append = '- please upgrade to at least version 1.74 or higher' if ($ver lt '1.74');
   mlog(0,"threads module $ver installed $append");
-  $ModuleList{'threads'} = $ver.'/1.74';
+  $ModuleList{'threads'} = $ver.'/2.02';
   print '.';
 
   $append = '';
   $ver=threads::shared->VERSION;
-  $append = '- please upgrade to version 1.32 or higher' if ($ver lt '1.32');
+  $append = '- please upgrade to at least version 1.32 or higher' if ($ver lt '1.32');
   mlog(0,"threads::shared module $ver installed $append");
-  $ModuleList{'threads::shared'} = $ver.'/1.32';
+  $ModuleList{'threads::shared'} = $ver.'/1.48';
   print '.';
 
   $append = '';
   $ver=Thread::Queue->VERSION;
   $append = '- please upgrade to version 2.11 or higher' if ($ver lt '2.11');
   mlog(0,"Thread::Queue module $ver installed $append");
-  $ModuleList{'Thread::Queue'} = $ver.'/2.11';
+  $ModuleList{'Thread::Queue'} = $ver.'/3.07';
   print '.';
 
   $append = '';
@@ -11376,9 +11836,9 @@ sub init {
 
   $append = '';
   $ver=IO::Select->VERSION;
-  $append = '- please upgrade to version 1.17' if ($ver lt '1.17');
+  $append = '- please upgrade to at least version 1.17' if ($ver lt '1.17');
   mlog(0,"IO::Select module $ver installed $append");
-  $ModuleList{'IO::Select'} = $ver.'/1.17';
+  $ModuleList{'IO::Select'} = $ver.'/1.21';
 
   if ($IOEngineRun == 0) {
       mlog(0,'SPAMBOX is using IOEngine - Poll');
@@ -11416,6 +11876,10 @@ sub init {
     my $sys = ($SysIOSocketINET6 == 1) ? '' : ' - but IPv6 is not supported by your system';
     mlog(0,"IO::Socket::INET6 module$ver installed and available$sys");
     mlog(0,'please upgrade the module IO::Socket::INET6 to version 2.67 or higher') if ($VerIOSocketINET6 lt '2.67');
+    unless ($Sysv6only) {
+        my $text = $can_enable_v6only ? " per default - but spambox will change this behavior - you have to define both universals [::] and 0.0.0.0 if needed" : '';
+        mlog(0,"this system binds universal IPv6 [::] to IPv6 and IPv4 (IPV6_V6ONLY is zero)$text");
+    }
     $installed = ($SysIOSocketINET6 == 1) ? 'enabled' : 'not supported';
   } else {
     $installed = $useIOSocketINET6 ? 'is not installed' : 'is disabled in config';
@@ -11429,7 +11893,7 @@ sub init {
     *{'File::Scan::ClamAV::ping'} = *{'main::ClamScanPing'};
     *{'File::Scan::ClamAV::streamscan'} = *{'main::ClamScanScan'};
     my $clamavd = File::Scan::ClamAV->new(port => $AvClamdPort);
-    if($clamavd->ping()) {
+    if ($clamavd->ping()) {
       $AvailAvClamd = 1;
       $ver = $clamavd->VERSION;
       $VerFileScanClamAV=$ver; $ver=" version $ver" if $ver;
@@ -11462,25 +11926,37 @@ sub init {
     $installed = $useNetLDAP ? 'is not installed' : 'is disabled in config';
     mlog(0,"Net::LDAP module $installed.") if $DoLDAP;
   }
-  $ModuleList{'Net::LDAP'} = $VerNetLDAP.'/0.33';
+  $ModuleList{'Net::LDAP'} = $VerNetLDAP.'/0.65';
   $ModuleStat{'Net::LDAP'} = $installed;
 
   if ($CanUseDNS) {
     $ver=eval('Net::DNS->VERSION'); $VerNetDNS=$ver; $ver=" version $ver" if $ver;
     mlog(0,"Net::DNS module$ver installed and available");
     $installed = 'enabled';
+    # internals in Net::DNS changed for version 1.02_02 and higher
+    # IO-Socket-IP is forced to be used
+    # IO-Socket-IP is not what Net::DNS should use - what a HACK ???
+    if (defined &Net::DNS::Resolver::Base::USE_SOCKET_IP) {
+        undef &Net::DNS::Resolver::Base::USE_SOCKET_IP;
+        *Net::DNS::Resolver::Base::USE_SOCKET_IP = sub {'';};
+    }
     my $d = Net::DNS::Resolver->new();
     $orgNewDNSResolver = \&Net::DNS::Resolver::Base::new;
     *Net::DNS::Resolver::Base::new = \&getDNSResolver;
     $d = eval{ Net::DNS::Resolver->send(); };
+    $d = eval{ Net::DNS::Resolver->bgread(); };
     $orgSendDNSResolver = \&Net::DNS::Resolver::Base::send;
     *Net::DNS::Resolver::Base::send = \&DNSResolverSend;
+    $orgreadbgDNSResolver = \&Net::DNS::Resolver::Base::bgread;
+    *Net::DNS::Resolver::Base::bgread = \&DNSResolverBGread;
     $orgNewDNSisSET = 1;
+    # make_query_packet is not exported and change to _make_query_packet in Net::DNS 1.02_02
+    $RSL_make_query_packet = '_make_query_packet' if defined &Net::DNS::Resolver::Base::_make_query_packet;
   } else {
     $installed = $useNetDNS ? 'is not installed' : 'is disabled in config';
     mlog(0,"Net::DNS module $installed.");
   }
-  $ModuleList{'Net::DNS'} = $VerNetDNS.'/0.61';
+  $ModuleList{'Net::DNS'} = $VerNetDNS.'/1.03';
   $ModuleStat{'Net::DNS'} = $installed;
 
   if ($CanUseNetSMTP) {
@@ -11498,7 +11974,7 @@ sub init {
     $installed = $useNetSMTP ? 'is not installed' : 'is disabled in config';
     mlog(0,"Net::SMTP module $installed.");
   }
-  $ModuleList{'Net::SMTP'} = $VerNetSMTP.'/2.31';
+  $ModuleList{'Net::SMTP'} = $VerNetSMTP.'/3.07';
   $ModuleStat{'Net::SMTP'} = $installed;
 
   if ($CanUseNetSMTPSSL) {
@@ -11601,7 +12077,7 @@ sub init {
     $installed = $useCompressZlib ? 'is not installed' : 'is disabled in config';
     mlog(0,"Compress::Zlib module $installed - HTTP compression disabled");
   }
-  $ModuleList{'Compress::Zlib'} = $VerCompressZlib.'/2.008';
+  $ModuleList{'Compress::Zlib'} = $VerCompressZlib.'/2.069';
   $ModuleStat{'Compress::Zlib'} = $installed;
 
   if ($CanUseMD5Keys) {
@@ -11612,7 +12088,7 @@ sub init {
     $installed = $useDigestMD5 ? 'is not installed' : 'is disabled in config';
     mlog(0,"Digest::MD5 module $installed - delaying can not use MD5 keys for hashes");
   }
-  $ModuleList{'Digest::MD5'} = $VerDigestMD5.'/2.36_01';
+  $ModuleList{'Digest::MD5'} = $VerDigestMD5.'/2.54';
   $ModuleStat{'Digest::MD5'} = $installed;
 
   if ($CanUseSHA1) {
@@ -11623,7 +12099,7 @@ sub init {
     $installed = $useDigestSHA1 ? 'is not installed' : 'is disabled in config';
     mlog(0,"Digest::SHA1 module $installed - BATV and FBMTV check not available");
   }
-  $ModuleList{'Digest::SHA1'} = $VerDigestSHA1.'/2.11';
+  $ModuleList{'Digest::SHA1'} = $VerDigestSHA1.'/2.13';
   $ModuleStat{'Digest::SHA1'} = $installed;
 
   if ($CanSearchLogs) {
@@ -11634,14 +12110,14 @@ sub init {
     $installed = $useFileReadBackwards ? 'is not installed' : 'is disabled in config';
     mlog(0,"File::ReadBackwards module $installed - searching of log files disabled");
   }
-  $ModuleList{'File::ReadBackwards'} = $VerFileReadBackwards.'/1.04';
+  $ModuleList{'File::ReadBackwards'} = $VerFileReadBackwards.'/1.05';
   $ModuleStat{'File::ReadBackwards'} = $installed;
 
   if ($CanStatCPU) {
     $ver=eval('Time::HiRes->VERSION'); $VerTimeHiRes=$ver; $ver=" version $ver" if $ver;
     mlog(0,"Time::HiRes module$ver installed - CPU usage statistics available");
   }
-  $ModuleList{'Time::HiRes'} = $VerTimeHiRes.'/1.9707';
+  $ModuleList{'Time::HiRes'} = $VerTimeHiRes.'/1.9726';
   $ModuleStat{'Time::HiRes'} = 'enabled';
 
   if ($CanChroot) {
@@ -11655,7 +12131,7 @@ sub init {
     $installed = $usePerlIOscalar ? 'is not installed' : 'is disabled in config';
     mlog(0,"PerlIO::scalar module $installed - chroot not available") if $ChangeRoot;
   }
-  $ModuleList{'PerlIO::scalar'} = $VerPerlIOscalar.'/0.05';
+  $ModuleList{'PerlIO::scalar'} = $VerPerlIOscalar.'/0.14_01';
   $ModuleStat{'PerlIO::scalar'} = $installed;
 
   if ($CanUseSyslog){
@@ -11677,7 +12153,7 @@ sub init {
     $installed = $useWin32Daemon ? 'is not installed' : 'is disabled in config';
     mlog(0,"Win32::Daemon module $installed - unable to run as Win32 service") if ( $^O eq 'MSWin32' );
   }
-  $ModuleList{'Win32::Daemon'} = $VerWin32Daemon.'/20080324';
+  $ModuleList{'Win32::Daemon'} = $VerWin32Daemon.'/20131206';
   $ModuleStat{'Win32::Daemon'} = $installed;
 
   if ($CanUseWin32Debug){
@@ -11701,7 +12177,7 @@ sub init {
     $installed = $useUnicodeGCString ? 'is not installed' : 'is disabled in config';
     mlog(0,"Unicode::GCString module $installed - unable to detect east asian language strings as sequence of UAX #29 Grapheme Clusters");
   }
-  $ModuleList{'Unicode::GCString'} = $VerUnicodeGCString.'/2012.04';
+  $ModuleList{'Unicode::GCString'} = $VerUnicodeGCString.'/2013.10';
   $ModuleStat{'Unicode::GCString'} = $installed;
 
   if ($CanUseUnicodeNormalize && $normalizeUnicode) {
@@ -11718,7 +12194,7 @@ sub init {
     $installed = $useTextUnidecode ? 'is not installed' : 'is disabled in config';
     mlog(0,"Text::Unidecode module $installed - unable to transliterate unicode characters to ASCII");
   }
-  $ModuleList{'Text::Unidecode'} = $VerTextUnidecode.'/0.04';
+  $ModuleList{'Text::Unidecode'} = $VerTextUnidecode.'/1.27';
   $ModuleStat{'Text::Unidecode'} = $installed;
 
   if ($CanUseWin32Unicode){
@@ -11741,7 +12217,7 @@ sub init {
     $installed = $useWin32Unicode ? 'is not installed' : 'is disabled in config';
     mlog(0,"Win32::Unicode module $installed - unable to write unicode filenames to OS") if ( $^O eq 'MSWin32' );
   }
-  $ModuleList{'Win32::Unicode'} = $VerWin32Unicode.'/0.37';
+  $ModuleList{'Win32::Unicode'} = $VerWin32Unicode.'/0.38';
   $ModuleStat{'Win32::Unicode'} = $installed;
 
   if ($CanUseTieRDBM) {
@@ -11763,7 +12239,7 @@ sub init {
     $installed = $useTieRDBM ? 'is not installed' : 'is disabled in config';
     mlog(0,"Tie::RDBM module $installed - database usage not available");
   }
-  $ModuleList{'Tie::RDBM'} = $VerTieRDBM.'/0.70';
+  $ModuleList{'Tie::RDBM'} = $VerTieRDBM.'/0.73';
   $ModuleStat{'Tie::RDBM'} = $installed;
 
   if ($CanUseDB_File) {
@@ -11909,7 +12385,7 @@ EOT
     $installed = $useNetCIDRLite ? 'is not installed' : 'is disabled in config';
     mlog(0,"Net::CIDR::Lite module $installed - hyphenated IP address range not available");
   }
-  $ModuleList{'Net::CIDR::Lite'} = $VerNetCIDRLite.'/0.20';
+  $ModuleList{'Net::CIDR::Lite'} = $VerNetCIDRLite.'/0.21';
   $ModuleStat{'Net::CIDR::Lite'} = $installed;
 
   if ($CanUseNetAddrIPLite) {
@@ -11920,7 +12396,7 @@ EOT
     $installed = $useNetAddrIPLite ? 'is not installed' : 'is disabled in config';
     mlog(0,"NetAddr::IP::Lite module $installed - hyphenated IP and CIDR address range calculation not available");
   }
-  $ModuleList{'NetAddr::IP::Lite'} = $VerNetAddrIPLite.'/1.47';
+  $ModuleList{'NetAddr::IP::Lite'} = $VerNetAddrIPLite.'/1.56';
   $ModuleStat{'NetAddr::IP::Lite'} = $installed;
 
   if ($CanUseNetIP) {
@@ -11931,7 +12407,7 @@ EOT
     $installed = $useNetIP ? 'is not installed' : 'is disabled in config';
     mlog(0,"Net::IP module $installed - hyphenated IP and CIDR address range calculation not available");
   }
-  $ModuleList{'Net::IP'} = $VerNetAddrIPLite.'/1.26';
+  $ModuleList{'Net::IP'} = $VerNetAddrIPLite.'/1.56';
   $ModuleStat{'Net::IP'} = $installed;
 
   if ($CanUseLWP) {
@@ -11942,7 +12418,7 @@ EOT
     $installed = $useLWPSimple ? 'is not installed' : 'is disabled in config';
     mlog(0,"LWP::Simple module $installed - procedural LWP interface not available");
   }
-  $ModuleList{'LWP::Simple'} = $VerLWPSimple.'/1.41';
+  $ModuleList{'LWP::Simple'} = $VerLWPSimple.'/6.13';
   $ModuleStat{'LWP::Simple'} = $installed;
 
   if ($CanUseEMM) {
@@ -11957,7 +12433,7 @@ EOT
     $installed = $useEmailMIME ? 'is not installed' : 'is disabled in config';
     mlog(0,"Email::MIME module $installed - MIME charset decoding and conversion interface and attachment detection not available");
   }
-  $ModuleList{'Email::MIME'} = $VerEmailMIME.'/1.442';
+  $ModuleList{'Email::MIME'} = $VerEmailMIME.'/1.936';
   $ModuleStat{'Email::MIME'} = $installed;
 
   if ($CanUseMTY) {
@@ -11968,7 +12444,7 @@ EOT
     $installed = $useMIMETypes ? 'is not installed' : 'is disabled in config';
     mlog(0,"MIME::Types module $installed - TNEF conversion not available");
   }
-  $ModuleList{'MIME::Types'} = $VerMIMETypes.'/1.23';
+  $ModuleList{'MIME::Types'} = $VerMIMETypes.'/2.11';
   $ModuleStat{'MIME::Types'} = $installed;
   print '.';
 
@@ -11980,7 +12456,7 @@ EOT
     $installed = $useEmailSend ? 'is not installed' : 'is disabled in config';
     mlog(0,"Email::Send module $installed - sending .eml files is not available");
   }
-  $ModuleList{'Email::Send'} = $VerEmailSend.'/2.192';
+  $ModuleList{'Email::Send'} = $VerEmailSend.'/2.201';
   $ModuleStat{'Email::Send'} = $installed;
 
   if ($CanUseTNEF) {
@@ -12006,7 +12482,7 @@ EOT
     $installed = $useMailDKIMVerifier ? 'is not installed' : 'is disabled in config';
     mlog(0,"Mail::DKIM::Verifier module $installed - DKIM verification not available");
   }
-  $ModuleList{'Mail::DKIM::Verifier'} = $VerMailDKIMVerifier.'/0.37';
+  $ModuleList{'Mail::DKIM::Verifier'} = $VerMailDKIMVerifier.'/0.38';
   $ModuleStat{'Mail::DKIM::Verifier'} = $installed;
 
   if ($CanUseSchedCron) {
@@ -12017,7 +12493,7 @@ EOT
     $installed = $useScheduleCron ? 'is not installed' : 'is disabled in config';
     mlog(0,"Schedule::Cron module $installed - RebuildSpamdb Scheduler not available");
   }
-  $ModuleList{'Schedule::Cron'} = $VerScheduleCron.'/0.97';
+  $ModuleList{'Schedule::Cron'} = $VerScheduleCron.'/1.01';
   $ModuleStat{'Schedule::Cron'} = $installed;
 
   if ($CanUseSysMemInfo) {
@@ -12038,12 +12514,14 @@ EOT
     mlog(0,"Sys::CpuAffinity module$ver installed - setting CPU Affinty is available - this system has $numcpus CPU\'s");
     eval{@currentCpuAffinity = Sys::CpuAffinity::getAffinity($$)};
     mlog(0,"The Cpu Affinity of spambox is currently '@currentCpuAffinity'");
+    my $num = scalar(@currentCpuAffinity);
+    mlog(0,"warning: there are currently $num CPU-cores available for spambox - but at least 4 CPU-cores are recommended!") if $num < 4;
     $installed = 'enabled';
   } elsif (!$AvailSysCpuAffinity)  {
     $installed = $useSysCpuAffinity ? 'is not installed' : 'is disabled in config';
     mlog(0,"Sys::CpuAffinity module $installed - setting CPU Affinty not available");
   }
-  $ModuleList{'Sys::CpuAffinity'} = $VerSysCpuAffinity.'/1.05';
+  $ModuleList{'Sys::CpuAffinity'} = $VerSysCpuAffinity.'/1.06';
   $ModuleStat{'Sys::CpuAffinity'} = $installed;
 
   print '.';
@@ -12056,7 +12534,7 @@ EOT
     $installed = $useAuthenSASL ? 'is not installed' : 'is disabled in config';
     mlog(0,"Authen::SASL module $installed - SMTP AUTH is not available");
   }
-  $ModuleList{'Authen::SASL'} = $VerAuthenSASL.'/2.1401';
+  $ModuleList{'Authen::SASL'} = $VerAuthenSASL.'/2.16';
   $ModuleStat{'Authen::SASL'} = $installed;
 
   if ($CanUseRegexpOptimizer) {
@@ -12076,16 +12554,16 @@ EOT
   $ModuleList{'Regexp::Optimizer'} = $VerRegexpOptimizer.'/0.23';
   $ModuleStat{'Regexp::Optimizer'} = $installed;
 
-  if ($CanUseAsspSelfLoader) {
-    $ver=eval('AsspSelfLoader->VERSION'); $VerAsspSelfLoader=$ver; $ver=" version $ver" if $ver;
-    mlog(0,"AsspSelfLoader module$ver installed - SPAMBOX Code Load Optimization is available");
+  if ($CanUseSpamboxSelfLoader) {
+    $ver=eval('SpamboxSelfLoader->VERSION'); $VerSpamboxSelfLoader=$ver; $ver=" version $ver" if $ver;
+    mlog(0,"SpamboxSelfLoader module$ver installed - SPAMBOX Code Load Optimization is available");
     $installed = 'enabled';
-  } elsif (!$AvailAsspSelfLoader)  {
-    $installed = $useAsspSelfLoader ? 'is not installed' : 'is disabled in config';
-    mlog(0,"AsspSelfLoader module $installed - SPAMBOX Code Load Optimization is not available");
+  } elsif (!$AvailSpamboxSelfLoader)  {
+    $installed = $useSpamboxSelfLoader ? 'is not installed' : 'is disabled in config';
+    mlog(0,"SpamboxSelfLoader module $installed - SPAMBOX Code Load Optimization is not available");
   }
-  $ModuleList{'AsspSelfLoader'} = $VerAsspSelfLoader.'/'.$requiredSelfLoaderVersion;
-  $ModuleStat{'AsspSelfLoader'} = $installed;
+  $ModuleList{'SpamboxSelfLoader'} = $VerSpamboxSelfLoader.'/'.$requiredSelfLoaderVersion;
+  $ModuleStat{'SpamboxSelfLoader'} = $installed;
 
   if ($CanUseSPAMBOX_WordStem) {
     $ver=eval('SPAMBOX_WordStem->VERSION'); $VerSPAMBOX_WordStem=$ver; $ver=" version $ver" if $ver;
@@ -12104,7 +12582,7 @@ EOT
     $installed = $useSPAMBOX_WordStem ? 'is not installed' : 'is disabled in config';
     mlog(0,"SPAMBOX_WordStem module $installed - SPAMBOX multi lingual word stemming engine for Bayesian and HMM checks is not available");
   }
-  $ModuleList{'SPAMBOX_WordStem'} = $VerSPAMBOX_WordStem.'/1.24';
+  $ModuleList{'SPAMBOX_WordStem'} = $VerSPAMBOX_WordStem.'/1.27';
   $ModuleStat{'SPAMBOX_WordStem'} = $installed;
 
   if ($CanUseSPAMBOX_FC) {
@@ -12132,10 +12610,11 @@ EOT
   if ($CanUseIOSocketSSL) {
     $ver=eval('IO::Socket::SSL->VERSION'); $VerIOSocketSSL=$ver; $ver=" version $ver" if $ver;
     mlog(0,"IO::Socket::SSL module$ver installed - https and TLS/SSL is possible");
-    mlog(0,"IO::Socket::SSL module$ver installed - but at least version 1.32 is recommended")
-        if ($VerIOSocketSSL < '1.32');
+    mlog(0,"IO::Socket::SSL module$ver installed - but at least version 2.006 is recommended")
+        if ($VerIOSocketSSL < '2.006');
     $installed = 'enabled';
-    $ModuleList{'Net::SSLeay'} = (eval('Net::SSLeay->VERSION')).'/1.35';
+    my $nv = eval('Net::SSLeay->VERSION');
+    $ModuleList{'Net::SSLeay'} = $nv.'/1.72';
     $ModuleStat{'Net::SSLeay'} = $installed;
 # IO-Socket-IP is not what IO-Socket-SSL should use - what a HACK ???
     if ("@IO::Socket::SSL::ISA" eq 'IO::Socket::IP') {
@@ -12153,7 +12632,16 @@ EOT
     if (-e $SSLCertFile and -e $SSLKeyFile) {
         mlog(0,'found valid certificate and private key file - https and TLS/SSL is available');
         mlog(0,'found valid ca file - chained certificate validation is available') if $SSLCaFile && -e $SSLCaFile;
-        my $d = Net::SSLeay::CTX_new();   # initialize Net::SSLeay before threads are started
+        eval {
+            Net::SSLeay::load_error_strings();
+            Net::SSLeay::SSLeay_add_ssl_algorithms();
+            Net::SSLeay::ENGINE_load_builtin_engines();
+            Net::SSLeay::ENGINE_register_all_complete();
+            Net::SSLeay::randomize();
+            my $d = Net::SSLeay::CTX_new();   # initialize Net::SSLeay before threads are started
+            my $ver_string = Net::SSLeay::SSLeay_version();
+            mlog(0,"the underlying SSL library Net::SSLeay version $nv uses $ver_string");
+        };
     } else {
         if (system('openssl', 'version') == 0) {
             mlog(0,'info: openssl is installed - try to create basic SSL-certificates');
@@ -12164,7 +12652,16 @@ EOT
         if (-e $SSLCertFile and -e $SSLKeyFile) {
             mlog(0,'found valid certificate and private key file - https and TLS/SSL is available');
             mlog(0,'found valid ca file - chained certificate validation is available') if $SSLCaFile && -e $SSLCaFile;
-            my $d = Net::SSLeay::CTX_new();   # initialize Net::SSLeay before threads are started
+            eval {
+                Net::SSLeay::load_error_strings();
+                Net::SSLeay::SSLeay_add_ssl_algorithms();
+                Net::SSLeay::ENGINE_load_builtin_engines();
+                Net::SSLeay::ENGINE_register_all_complete();
+                Net::SSLeay::randomize();
+                my $d = Net::SSLeay::CTX_new();   # initialize Net::SSLeay before threads are started
+                my $ver_string = Net::SSLeay::SSLeay_version();
+                mlog(0,"the underlying SSL library Net::SSLeay version $nv uses $ver_string");
+            };
         } else {
             $CanUseIOSocketSSL = 0;
             mlog(0,"warning: server certificate $SSLCertFile not found") unless (-e $SSLCertFile);
@@ -12177,16 +12674,82 @@ EOT
     $installed = $useIOSocketSSL ? 'is not installed' : 'is disabled in config';
     mlog(0,"IO::Socket::SSL module $installed - https and TLS/SSL not available");
   }
-  $ModuleList{'IO::Socket::SSL'} = $VerIOSocketSSL.'/1.32';
+  $ModuleList{'IO::Socket::SSL'} = $VerIOSocketSSL.'/2.020';
   $ModuleStat{'IO::Socket::SSL'} = $installed;
 
   my $v;
-  $ModuleList{'Plugins::SPAMBOX_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=3.10;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_AFC'};
+  if (exists $ModuleList{'Plugins::SPAMBOX_AFC'}) {
+      if ($ModuleList{'Plugins::SPAMBOX_AFC'} =~ /^3/o) {
+          $ModuleList{'Plugins::SPAMBOX_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=3.19;$1>$v?$1:$v;/oe;
+      } else {
+          $ModuleList{'Plugins::SPAMBOX_AFC'}   =~ s/([0-9\.\-\_]+)$/$v=4.11;$1>$v?$1:$v;/oe;
+      }
+  }
   $ModuleList{'Plugins::SPAMBOX_ARC'}   =~ s/([0-9\.\-\_]+)$/$v=2.05;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_ARC'};
   $ModuleList{'Plugins::SPAMBOX_DCC'}   =~ s/([0-9\.\-\_]+)$/$v=2.01;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_DCC'};
-  $ModuleList{'Plugins::SPAMBOX_OCR'}   =~ s/([0-9\.\-\_]+)$/$v=2.18;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_OCR'};
+  $ModuleList{'Plugins::SPAMBOX_OCR'}   =~ s/([0-9\.\-\_]+)$/$v=2.20;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_OCR'};
   $ModuleList{'Plugins::SPAMBOX_Razor'} =~ s/([0-9\.\-\_]+)$/$v=1.09;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_Razor'};
+  $ModuleList{'Plugins::SPAMBOX_FakeMX'} =~ s/([0-9\.\-\_]+)$/$v=1.01;$1>$v?$1:$v;/oe if exists $ModuleList{'Plugins::SPAMBOX_FakeMX'};
 
+  mlog(0,'info: spambox has successfully loaded '.scalar(keys(%INC)).' Perl modules in to its namespace');
+  if (open(my $f, '>', "$base/notes/loaded_perl_modules.txt")) {
+      binmode $f;
+      print $f 'SPAMBOX runtime and support information at '.timestring()."\n\n";
+      print $f 'OS: '.$^O."\n";
+      print $f 'Perl: '.$]."\n";
+      print $f "SPAMBOX: $0 - $MAINVERSION\n";
+      print $f "UUID: $UUID\n";
+      print $f "base: $base\n";
+      print $f "MD5: $spamboxCodeMD5\n";
+      print $f "CPU: system-cores: $numcpus, spambox-cpu-affinity: @currentCpuAffinity\n";
+      if ($CanUseSysMemInfo) {
+          my $totalmem = "n/a";
+          my $freemem = "n/a";
+          my $totalswap = "n/a";
+          my $freeswap = "n/a";
+          $totalmem = eval{int(Sys::MemInfo::totalmem() / 1048576);};
+          $freemem = eval{int(Sys::MemInfo::freemem() / 1048576);};
+          $totalswap = eval{int(Sys::MemInfo::totalswap() / 1048576);};
+          $freeswap = eval{int(Sys::MemInfo::freeswap() / 1048576);};
+          print $f "MEM(MB): total: $totalmem, free: $freemem, totalswap: $totalswap, freeswap: $freeswap\n";
+      }
+      if ($CanUseIOSocketSSL) {
+          my $ov;
+          eval {
+          print $f "\n";
+          print $f 'Net-SSLeay: version ' . Net::SSLeay->VERSION ." - build information\n";
+          $ov = Net::SSLeay::SSLeay_version(0);
+          print $f "  openssl : $ov\n";
+          print $f '  ' . Net::SSLeay::SSLeay_version(2)."\n";
+          print $f '  ' . Net::SSLeay::SSLeay_version(3)."\n";
+          print $f '  platform: ' . Net::SSLeay::SSLeay_version(4)."\n";
+        #   0 (=SSLEAY_VERSION) - e.g. 'OpenSSL 1.0.0d 8 Feb 2011'
+        #   2 (=SSLEAY_CFLAGS)  - e.g. 'compiler: gcc -D_WINDLL -DOPENSSL_USE_APPLINK .....'
+        #   3 (=SSLEAY_BUILT_ON)- e.g. 'built on: Fri May  6 00:00:46 GMT 2011'
+        #   4 (=SSLEAY_PLATFORM)- e.g. 'platform: mingw'
+          };
+          my ($k) = $ov =~ /(\d+\.\d+\.\d+[\S]+)/o;
+          $ov =~ s/OpenSSL/OpenSSL-lib/o;
+          $ModuleList{$ov} = "$k/1.0.1h";
+      }
+      print $f "\nspambox has loaded the following Perl modules in to its namespace\n\n";
+      print $f "module name\tfile name\tmodule location\tmodule version\n\n";
+      for my $mod (sort keys(%INC)) {
+          my $mn = my $fn = $mod;
+          $mn =~ s/\//::/go;
+          my $ty;
+          $ty = $1 if $mn =~ s/\.([^.]+)$//o;
+          $mn =~ s/[a-z]::://oi;
+          my $v;
+          eval{$v = $mn->VERSION} if $ty =~ /^p[ml]$/o;
+          $v ||= 'n/a';
+          print $f "$mn\t$fn\t$INC{$mod}\t$v\n";
+          if ($mn eq 'BerkeleyDB') {
+              print $f "BerkeleyDB-engine\t$BDBver / $BDBverStr\n";
+          }
+      }
+      close $f;
+  }
   if (scalar keys %ModuleError) {
       mlog(0,"warning: There were module load errors detected - look in to file $base/moduleLoadErrors.txt for more details. To solve this issue install the failed modules or disable them in the 'Module Setup' section in the GUI.");
   }
@@ -12256,24 +12819,37 @@ EOT
       }
   }
   unless ($T[0] && eval{$L->($T[0])}) {
+      my $xs2;
       $T[0] = ($Y->{useXS}) ? <<'EOT1' : <<'EOT2';
-3D27BEF787EEB4C6D2A40968821CFF93E451284854277EE02CA6F5D418F4E020F35B3F6D169E7398BDCE4C14D3EDAAA5B6D9FA8986A7C5B0372EA8AC
-14CDABEF52A96235E3A6A1727A42FC95C94F9B922F1A7C355F7CCAFE9F2526AA138637A545060D019E3F988DE88B8020317E6D6BD337656ACAA3DE93
-6C95EAAAA6A41E54E0DB51D472A26FFE63650D4037B1C24914EA3FEEBB2CBCB9E3E46AC6A67E6A014A36C18AE5F31888B067DE1CE47263D9BAA70D59
-CD6BC5CD975801F173EA6C603E6CE6A73D7D078EBAE6BD993B35766419BCF99C9B9D2D24BE1E3FF0A578C1F899EB394AFEA9E419EB46FDF86205B8F9
-3F26129B75990B77A310FD5D62E87DF8E8390AA47817C1ADFA802B2AFAD0D801
-01104440EE
+D6BF891262F757782FDD15748F82D065805D62A749F603F47FA47748BFF3B97A87FA203AA747C4E3B72014B9E41E77558D992C892B936EC21EC3EF74
+8301E3E54B2C7F3EA223C277BFA172D16781ECDEAB6A86EF6230278C52D4F48D3EA6C783A7FD414BA94B60297F53A179B09E4264DA64640F6268DAEC
+19E018AB209CF1BF331F10051626B0FA039372EC0E77E61207ACB0002B616D18FDE8B8BE6A63CA0234242F73B4470B6D6E49B2E51832650BBBFB9C29
+1517818A78D3EB86480C2E94475396904CEF29C2FC0E6B5F7831466C6F114BDE14B955786D36997CF29DB46C4C9011FF3F15B0673CFCF235CEAFD95A
+1918C6524FC311B9721315C48022524BE41E5FC1742EAF1C8D3D7BB6F0A9DE28
+010A163FFA
 EOT1
-CF47405B197EEBE265A94D35A79E0B312A9A0CFEA865961B7267838437B765D98EC1EBFC8FA82427A6BBC369C6408FCF742CB72E0046573C042DC5F6
-AD52FD93155B368A9855ED760672210B7DCF5EA8D78CCE3BCBDC902CE68764C6E0EE355AC0185577F958A995D6518880E3E950945A1DEC58CD551B66
-445BA826D30BC729E87CB15EDFAA39E14F8B56923984F3015C896A948134D436EA578E8A036672A511E858BE1A544180EC483B120C7AE55B21B88518
-B12698FFA78AD88F26D6D66C497A6FD019EDB954276ED5521D423A4F2C0D1A276F41EBB5238911D22167BFB1C496A2B2005638E86FFC929CF0C26028
-D641F65423B12D76CAE8414EB71AB843775EB09C6D39015BEA12A0427870E62A
-01104440EE
+FA431E3F72B9B287F6703F17AE28B0964338771834010AA37E559F1BC56B27A0633F8AACA0FD7382F8B07E95F79F5427BC5916CC2FCF15E955A09176
+168B5CDECA634CCBBDFF50DBE890D7189B70185936538F48CBDB8FB1E3DAE14F5A0982A7A36337E5DB2340C685127177FB94250AD6CB2BE63B84DB1B
+81F825C07C16D818F8840F7D6BD74E34DA49492B9C2E317B73BAD723A5D4288160B0E58E7F0C3483A7A11B25F134B07EDE8DEC8FFA36CA18C5917633
+9E4B55DCC7F537529CFCB9B6E1C191998C9A0577F4E5AD83A02CA424BCC4DD219D774A74FDD893648D080A5494D21920F1B4E03F86A7FF7A0D4EBB89
+0248B8414B5B9537D22A8D5BC10CC040E96537B5931DC9C1C7B01788ACF4E8E2
+010A163FFA
 EOT2
+      if ($Y->{useXS}) {
+          $xs2 = <<'EOT3';
+D6BF891262F757782FDD15748F82D0654FE6578BBC399622DC648385E222F12F09F7A5A17BB1EE3BF7F754620E239196B4824AA655D6A39F820D0FF0
+A5D64A4163680CF0CB94C7B2D2C0796534E433A1AA0F14228FCDB5D1AF4CE7CFE2E2C66C372EA8AC14CDABEF52A96235E3A6A1727A42FC95C94F9B92
+57C2507673DF60B1E4C2241D586AF73D1F0218A89C54DA01CE2829F76A30AB7C2AF50056D4DAA5B43C1F2021200AF9204E5E7C2D32C349DFD062D4BD
+3CBBE966F2F36194521FFCB10C22DD1023913A0F3F26129B75990B77BE486BE1BF8C6ECEFFD0ED556A0FB25E4DB133C25B8F64E49670780477644559
+3A97DDE6DB060DF9808F98FB7959D0CCE41E5FC1742EAF1C8D3D7BB6F0A9DE28
+010A163FFA
+EOT3
+          $xs2 =~ s/\r|\n|\s//gos;
+          $xs2 =~ s/([0-9a-fA-F]{2})/pack('C',hex($1))/geo;
+      }
       $T[0] =~ s/\r|\n|\s//gos;
       $T[0] =~ s/([0-9a-fA-F]{2})/pack('C',hex($1))/geo;
-      if (eval{$T[0] && $L->($T[0])}) {
+      if (eval{($T[0] && $L->($T[0]))} || eval{(($T[0] = $xs2) && $L->($T[0]))}) {
           $liccount++;
       } else {
           @T = ();
@@ -12285,9 +12861,21 @@ EOT2
           next if /\/spambox.license$/oi;
           local $/ = undef;
           open(my $F, '<',"$_");binmode($F);my $f = <$F>;close $F;
-          unless (eval{$f && $L->($f)}) {
+          my $v;
+          if ( ! eval{$f && $L->($f)} ) {
               mlog(0,"warning: license file '$_' is not valid");
               next;
+          } elsif ( ! eval{$f && ($v = $L->($f)->{validate})} ) {
+              my $valid;
+              for my $s (keys(%$v)) {
+                  next unless $s;
+                  $valid = $v->{$s}->( $L->($f)->{license}->{$s} );
+                  last unless $valid;
+              }
+              if (! $valid) {
+                  mlog(0,"warning: license in file '$_' is not valid");
+                  next;
+              }
           }
           foreach my $s (keys(%{$L->($f)->{license}})) {
               next unless $s;
@@ -12305,9 +12893,10 @@ EOT2
   -d "$base/$notspamlog" or mkdir "$base/$notspamlog",0755;
   -d "$base/$incomingOkMail" or mkdir "$base/$incomingOkMail", 0755;
   -d "$base/$discarded"  or mkdir "$base/$discarded",  0755;
+  -d "$base/$viruslog" or mkdir "$base/$viruslog",0755;
   -d "$base/files" or mkdir "$base/files",0755;
   -d "$base/logs" or mkdir "$base/logs",0755;
-  
+
   -d "$base/rebuild_error" or mkdir "$base/rebuild_error", 0755;
   -d "$base/rebuild_error/$spamlog" or mkdir "$base/rebuild_error/$spamlog", 0755;
   -d "$base/rebuild_error/$notspamlog" or mkdir "$base/rebuild_error/$notspamlog", 0755;
@@ -12330,7 +12919,7 @@ EOT2
   -d "$base/rebuild_error/$correctednotspam" or mkdir "$base/rebuild_error/$correctednotspam", 0755;
 
   -d "$base/$resendmail" or mkdir "$base/$resendmail",0755;
-  $pbdir = $1 if $pbdb=~/(.*)\/.*/o;
+  $pbdir = $1 if $pbdb=~/^(.*)\/[^\/]*$/o;
   $pbdir = 'pb' if $pbdb =~ /DB:/o;
   if ($pbdir) {
      -d  "$base/$pbdir" or mkdir "$base/$pbdir",0755;
@@ -12358,7 +12947,12 @@ EOT2
   -d "$base/debug" or mkdir "$base/debug",0755;
 
   foreach my $file ( Glob("$base/tmp/*")) {
-      mlog(0,"info: deleted temporary file $file") if unlink($file) && $MaintenanceLog > 1;
+      if ($dF->( $file )) {
+          my $c = rmTree($file);
+          mlog(0,"info: deleted temporary folder $file with $c files") if $c && $MaintenanceLog > 1;
+      } else {
+          mlog(0,"info: deleted temporary file $file") if $unlink->($file) && $MaintenanceLog > 1;
+      }
   }
 
   my $unclean = (exists $Config{clearBerkeleyDBEnv} || -e "$base/$pidfile");
@@ -12379,7 +12973,7 @@ EOT2
       }
   }
   if ($useDB4griplist && $unclean) {
-      foreach ( Glob("$base/griplist.*")) {
+      foreach ( Glob("$base/$griplist.*")) {
           next if (-d "$_");
           mlog(0,"info: removed GRIPLIST file $_") if unlink($_);
       }
@@ -12387,10 +12981,10 @@ EOT2
   delete $Config{clearBerkeleyDBEnv};
   &SaveConfig() if $unclean;
 
-  if($pidfile) {open(my $PIDH,'>',"$base/$pidfile"); $PIDH->autoflush; print $PIDH $$; close $PIDH}
+  if ($pidfile) {open(my $PIDH,'>',"$base/$pidfile"); $PIDH->autoflush; print $PIDH $$; close $PIDH}
 
   if ($^O ne 'MSWin32') {
-      if($setFilePermOnStart) {
+      if ($setFilePermOnStart) {
           print "\t\t\t\t\t[OK]\nsetup file permission" ;
           &setPermission($base,oct('0777'),1,1) ;
           $Config{setFilePermOnStart} = '';
@@ -12401,36 +12995,13 @@ EOT2
           &checkPermission($base,oct('0600'),1,1) ;
       }
   } else {
-      if($setFilePermOnStart) {
+      if ($setFilePermOnStart) {
           print "\t\t\t\t\t[OK]\nskip file permission" ;
           $Config{setFilePermOnStart} = $setFilePermOnStart = '';
       } elsif ($checkFilePermOnStart) {
           print "\t\t\t\t\t[OK]\nskip file permission" ;
           $Config{checkFilePermOnStart} = $checkFilePermOnStart = '';
       }
-  }
-
-  $nextGlobalUploadBlack = $nextNoop + 120;
-  $nextGlobalUploadWhite = $nextNoop + 120;
-  if (-e "$base/$pbdir/global/out/pbdb.black.db.gz") {
-    my $mtime = ftime("$base/$pbdir/global/out/pbdb.black.db.gz");
-    my $m = &getTimeDiff(time - $mtime);
-    mlog(0,"info: last PBBlack upload to global server was scheduled before $m") if (($DoGlobalBlack || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
-    if ($mtime) {
-        $nextGlobalUploadBlack=$mtime + (int(rand(300) + 1440))*60;
-        my $m = &getTimeDiff($nextGlobalUploadBlack - time);
-        mlog(0,"info: next PBBlack upload to global server is scheduled in $m") if (($DoGlobalBlack || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
-    }
-  }
-  if (-e "$base/$pbdir/global/out/pbdb.white.db.gz") {
-    my $mtime = ftime("$base/$pbdir/global/out/pbdb.white.db.gz");
-    my $m = &getTimeDiff(time - $mtime);
-    mlog(0,"info: last PBWhite upload to global server was scheduled before $m") if (($DoGlobalWhite || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
-    if ($mtime) {
-        $nextGlobalUploadWhite=$mtime + (int(rand(300) + 1440))*60 if ($mtime);
-        my $m = &getTimeDiff($nextGlobalUploadWhite - time);
-        mlog(0,"info: next PBWhite upload to global server is scheduled in $m") if (($DoGlobalWhite || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
-    }
   }
 
  # is any database driver defined - so we have to parse the driver and the options
@@ -12456,50 +13027,105 @@ EOT2
     }
   }
 
-#define Cache- and List groups - so have to care about only here
-  @GroupList=("whitelistGroup","PersBlackGroup","redlistGroup","delayGroup","pbdbGroup","spamdbGroup","LDAPGroup","AdminGroup");
-  my $HMMdb = 'HMMdb';
-  if ($spamdb !~ /DB:/o && $spamdb =~ /^(.+?\/)[^\/]+$/o) {
-      $HMMdb = $1 . $HMMdb;
-  }
-  my $v;
-# $v =  "KeyName   ,dbConfigVar,CacheObject     ,realFileName  ,mysqlFileName,FailoverValue,mysqlTable"); remove spaces and push to Group
-#                                                                                                         for dbConfigVar
-  $v = ("Whitelist ,whitelistdb,WhitelistObject ,$whitelistdb  ,whitelist    ,whitelist  ,whitelist"   ); $v=~s/\s*,/,/go; push(@whitelistGroup,$v);
+  initDBSetup($newDB ? 'database' : '');
 
-  $v = ("Redlist   ,redlistdb  ,RedlistObject   ,$redlistdb    ,redlist      ,redlist    ,redlist"     ); $v=~s/\s*,/,/go; push(@redlistGroup,$v);
-
-  $v = ("Delay     ,delaydb    ,DelayObject     ,$delaydb      ,delaydb      ,delaydb    ,delaydb"     ); $v=~s/\s*,/,/go; push(@delayGroup,$v);
-  $v = ("DelayWhite,delaydb    ,DelayWhiteObject,$delaydb.white,delaydb.white,delaydb    ,delaywhitedb"); $v=~s/\s*,/,/go; push(@delayGroup,$v);
-
-  $v = ("Spamdb    ,spamdb     ,SpamdbObject    ,$spamdb       ,spamdb       ,spamdb     ,spamdb"      ); $v=~s/\s*,/,/go; push(@spamdbGroup,$v);
-  $v = ("HeloBlack ,spamdb     ,HeloBlackObject ,$spamdb.helo  ,spamdb.helo  ,spamdb     ,spamdbhelo"  ); $v=~s/\s*,/,/go; push(@spamdbGroup,$v);
-
-  if (! $runHMMusesBDB || ! $CanUseBerkeleyDB) {
-      $v = ("HMMdb ,spamdb     ,HMMdbObject     ,$HMMdb        ,HMMdb        ,spamdb     ,hmmdb"      ); $v=~s/\s*,/,/go; push(@spamdbGroup,$v);
-      delete $tempDBvars{HMMdb};
+  if ($moveDB && ! $newDB) {
+      &RemovePid();
+      print "\n\nnow moving default configured databases in to a new folder structure - $base/database\n";
+      mkdir "$base/database",0755 or die "can't create folder $base/database - $!\n";
+      mkdir "$base/database/pb",0755  or die "can't create folder $base/database/pb - $!\n";
+      my $p = 'database';
+      foreach my $dbGroup (@GroupList) {
+          my %changed;
+          foreach my $dbGroupEntry (@$dbGroup) {
+              my ($KeyName,$dbConfig,$CacheObject,$realFileName,$mysqlFileName,$FailoverValue,$mysqlTable) = split(/,/o,$dbGroupEntry);
+              $realFileName =~ s/^DB:/$FailoverValue/;
+              if ($realFileName =~ /^pb\//o || $realFileName !~ /\//o) {
+                  print "try $base/$realFileName\n";
+                  print "successfully moved $base/$realFileName to $base/$p/$realFileName\n"
+                    if $move->("$base/$realFileName","$base/$p/$realFileName");
+                  print "successfully moved $base/$realFileName.bdb to $base/$p/$realFileName.bdb\n"
+                    if $move->("$base/$realFileName.bdb","$base/$p/$realFileName.bdb");
+                  print "successfully moved $base/$realFileName.bak to $base/$p/$realFileName.bak\n"
+                    if $move->("$base/$realFileName.bak","$base/$p/$realFileName.bak");
+                  if (! exists $changed{$dbConfig} && $$dbConfig !~ /DB:/o) {
+                      my $old = $Config{$dbConfig};
+                      $changed{$dbConfig} = $Config{$dbConfig} = $$dbConfig = $p.'/'.$$dbConfig;
+                      print "changed configuration for $dbConfig from '$old' to '$Config{$dbConfig}'\n";
+                  }
+              }
+          }
+          if ($dbGroup eq 'pbdbGroup') {
+              mkdir "$base/database/pb/global",0755;
+              mkdir "$base/database/pb/global/in",0755;
+              mkdir "$base/database/pb/global/out",0755;
+              foreach ( Glob("$base/pb/global/in/*"),Glob("$base/pb/global/out/*")) {
+                  my $t = $_;
+                  $t =~ s/^\Q$base\E\/pb/$base\/database\/pb/;
+                  print "successfully moved $_ to $t\n" if $move->($_,$t);
+              }
+              rmdir "$base/pb/global/out";
+              rmdir "$base/pb/global/in";
+              rmdir "$base/pb/global";
+              rmdir "$base/pb";
+          }
+      }
+      if ($griplist eq 'griplist') {
+          print "try $base/griplist\n";
+          foreach ( Glob("$base/$griplist*")) {
+              next if (-d "$_");
+              next if /griplist\.conf$/o;
+              my $t = $_;
+              $t =~ s/^\Q$base\E\//$base\/$p\//;
+              print "successfully moved $_ to $t\n" if $move->($_,$t);
+          }
+          my $old = $griplist;
+          $Config{griplist} = $griplist = $p.'/'.$griplist;
+          print "changed configuration for griplist from '$old' to '$Config{griplist}'\n";
+      }
+      initDBSetup($p);
+      $pbdir = $1 if $pbdb=~/^(.*)\/[^\/]*$/o;
+      $pbdir = $p.'/pb' if $pbdb =~ /DB:/o;
+      foreach my $dir ( Glob("$base/tmpDB/*")) {
+          if (-d $dir) {
+              foreach my $f ( Glob("$dir/*")) {
+                 unlink($f) if ($f =~ /\.(?:00\d|bdb)$/o);
+              }
+          }
+      }
+      &SaveConfig();
+      print "\n\n\nall default set databases are now moved to $base/database\n";
+      print "DO NOT uses the --moveDB:=1 switch again!\n";
+      print "You can start now spambox normaly.\n";
+      exit;
+  } elsif ( $moveDB ) {
+      &RemovePid();
+      die "\n\ncan't process 'moveDB' - the folder $base/database already exists\n";
   }
   
-  $v = ("PBWhite   ,pbdb       ,PBWhiteObject   ,$pbdb.white.db,pbdb.white.db,pb/pbdb    ,PBWhite"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("PBBlack   ,pbdb       ,PBBlackObject   ,$pbdb.black.db,pbdb.black.db,pb/pbdb    ,PBBlack"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("RBLCache  ,pbdb       ,RBLCacheObject  ,$pbdb.rbl.db  ,pbdb.rbl.db  ,pb/pbdb    ,RBLCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("URIBLCache,pbdb       ,URIBLCacheObject,$pbdb.uribl.db,pbdb.uribl.db,pb/pbdb    ,URIBLCache"  ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("PTRCache  ,pbdb       ,PTRCacheObject  ,$pbdb.ptr.db  ,pbdb.ptr.db  ,pb/pbdb    ,PTRCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("MXACache  ,pbdb       ,MXACacheObject  ,$pbdb.mxa.db  ,pbdb.mxa.db  ,pb/pbdb    ,MXACache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("RWLCache  ,pbdb       ,RWLCacheObject  ,$pbdb.rwl.db  ,pbdb.rwl.db  ,pb/pbdb    ,RWLCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("SPFCache  ,pbdb       ,SPFCacheObject  ,$pbdb.spf.db  ,pbdb.spf.db  ,pb/pbdb    ,SPFCache"    ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("SBCache   ,pbdb       ,SBCacheObject   ,$pbdb.sb.db   ,pbdb.sb.db   ,pb/pbdb    ,SBCache"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("PBTrap    ,pbdb       ,PBTrapObject    ,$pbdb.trap.db ,pbdb.trap.db ,pb/pbdb    ,PBTrap"      ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("DKIMCache ,pbdb       ,DKIMCacheObject ,$pbdb.dkim.db ,pbdb.dkim.db ,pb/pbdb    ,DKIMCache"   ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("BATVTag   ,pbdb       ,BATVTagObject   ,$pbdb.batv.db ,pbdb.batv.db ,pb/pbdb    ,BATVTag"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
-  $v = ("BackDNS   ,pbdb       ,BackDNSObject   ,$pbdb.back.db ,pbdb.back.db ,pb/pbdb    ,BackDNS"     ); $v=~s/\s*,/,/go; push(@pbdbGroup,$v);
+  $nextGlobalUploadBlack = $nextNoop + 120;
+  $nextGlobalUploadWhite = $nextNoop + 120;
+  if (-e "$base/$pbdir/global/out/pbdb.black.db.gz") {
+    my $mtime = ftime("$base/$pbdir/global/out/pbdb.black.db.gz");
+    my $m = &getTimeDiff(time - $mtime);
+    mlog(0,"info: last PBBlack upload to global server was scheduled before $m") if (($DoGlobalBlack || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
+    if ($mtime) {
+        $nextGlobalUploadBlack=$mtime + (int(rand(300) + 1440))*60;
+        my $m = &getTimeDiff($nextGlobalUploadBlack - time);
+        mlog(0,"info: next PBBlack upload to global server is scheduled in $m") if (($DoGlobalBlack || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
+    }
+  }
+  if (-e "$base/$pbdir/global/out/pbdb.white.db.gz") {
+    my $mtime = ftime("$base/$pbdir/global/out/pbdb.white.db.gz");
+    my $m = &getTimeDiff(time - $mtime);
+    mlog(0,"info: last PBWhite upload to global server was scheduled before $m") if (($DoGlobalWhite || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
+    if ($mtime) {
+        $nextGlobalUploadWhite=$mtime + (int(rand(300) + 1440))*60 if ($mtime);
+        my $m = &getTimeDiff($nextGlobalUploadWhite - time);
+        mlog(0,"info: next PBWhite upload to global server is scheduled in $m") if (($DoGlobalWhite || $GPBDownloadLists || $GPBautoLibUpdate) && $globalClientName && $globalClientPass && $MaintenanceLog);
+    }
+  }
 
-  $v = ("PersBlack ,persblackdb,PersBlackObject ,$persblackdb  ,persblack    ,persblack  ,persblack"   ); $v=~s/\s*,/,/go; push(@PersBlackGroup,$v);
-
-  $v = ("LDAPlist  ,ldaplistdb ,LDAPlistObject  ,$ldaplistdb   ,ldaplist     ,ldaplist   ,ldaplist"    ); $v=~s/\s*,/,/go; push(@LDAPGroup,$v);
-
-  $v = ("AdminUsers,adminusersdb ,AdminUsersObject,$adminusersdb   ,adminusers   ,adminusers ,AdminUsers"  ); $v=~s/\s*,/,/go; push(@AdminGroup,$v);
-  $v = ("AdminUsersRight,adminusersdb,AdminUsersRightObject,$adminusersdb.right,adminusers.right,adminusers,AdminUsersRight"   ); $v=~s/\s*,/,/go; push(@AdminGroup,$v);
 # %Types is defined by Tie::RDBM -> we redefine the datatypes for the key field of some drivers
 # For better support of the key field with different charsets defined by the DB - the key field should
 # be a varbinary type  -  some databases skipping leading and/or trailing spaces in char and varchar fields
@@ -12648,9 +13274,10 @@ if ($CanUseTieRDBM) {
   if ($CanUseSPAMBOX_WordStem) {
       $Lingua::Stem::Snowball::stemmifier = Lingua::Stem::Snowball::Stemmifier->new unless ref($Lingua::Stem::Snowball::stemmifier);
   }
-  
+
   &openLogs();
-  
+  &mlogWrite();
+
   if (! $silent) {
       binmode STDOUT;
       binmode STDERR;
@@ -12659,7 +13286,8 @@ if ($CanUseTieRDBM) {
   &mlogWrite();
   
   &WaitForAllThreads;
-  
+  &mlogWrite();
+
   $canNotify = 1;
   
   if ($CanUseThreadState && $WorkerCPUPriority) {
@@ -12671,6 +13299,7 @@ if ($CanUseTieRDBM) {
          mlog(0,"info: CPU priority changed for Worker_$i from $po to $pn") if ($po != $pn);
       }
   }
+  &mlogWrite();
   if ($CanUseThreadState) {                   # set down thread priority for MaintThread and RebuildThread
      my $po = $Threads{10000}->priority(2);
      my $pn = $Threads{10000}->priority;
@@ -12697,29 +13326,39 @@ if ($CanUseTieRDBM) {
   &mlogWrite();
 
   ConfigChangePassword('webAdminPassword', '', '', 0) if $usedCrypt == -1; # change the encryption engine now !
-  
+  &mlogWrite();
+
 # check if there are at least 500 records in spamdb (~10KB)
   mlog(0,"start analyze spamdb") if $MaintenanceLog >= 2;
+  &mlogWrite();
   my $i = $haveSpamdb = getDBCount('Spamdb','spamdb');
+  &mlogWrite();
   $currentDBVersion{'Spamdb'} = $Spamdb{'***DB-VERSION***'} || 'n/a';
   mlog(0,'spamdb has '.nN($i).' records') if $MaintenanceLog >= 2;
+  &mlogWrite();
   mlog(0,"warning: Bayesian spam database has only $i records") if ($i < 500 && $spamdb);
+  &mlogWrite();
   mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ($haveSpamdb && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb});
   &mlogWrite();
   
 # check if there are at least 50 records in whitelist (~1KB)
   mlog(0,"start analyze whitelist") if $MaintenanceLog >= 2;
+  &mlogWrite();
   $i = getDBCount('Whitelist','whitelistdb');
   mlog(0,'whitelist has '.nN($i).' records') if $MaintenanceLog >= 2;
+  &mlogWrite();
   mlog(0,"warning: whitelist has only $i records: (ignore if this is a new install)") if ($i < 50 );
+  &mlogWrite();
 
   if ($DoHMM) {
       $haveHMM = getDBCount('HMMdb','spamdb');
       mlog(0,"The Hidden-Markov-Model-DB is empty - the HMM check is disabled") if $MaintenanceLog && ! $haveHMM;
       mlog(0,'The Hidden-Markov-Model-DB has '.nN($haveHMM).' records.') if $MaintenanceLog >= 2 && $haveHMM;
+      &mlogWrite();
   }
   $currentDBVersion{'HMMdb'} = $HMMdb{'***DB-VERSION***'} || 'n/a';
   mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($DoHMM && $haveHMM && $currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb});
+  &mlogWrite();
 
   if ($mysqlSlaveMode) {
       mlog(0,"spambox is running in mysqlSlaveMode - no maintenance will be done for database tables!");
@@ -12735,10 +13374,11 @@ if ($CanUseTieRDBM) {
   $shuttingDown=$doShutdown=0;
   $smtpConcurrentSessions=0;
   threads->yield;
-  $Stats{starttime}=time;
+  $Stats{starttime} = $StartTime;
   $Stats{version}="$version$modversion";
 
   my ($lsn,$lsnI) = newListen($listenPort,\&ConToThread,1);
+  &mlogWrite();
   @lsn = @$lsn; @lsnI = @$lsnI;
   for (@$lsnI) {s/:::/\[::\]:/o;}
   mlog(0,"listening for SMTP connections on ".join(' , ',@$lsnI)) if @lsn;
@@ -12779,7 +13419,7 @@ if ($CanUseTieRDBM) {
   }
   &mlogWrite();
 
-  if($listenPort2) {
+  if ($listenPort2) {
     my ($lsn2,$lsn2I) = newListen($listenPort2,\&ConToThread,1);
     @lsn2 = @$lsn2; @lsn2I = @$lsn2I;
     for (@$lsn2I) {s/:::/\[::\]:/o;}
@@ -12787,7 +13427,7 @@ if ($CanUseTieRDBM) {
     &mlogWrite();
   }
 
-  if($relayHost && $relayPort) {
+  if ($relayHost && $relayPort) {
     my ($lsnRelay,$lsnRelayI)=newListen($relayPort,\&ConToThread,1);
     @lsnRelay = @$lsnRelay; @lsnRelayI = @$lsnRelayI;
     for (@$lsnRelayI) {s/:::/\[::\]:/o;}
@@ -12807,6 +13447,8 @@ if ($CanUseTieRDBM) {
            &mlogWrite();
        }
   }
+  mlog(0,"info: system TCP-socket receive buffer is $maxTCPRCVbuf byte");
+  mlog(0,"info: system TCP-socket send buffer is $maxTCPSNDbuf byte");
   my $isproxy = scalar(keys %ProxySocket) ? ' and Proxy':'';
   mlog(0,"warning : DisableSMTPNetworking is switch on - SMTP$isproxy listeners will be switched off") if ($DisableSMTPNetworking);
 
@@ -12830,7 +13472,7 @@ if ($CanUseTieRDBM) {
   mlog(0,"info: POP3 collection is now allowed")
      if ($POP3Interval && -e "$base/spambox_pop3.pl" && $POP3ConfigFile =~ /^ *file: *(?:.+)/io);
   &mlogWrite();
-  if($pidfile) {open($PIDH,'>',"$base/$pidfile"); $PIDH->autoflush; print $PIDH $$;}
+  if ($pidfile) {open($PIDH,'>',"$base/$pidfile"); $PIDH->autoflush; print $PIDH $$;}
   nixUsers();
   &mlogWrite();
   activeRemoteSupport();
@@ -12839,7 +13481,7 @@ if ($CanUseTieRDBM) {
 
 sub initDBHashes {
 
-# generate the CacheObjects and Hashes for all Groups in GroupList, defined in the table above
+# generate the CacheObjects and Hashes for all Groups in GroupList, defined in initDBSetup
 # if there is "DB:" defined in $dbConfig, database tables are used - otherwise files are used
     return unless $DBisUsed;
     my $waserror = 0;
@@ -12854,7 +13496,7 @@ sub initDBHashes {
             foreach my $dbGroupEntry (@$dbGroup) {
                 last if ($switch_to_files);
                 my ($KeyName,$dbConfig,$CacheObject,$realFileName,$mysqlFileName,$FailoverValue,$mysqlTable) = split(/,/o,$dbGroupEntry);
-                undef $$CacheObject if(defined $$CacheObject && ${$dbConfig} =~ /DB:/o); # undef if we have switched from database to files
+                undef $$CacheObject if (defined $$CacheObject && ${$dbConfig} =~ /DB:/o); # undef if we have switched from database to files
                 eval {untie %$KeyName if (${$dbConfig} =~ /DB:/o);}; # untie if we have switched from database to files
                 if (($CanUseTieRDBM or $CanUseBerkeleyDB) && ${$dbConfig} =~ /DB:/o && ! $waserror) {
                     eval {
@@ -12885,6 +13527,7 @@ sub initDBHashes {
                                     			      ChopBlanks=>1,
                                     			      Warn=>0 }
                                     			  );
+                            die "unable to connect to database $mydb for $mysqlTable on host $myhost using DBI::$DBusedDriver - $DBI::err: $DBI::errstr\n" unless $dbh;
                             if ($dbGroup ne 'AdminGroup') {
                                 d("DB (initDBHashes) - $KeyName");
                                 $$CacheObject=tie %$KeyName,'Tie::RDBM',{db=>$dbh,table=>"$mysqlTable",create=>1,DEBUG=>$DataBaseDebug};
@@ -12897,7 +13540,7 @@ sub initDBHashes {
                             }
                         }
                     };
-                    if($@) {    # there was an error tie
+                    if ($@) {    # there was an error tie
                         $failedTable{$KeyName} = 2;
                         if ($dbGroup ne 'AdminGroup') {
                             mlog(0,"$mysqlFileName database error: $@");
@@ -13075,7 +13718,7 @@ sub clearDBCon {
         next if $dbGroup eq 'AdminGroup' && $WorkerNumber != 0 && $WorkerNumber < 10000;
         foreach my $dbGroupEntry (@$dbGroup) {
             my ($KeyName,$dbConfig,$CacheObject,$realFileName,$mysqlFileName,$FailoverValue,$mysqlTable) = split(/,/o,$dbGroupEntry);
-            if(defined $$CacheObject && ${$dbConfig} =~ /DB:/o) {
+            if (defined $$CacheObject && ${$dbConfig} =~ /DB:/o) {
                 eval{$$CacheObject->rdbm_cleanCache() if "$$CacheObject" =~ /Tie::RDBM/o;} if ! $WorkerNumber;
                 $dbh{$$CacheObject->{'dbh'}} = 1 if eval{exists $$CacheObject->{'dbh'};};
                 $dbh{$$CacheObject->{hashobj}->{'dbh'}} = 1 if eval{exists $$CacheObject->{hashobj}->{'dbh'};};
@@ -13121,7 +13764,7 @@ sub CheckTableStructure {
   $sth = $dbh->column_info( undef, undef, $mysqlTable, 'pkey' );
   my $db_info;
   eval{$db_info = $sth->fetchrow_arrayref} ;
-  if($@) {
+  if ($@) {
     mlog(0,"warning: your mysql driver does not support GET-COLUMNE-INFO");
     mlog(0,"driver version is $DBD::mysql::VERSION - should be at least 4.005");
     $dbh->disconnect() if ( $dbh );
@@ -13197,7 +13840,7 @@ sub importDB {
    }
 
    exportDB($name,$file,"backup",0) if $importrpl ne 'cache';   #overall - backup before update is the right way
-   return if($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
+   return if ($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
 
    if (-e $importrpl || $importrpl ne 'cache') {
        mlog_i(0,"replacing records in table $mysqlTable with records in file $importrpl") if $importrpl ne 'cache';
@@ -13269,7 +13912,7 @@ sub importDB {
                              my $stime = time - $last_step_time || 1;
                              $toadd = int(2 / $stime * $toadd);
                              $last_step_time = time;
-                             return if($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
+                             return if ($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
                          }
                      } else {
                          $records++ if (! exists $tempCache->{$k});
@@ -13476,7 +14119,7 @@ sub importDB {
                   mlog_i(0,"added $count of $records records (BULK) for table $mysqlTable - finished in $sec_left sec");
                   &checkDBCon() if $WorkerNumber > 0;
                   &ThreadMonitorMainLoop("import $mysqlTable") if $WorkerNumber == 0;
-                  last if($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
+                  last if ($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
               }
 # reset the separator and the begin of the insert statement
               eval ($se);
@@ -13526,7 +14169,7 @@ sub importDB {
                     my $stime = time - $last_step_time || 1;
                     $toadd = int(2 / $stime * $toadd);
                     $last_step_time = time;
-                    last if($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
+                    last if ($WorkerNumber != 0 && ! $ComWorker{$WorkerNumber}->{run});
                  }
               }
        } else {
@@ -13674,7 +14317,7 @@ sub exportDB {
          if ($WorkerNumber == 0 ) {
              &ThreadMonitorMainLoop("$action $name");
          } else {
-             last if(! $ComWorker{$WorkerNumber}->{run});
+             last if (! $ComWorker{$WorkerNumber}->{run});
          }
      }
   }
@@ -13779,6 +14422,7 @@ sub checkDBCon {
                             			      ChopBlanks=>1,
                             			      Warn=>0 }
                             			  );
+                    die "DB-connection recovery failed: unable to connect to database $mydb for $mysqlTable on host $myhost using DBI::$DBusedDriver - $DBI::err: $DBI::errstr\n" unless $dbh;
                     if ($dbGroup ne 'AdminGroup') {
                         $$CacheObject=tie %$KeyName,'Tie::RDBM',{db=>$dbh,table=>"$mysqlTable",create=>1,DEBUG=>$DataBaseDebug};
                         $$CacheObject->{tableID} = $KeyName;
@@ -13789,7 +14433,7 @@ sub checkDBCon {
                     }
                 }
             };
-            if($@) {
+            if ($@) {
                 mlog(0,"$mysqlFileName database error: $@");
                 $realFileName =~ s/DB:/$FailoverValue/o;
                 if ($dbGroup ne 'AdminGroup') {
@@ -13864,6 +14508,13 @@ EOT
     return %Domain;
 }
 
+# replacement for IO::Socket::INET6::bind to set Socket::IPV6_V6ONLY
+sub _ipv6_bind {
+    d('_ipv6_bind');
+    eval{$_[0]->setsockopt($IPPROTO_IPV6, $IPV6_V6ONLY,1);};
+    return IO::Socket::bind(@_);
+}
+
 # for multihomed systems with multiple default gateways
 # the system must support strong host based routing (nix, Vista,2008 >)
 #
@@ -13886,12 +14537,11 @@ EOT
 # );
 sub getLocalAddress {
     my ($hash, $destination) = @_;
-    d("getLocalAddress - $hash , $destination");
-
     my $h = $hash;
     my $key = ($h eq 'LDAP') ? 'localaddr' : 'LocalAddr';
     $hash = \%{'main::'.$hash.'_local_address'};
     return unless scalar keys %{$hash};   # nothing defined
+    d("getLocalAddress - $hash , $destination");
     $destination =~ s/^($HostRe):$PortRe$/$1/o;
     return if $destination =~ /^\d+$/o;  # is a port only
     if (! ($destination =~ s/^\[?($IPRe)\]?$/$1/o)) {    # a hostname was given - resolve it
@@ -13934,9 +14584,9 @@ sub newListen {
     my($port,$handler,$threadhandler)=@_;
     my @s;
     my @sinfo;
-    return \@s,\@sinfo if($DisableSMTPNetworking and $handler eq \&ConToThread);
+    return \@s,\@sinfo if ($DisableSMTPNetworking and $handler eq \&ConToThread);
     foreach my $portA (split(/\|/o, $port)) {
-        if($portA !~ /$HostRe?:?$PortRe/o) {
+        if ($portA !~ /$HostRe?:?$PortRe/o) {
             mlog(0,"wrong (host) + port definition in '$portA' -- entry will be ignored !");
             next;
         }
@@ -13948,22 +14598,40 @@ sub newListen {
                     : ('LocalPort' => $portA);
         $parms{Listen} = 10;
         $parms{Reuse} = 1;
+        $parms{Proto} = 'tcp';
         
         if ($CanUseIOSocketINET6) {
             my $isv4 = [&getDestSockDom($interface)]->[1] != AF_INET6;
-            my ($s4,$s6);
-            if (! $interface || $isv4) {
+            my ($s4,$s6,$v6only);
+            if (! $interface || ! $isv4) {
+                $parms{Domain} = AF_INET6;
+                $parms{LocalAddr} ||= '[::]';
+                if ($parms{LocalAddr} eq '[::]' && ! $Sysv6only && $can_enable_v6only) {
+                    my $obind = \&IO::Socket::INET6::bind;  # we need to set IPV6_V6ONLY before binding the socket
+                    *IO::Socket::INET6::bind = \&_ipv6_bind;
+                    $s6 = IO::Socket::INET6->new(%parms);
+                    *IO::Socket::INET6::bind = $obind;
+                } else {
+                    $s6 = IO::Socket::INET6->new(%parms);
+                }
+                if ($s6) {
+                    push @stt,$s6;
+                    # get the socket info, if binding to universal IPv6 [::] is unique or not
+                    if ($s6->sockhost eq '[::]') {
+                        eval {$v6only = $s6->getsockopt($IPPROTO_IPV6, $IPV6_V6ONLY);};
+                        if ($@ && $^O eq 'MSWin32') {
+                            $v6only = $Sysv6only;
+                        }
+                        ${*$s6}{'io_socket_isv6only'} = $v6only;
+                    }
+                }
+                delete $parms{LocalAddr} if ! $interface;
+            }
+            if ((! $interface && $v6only) || $isv4) {
                 $parms{Domain} = AF_INET;
                 $parms{LocalAddr} ||= '0.0.0.0';
                 $s4 = IO::Socket::INET6->new(%parms);
                 push @stt,$s4 if $s4;
-                delete $parms{LocalAddr} if ! $interface;
-            }
-            if (! $interface || ! $isv4) {
-                $parms{Domain} = AF_INET6;
-                $parms{LocalAddr} ||= '[::]';
-                $s6 = IO::Socket::INET6->new(%parms);
-                push @stt,$s6 if $s6;
             }
         } else {
             $parms{Domain} = AF_INET;
@@ -13971,8 +14639,8 @@ sub newListen {
             my $s4 = IO::Socket::INET->new(%parms);
             push @stt,$s4 if $s4;
         }
-        if(! @stt) {
-            mlog(0,"error: couldn't create server socket on port '$portA' -- maybe another service is running or I'm not root (uid=$>)? -- or a wrong IP address is defined? -- $!");
+        if (! @stt) {
+            mlog(0,"error: couldn't create server socket on port '$portA' -- maybe another service uses this listener or I'm not root (uid=$>)? -- or a wrong IP address is defined? -- $!");
             next;
         }
         foreach my $s (@stt) {
@@ -13981,7 +14649,12 @@ sub newListen {
             $ThreadHandler{$s} = $threadhandler if $threadhandler;    # tell thread what to do
             &dopoll($s,$readable,POLLIN);
             push @s,$s;
-            push @sinfo,$s->sockhost . ':' . $s->sockport;
+            push @sinfo, $s->sockhost . ':' . $s->sockport;
+            if ($s->sockhost eq '[::]' && ! ${*$s}{'io_socket_isv6only'}) {
+                push @sinfo,'0.0.0.0:'.$s->sockport;
+                mlog(0,"info: the operating system IPv6 is configured to bind the universal IPv6 address [::] not only to IPv6 - it binds to IPv4 (0.0.0.0) also");
+            }
+            delete ${*$s}{'io_socket_isv6only'};
         }
     }
     return \@s,\@sinfo;
@@ -13991,13 +14664,13 @@ sub newListenSSL {
     my($port,$handler,$threadhandler)=@_;
     my @s;
     my @sinfo;
-    return \@s,\@sinfo if($DisableSMTPNetworking and $handler eq \&ConToThread);
+    return \@s,\@sinfo if ($DisableSMTPNetworking and $handler eq \&ConToThread);
     my $isWebListen = $handler eq \&NewWebConnection;
     my $isStatListen = $handler eq \&NewStatConnection;
     my $isSMTPListen = $handler eq \&ConToThread;
     $IO::Socket::SSL::DEBUG = $SSLDEBUG;
     foreach my $portA (split(/\|/o, $port)) {
-        if($portA !~ /$HostRe?:?$PortRe/o) {
+        if ($portA !~ /$HostRe?:?$PortRe/o) {
             mlog(0,"wrong (host) + port definition in '$portA' -- entry will be ignored !");
             next;
         }
@@ -14047,24 +14720,40 @@ sub newListenSSL {
 
         if ($CanUseIOSocketINET6) {
             my $isv4 = [&getDestSockDom($interface)]->[1] != AF_INET6;
-            my ($s4,$s6);
-            if (! $interface || $isv4) {
+            my ($s4,$s6,$v6only);
+            if (! $interface || ! $isv4) {
+                $parms{Domain} = AF_INET6;
+                $parms{LocalAddr} ||= '[::]';
+                if ($parms{LocalAddr} eq '[::]' && ! $Sysv6only && $can_enable_v6only) {
+                    my $obind = \&IO::Socket::INET6::bind;   # we need to set IPV6_V6ONLY before binding the socket
+                    *IO::Socket::SSL::INET6 = \&_ipv6_bind;
+                    $s6 = IO::Socket::SSL->new(%parms);
+                    *IO::Socket::INET6::bind = $obind;
+                } else {
+                    $s6 = IO::Socket::SSL->new(%parms)
+                }
+                if ($s6) {
+                    push @stt,$s6;
+                    # get the socket info, if binding to universal IPv6 [::] is unique or not
+                    if ($s6->sockhost eq '[::]') {
+                        eval {$v6only = $s6->getsockopt($IPPROTO_IPV6, $IPV6_V6ONLY);};
+                        if ($@ && $^O eq 'MSWin32') {
+                            $v6only = $Sysv6only;
+                        }
+                        ${*$s6}{'io_socket_isv6only'} = $v6only;
+                    }
+                } else {
+                    mlog(0,"error: unable to create IPv6 socket to $parms{LocalAddr}:$parms{LocalPort} - ".IO::Socket::SSL::errstr());
+                }
+                delete $parms{LocalAddr} if ! $interface;
+            }
+            if ((! $interface && $v6only) || $isv4) {
                 $parms{Domain} = AF_INET;
                 $parms{LocalAddr} ||= '0.0.0.0';
                 if ($s4 = IO::Socket::SSL->new(%parms)) {
                     push @stt,$s4;
                 } else {
                     mlog(0,"error: unable to create IPv4 socket to $parms{LocalAddr}:$parms{LocalPort} - ".IO::Socket::SSL::errstr());
-                }
-                delete $parms{LocalAddr} if ! $interface;
-            }
-            if (! $interface || ! $isv4) {
-                $parms{Domain} = AF_INET6;
-                $parms{LocalAddr} ||= '[::]';
-                if ($s6 = IO::Socket::SSL->new(%parms)) {
-                    push @stt,$s6;
-                } else {
-                    mlog(0,"error: unable to create IPv6 socket to $parms{LocalAddr}:$parms{LocalPort} - ".IO::Socket::SSL::errstr());
                 }
             }
         } else {
@@ -14085,7 +14774,7 @@ sub newListenSSL {
         }
 
         if(! @stt) {
-            mlog(0,"error: couldn't create server SSL-socket on port '$portA' -- maybe another service is running or I'm not root (uid=$>)? - or a wrong IP address is specified?");
+            mlog(0,"error: couldn't create server SSL-socket on port '$portA' -- maybe another service uses this listener or I'm not root (uid=$>)? -- or a wrong IP address is defined? -- $!");
             next;
         }
 
@@ -14095,103 +14784,105 @@ sub newListenSSL {
             &dopoll($s,$readable,POLLIN);
             push @s,$s;
             push @sinfo,$s->sockhost . ':' . $s->sockport;
+            if ($s->sockhost eq '[::]' && ! ${*$s}{'io_socket_isv6only'}) {
+                push @sinfo,'0.0.0.0:'.$s->sockport;
+                mlog(0,"info: the operating system IPv6 is configured to bind the universal IPv6 address [::] not only to IPv6 - it binds to IPv4 (0.0.0.0) also");
+            }
+            delete ${*$s}{'io_socket_isv6only'};
         }
     }
     return \@s,\@sinfo;
 }
 
 sub nixUsers {
-  my ($uid,$gid); ($uid,$gid) = getUidGid($runAsUser,$runAsGroup) if ($runAsUser || $runAsGroup);
-  if($ChangeRoot) {
-    my $chroot;
-    eval('$chroot=chroot($ChangeRoot)');
-    if($@) {
-      my $msg="request to change root to '$ChangeRoot' failed: $@";
-      mlog(0,$msg);
-      &downSPAMBOX($msg);
-      exit(1);
-    } elsif(! $chroot) {
-      my $msg="request to change root to '$ChangeRoot' did not succeed: $!";
-      mlog(0,$msg);
-      &downSPAMBOX($msg);
-      exit(1);
-    } else {
-      $chroot=$ChangeRoot; $chroot=~s/(\W)/\\$1/go;
-      $base=~s/^$chroot//io;
-      chdir("/");
-      mlog(0,"successfully changed root to '$ChangeRoot' -- new base is '$base'");
-    }
-  }
-
-  switchUsers($uid,$gid) if ($runAsUser || $runAsGroup);
+  my ($uid,$gid,$sgids); ($uid,$gid,$sgids) = getUidGid($runAsUser,$runAsGroup,$runAsGroupSupplementary) if ($runAsUser || $runAsGroup);
+  switchUsers($uid,$gid,$sgids) if ($runAsUser || $runAsGroup);
 }
 
-sub getUidGid { my ($uname,$gname)=@_;
+sub getUidGid { my ($uname,$gname,$sgnames)=@_;
   return if $AsAService;
   my $rname="root";
   eval('getgrnam($rname);getpwnam($rname);');
-  if($@) {
+  if ($@) {
 # windows pukes "unimplemented" for these -- just skip it
     mlog(0,"warning: uname and/or gname are set ($uname,$gname) but getgrnam / getpwnam give errors: $@");
     return;
   }
   my $gid;
-  if($gname) {
+  if ($gname) {
     $gid = getgrnam($gname);
-    if(defined $gid) {
-    } else {
+    if (! defined $gid) {
       my $msg="could not find gid for group '$gname' -- not switching effective gid -- quitting";
       mlog(0,$msg);
       &downSPAMBOX($msg);
       exit(1);
     }
   }
+  my @sgids;
+  foreach my $sgname (split(/\|/o, $sgnames)) {
+    my $sgid = getgrnam($sgname);
+    if (!defined $sgid) {
+      my $msg="could not find gid for supplementary group '$sgname' -- not switching supplementary gid -- quitting";
+      mlog(0,$msg);
+      &downSPAMBOX($msg);
+      exit(1);
+    }
+    push(@sgids,$sgid);
+  }
   my $uid;
-  if($uname) {
+  if ($uname) {
     $uid = getpwnam($uname);
-    if(defined $uid) {
-    } else {
+    if (! defined $uid) {
       my $msg="could not find uid for user '$uname' -- not switching effective uid -- quitting";
       mlog(0,$msg);
       &downSPAMBOX($msg);
       exit(1);
     }
   }
-  ($uid,$gid);
+  ($uid,$gid,join(' ',@sgids));
 }
 
-sub switchUsers { my ($uid,$gid)=@_;
+sub switchUsers { my ($uid,$gid,$sgids)=@_;
   return if $AsAService;
-  my($uname,$gname)=($runAsUser,$runAsGroup);
+  my($uname,$gname,$sgnames)=($runAsUser,$runAsGroup,join(' ',split(/\|/o,$runAsGroupSupplementary)));
   $>=0;
-  if($> != 0) {
+  if ($> != 0) {
     my $msg="requested to switch to user/group '$uname/$gname' but cannot set effective uid to 0 -- quitting; uid is $>";
     mlog(0,$msg);
     &downSPAMBOX($msg);
     exit(1);
   }
   $<=0;
-  if($gid) {
-    $)=$gid;
-    if($)+0==$gid) {
-      mlog(0,"switched effective gid to $gid ($gname)");
+  if ($gid) {
+    $)=join(' ',$gid,$sgids);
+    if ($)+0==$gid) {
+      if ($sgids) {
+        mlog(0,"switched effective gid to $gid ($gname) with supplementary groups $sgids ($sgnames)");
+      } else {
+        mlog(0,"switched effective gid to $gid ($gname)");
+      }
     } else {
-      my $msg="failed to switch effective gid to $gid ($gname) -- effective gid=$) -- quitting";
+      my $msg;
+      if ($sgids) {
+        $msg="failed to switch effective gid to $gid ($gname) with supplementary groups $sgids ($sgnames) -- effective gid=$) -- quitting";
+      } else {
+        $msg="failed to switch effective gid to $gid ($gname) -- effective gid=$) -- quitting";
+      }
       mlog(0,$msg);
       &downSPAMBOX($msg);
       exit(1);
     }
     $(=$gid;
-    if($(+0==$gid) {
+    if ($(+0==$gid) {
       mlog(0,"switched real gid to $gid ($gname)");
     } else {
       mlog(0,"failed to switch real gid to $gid ($gname) -- real uid=$(");
     }
   }
-  if($uid) {
+  if ($uid) {
 # do it both ways so linux and bsd are happy
    $< = $> = $uid;
-    if($>==$uid) {
+    if ($>==$uid) {
       mlog(0,"switched effective uid to $uid ($uname)");
       $switchedUser = 1;
     } else {
@@ -14200,7 +14891,7 @@ sub switchUsers { my ($uid,$gid)=@_;
       &downSPAMBOX($msg);
       exit(1);
     }
-    if($<==$uid) {
+    if ($<==$uid) {
       mlog(0,"switched real uid to $uid ($uname)");
       $switchedUser = 1;
     } else {
@@ -14294,7 +14985,7 @@ sub MainLoop {
   if ($maxwait && $ThreadsDoStatus && $stime - $lastThreadsDoStatus > 5) {
       d('stop Status collection');
       $ThreadsDoStatus = 0;
-      mlog(0,"info: stop Threads collecting status information") if($MaintenanceLog);
+      mlog(0,"info: stop Threads collecting status information") if ($MaintenanceLog);
       &ThreadYield();
       %ConFno = ();
       undef %ConFno;
@@ -14423,7 +15114,7 @@ sub MainLoop {
 
   d('mainloop before restart check');
 
-  if($RestartEvery && $itime >= $endtime) {
+  if ($RestartEvery && $itime >= $endtime) {
 # time to quit -- after endtime and we're bored.
         mlog(0,"info: restart time is reached - waiting until all connection are gone but max 5 minutes");
         while ($smtpConcurrentSessions && time < $endtime + 300) {
@@ -14558,7 +15249,7 @@ sub MainLoop2 {
     } until (@canread==0 || $time >= $nextLoop2);
     $nextLoop2=Time::HiRes::time()+0.3; # 0.3s for other tasks
 
-    if($RestartEvery && $itime >= $endtime) {
+    if ($RestartEvery && $itime >= $endtime) {
 # time to quit -- after endtime and we're bored.
         &downSPAMBOX("restarting");
         _spambox_try_restart;
@@ -14821,7 +15512,10 @@ sub LoadHash {
                my ($KeyName,$dbConfig,$CacheObject,$realFileName,$mysqlFileName,$FailoverValue,$mysqlTable) = split(/,/o,$dbGroupEntry);
                next if $KeyName ne $hash;
                if ($count < 2000) {
-                   mlog(0,"warning: $hashname contains $count records - it is recommended to use a database for '$dbConfig' to prevent memory leaking") if (! $EnableHighPerformance || $EnableHighPerformance > 500);
+                   if (! $EnableHighPerformance || $EnableHighPerformance > 500) {
+                       mlog(0,"warning: $hashname contains $count records - it is recommended to use a database for '$dbConfig' to prevent memory leaking");
+                       $Recommends{$hashname} = "the $hashname contains $count records - it is recommended to use a database for '$dbConfig' to prevent memory leaking";
+                   }
                } else {
                    my $i = $count * 2;
                    my $exp = 7;
@@ -14830,10 +15524,15 @@ sub LoadHash {
                        $exp++;
                    }
                    $i = 2 ** $exp + $count * 4 + ($size * ($NumComWorkers + 3));
-                   mlog(0,"error: $hashname contains $count records (allocating approx. " . &formatDataSize($i,1) . " shared memory) - it is highly recommended to use a database for '$dbConfig' to reduce memory usage and to prevent memory leaking") if (! $EnableHighPerformance || $EnableHighPerformance > 500);
+                   if (! $EnableHighPerformance || $EnableHighPerformance > 500) {
+                       mlog(0,"error: $hashname contains $count records (allocating approx. " . &formatDataSize($i,1) . " shared memory) - it is highly recommended to use a database for '$dbConfig' to reduce memory usage and to prevent memory leaking");
+                       $Recommends{$hashname} = "the $hashname contains $count records (allocating approx. " . &formatDataSize($i,1) . " shared memory) - it is highly recommended to use a database for '$dbConfig' to reduce memory usage and to prevent memory leaking";
+                   }
                }
            }
        }
+   } else {
+       delete $Recommends{$hashname};
    }
    return if ($ignorefile);
 
@@ -14949,6 +15648,7 @@ sub CleanCache {
   &cleanCacheMXA() if $DoDomainCheck && $MXACacheInterval;
   &cleanCacheSPF() if $ValidateSPF && $SPFCacheInterval;
   &cleanCacheDKIM() if $DoDKIM && $DKIMCacheInterval;
+  &cleanCacheAUTHIP() if $AUTHUserIPfrequency;
   &cleanCacheSB()  if $SBCacheExp;
   &cleanCacheBackDNS() if $BackDNSInterval;
   &cleanCachePersBlack();
@@ -15060,11 +15760,53 @@ sub Whitelist {
     }
 }
 
+# remove entries from whitelistdb, if they are made only by bounce addresses
+sub RepairWhitelist {
+  d('RepairWhitelist');
+  &ThreadMaintMain2() if $WorkerNumber == 10000;
+  mlog(0,"repair whitelist database ...") if $MaintenanceLog;
+  my $keys_before = my $keys_deleted = 0;
+  my (%todelete, %tokeep);
+  while (my ($k,$v)=each(%Whitelist)) {
+      &ThreadMaintMain2() if $WorkerNumber == 10000 && ! $keys_before % 100;
+      $keys_before++;
+      $v = 0 unless $v;
+      next if $v < 1000000000;   # special time - is never removed
+      my ($to,$from) = split(/,/o,$k);
+      next if (! $from || $from =~ /^\@$EmailDomainRe$/o);   # ignore a global or domain entry here
+      if ($from =~ /$BSRE/) {
+          $todelete{$to} = 1;     # mark address for deletion
+          delete $Whitelist{$k};  # delete this entry, it is related to a bounce addresses
+          $keys_deleted++;
+          mlog(0,"Admininfo: $k removed from whitelistdb - entry is related to a bounce address") if $MaintenanceLog >= 2;
+      } else {
+          $tokeep{$to} = 1 if $v <= 9999999999;       # keep all others they are not personal removed
+      }
+  }
+  while (my ($k,$v)=each(%tokeep)) {
+      delete $todelete{$k};       # there are whitelistings from others - do not delete them
+  }
+  $keys_before = 0;
+  while (my ($k,$v)=each(%Whitelist)) {
+      &ThreadMaintMain2() if $WorkerNumber == 10000 && ! $keys_before % 100;
+      $keys_before++;
+      my ($to,$from) = split(/,/o,$k);
+      if (exists $todelete{$to}) {  # delete remaining global and domain entries
+          delete $Whitelist{$k};
+          $keys_deleted++;
+          mlog(0,"Admininfo: $k removed from whitelistdb - entry was made from bounce address") if $MaintenanceLog >= 2;
+      }
+  }
+  mlog(0,"repair whitelist database finished: keys before=$keys_before, deleted=$keys_deleted") if $keys_before && $MaintenanceLog;
+  &SaveWhitelistOnly();
+}
+
 sub CleanWhitelist {
   d('CleanWhitelist');
   &ThreadMaintMain2() if $WorkerNumber == 10000;
   mlog(0,"cleaning up whitelist database ...") if $MaintenanceLog;
   my $t=time;
+  my %global;
   my $keys_before = my $keys_deleted = 0;
   my $maxtime = $MaxWhitelistDays * 3600 * 24;
   if ($MaxWhitelistDays) {
@@ -15074,12 +15816,28 @@ sub CleanWhitelist {
         $v = 0 unless $v;
         next if $v < 1000000000;
         my $delta = $t-$v;
-        if ($delta >= $maxtime or ($k=~/,/o && $v > 9999999999 && $delta + 9999999999 >= $maxtime)) {
+        if (   $delta >= $maxtime
+            || ($k=~/,/o && $v > 9999999999 && $delta + 9999999999 >= $maxtime)
+            || $k =~ /^[^\@]*\*[^\@]*\@/o )
+        {
           delete $Whitelist{$k};
           $v -= 9999999999 if $v > 9999999999;
           mlog(0,"Admininfo: $k removed from whitelistdb - entry was outdated (" . &timestring($v,'') . ')') if $MaintenanceLog >= 2;
           $keys_deleted++;
+          $global{$k} = 1 if $k =~ /^[^\@]*\*[^\@]*\@/o;
         }
+      }
+      if (keys %global) {
+          if (open(my $f,'>>',"$base/whitelistdb.removed.wildcard.entries.txt")) {
+              binmode $f;
+              print $f &timestring()."\nlisting of wildcard entries removed from Whitelist\n";
+              print $f "wildcard entries are no longer supported in the Whitelist\n";
+              print $f "possibly add them to the whitelistedDomains list\n\n";
+              for (sort keys %global) {print $f "$_\n"};
+              print $f "\n\n";
+              close $f;
+              mlog(0,"list of wildcard entries removed from Whitelist was exported to file '$base/whitelistdb.removed.wildcard.entries.txt'") if $MaintenanceLog;
+          }
       }
       mlog(0,"cleaning whitelist database finished: keys before=$keys_before, deleted=$keys_deleted") if $keys_before && $MaintenanceLog;
   }
@@ -15099,7 +15857,7 @@ sub mlogRe{
 	$subre =~ s/\s+/ /go;
 	$subre=substr($subre,0,$RegExLength);
 	$this->{messagereason}="Regex: $regextype '$subre'";
- 	$this->{myheader}.="X-Assp-Re-$regextype: $subre\r\n" if $AddRegexHeader;
+ 	$this->{myheader}.="X-Spambox-Re-$regextype: $subre\r\n" if $AddRegexHeader;
     my $m;
 	$m = $check . ' ' if $check;
 	$m .= $this->{messagereason};
@@ -15252,11 +16010,12 @@ sub mlog {
 
     my $m = &timestring();
 
-    if($LogRollDays > 0 && $WorkerNumber == 0 && ! $comment) {
+    if ($LogRollDays > 0 && $WorkerNumber == 0 && ! $comment) {
 
+        my $error;
         # roll log every $LogRollDays days, at midnight
         my $t=int((time + TimeZoneDiff())/($LogRollDays*24*3600));
-        if($logfile && $mlogLastT && $t != $mlogLastT && $logfile ne 'maillog.log' && $spamboxLog) {
+        if ($logfile && $mlogLastT && $t != $mlogLastT && $logfile ne 'maillog.log' && $spamboxLog) {
 
             # roll the log
             my $mm = &timestring(time - 7200,'d',$LogNameDate);
@@ -15277,34 +16036,44 @@ sub mlog {
             &closeLogs();
             sleep 1;
             $ThreadIdleTime{$WorkerNumber} += 1;
-            if ($ExtraBlockReportLog) {
+            if ($ExtraBlockReportLog && ! -e "$base/$archivelogfileBR") {
                 rename("$base/$blogfile", "$base/$archivelogfileBR");
                 my $e = $!;
                 if ($e && ! -e "$base/$archivelogfileBR") {
-                    print "error: unable to rename file $base/$blogfile to $base/$archivelogfileBR - $e\n";
+                    print "error: unable to rename file $base/$blogfile to $base/$archivelogfileBR - $e\n" unless $silent;
                     threads->yield();
                     $mlogQueue->enqueue("error: unable to rename file $base/$blogfile to $base/$archivelogfileBR - $e\n");
                     threads->yield();
+                    $error |= 2;
                 }
             }
-            rename("$base/$logfile", "$base/$archivelogfile");
-            my $e = $!;
-            if ($e && ! -e "$base/$archivelogfile") {
-                print "error: unable to rename file $base/$logfile to $base/$archivelogfile - $e\n";
-                threads->yield();
-                $mlogQueue->enqueue("error: unable to rename file $base/$logfile to $base/$archivelogfile - $e\n");
-                threads->yield();
+            if (! -e "$base/$archivelogfile") {
+                rename("$base/$logfile", "$base/$archivelogfile");
+                my $e = $!;
+                if ($e && ! -e "$base/$archivelogfile") {
+                    print "error: unable to rename file $base/$logfile to $base/$archivelogfile - $e\n" unless $silent;
+                    threads->yield();
+                    $mlogQueue->enqueue("error: unable to rename file $base/$logfile to $base/$archivelogfile - $e\n");
+                    threads->yield();
+                    $error |= 1;
+                }
             }
             &openLogs();
-            print $LOG "$m $WorkerName new log file -- old log file renamed to '$archivelogfile'\n" if fileno($LOG);
-            print $LOG "$m $WorkerName new blog file -- old log file renamed to '$archivelogfileBR'\n" if $ExtraBlockReportLog && fileno($LOG);
-            w32dbg("$m $WorkerName new log file -- old log file renamed to '$archivelogfile'") if ($CanUseWin32Debug);
-            w32dbg("$m $WorkerName new log file -- old log file renamed to '$archivelogfileBR'") if $CanUseWin32Debug && $ExtraBlockReportLog;
+            print $LOG "$m $WorkerName new log file -- old log file renamed to '$archivelogfile'\n" if fileno($LOG) && ! ($error & 1);
+            print $LOG "$m $WorkerName new blog file -- old log file renamed to '$archivelogfileBR'\n" if $ExtraBlockReportLog && fileno($LOG) && ! ($error & 2);
+            w32dbg("$m $WorkerName new log file -- old log file renamed to '$archivelogfile'") if ($CanUseWin32Debug) && ! ($error & 1);
+            w32dbg("$m $WorkerName new log file -- old log file renamed to '$archivelogfileBR'") if $CanUseWin32Debug && $ExtraBlockReportLog && ! ($error & 2);
         }
-        $mlogLastT=$t;
+        if ($error && $rotLogRetry) {
+            $rotLogRetry--;  # retry 10 times on error with the next empty $comment in worker_0
+        } else {
+            print $LOG "$m $WorkerName giving up renaming the log files after 10 retries\n" if fileno($LOG) && $rotLogRetry <= 0;
+            $mlogLastT = $t;
+            $rotLogRetry = 10;
+        }
     }
 
-    return 1 if((! $comment || $comment =~ /^[\s\r\n]+$/o) && ($fh == 0 || $WorkerNumber == 0));
+    return 1 if ((! $comment || $comment =~ /^[\s\r\n]+$/o) && ($fh == 0 || $WorkerNumber == 0));
 
     my @m;
     if ($this) {
@@ -15315,8 +16084,8 @@ sub mlog {
                 $m .= ("$fh" =~ /SSL/io && $this->{oldfh})
                     ? ' [TLS-in]' : ("$fh" =~ /SSL/io && ! $this->{oldfh})
                     ? ' [SSL-in]' : '';
-                $m .= ("$this->{friend}" =~ /SSL/io && $Con{$this->{friend}}->{oldfh})
-                    ? ' [TLS-out]' : ("$this->{friend}" =~ /SSL/io && ! $Con{$this->{friend}}->{oldfh})
+                $m .= ("$this->{friend}" =~ /SSL/io && exists $Con{$this->{friend}} && $Con{$this->{friend}}->{oldfh})
+                    ? ' [TLS-out]' : ("$this->{friend}" =~ /SSL/io && exists $Con{$this->{friend}} && ! $Con{$this->{friend}}->{oldfh})
                     ? ' [SSL-out]' : '';
             }
         }
@@ -15374,7 +16143,8 @@ sub mlog {
                   $EmailFrom,
                   $rcpt,
                   $sub,
-                  "log event on host $myName:\r\n\r\n$comment\r\n");
+                  "log event on host $myName:\r\n\r\n$comment\r\n\r\n".
+                  "full line in log is:\r\n\r\n$m\r\n");
             }
         }
     }
@@ -15525,6 +16295,7 @@ sub setSSLfailed {
     return;
 }
 
+# switch the connected client to SSL (we are the SSL-server)
 sub switchSSLClient {
     my $fh =shift;
     my $sslfh;
@@ -15534,12 +16305,12 @@ sub switchSSLClient {
              SSL_startHandshake => 1,
              getSSLParms(1)
              });
-    while ($try-- && "$sslfh" !~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_WRITE') ) && $SSLRetryOnError)
+    while ($try-- && "$sslfh" !~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE') ) && $SSLRetryOnError)
     {
          &ThreadYield();
          Time::HiRes::sleep(0.5);
          $ThreadIdleTime{$WorkerNumber} += 0.5;
-         mlog($fh,"info: retry ($try) SSL negotiation - peer socket was not ready");
+         mlog($fh,"info: retry ($try) SSL negotiation - peer socket was not ready - $IO::Socket::SSL::SSL_ERROR");
          
          $sslfh = IO::Socket::SSL->start_SSL($fh,{
              SSL_startHandshake => 1,
@@ -15553,6 +16324,8 @@ sub switchSSLClient {
     }
     return $sslfh,$fh;
 }
+
+# switch the connected server to SSL (we are the SSL-client)
 sub switchSSLServer {
     my $fh =shift;
     my $sslfh;
@@ -15562,12 +16335,12 @@ sub switchSSLServer {
              SSL_startHandshake => 1,
              getSSLParms(0)
              });
-    while ($try-- && "$sslfh" !~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_WRITE') ) && $SSLRetryOnError)
+    while ($try-- && "$sslfh" !~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE') ) && $SSLRetryOnError)
     {
          &ThreadYield();
          Time::HiRes::sleep(0.5);
          $ThreadIdleTime{$WorkerNumber} += 0.5;
-         mlog($fh,"info: retry ($try) SSL negotiation - peer socket was not ready");
+         mlog($fh,"info: retry ($try) SSL negotiation - peer socket was not ready - $IO::Socket::SSL::SSL_ERROR");
 
          $sslfh = IO::Socket::SSL->start_SSL($fh,{
              SSL_startHandshake => 1,
@@ -15636,7 +16409,7 @@ sub NewSMTPConnectionConnect {
         $client = $fhh->accept;
     } else {
         # some OS may return on non-blocking ->accept immediately but setting EAGAIN or EWOULDBLOCK
-        # $client is retured but $client->connected is set to undef in case
+        # $client is returned but $client->connected is set to undef in case
         my $st = Time::HiRes::time();
         while ((! $client || ! $client->connected) && (Time::HiRes::time() - $st) < $tout) {
             $client = $fhh->accept;
@@ -15644,14 +16417,14 @@ sub NewSMTPConnectionConnect {
     }
     
     if(! $client || ! $client->connected) {
-        while ((! $client || ! $client->connected) && $isSSL && $retry-- && ($IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_WRITE') ) && $SSLRetryOnError) {
+        while ((! $client || ! $client->connected) && $isSSL && $retry-- && ($IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE') ) && $SSLRetryOnError) {
             &ThreadYield();
             Time::HiRes::sleep(0.5);
             $ThreadIdleTime{$WorkerNumber} += 0.5;
             $mlog->(0,"info: retry ($retry) SSL negotiation - peer socket was not ready - ".IO::Socket::SSL::errstr()) if $ConnectionLog;
             $client = $fhh->accept;
         }
-        if (! $client || $client->connected) {
+        if (! $client || ! $client->connected) {
             my $error = $isSSL ? IO::Socket::SSL::errstr() : $!;
             eval{$timeout = $fhh->timeout();};
             $mlog->(0,"error: $WorkerName accept to client failed $fhh (timeout: $timeout s) : $error");
@@ -15938,7 +16711,8 @@ sub NewSMTPConnection {
 
     if ($MaxAUTHErrors &&
         $doIPcheck &&
-        $AUTHErrors{$bip} > $MaxAUTHErrors
+        $AUTHErrors{$bip} > $MaxAUTHErrors &&
+        ! matchIP($ip,'noMaxAUTHErrorIPs',0,0)
        )
     {
         d("NewSMTPConnection - AUTHError ip: $client");
@@ -15953,6 +16727,10 @@ sub NewSMTPConnection {
         return;
     }
     
+    if ($isSSL && $ConnectionLog >= 2) {
+        my ($sslv, $sslc) = ($client->get_sslversion(),$client->get_cipher());
+        mlog(0,"client $ip connected using SSL - $sslv , $sslc");
+    }
     my $intentForIP;
     my $peerhost;
     my $peerport;
@@ -15963,7 +16741,7 @@ sub NewSMTPConnection {
             $localip = '[::1]' if ($localip eq '::');
             if (exists $crtable{$localip}) {
                 $destinationA=$crtable{$localip};
-                $intentForIP = "X-Assp-Intended-For-IP: $localip\r\n";
+                $intentForIP = "X-Spambox-Intended-For-IP: $localip\r\n";
             } else {
                 $destinationA = $localip .':'.$2;
             }
@@ -16002,6 +16780,7 @@ sub NewSMTPConnection {
             threads->yield;
             if(ref($server) && eval{$peerhost = $server->peerhost(); $peerport = $server->peerport();$peerhost && $peerport;} ) {
                 $destination=$destinationA;
+                $useSSL .= ' - ' .$server->get_sslversion() .' , '. $server->get_cipher() if $useSSL;
                 d("connected to server $server at $peerhost:$peerport$useSSL");
                 mlog(0,"info: connected to server at $peerhost:$peerport$useSSL") if $ConnectionLog >= 2;
                 last;
@@ -16068,7 +16847,7 @@ sub NewSMTPConnection {
     $Con{$client}->{localport}= $localport;
     $Con{$client}->{relayok}  = $relayok;
     $Con{$client}->{myheaderCon} .= $intentForIP if $intentForIP;
-    $Con{$client}->{myheaderCon} .= "X-Assp-Client-SSL: yes\r\n" if $isSSL;
+    $Con{$client}->{myheaderCon} .= "X-Spambox-Client-SSL: yes\r\n" if $isSSL;
     $Con{$client}->{chainMailInSession} = -1;
     $Con{$client}->{type}     = 'C';
     $Con{$client}->{fno}      = $fnoC;
@@ -16126,29 +16905,57 @@ sub SMTPTraffic {
     my $fh=shift;
     $SMTPbuf = '';
     my $ip = $Con{$fh}->{ip};
+    my $sslwantrw;
+    $sslwantrw = $Con{$fh}->{sslwantrw} if exists $Con{$fh}->{sslwantrw};
     my $pending = 0;
-    eval{$pending = $fh->pending();} if ("$fh" =~ /SSL/io);
-    $SMTPmaxbuf = max( $SMTPmaxbuf, 16384 , ($MaxBytes + 4096), $pending);
     $Con{$fh}->{prepend} = '';
     $Con{$fh}->{socketcalls}++;
     $fh->blocking(0) if $fh->blocking;
+    my $hasread;
     &sigoffTry(__LINE__);
-    my $hasread = $fh->sysread($SMTPbuf, $SMTPmaxbuf);
+    $hasread = $fh->sysread($SMTPbuf, $Con{$fh}->{RCVBUF});
+    if ("$fh" =~ /SSL/io && $hasread > 0) {
+        while ($hasread && ($pending = $fh->pending())) {
+            mlog(0,"warning: there are $pending byte pending in SSL buffer - this should not happen");
+            my $buff;
+            $hasread = $fh->sysread($buff, $Con{$fh}->{RCVBUF});
+            $SMTPbuf .= $buff;
+        }
+    }
     &sigonTry(__LINE__);
-    if ($hasread == 0 && "$fh" =~ /SSL/io && IO::Socket::SSL::errstr() =~ /SSL wants a/io) {
+    my $hasSSLrwerr;
+    if (! defined($hasread) && "$fh" =~ /SSL/io && $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE')) {
+        &dopoll($fh,$writable,POLLOUT);
+        $hasSSLrwerr = 1;
+        mlog($fh,'info: ssl-read - renegotiation in progress - SSL_WANT_WRITE') if ($ConnectionLog > 1 && $Con{$fh}->{lastReadError} ne 'SSL_WANT_WRITE');
+        $Con{$fh}->{lastReadError} = 'SSL_WANT_WRITE';
+    } elsif (! defined($hasread) && "$fh" =~ /SSL/io && $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ')) {
+        $hasSSLrwerr = 1;
+        mlog($fh,'info: ssl-read - renegotiation in progress - SSL_WANT_READ') if ($ConnectionLog > 1 && $Con{$fh}->{lastReadError} ne 'SSL_WANT_READ');
+        $Con{$fh}->{lastReadError} = 'SSL_WANT_READ';
+    } elsif ("$fh" =~ /SSL/io) {
+        if ((my $e = delete $Con{$fh}->{lastReadError}) && $ConnectionLog > 1) {
+            mlog($fh,"info: ssl-read renegotiation finished - recovered from - $e");
+        }
+    }
+    if ($hasSSLrwerr) {
         ThreadYield();
         $Con{$fh}->{sslwantrw} ||= time;
-        if (time - $Con{$fh}->{sslwantrw} > $SSLtimeout) {
-            my $lastcmd = "- last command was \'$Con{$fh}->{lastcmd}\'";
-            $lastcmd = '' unless $Con{$fh}->{lastcmd};
-            mlog($fh,"info: can't read from SSL-Socket for $SSLtimeout seconds - close connection - $! $lastcmd") if ($ConnectionLog);
-            delete $Con{$fh}->{sslwantrw};
-            setSSLfailed($ip);
-            done2($fh);
+        if (! length($SMTPbuf)) {
+            if (time - $Con{$fh}->{sslwantrw} > $SSLtimeout) {
+                my $lastcmd = "- last command was \'$Con{$fh}->{lastcmd}\'";
+                $lastcmd = '' unless $Con{$fh}->{lastcmd};
+                mlog($fh,"info: can't read from SSL-Socket (renegotiation took too long) for at least $SSLtimeout seconds - close connection - $! $lastcmd") if ($ConnectionLog);
+                delete $Con{$fh}->{sslwantrw};
+                setSSLfailed($ip);
+                done2($fh);
+            }
+            return;
         }
-        return;
     }
     delete $Con{$fh}->{sslwantrw};
+    return if ($sslwantrw && ! ($hasread > 0 or length($SMTPbuf) > 0));
+
     if($hasread > 0 or length($SMTPbuf) > 0) {
         my $crashfh = $Con{$fh}->{crashfh};
         if ($crashfh) {
@@ -16208,8 +17015,12 @@ sub SMTPTraffic {
             $SMTPbuf =~ /^\.(?:\x0D?\x0A)?$/o  or
             $SMTPbuf =~ /\x0D?\x0A\.\x0D?\x0A$/o)
         {
-            while (($bn=index($SMTPbuf,"\n",$bn+1)) >= 0) {
-                my $s=substr($SMTPbuf,$lbn+1,$bn-$lbn);
+            # do not split the early SSL-Client-Handshake-Frame
+            my $needall = (! $Con{$fh}->{lastcmd} && $SMTPbuf =~ /^\x16[\x00-\xFF][\x00-\xFF][\x00-\xFF]{2}(?:\x01|\x02)|^\x80[\x00-\xFF](?:\x01|\x02)[\x00-\xFF][\x00-\xFF]/os);
+
+            while (($bn=index($SMTPbuf,"\n",$bn+1)) >= 0 || ($needall && $SMTPbuf)) {
+                my $s = $needall ? $SMTPbuf : substr($SMTPbuf,$lbn+1,$bn-$lbn);
+                $Con{$fh}->{_} = $SMTPbuf = '' if $needall;
                 if(defined($Con{$fh}->{bdata})) { $Con{$fh}->{bdata}-=length($s); }
                 d("doing line <$s>");
 
@@ -16219,7 +17030,8 @@ sub SMTPTraffic {
 
                 if ($Con{$fh}->{type} eq 'C' &&
                     ! $Con{$fh}->{headerpassed} &&
-                    ! $Con{$fh}->{relayok})
+                    ! $Con{$fh}->{relayok} &&
+                    ! $Con{$fh}->{reportaddr})
                 {
                     if ($preHeaderRe && $s =~ /($preHeaderReRE)/i) {
                         $Con{$fh}->{prepend} = '[preHeaderRE][block]';
@@ -16325,6 +17137,84 @@ sub SMTPTraffic {
         done2($fh);
     }
     &NewSMTPConCall();
+}
+
+sub SMTPWrite {
+    my $fh = shift;
+    d("SMTPWrite - $fh"),
+    my $l=length($Con{$fh}->{outgoing});
+    if($l) {
+        $thread_nolog = 0;
+        $fh->blocking(0) if $fh->blocking;
+        &sigoff(__LINE__);
+        my $written;
+        my $towrite = min($Con{$fh}->{SNDBUF},length($Con{$fh}->{outgoing}));
+        $towrite = $Con{$fh}->{sslwritestate} if exists $Con{$fh}->{sslwritestate};
+        eval{$written=$fh->syswrite(substr($Con{$fh}->{outgoing},0,$towrite),$towrite);};
+        my $werr;
+        $werr = ' - '.$! if $!;
+        $werr = ' - '.$@ if $@;
+        if ("$fh" =~ /SSL/io && $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ')) {
+            $written = 0;
+            $werr = ' - SSL_WANT_READ';
+            &dopoll($fh,$readable,POLLIN);
+            $Con{$fh}->{sslwritestate} = $towrite;
+        } elsif ("$fh" =~ /SSL/io && $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE')) {
+            $written = 0;
+            $werr = ' - SSL_WANT_WRITE';
+            $Con{$fh}->{sslwritestate} = $towrite;
+        } elsif ("$fh" =~ /SSL/io) {
+            delete $Con{$fh}->{sslwritestate};
+        }
+        &sigon(__LINE__);
+        if (!$written && $werr) {
+            if ("$fh" =~ /SSL/io) {
+                my $text = $werr =~ /SSL_WANT_/o ? 'renegotiation in progress' : 'error';
+                mlog($fh,"info: ssl-write $text$werr",1) if $ConnectionLog > 1 && $Con{$fh}->{lastWriteError} ne $werr;
+            } else {
+                mlog($fh,"info: write error$werr",1) if $ConnectionLog > 1 && $Con{$fh}->{lastWriteError} ne $werr;
+            }
+            $Con{$fh}->{lastWriteError} = $werr;
+        } elsif (! $werr) {
+            if ((my $e = delete $Con{$fh}->{lastWriteError}) && $ConnectionLog > 1 && "$fh" =~ /SSL/io) {
+                mlog($fh,"info: ssl-write renegotiation finished - recovered from$e") if $e =~ /SSL_WANT_/o;
+            }
+        }
+        $Con{$fh}->{lastwritten} = time if $written;
+        if($debug or $ThreadDebug) {
+            if ($debugNoWriteBody) {
+                d("wrote: $fh $Con{$fh}->{ip} ($written)$werr");
+            } else {
+                d("wrote: $fh $Con{$fh}->{ip} ($written)<".substr($Con{$fh}->{outgoing},0,$written).">$werr");
+            }
+        }
+        if ($ConTimeOutDebug) {
+            my $m = &timestring();
+            if ($Con{$fh}->{type} eq 'C'){
+              $Con{$fh}->{contimeoutdebug} .= "$m client wrote = ".substr($Con{$fh}->{outgoing},0,$written);
+            } else {
+              $Con{$Con{$fh}->{friend}}->{contimeoutdebug} .= "$m server wrote = ".substr($Con{$fh}->{outgoing},0,$written);
+            }
+        }
+        my $done = length($Con{$fh}->{outgoing}) == $written && $Con{$fh}->{outgoing} =~ /(?:^|\x0A)\.\x0D\x0A$/o;
+        $Con{$fh}->{outgoing}=substr($Con{$fh}->{outgoing},$written) if $written;
+        $l=length($Con{$fh}->{outgoing});
+        mlog($Con{$fh}->{friend},"info: all DATA written to server - sent [CR][LF].[CR][LF]") if $ConnectionLog > 1 && ! $l && $done;
+
+        # test for highwater mark - paused is never set for SSL/TLS
+        if($written>0 && $l < $OutgoingBufSizeNew && $Con{$fh}->{paused}) {
+            $Con{$fh}->{paused}=0;
+            &dopoll($Con{$fh}->{friend},$readable,POLLIN) if (fileno($Con{$fh}->{friend}));
+        }
+        if ($Con{$fh}->{type} ne 'C' &&
+            $written > 0 &&
+            $Con{$fh}->{friend} &&
+            exists $Con{$Con{$fh}->{friend}} &&
+            $Con{$Con{$fh}->{friend}}->{lastcmd} =~ /^ *(?:DATA|BDAT)/io )
+        {
+            $Con{$Con{$fh}->{friend}}->{writtenDataToFriend} += $written;
+        }
+    }  # end if $l
 }
 
 sub SMTPTimeOut {
@@ -16434,7 +17324,7 @@ sub loadexportedRE {
     binmode $optRE;
     my $re = join('',<$optRE>);
     close $optRE;
-    if (exists $CryptFile{"$base/files/optRE/$name.txt"} && $re =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
+    if (exists $CryptFile{"$base/files/optRE/$name.txt"} && $re =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
         $re = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT($re);
     }
     return $re;
@@ -16664,6 +17554,14 @@ sub PopB4Merak {
   return 0;
 }
 
+sub replaceLiterals {
+     my ($fh,$str) = @_;
+    $$str =~ s/SESSIONID/$Con{$fh}->{msgtime} $Con{$fh}->{SessionID}/go;
+    $$str =~ s/MYNAME/$myName/go;
+    $$str =~ s/IPCONNECTED/$Con{$fh}->{ip}/go;
+    $$str =~ s/IPORIGIN/$Con{$fh}->{cip}/go;
+}
+
 sub NoLoopSyswrite {
     my ($fh,$out,$timeout) = @_;
     d('NoLoopSyswrite');
@@ -16674,6 +17572,7 @@ sub NoLoopSyswrite {
     my $ip;
     my $port;
     my $error;
+    my $lastWriteError;
     eval{
       $ip=$fh->peerhost();
       $port=$fh->peerport();
@@ -16687,8 +17586,7 @@ sub NoLoopSyswrite {
         && ($replyLogging == 2 or ($replyLogging == 1 && $out =~ /^[45]/o))
         && $out =~ /^(?:[1-5]\d\d\s+[^\r\n]+\r\n)+$/o)    # is a reply?
     {
-        $out =~ s/SESSIONID/$Con{$fh}->{msgtime} $Con{$fh}->{SessionID}/go;
-        $out =~ s/MYNAME/$myName/go;
+        replaceLiterals($fh,\$out);
         my @reply = split(/(?:\r?\n)+/o,$out);
         for (@reply) {
             next unless $_;
@@ -16727,12 +17625,25 @@ sub NoLoopSyswrite {
             if ($ConnectionLog >= 2 and $polltime > 3);
         $written = 0;
         $error = 0;
-        eval{$written = $fh->syswrite($out,length($out));
+        my $SSLwant;
+        my $maxlen = (exists $Con{$fh} && $Con{$fh}->{SNDBUF}) ? $Con{$fh}->{SNDBUF} : $maxTCPSNDbuf || 16384;
+        $maxlen = 16384 if "$fh" =~ /SSL/io;
+        eval{my $towrite = min($maxlen, length($out));
+             $written = $fh->syswrite($out,$towrite);
              $error = $!;
-             $error = '' if ("$fh" =~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_READ') ? 1 : $IO::Socket::SSL::SSL_ERROR == eval('SSL_WANT_WRITE') ) );
+             if ($SSLwant = "$fh" =~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ') || $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE'))) {
+                 $error = '';
+                 $written = 0;
+                 mlog($fh,"info: ssl-direct-write - renegotiation in progress - $IO::Socket::SSL::SSL_ERROR") if ($ConnectionLog > 1 && $lastWriteError ne "$IO::Socket::SSL::SSL_ERROR");
+                 $lastWriteError = "$IO::Socket::SSL::SSL_ERROR";
+             }
         } if @canwrite or "$fh" =~ /SSL/io;
+        if ($lastWriteError && $written) {
+            mlog($fh,"info: ssl-direct-write - renegotiation finished - recovered from $lastWriteError") if $ConnectionLog > 1;
+            $lastWriteError = undef;
+        }
         $allwritten += $written;
-        if (@canwrite && ! $written && ($@ or $error)) {
+        if (@canwrite && ! $written && ! $SSLwant && ($@ or $error)) {
             my $er = $error . $@;
             if ($ConnectionLog == 3 && ! ($WorkerNumber == 0 && $er =~ /Wide character in syswrite/io)) {
                 mlog(0,"warning: unable to write to socket $ip:$port $error") if $error;
@@ -16778,7 +17689,7 @@ sub SNMPStats {
     );
     my $str = &ConfigStatsXml();
     my %st;
-    while ($str =~ /<stat +name='(.+?)' type='(.+?)'>(.*?)<\/stat>/gso) {
+    while ($str =~ /<stat +name='(.+?)' +type='(.+?)'\s*>(.*?)<\/stat>/gso) {
         $st{$1}{$subh{$2}}=$3 if $subh{$2};
     }
     delete $st{memusage};
@@ -16965,7 +17876,7 @@ sub SNMPload_1 {
     $subOID{'.1.9.0'} = \$localhostname;
     $subOID{'.1.10.0'} = \$localhostip;
     $subOID{'.1.11.0'} = \$myName;
-    $subOID{'.1.12.0'} = \$NewAsspURL;
+    $subOID{'.1.12.0'} = \$NewSpamboxURL;
     $subOID{'.1.13.0'} = [\&SNMPload_1_13];
     $subOID{'.1.14.0'} = [\&SNMPload_1_14];
 
@@ -17440,7 +18351,7 @@ sub WebPermission {
         'shutdown_list',
         'shutdown',
         'shutdown_frame',
-        'github',
+        'donations',
         'pwd',
         'reload',
         'quit',
@@ -17487,12 +18398,21 @@ sub WebTraffic {
   my $blocking = ("$fh" =~ /SSL/io) ? $HTTPSblocking : $HTTPblocking ;
   eval{$ip = $fh->peerhost(); $blocking = $WebIP{$ActWebSess}->{blocking} if exists $WebIP{$ActWebSess}->{blocking};};
   d("WEB: $ip");
-  my $maxbuf = ("$fh" =~ /SSL/io) ? 16384 : 4096 ;
-  eval{$pending = $fh->pending(); $maxbuf = $pending if $pending > 0;} if ("$fh" =~ /SSL/io);
+  my $maxbuf = ("$fh" =~ /SSL/io) ? 16384 : $maxTCPRCVbuf || 16384 ;
   &ThreadMonitorMainLoop('MainLoop WebTraffic start');
   $fh->blocking($blocking) if ! $buf;
   $hasread = $fh->sysread($WebCon{$fh},$maxbuf);
-  if ($hasread == 0 && "$fh" =~ /SSL/io && IO::Socket::SSL::errstr() =~ /SSL wants a/io) {
+
+  if ("$fh" =~ /SSL/io && $hasread > 0) {
+      while ($hasread && ($pending = $fh->pending())) {
+          mlog(0,"warning: there are $pending byte pending in SSL Web buffer - this should not happen");
+          my $buff;
+          $hasread = $fh->sysread($buff, $maxbuf);
+          $WebCon{$fh} .= $buff;
+      }
+  }
+
+  if ($hasread == 0 && "$fh" =~ /SSL/io && ($IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_READ') || $IO::Socket::SSL::SSL_ERROR eq eval('SSL_WANT_WRITE'))) {
       mlog(0,"WebTraffic: SSL socket is not ready - will retry") if $ConnectionLog == 3 && ! $WebIP{$ActWebSess}->{sslerror};
       ThreadYield();
       $WebCon{$fh} = $buf;
@@ -17972,6 +18892,21 @@ sub done2 {
 
         delete $Con{$fh}->{prepend};
 
+        if (   $Con{$fh}->{type} eq 'C'
+            && $DoPenalty
+            && $Con{$fh}->{ipscore}
+            && (my $ip=$Con{$fh}->{ip})
+            && $PenaltyLog)
+        {
+            $ip = $Con{$fh}->{cip} if $Con{$fh}->{ispip} && $Con{$fh}->{cip};
+            $ip = &ipNetwork( $ip, $PenaltyUseNetblocks);
+            my ( $ct, $ut, $freq, $score, $sip, $sreason ) = split( / /o, $PBBlack{$ip} );
+            $score ||= 0;
+            mlog( $fh, "info: PB-IP-Score for '$ip' is $score, added $Con{$fh}->{ipscore} in this session",1,1,0);
+        }
+        
+        $newReported{$Con{$fh}->{maillogfilename}} = 'spam' if ($Con{$fh}->{newReported} && $Con{$fh}->{maillogfilename});
+
         if (   $Con{$fh}->{type} eq 'C'   # remove MaillogFile for possily incomplete transmitted mails
             && ! $Con{$fh}->{spamfound}
             && ! $Con{$fh}->{error}
@@ -17996,6 +18931,7 @@ sub done2 {
         %{$Con{$fh}->{authmethodes}} = (); undef %{$Con{$fh}->{authmethodes}};
         %{$Con{$fh}->{userauth}} = (); undef %{$Con{$fh}->{userauth}};
         %{$Con{$fh}->{Xheaders}} = (); undef %{$Con{$fh}->{Xheaders}};
+        %{$Con{$fh}->{scores}} = (); undef %{$Con{$fh}->{scores}};
 
         $cmdlist = $ConnectionLog >= 2 ? "- command list was $cmdlist" : '';
         if ($ip &&
@@ -18023,6 +18959,7 @@ sub done2 {
         &MaillogClose($fh);
 
         my $what = ($Con{$fh}->{type} eq 'C') ? 'client' : 'server';
+
         d("closing $what $fh $ip");
         # close it
         if ("$fh" =~ /SSL/io) {
@@ -18124,6 +19061,21 @@ sub addfh {
   $Con{$fh}->{timelast} = $Con{$fh}->{timestart};
   $Con{$fh}->{socketcalls} = 0;
   $Con{$fh}->{fno} = fileno($fh);
+  if ("$fh" =~ /SSL/io) {
+      $Con{$fh}->{sslversion} = $fh->get_sslversion();
+      $Con{$fh}->{sslcipher} = $fh->get_cipher();
+      $Con{$fh}->{RCVBUF} = 16384;
+      $Con{$fh}->{SNDBUF} = 16384;
+  } else {
+      eval <<'EOF';
+      $Con{$fh}->{RCVBUF} = $maxTCPRCVbuf || unpack("i", getsockopt($fh, SOL_SOCKET, SO_RCVBUF));
+EOF
+      eval <<'EOF';
+      $Con{$fh}->{SNDBUF} = $maxTCPSNDbuf || unpack("i", getsockopt($fh, SOL_SOCKET, SO_SNDBUF));
+EOF
+      $Con{$fh}->{RCVBUF} ||= 16384;
+      $Con{$fh}->{SNDBUF} ||= 16384;
+  }
 }
 
 # adding a SSL socket to the Select structure and Con hash
@@ -18141,10 +19093,10 @@ sub addsslfh {
   if ($Con{$sslfh}->{type} eq 'C') {
     $Con{$sslfh}->{client}   = $sslfh;
     $Con{$sslfh}->{server}   = $friend;
-    $Con{$sslfh}->{myheaderCon} .= "X-Assp-Client-TLS: yes\r\n";
+    $Con{$sslfh}->{myheaderCon} .= "X-Spambox-Client-TLS: yes\r\n";
     $Stats{smtpConnTLS}++ unless $Con{$sslfh}->{relayok};
   } else {
-    $Con{$friend}->{myheaderCon} .= "X-Assp-Server-TLS: yes\r\n";
+    $Con{$friend}->{myheaderCon} .= "X-Spambox-Server-TLS: yes\r\n";
   }
   &dopoll($sslfh,$readable,POLLIN);
   &dopoll($sslfh,$writable,POLLOUT);
@@ -18153,6 +19105,10 @@ sub addsslfh {
   if (exists $ConFno{$fno}) {delete $ConFno{$fno};}
   delete $Fileno{$fno} if (exists $Fileno{$fno});
   $Con{$sslfh}->{fno} = fileno($sslfh);
+  $Con{$sslfh}->{sslversion} = $sslfh->get_sslversion();
+  $Con{$sslfh}->{sslcipher} = $sslfh->get_cipher();
+  $Con{$sslfh}->{RCVBUF} = 16384;
+  $Con{$sslfh}->{SNDBUF} = 16384;
   $Fileno{$Con{$sslfh}->{fno}} = $sslfh;
   d("info: switched connection from $oldfh to $sslfh");
 }
@@ -18170,11 +19126,11 @@ sub sendque {
         && $$outmessage =~ /^[1-5]\d\d\s+[^\r\n]+\r\n$/o)    # is a reply?
     {
         my $what = 'Reply';
-        $$outmessage =~ s/SESSIONID/$Con{$fh}->{msgtime} $Con{$fh}->{SessionID}/go;
-        $$outmessage =~ s/MYNAME/$myName/go;
+        replaceLiterals($fh,$outmessage);
         if ($$outmessage =~ /^([45])/o) {
             $what = ($1 == 5) ? 'Error' : 'Status';
         }
+        $$outmessage =~ s/NOTSPAMTAG/NotSpamTagGen($fh)/ge if $what eq 'Error';
         my $reply = $$outmessage;
         $reply =~ s/\r?\n//o;
         mlog( $fh, "[SMTP $what] $reply", 1, 1 );
@@ -18182,7 +19138,7 @@ sub sendque {
 
     &dopoll($fh,$writable,POLLOUT);
     $Con{$fh}->{outgoing}.=$$outmessage;
-    if(!$Con{$fh}->{paused} && length($Con{$fh}->{outgoing}) > $OutgoingBufSizeNew) {
+    if(!$Con{$fh}->{paused} && length($Con{$fh}->{outgoing}) > $OutgoingBufSizeNew && "$fh" !~ /SSL/oi) {
         $Con{$fh}->{paused}=1;
         d('pausing');
         unpoll($Con{$fh}->{friend},$readable);
@@ -18382,7 +19338,12 @@ sub sendquedata {
 #     return;
 #  }
 
-  unless ($DoDKIM && $friend->{isDKIM} &&  ! $friend->{relayok}) {
+  # this may happen on Transfer-Encoding 8BIT or BINARY
+  if (! $friend->{IS8BITMIME}) {
+      $friend->{IS8BITMIME} = 1 if $message =~ /$NONASCII/os;
+  }
+
+  unless ($DoDKIM && $friend->{isDKIM} && ! $friend->{relayok} && ! $friend->{IS8BITMIME}) {
       $message =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
       $message =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
   }
@@ -18397,6 +19358,7 @@ sub sendquedata {
 
   if ($this->{noMoreQueued}) {    # queueing is switched of for some reasons
      $message .= "\x0D\x0A\.\x0D\x0A" if $done && $friend->{header} !~ /\x0D?\x0A\.(?:\x0D?\x0A)+$/o;
+     mlog($this->{friend},"info: received all data - all data moved to send queue (1)") if $done && $ConnectionLog > 1;
      sendque($fh,\$message);
      return;
   }
@@ -18425,6 +19387,7 @@ sub sendquedata {
          $message .= "\x0D\x0A\.\x0D\x0A" if $done && $friend->{header} !~ /\x0D?\x0A\.(?:\x0D?\x0A)+$/o;
          sendque($fh,\$message);
      }
+     mlog($this->{friend},"info: received all data - all data moved to send queue (2)") if $done && $ConnectionLog > 1;
      &sayMessageOK($this->{friend});
      return;
   }
@@ -18444,6 +19407,7 @@ sub sendquedata {
          $message .= "\x0D\x0A\.\x0D\x0A" if $done && $friend->{header} !~ /\x0D?\x0A\.(?:\x0D?\x0A)+$/o;
          sendque($fh,\$message);
      }
+     mlog($this->{friend},"info: received all data - all data moved to send queue (3)") if $done && $ConnectionLog > 1;
      &sayMessageOK($this->{friend});
      return;
   }
@@ -18487,6 +19451,7 @@ sub sendquedata {
          $message .= "\x0D\x0A\.\x0D\x0A" if $done && $friend->{header} !~ /\x0D?\x0A\.(?:\x0D?\x0A)+$/o;
          sendque($fh,\$message);
      }
+     mlog($this->{friend},"info: received all data - all data moved to send queue (4)") if $done && $ConnectionLog > 1;
      &sayMessageOK($this->{friend});
      return;
   }
@@ -18535,7 +19500,7 @@ sub sendquedata {
   d('convert and send data');
   mlog($this->{friend},"convert and send data from sendqueue") if ($TNEFDEBUG);
 
-  unless ($DoDKIM && $friend->{isDKIM} &&  ! $friend->{relayok}) {
+  unless ($DoDKIM && $friend->{isDKIM} &&  ! $friend->{relayok}  && ! $friend->{IS8BITMIME}) {
       $friend->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
       $friend->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
   }
@@ -18579,7 +19544,7 @@ sub sendquedata {
            }
            # message is OK
            $headlen = index($friend->{header}, "\x0D\x0A\x0D\x0A");  # merge header
-           $friend->{header} = substr($friend->{header},0,$headlen)."\r\nX-Assp-DKIM: $friend->{dkimverified}".substr($friend->{header},$headlen,length($friend->{header})-$headlen) if ($AddDKIMHeader and $headlen > 2);
+           $friend->{header} = substr($friend->{header},0,$headlen)."\r\nX-Spambox-DKIM: $friend->{dkimverified}".substr($friend->{header},$headlen,length($friend->{header})-$headlen) if ($AddDKIMHeader and $headlen > 2);
            $friend->{skipmaillog} = 0;
            $friend->{maillogparm} = 2 if (! $friend->{maillogparm});
            Maillog($this->{friend},'',$friend->{maillogparm});
@@ -18587,6 +19552,7 @@ sub sendquedata {
            if (! $doDKIMConv && ! $runlvl2PL) {
               $friend->{header} .= "\x0D\x0A.\x0D\x0A" if $done && ($friend->{header} !~ /\x0D\x0A\.\x0D\x0A$/o);
               sendque($fh,\$friend->{header});
+              mlog($this->{friend},"info: received all data - all data moved to send queue (5)") if $done && $ConnectionLog > 1;
               &sayMessageOK($this->{friend});
               return;
            }
@@ -18601,6 +19567,7 @@ sub sendquedata {
         if (! $doDKIMConv && ! $runlvl2PL) {
            $friend->{header} .= "\x0D\x0A.\x0D\x0A" if $done && ($friend->{header} !~ /\x0D\x0A\.\x0D\x0A$/o);
            sendque($fh,\$friend->{header});
+           mlog($this->{friend},"info: received all data - all data moved to send queue (6)") if $done && $ConnectionLog > 1;
            &sayMessageOK($this->{friend});
            return;
         }
@@ -18640,6 +19607,7 @@ sub sendquedata {
   if (! $doDKIMConv && $friend->{isDKIM}) {
         $friend->{header} .= "\x0D\x0A\.\x0D\x0A" if $done && $friend->{header} !~ /\x0D?\x0A\.(?:\x0D?\x0A)+$/o;
         sendque($fh,\$friend->{header});
+        mlog($this->{friend},"info: received all data - all data moved to send queue (7)") if $done && $ConnectionLog > 1;
         &sayMessageOK($this->{friend});
         return;
   }
@@ -18813,8 +19781,10 @@ if ((! $friend->{noprocessing} || $convertNP) && $convert && ! $friend->{signed}
        my $addend; $addend = 1 if ($friend->{header} =~ /\x0D\x0A\.\x0D\x0A$/o);
        $friend->{header} = $newmail;
        undef $email;
-       $friend->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
-       $friend->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
+       unless ($friend->{IS8BITMIME}) {
+           $friend->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
+           $friend->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
+       }
        $friend->{header} .= "\x0D\x0A.\x0D\x0A" if ($friend->{header} !~ /\x0D\x0A\.\x0D\x0A$/o &&
                                             $addend);   # send the dot if the conversion has removed it
        $time= sprintf("%.3f",(Time::HiRes::time()) - $time) ;
@@ -18829,13 +19799,16 @@ if ((! $friend->{noprocessing} || $convertNP) && $convert && ! $friend->{signed}
 } # end convert
 
   if ($friend->{relayok} && $genDKIM) {
-      $friend->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
-      $friend->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
+      unless ($friend->{IS8BITMIME}) {
+          $friend->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
+          $friend->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
+      }
       &DKIMgen($this->{friend});
   }
   $friend->{header} .= "\x0D\x0A\.\x0D\x0A" if $done && $friend->{header} !~ /\x0D?\x0A\.(\x0D?\x0A)+$/o;
   $friend->{maillength} = length($friend->{header});
   sendque($fh,\$friend->{header});
+  mlog($this->{friend},"info: received all data - all data moved to send queue (8)") if $done && $ConnectionLog > 1;
 #  &printallCon($fh);
 }
 
@@ -18892,21 +19865,16 @@ sub localvrfy2MTA_Run {
   my $canvrfy;
   my $canexpn;
 
+  $domain = $1 if $h=~/\@([^@]*)/o;
+  return 0 unless $domain;
+
   $h = &batv_remove_tag(0,lc($h),'');
 
   return 1 if &LDAPCacheFind($h,'VRFY');
-  if (my $nf = $LDAPNotFound{$h}) {
-      if ((time - $nf) < 300) {
-          mlog($fh,"info: found $h in LDAPNotFound - skip VRFY") if ($VRFYLog >= 2 && $WorkerNumber != 10001);
-          return 0;
-      } elsif (defined $nf) {
-          mlog($fh,"info: found $h in LDAPNotFound - entry is too old and is removed - will force VRFY") if ($VRFYLog >= 2 && $WorkerNumber != 10001);
-          delete $LDAPNotFound{$h};
-      }
+  if (exists $LDAPNotFound{LDAPnormAddr($h)}) {
+      mlog($fh,"info: found $h in LDAPNotFound - skip VRFY") if ($VRFYLog >= 2 && $WorkerNumber != 10001);
+      return 0;
   }
-
-  $domain = $1 if $h=~/\@([^@]*)/o;
-  return 0 unless $domain;
 
   my $MTAList = &matchHashKey('DomainVRFYMTA',$domain);
   $MTAList = &matchHashKey('FlatVRFYMTA',"\@$domain") unless $MTAList;
@@ -18915,42 +19883,65 @@ sub localvrfy2MTA_Run {
   my $timeout = $VRFYQueryTimeOut ? $VRFYQueryTimeOut : 5;
   &sigoffTry(__LINE__);
   eval{
+    my $canssl = $CanUseIOSocketSSL && eval{Net::SMTP::can_ssl()};
     for my $MTA (split(/,/,$MTAList)) {
+      my $oMTA = $MTA;
       mlog($fh,"info: starting VRFY for $h on $MTA") if ($VRFYLog >= 2 && $WorkerNumber != 10001);
+      my $port;
+      $port = $1 if $MTA =~ s/:($PortRe)$//o;
+      my $doSSL = $MTA =~ s/^SSL://oi || $port == 465;
+      my %sslargs;
+      if ($doSSL && $canssl) {
+          %sslargs = getSSLParms(0);
+          $port ||= 465;
+          $sslargs{SSL} = 1;
+      } elsif ($doSSL && ! $canssl) {
+          mlog($fh,"info: SSL is not available for $h on $oMTA - skip MTA") if ($VRFYLog && $WorkerNumber != 10001);
+          next;
+      } else {
+          $port ||= 25;
+          mlog($fh,"info: SSL is not available for $h on $oMTA - using $MTA:$port") if ($doSSL && $VRFYLog >= 2 && $WorkerNumber != 10001);
+          $doSSL = 0;
+      }
       eval{
       $smtp = Net::SMTP->new($MTA,
                         Hello => $myName,
+                        Port => $port,
                         Timeout => $timeout),
+                        %sslargs,
                         getLocalAddress('SMTP',$MTA);
       };
       if (! $smtp) {
-          mlog($fh,"warning: unable to connect to MTA $MTA - $@") if ($VRFYLog && $WorkerNumber != 10001);
+          mlog($fh,"warning: unable to connect to MTA $MTA:$port - $@") if ($VRFYLog && $WorkerNumber != 10001);
           next;
       } else {
-          $forceRCPTTO = ($VRFYforceRCPTTO && $MTA =~ /$VFRTRE/) ? 1 : 0;
-          mlog($fh,"info: established SMTP to $MTA - force RCPTO is '$forceRCPTTO'") if ($VRFYLog >= 2 && $WorkerNumber != 10001);
-          if (! $forceRCPTTO) {
-              $canvrfy = exists ${*$smtp}{'net_smtp_esmtp'}->{'VRFY'};   # was VRFY in EHLO Answer?
-              $canexpn = exists ${*$smtp}{'net_smtp_esmtp'}->{'EXPN'};   # was EXPN in EHLO Answer?
-              if (! $canvrfy && ! $canexpn &&   # there was no VRFY or EXPN in the EHLO Answer, or HELO was used
-                  (exists ${*$smtp}{'net_smtp_esmtp'}->{'HELP'} ||    # we can use HELP      or
-                   ! exists ${*$smtp}{'net_smtp_esmtp'}) )            # only HELO was used - try HELP
-              {
-                      my $help = $smtp->help();
-                      $canvrfy = $help =~ /VRFY/io;
-                      $canexpn = $help =~ /EXPN/io;
+          # changes here must be also done in sub LDAPcrossCheck
+          $forceRCPTTO = ($VRFYforceRCPTTO && $oMTA =~ /$VFRTRE/) ? 1 : 0;
+          mlog($fh,"info: established SMTP to $MTA:$port - force RCPTO is ".($forceRCPTTO ? 'ON' : 'OFF')) if ($VRFYLog >= 2 && $WorkerNumber != 10001);
+          if ($enableTLS4VRFY && !$doSSL && $CanUseIOSocketSSL && $smtp->supports('STARTTLS')) {
+              if ((my $ok = eval{$smtp->starttls(getSSLParms(0));}) && $VRFYLog >= 2 && $WorkerNumber != 10001) {
+                  mlog($fh,"info: TLS-session started for $MTA:$port") if $ok != 1;
               }
-              if ($canvrfy) {$vrfy = $smtp->verify($h) ? 1 : $smtp->verify("\"$h\"");}
-              if ($canexpn && ! $vrfy) {$expn = scalar($smtp->expand($h)) ? 1 : scalar($smtp->expand("\"$h\""));}
+          }
+          if (! $forceRCPTTO) {
+              $canvrfy = $smtp->supports('VRFY');   # was VRFY in EHLO Answer?
+              $canexpn = $smtp->supports('EXPN');   # was EXPN in EHLO Answer?
+              if (! $canvrfy && ! $canexpn)  { # try HELO (exim !!!)
+                  my $help = $smtp->help();   # try HELP
+                  $canvrfy = $help =~ /VRFY/io;
+                  $canexpn = $help =~ /EXPN/io;
+              }
+              if ($canvrfy) {$vrfy = ($smtp->verify($h) && $smtp->code =~ /$vrfyOKRE/o) ? 1 : ($smtp->verify("\"$h\"") && $smtp->code =~ /$vrfyOKRE/o);}
+              if ($canexpn && ! $vrfy) {$expn = (scalar($smtp->expand($h)) && $smtp->code =~ /$vrfyOKRE/o) ? 1 : (scalar($smtp->expand("\"$h\"")) && $smtp->code =~ /$vrfyOKRE/o);}
           } else {
               mlog($fh,"info: using RCPT TO: (skiped VRFY) for $h") if ($VRFYLog >= 2 && $WorkerNumber != 10001);
           }
           if (!$canvrfy && !$canexpn) {    # VRFY and EXPN are both not supported or VRFYforceRCPTTO is set for this MTA
-              mlog($fh,"info: host $MTA does not support VRFY and EXPN (tried EHLO and HELP) - now using RCPT TO to verify $h") if ($VRFYLog >= 2 && ! $forceRCPTTO && $WorkerNumber != 10001);
+              mlog($fh,"info: host $MTA:$port does not support VRFY and EXPN (tried EHLO and HELP) - now using RCPT TO to verify $h") if ($VRFYLog >= 2 && ! $forceRCPTTO && $WorkerNumber != 10001);
               if ($smtp->mail('postmaster@'.$myName)) {
                   $vrfy = $smtp->to($h);
               } else {
-                  mlog($fh,"info: host $MTA does not accept 'mail from:postmaster\@$myName'") if $VRFYLog && $WorkerNumber != 10001;
+                  mlog($fh,"info: host $MTA:$port does not accept 'mail from:postmaster\@$myName'") if $VRFYLog && $WorkerNumber != 10001;
               }
           }
           $smtp->quit;
@@ -18974,16 +19965,11 @@ sub localvrfy2MTA_Run {
   &sigonTry(__LINE__);
   delete $this->{userTempFail} if $this;
   if ($vrfy || $expn) {
-     if ($ldaplistdb) {
-         $LDAPlist{$h}=time." 1";
-         mlog($fh,"VRFY added $h to VRFY-/LDAPlist") if $VRFYLog && $WorkerNumber != 10001;
-         d("VRFY added $h to LDAP-cache",1) if $WorkerNumber != 10001;
-     }
-     delete $LDAPNotFound{$h};
+     LDAPCacheAdd($h , 'VRFY');
      mlog($fh,"info: VRFY found $h") if $VRFYLog >= 2 && $WorkerNumber != 10001;
      return 1 ;
   } else {
-     $LDAPNotFound{$h} = time;
+     $LDAPNotFound{LDAPnormAddr($h)} = time;
      mlog($fh,"info: caching result for $h in LDAPNotFound") if $VRFYLog > 1;
   }
   mlog($fh,"info: VRFY was unable to find $h") if $VRFYLog >= 2 && $WorkerNumber != 10001;
@@ -19001,10 +19987,11 @@ sub localmail {
   return &localdomains($h);
 }
 
-# returns true if this address is in localdomains file or localDomains or LDAP
+# returns true if this address is in localdomains file or localDomains or LDAP or VRFY-Cache or any internal domain
 sub localdomains {
     my $h = shift;
     d("localdomains - $h",1) if $WorkerNumber != 10001;
+    return 0 unless $h;
     $h =~ tr/A-Z/a-z/;
     my $hat; $hat = $1 if $h =~ /(\@[^@]*)/o;
     $h = $1 if $h =~ /\@([^@]*)/o;
@@ -19016,26 +20003,50 @@ sub localdomains {
     return 1 if ($EBRD && lc($h) eq lc($EBRD));
 
     return 1 if $localDomains && ( ($hat && $hat =~ /$LDRE/) || ($h && $h =~ /$LDRE/) );
-    return &localLDAPdomain($h);
+
+    return 1 if &localLDAPdomain($h);
+
+    if ($DoVRFY && $CanUseNetSMTP && $FlatVRFYMTA{'*'} && $ldaplistdb) {
+        # lookup the local domain in this special case, using the postmaster address
+        if (exists $LDAPlist{'@'.lc($h)} || localvrfy2MTA(0,'postmaster@'.$h)) {
+            LDAPCacheAdd($h, 'VRFY');
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
-# returns true if this address is in localdomains file or localDomains or LDAP
+# returns true if this address is in localdomains file or localDomains or LDAP or VRFY-Cache
 sub localdomainsreal {
     my $h = shift;
     d("localdomainsreal - $h",1) if $WorkerNumber != 10001;
+    return 0 unless $h;
     $h =~ tr/A-Z/a-z/;
     my $hat; $hat = $1 if $h =~ /(\@[^@]*)/o;
     $h = $1 if $h =~ /\@([^@]*)/o;
 
     return 1 if $localDomains && ( ($hat && $hat =~ /$LDRE/) || ($h && $h =~ /$LDRE/) );
-    return &localLDAPdomain($h);
+
+    return 1 if &localLDAPdomain($h);
+
+    if ($DoVRFY && $CanUseNetSMTP && $FlatVRFYMTA{'*'} && $ldaplistdb) {
+        # lookup the local domain in this special case, using the postmaster address
+        if (exists $LDAPlist{'@'.lc($h)} || localvrfy2MTA(0,'postmaster@'.$h)) {
+            LDAPCacheAdd($h, 'VRFY');
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 sub localLDAPdomain {
   my $h = shift;
   d("localLDAPdomain - $h",1);
+  return 0 unless $h;
   $h =~ tr/A-Z/a-z/;
-  return 1 if &LDAPCacheFind('@'.$h,'LDAP');
+  return 1 if &LDAPCacheFind($h,'LDAP');  # if VRFY is used, return the Cache result, if found
   return 0 unless $CanUseLDAP;
   return 0 unless $ldLDAP;
   my $ldapflt = $ldLDAPFilter;
@@ -19048,6 +20059,7 @@ sub localLDAPdomain {
 sub localmailaddress {
   my ($fh,$current_email) = @_;
   d("localmailaddress - $current_email",1) if $WorkerNumber != 10001;
+  return 0 unless $current_email;
   $current_email = &batv_remove_tag(0,$current_email,'');
   $current_email =~ tr/A-Z/a-z/;
   my $at_position = index($current_email, '@');
@@ -19060,16 +20072,16 @@ sub localmailaddress {
   $ldapflt =~ s/DOMAIN/$current_domain/go;
   my $ldaproot = $LDAPRoot;
   $ldaproot =~ s/DOMAIN/$current_domain/go;
-  if ( matchSL( $current_email, 'LocalAddresses_Flat' ) ) {
-      $LDAPlist{'@'.$current_domain} = time if $ldaplistdb;
+  if ( matchSL( $current_email, 'LocalAddresses_Flat', ($WorkerNumber == 10001)) ) {
+      LDAPCacheAdd($current_domain,0);
       return 1;
   }
   if (&LDAPCacheFind($current_email,'LDAP')) {
-      $LDAPlist{'@'.$current_domain} = time if $ldaplistdb && $ldLDAPFilter;
+      LDAPCacheAdd($current_domain,0) if $ldLDAPFilter;
       return 1;
   }
   if($DoLDAP && $CanUseLDAP && LDAPQuery($ldapflt, $ldaproot,$current_email)) {
-      $LDAPlist{'@'.$current_domain} = time if (!$LDAPoffline && $ldaplistdb && $ldLDAPFilter);
+      LDAPCacheAdd($current_domain,0) if (!$LDAPoffline && $ldaplistdb && $ldLDAPFilter);
       return 1;
   }
   if($DoVRFY && (&matchHashKey('FlatVRFYMTA',"\@$current_domain") or &matchHashKey('DomainVRFYMTA',$current_domain))
@@ -19077,27 +20089,47 @@ sub localmailaddress {
              && $current_email =~ /[^@]+\@[^@]+/o
              && localvrfy2MTA($fh,$current_email))
   {
-      $LDAPlist{'@'.$current_domain} = time if (! ($fh && $Con{$fh}->{userTempFail}) && $ldaplistdb);
+      LDAPCacheAdd($current_domain,'VRFY') if (! ($fh && $Con{$fh}->{userTempFail}) && $ldaplistdb);
       return 1;
   }
   return 0;
+}
+
+sub LDAPnormAddr {
+    my $current_email = shift;
+    return unless $current_email;
+    $current_email = '@'.$current_email if $current_email !~ /\@/o;
+    return $current_email;
+}
+
+sub LDAPCacheAdd {
+    my ($current_email,$how) = @_;
+    d("LDAPCacheAdd - $current_email , $how",1) if $WorkerNumber != 10001;
+    return unless $ldaplistdb;
+    return unless $current_email;
+    $current_email = LDAPnormAddr(lc $current_email);
+    if ($how) {
+        mlog(0,"info: $how added $current_email to LDAPlist") if ($WorkerNumber != 10001 && ((${$how.'Log'} && ! exists($LDAPlist{$current_email})) || ${$how.'Log'} >= 2));
+        $LDAPlist{$current_email}=time." $how";
+    } else {
+        mlog(0,"info: LDAP added $current_email to LDAPlist") if ($WorkerNumber != 10001 && (($LDAPLog && ! exists($LDAPlist{$current_email})) || $LDAPLog >= 2));
+        $LDAPlist{$current_email}=time;
+    }
+    delete $LDAPNotFound{$current_email};
+    d("added $current_email to LDAP-cache") if $WorkerNumber != 10001;
 }
 
 sub LDAPCacheFind {
   my ($current_email,$how) = @_;
   d("LDAPCacheFind - $current_email , $how",1) if $WorkerNumber != 10001;
   return 0 unless $ldaplistdb;
-  $current_email = lc $current_email;
+  return 0 unless $current_email;
+  $current_email = LDAPnormAddr(lc $current_email);
   if (my ($vt,$vl) = split(/ /o,$LDAPlist{$current_email})) {
-    mlog(0,"info: $how - found $current_email in $how-cache (ldaplistdb)") if (${$how.'Log'} && $WorkerNumber != 10001);
-    d("$how - found $current_email in $how-cache",1) if $WorkerNumber != 10001;
-    if ($vl) {
-      $LDAPlist{$current_email}=time." $vl";
-    } else {
-      $LDAPlist{$current_email}=time;
-    }
+    LDAPCacheAdd($current_email, $vl);
     return 1;
   }
+  $how = 'LDAP' unless $how;
   d("$how - not found $current_email in $how-cache",1) if $WorkerNumber != 10001;
   mlog(0,"info: $how - $current_email not found in $how-cache (ldaplistdb)") if (${$how.'Log'} >= 2 && $WorkerNumber != 10001);
   return 0;
@@ -19116,12 +20148,9 @@ sub LDAPQuery {
   $current_email = &batv_remove_tag(0,lc($current_email),'');
 
   return 1 if &LDAPCacheFind($current_email,'LDAP');
-  if (my $nf = $LDAPNotFound{$current_email}) {
-      if (time - $nf < 300) {
-          mlog(0,"info: found $current_email in LDAPNotFound - skip ldap") if $LDAPLog > 1;
-          return 0;
-      }
-      delete $LDAPNotFound{$current_email};
+  if (exists $LDAPNotFound{LDAPnormAddr($current_email)}) {
+      mlog(0,"info: found $current_email in LDAPNotFound - skip ldap") if $LDAPLog > 1;
+      return 0;
   }
 
   d("doing LDAP lookup with $ldapflt in $ldaproot",1) if $WorkerNumber != 10001;
@@ -19185,15 +20214,10 @@ sub LDAPQuery {
   d("got $entry_count result(s) from LDAP lookup") if $WorkerNumber != 10001;
   $mesg = $ldap->unbind;  # take down session
   if($entry_count) {
-     if($ldaplistdb) {
-         $LDAPlist{$current_email}=time;
-         mlog(0,"info: LDAP added $current_email to LDAPlist") if $LDAPLog && $WorkerNumber != 10001;
-         d("added $current_email to LDAP-cache") if $WorkerNumber != 10001;
-     }
-     delete $LDAPNotFound{$current_email};
+     LDAPCacheAdd($current_email,0);
   } else {
      mlog(0,"info: caching result for $current_email in LDAPNotFound") if $LDAPLog > 1;
-     $LDAPNotFound{$current_email} = time;
+     $LDAPNotFound{LDAPnormAddr($current_email)} = time;
   }
   &sigonTry(__LINE__);
   return $entry_count;
@@ -19322,6 +20346,9 @@ sub LDAPcrossCheck {
   my $t;
   my $timeout = $VRFYQueryTimeOut ? $VRFYQueryTimeOut : 5;
   my $forceRCPTTO;
+  my $canvrfy;
+  my $canexpn;
+  my %domains;
 
   if(! $ldaplistdb) {
       mlog(0,"warning: unable to do crosscheck - ldaplistdb is not configured");
@@ -19380,38 +20407,71 @@ sub LDAPcrossCheck {
         if ($DoVRFY && $CanUseNetSMTP) {
             mlog(0,"info: VRFY-crosscheck on $k") if $MaintenanceLog >= 2;
             my ($domain) = $k =~ /[^@]+\@([^@]+)/o;
-            my $MTA = &matchHashKey('DomainVRFYMTA',lc $domain);
-            $MTA = &matchHashKey('FlatVRFYMTA',lc "\@$domain") unless $MTA;
+            my $MTAList = &matchHashKey('DomainVRFYMTA',lc $domain);
+            $MTAList = &matchHashKey('FlatVRFYMTA',lc "\@$domain") unless $MTAList;
             $expire_only = 1;
+
             eval{
             $expire_only = 0;
-            my $vrfy;
-            my $expn;
-            my $smtp = Net::SMTP->new($MTA,
-                                 Hello => $myName,
-                                 Timeout => $timeout),
-                                 getLocalAddress('SMTP',$MTA);
-
-            if ($smtp) {
-                $forceRCPTTO = ($VRFYforceRCPTTO && $MTA =~ /$VFRTRE/) ? 1 : 0;
-                if (! $forceRCPTTO) {
-                    my $help = $smtp->help();
-                    my $canvrfy = $help =~ /VRFY/io;
-                    my $canexpn = $help =~ /EXPN/io;
-                    if ($canvrfy) {$vrfy = $smtp->verify($k) ? 1 : $smtp->verify("\"$k\"");}
-                    if ($canexpn && ! $vrfy) {$expn = scalar($smtp->expand($k)) ? 1 : scalar($smtp->expand("\"$k\""));}
-                }
-                if (!$expn && !$vrfy) {
-                    if ($smtp->mail('postmaster@'.$myName)) {
-                        $vrfy = $smtp->to($k);
-                    }
-                }
-                $smtp->quit;
-                $entry_count = $vrfy || $expn;
+            my $canssl = $CanUseIOSocketSSL && eval{Net::SMTP::can_ssl()};
+            for my $MTA (split(/,/,$MTAList)) {
+              my $oMTA = $MTA;
+              my $port;
+              $port = $1 if $MTA =~ s/:($PortRe)$//o;
+              my $doSSL = $MTA =~ s/^SSL://oi || $port == 465;
+              my %sslargs;
+              if ($doSSL && $canssl) {
+                  %sslargs = getSSLParms(0);
+                  $port ||= 465;
+                  $sslargs{SSL} = 1;
+              } elsif ($doSSL && ! $canssl) {
+                  mlog(0,"info: SSL is not available for $oMTA - skip MTA") if ($VRFYLog && $WorkerNumber != 10001);
+                  next;
+              } else {
+                  $port ||= 25;
+                  $doSSL = 0;
+              }
+              my ($smtp, $vrfy, $expn);
+              eval{
+              $smtp = Net::SMTP->new($MTA,
+                                Hello => $myName,
+                                Port => $port,
+                                Timeout => $timeout),
+                                %sslargs,
+                                getLocalAddress('SMTP',$MTA);
+              };
+              if (! $smtp) {
+                  next;
+              } else {
+                  # changes here must be also done in sub localvrfy2MTA_Run
+                  $forceRCPTTO = ($VRFYforceRCPTTO && $oMTA =~ /$VFRTRE/) ? 1 : 0;
+                  if ($enableTLS4VRFY && !$doSSL && $CanUseIOSocketSSL && $smtp->supports('STARTTLS')) {
+                      eval{$smtp->starttls(getSSLParms(0));};
+                  }
+                  if (! $forceRCPTTO) {
+                      $canvrfy = $smtp->supports('VRFY');   # was VRFY in EHLO Answer?
+                      $canexpn = $smtp->supports('EXPN');   # was EXPN in EHLO Answer?
+                      if (! $canvrfy && ! $canexpn)  { # try HELO (exim !!!)
+                          my $help = $smtp->help();   # try HELP
+                          $canvrfy = $help =~ /VRFY/io;
+                          $canexpn = $help =~ /EXPN/io;
+                      }
+                      if ($canvrfy) {$vrfy = ($smtp->verify($k) && $smtp->code =~ /$vrfyOKRE/o) ? 1 : ($smtp->verify("\"$k\"") && $smtp->code =~ /$vrfyOKRE/o);}
+                      if ($canexpn && ! $vrfy) {$expn = (scalar($smtp->expand($k)) && $smtp->code =~ /$vrfyOKRE/o) ? 1 : (scalar($smtp->expand("\"$k\"")) && $smtp->code =~ /$vrfyOKRE/o);}
+                  }
+                  if (!$canvrfy && !$canexpn) {    # VRFY and EXPN are both not supported or VRFYforceRCPTTO is set for this MTA
+                      if ($smtp->mail('postmaster@'.$myName)) {
+                          $vrfy = $smtp->to($k);
+                      }
+                  }
+                  $smtp->quit;
+                  $entry_count = $vrfy || $expn;
+              }
+              last if ($vrfy || $expn);
             }
-            } if $MTA;
+            };
             if ($@) {
-               mlog(0,"error: VRFY failed on host $MTA - $@");
+               mlog(0,"error: VRFY failed - $@");
                $expire_only = 1;
             }
         } else {
@@ -19442,8 +20502,10 @@ sub LDAPcrossCheck {
           $expire_only = 1;
         }
         $entry_count = $expire_only ? 0 : $mesg->count;
-    } else {
+    } elsif ($k =~ /^@/o) {
         $expire_only = 2;
+    } else {
+        $expire_only = 1;
     }
 
     if ($entry_count && exists $PBTrap{$k}) {
@@ -19463,8 +20525,17 @@ sub LDAPcrossCheck {
        delete($LDAPlist{$k});
        mlog(0,"LDAP-crosscheck: $k domain entry removed from LDAPlist") if $MaintenanceLog;
        d("LDAP-crosscheck: $k domain removed from LDAPlist");
+    } elsif ($expire_only == 2 && $MaxLDAPlistDays && $vt + $MaxLDAPlistDays * 24 * 3600 < $t) { # entry is to old -> delete the cache entry
+       delete($LDAPlist{$k});
+       mlog(0,"LDAP/VRFY-crosscheck: domain $k removed from LDAPlist - entry is older than $MaxLDAPlistDays days") if $MaintenanceLog;
+       d("LDAP/VRFY-crosscheck: domain $k removed from LDAPlist - entry is older than $MaxLDAPlistDays days");
+    } elsif ($entry_count && $expire_only != 2) {
+       if ($k =~ /(\@[^@]+)$/o) {
+           $domains{$1} = $t;
+       }
     }
   }
+  while (my ($k,$v)=each(%domains)) {$LDAPlist{$k} = $v;} # store the found domains in ldaplistdb
   $mesg = $ldap->unbind if $ldap;  # take down session
   mlog(0,"LDAP/VRFY-crosscheck finished") if $MaintenanceLog;
   &SaveLDAPlist();
@@ -19510,7 +20581,7 @@ sub sendNotification {
     my $tz=$UseLocalTime ? tzStr() : '+0000';
     $date=~s/(\w+) +(\w+) +(\d+) +(\S+) +(\d+)/$1, $3 $2 $5 $4/o;
     $text = "Date: $date $tz\r\n";
-    $text .= "X-Assp-Notification: YES\r\n";
+    $text .= "X-Spambox-Notification: YES\r\n";
     $from =~ s/^\s+//o;
     $from =~ s/\s+$//o;
     if ($from !~ /\</o) {
@@ -19550,13 +20621,15 @@ sub sendNotification {
     $text .= "\r\n";           # end header
     my $sendbody;
     foreach (split(/\r?\n/o,$body)) {
-        $sendbody .= ( $_ ? spambox_encode_Q(e8($_)) : '') . "\r\n";
+        $sendbody .= ( $_ ? spambox_encode_Q(de8($_)) : '') . "\r\n";
     }
     my $f;
     if ($file && $open->($f,"<",$file)) {
+        my $isUTF8;
         while (<$f>) {
+             $isUTF8 = 1 if s/^$UTF8BOMRE//o;
              s/\r?\n$//o;
-             $sendbody .= ( $_ ? spambox_encode_Q(e8($_)) : '') . "\r\n";
+             $sendbody .= ( $_ ? spambox_encode_Q($isUTF8 ? $_ : e8($_)) : '') . "\r\n";
         }
         $f->close;
     }
@@ -19620,7 +20693,7 @@ sub resend_mail {
 
 # check for AUTH honeypot mails - and do not resend, delete them here
 #
-      if ($message =~ /X-Assp-Spam-Reason: faked AUTH success SPAM collecting/ios) {
+      if ($message =~ /X-Spambox-Spam-Reason: faked AUTH success SPAM collecting/ios) {
           $unlink->($file);
           mlog(0,"*x*(re)send - honeypot (faked AUTH success) file: '$file' is removed - resend is not allowed") if $MaintenanceLog;
           delete $ResendFile{$file};
@@ -19631,7 +20704,7 @@ sub resend_mail {
       mlog(0,"*x*(re)send - process: $file $count") if $MaintenanceLog >= 2;
       my ($howF, $mailfrom);
       ($howF, $mailfrom) = ($1,$2)
-        if ($message =~ /\n(X-Assp-Envelope-From:)[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/sio);
+        if ($message =~ /\n(X-Spambox-Envelope-From:)[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/sio);
       if (! $mailfrom && $message =~ /\n(from:)($HeaderValueRe)/sio) {
           ($howF, my $value) = ($1,$2);
           ($mailfrom) = $value =~ /($EmailAdrRe\@$EmailDomainRe)/sio;
@@ -19641,16 +20714,16 @@ sub resend_mail {
           ($howF, $mailfrom) = ($1,$2)
              if ($message =~ s/\n(from:)\s*(SPAMBOX <>)\s*\r?\n/\n/sio);
           if (! $mailfrom) {
-              mlog(0,"*x*(re)send - $file - From: and X-Assp-Envelope-From: headertag not found");
-              $message = "# (re)send - $file - From: and X-Assp-Envelope-From: headertag not found\r\n".$message;
+              mlog(0,"*x*(re)send - $file - From: and X-Spambox-Envelope-From: headertag not found");
+              $message = "# (re)send - $file - From: and X-Spambox-Envelope-From: headertag not found\r\n".$message;
               &resendError($file,\$message);
               next;
           }
       }
-#      if (lc $howF eq lc "X-Assp-Envelope-From:") {
+#      if (lc $howF eq lc "X-Spambox-Envelope-From:") {
 #          my ($frN,$frA);
 #          ($frN,$frA) = ($1,lc $2) if $message =~ s/\nfrom:\s*([^\<]*?)\s*<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/\n/sio;
-#          $message =~ s/X-Assp-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/From: <$1>\r\n/iso;
+#          $message =~ s/X-Spambox-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/From: <$1>\r\n/iso;
 #          if ($frA && lc $1 eq $frA) {
 #              $message =~ s/\nFrom:\s*([^\r]+?)\s*\r/\nFrom: $frN $1\r/sio;
 #          }
@@ -19658,22 +20731,22 @@ sub resend_mail {
 
       my ($howT, $to);
       ($howT, $to) = ($1,$2)
-        if ($message =~ /\n(X-Assp-Intended-For:)[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio);
+        if ($message =~ /\n(X-Spambox-Intended-For:)[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio);
       if (! $to && $message =~ /\n(to:)($HeaderValueRe)/sio) {
           ($howT, my $value) = ($1,$2);
           ($to) = $value =~ /($EmailAdrRe\@$EmailDomainRe)/sio;
       }
 
       if (! $to) {
-          mlog(0,"*x*(re)send - $file - To: and X-Assp-Intended-For: headertag not found - skip file");
-          $message = "# (re)send - $file - To: and X-Assp-Intended-For: headertag not found - skip file\r\n".$message;
+          mlog(0,"*x*(re)send - $file - To: and X-Spambox-Intended-For: headertag not found - skip file");
+          $message = "# (re)send - $file - To: and X-Spambox-Intended-For: headertag not found - skip file\r\n".$message;
           &resendError($file,\$message);
           next;
       }
-      if (lc $howT eq lc "X-Assp-Intended-For:") {
+      if (lc $howT eq lc "X-Spambox-Intended-For:") {
 #          $message =~ s/\nto:[^\<]*?<?$EmailAdrRe\@$EmailDomainRe>?\s*\r?\n/\n/sio;
           $message =~ s/\nto:$HeaderValueRe/\n/sio;
-          $message =~ s/X-Assp-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/To: <$1>\r\n/sio;
+          $message =~ s/X-Spambox-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?\s*\r?\n/To: <$1>\r\n/sio;
       }
 
       my $islocal = localmail($to);
@@ -19688,7 +20761,7 @@ sub resend_mail {
       }
 
       $message =~ s/^\r?\n//o;
-      $message =~ s/(?:ReturnReceipt|Return-Receipt-To|Disposition-Notification-To):$HeaderValueRe//gios
+      $message =~ s/(?:$removeDispositionNotification):$HeaderValueRe//gios
             if ($removeDispositionNotification);
 
       mlog(0,"*x*(re)send - $file - $howF $mailfrom - $howT $to") if $MaintenanceLog >= 2;
@@ -19723,6 +20796,10 @@ sub resend_mail {
           $message =~ s/\nbcc:[\r\n\s]+($HeaderNameRe:)?/\n$1/iogs;
       }
 
+      my $IS8BITMIME;
+      if ($message =~ /X-Spambox-8BITMIME:\s*YES/io) {
+          $IS8BITMIME = 1;
+      }
       if (! $islocal && $relayHost) {
           mlog(0,"*x*(re)send - $file - using relayHost for not local mail - From: $mailfrom - To: $to")
               if $MaintenanceLog >= 2;
@@ -19751,7 +20828,7 @@ sub resend_mail {
           delete $Con{$t};
       }
       my $localip;
-      if ( $islocal && $host eq $smtpDestination && $message =~ /X-Assp-Intended-For-IP: ([^\r\n]+)\r\n/o) {
+      if ( $islocal && $host eq $smtpDestination && $message =~ /X-Spambox-Intended-For-IP: ([^\r\n]+)\r\n/o) {
           $localip = $1;
       }
       if (! $host) {
@@ -19762,6 +20839,8 @@ sub resend_mail {
       }
       my $AVa = 0;
       my $reason;
+      my $DoTLS = $DoTLS;
+      $DoTLS = 0 unless $CanUseIOSocketSSL;
       foreach my $destinationA (split(/\s*\|\s*/o, $host)) {
           my $useSSL;
           if ($destinationA =~ /^(_*INBOUND_*:)?(\d+)$/o){
@@ -19777,7 +20856,7 @@ sub resend_mail {
           if ($destinationA =~ /^SSL:(.+)$/oi) {
               $destinationA = $1;
               $useSSL = ' using SSL';
-              if ($useSSL && ! $CanUseNetSMTPSSL) {
+              if ($useSSL && (! $CanUseNetSMTPSSL || ! $CanUseIOSocketSSL)) {
                   mlog(0,"*x*SSL:$destinationA require Net::SMTP::SSL and IO::Socket::SSL to be installed and enabled, trying others...") ;
                   next;
               }
@@ -19789,11 +20868,12 @@ sub resend_mail {
                   my ($host,$port) = $destinationA =~ /($HostRe)(?::($PortRe))?$/io;
                   $port ||= 25;
                   my %auth = ($hostCFGname eq 'relayHost' && $relayAuthUser && $relayAuthPass) ? (username => $relayAuthUser, password => $relayAuthPass) : ();
-                  my (%from, %to);
+                  my (%from, %to, %Bits);
                   %from = ('From' => $mailfrom);
+                  $Bits{Bits} = 8 if $IS8BITMIME;
 #                  %to = ('To' => $to);
                   my $sender = Email::Send->new({mailer => 'SMTP'});
-                  $sender->mailer_args([Host => $host, Port => $port, Hello => $myName, tls => ($DoTLS == 2 && ! exists $localTLSfailed{$destinationA} && ! $useSSL), ssl => ($useSSL?1:0), %auth, %from, %to]);
+                  $sender->mailer_args([Host => $host, Port => $port, Hello => $myName, tls => ($DoTLS == 2 && ! exists $localTLSfailed{$destinationA} && ! $useSSL), ssl => ($useSSL?1:0), %auth, %from, %to, %Bits]);
                   eval{ require Email::Send::SMTP; };
                   *{'Email::Send::SMTP::send'} = \&main::email_send_X;
                   eval{$result = $sender->send($message);};
@@ -19802,7 +20882,7 @@ sub resend_mail {
                       $result = undef;
                       $localTLSfailed{$destinationA} = time;
                       $sender = Email::Send->new({mailer => 'SMTP'});
-                      $sender->mailer_args([Host => $host, Port => $port, Hello => $myName, NoTLS => 1, %auth, %from, %to]);
+                      $sender->mailer_args([Host => $host, Port => $port, Hello => $myName, NoTLS => 1, %auth, %from, %to, %Bits]);
                       $result = eval{$sender->send($message)};
                   } elsif ($@) {
                       die "$@\n";
@@ -20075,6 +21155,7 @@ sub stateReset {
     $this->{messagescore} ||= 0;
     $this->{messagescoredone} = '';
     $this->{myheader} = $this->{myheaderCon};
+    delete $this->{newReported};
     $this->{nobayesian} = '';
     $this->{nocollect} = '';
     $this->{nodamping} = '';
@@ -20119,6 +21200,7 @@ sub stateReset {
     $this->{saveprepend} = '';
     $this->{sayMessageOK} = '';
     delete $this->{scanfile};
+    %{$this->{scores}} = (); undef %{$this->{scores}}; delete $this->{scores};
     $this->{senderok} = '';
     @{$this->{senders}} = (); undef @{$this->{senders}}; delete $this->{senders};
     $this->{signed} = '';
@@ -20126,6 +21208,7 @@ sub stateReset {
     delete $this->{skipBayes};
     $this->{skipuriblPL} = '';
     $this->{skipnotspam} = '';
+    $this->{skipNotSpamTag} = '';
     $this->{spambuf} = 0;
     $this->{SpamCollectAddress} = '';
     $this->{spamconf} = 0;
@@ -20205,6 +21288,8 @@ sub stateReset {
     delete $this->{gotAllText};
     delete $this->{gripdone};
     delete $this->{hmmValues};
+    delete $this->{hmmQueryRelation};
+    delete $this->{hmmQuestion};
     delete $this->{hmmdone};
     delete $this->{islocalmailaddress};
     delete $this->{maillength};
@@ -20404,8 +21489,34 @@ sub getline {
         return;
     }
 
+    if ( ! $this->{lastcmd} && $l =~ /^\x16([\x00-\xFF])([\x00-\xFF])[\x00-\xFF]{2}(\x01|\x02)/os) {     # a SSLv3/TLS handshake Client-Helo-Frame - this should be never seen here
+        my ($major, $minor, $what)  = (iso2hex($1), iso2hex($2), iso2hex($3));
+        $what = $what eq '01' ? 'Client' : 'Server';
+        my $close = $ignoreEarlySSLClientHelo ? 'this frame is ignored' : 'the connection will be closed';
+        mlog($fh,"warning: got an unexpected SSLv3/TLS handshake $what"."-Helo-Frame of version ($major.$minor) from IP '$this->{ip}' at local IP '$this->{localip}' and Port '$this->{localport}' - $close");
+        $SMTPbuf = $this->{_} = undef;
+        if (! $ignoreEarlySSLClientHelo) {
+            pbAdd($fh, $this->{ip}, 'etValencePB', "EarlyTalker");
+            done($fh);
+        }
+        return;
+    }
+    if ( ! $this->{lastcmd} && $l =~ /^\x80[\x00-\xFF](\x01|\x02)([\x00-\xFF])([\x00-\xFF])/os) {      # a SSLv2/TLS handshake Client-Helo-Frame - this should be never seen here
+        my ($what, $major, $minor)  = (iso2hex($1), iso2hex($2), iso2hex($3));
+        $what = $what eq '01' ? 'Client' : 'Server';
+        my $close = $ignoreEarlySSLClientHelo ? 'this frame is ignored' : 'the connection will be closed';
+        mlog($fh,"warning: got an unexpected SSLv2/TLS handshake $what"."-Helo-Frame of version ($major.$minor) from IP '$this->{ip}' at local IP '$this->{localip}' and Port '$this->{localport}' - $close");
+        $SMTPbuf = $this->{_} = undef;
+        if (! $ignoreEarlySSLClientHelo) {
+            pbAdd($fh, $this->{ip}, 'etValencePB', "EarlyTalker");
+            done($fh);
+        }
+        return;
+    }
+    
     if (   ! $this->{greetingSent}
         && ! $this->{relayok}
+        && ! $disableEarlyTalker
         && &matchFH($fh,@lsnI)
         && ! matchIP($this->{ip},'whiteListedIPs',$fh,0)
         && ! matchIP($this->{ip},'ispip',$fh,0)
@@ -20421,7 +21532,7 @@ sub getline {
        my $l1 = $l;
        $l1 =~ s/\r|\n//go;
        my $emergency;
-       if ($l1 =~ /$NONPRINT/o) {
+       if ($l1 =~ /$NONPRINT/os) {
            $l1 = 'non printable hex data';
            $emergency = 1;
        }
@@ -20581,27 +21692,35 @@ sub getline {
             $this->{lastcmd} = 'AUTH';
             push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
             $this->{prepend}="[unsupported_$this->{lastcmd}_encryption_required]";
-            mlog($fh,"$this->{lastcmd} encryption required for requested authentication mechanism $authmeth");
+            mlog($fh,"$this->{lastcmd} transport layer encryption (SSL/TLS) required for requested authentication mechanism $authmeth");
             if($MaxErrors && ++$this->{serverErrors} > $MaxErrors) {
                 MaxErrorsFailed($fh,
-                "538 5.7.11 encryption required for requested authentication mechanism\r\n421 <$myName> closing transmission\r\n",
+                "538 5.7.11 transport layer encryption (SSL/TLS) required for requested authentication mechanism\r\n421 <$myName> closing transmission\r\n",
                 "max errors (MaxErrors=$MaxErrors) exceeded -- dropping connection after $this->{lastcmd}");
                 return;
             }
-            sendque($fh, "538 5.7.11 encryption required for requested authentication mechanism\r\n");
+            if ($AUTHrequireTLSDelay && ! $this->{relayok} && ! matchIP($this->{ip},'noPB',0,1)) {
+                $this->{sendTime} = time + $AUTHrequireTLSDelay;
+                $Stats{damptime} += $AUTHrequireTLSDelay;
+                $this->{damptime} += $AUTHrequireTLSDelay;
+                $this->{damping} = 1;
+                $Stats{damping}++;
+            }
+            sendque($fh, "538 5.7.11 transport layer encryption (SSL/TLS) required for requested authentication mechanism\r\n");
             return;
         }
 
         my $ip = &ipNetwork( $this->{ip}, 1);
-        if ($MaxAUTHErrors && $AUTHErrors{$ip} >= $MaxAUTHErrors) {
+        if ($MaxAUTHErrors && ! matchIP($this->{ip},'noMaxAUTHErrorIPs',0,0) && ($this->{relayok} ? $AUTHErrors{$this->{ip}} >= $MaxAUTHErrors : $AUTHErrors{$ip} >= $MaxAUTHErrors)) {
+            my $ip = $this->{relayok} ? $this->{ip} : &ipNetwork( $this->{ip}, 1);
             $this->{prepend}='[MaxAUTHErrors]';
-            NoLoopSyswrite($fh,"521 $myName does not accept mail - closing transmission - too many previouse AUTH errors from network $ip\r\n",0);
-            mlog($fh,"too many ($AUTHErrors{$ip}) AUTH errors from network $ip") if $ConnectionLog;
+            NoLoopSyswrite($fh,"521 $myName does not accept mail - closing transmission - too many previouse AUTH errors from $ip\r\n",0);
+            mlog($fh,"too many ($AUTHErrors{$ip}) AUTH errors from $ip") if $ConnectionLog;
             if (! matchIP($this->{ip},'noPB',0,1)) {
                 pbAdd( $fh, $this->{ip}, 'autValencePB', 'AUTHErrors' );
                 $this->{prescore} += ${'autValencePB'}[0];
             }
-            $AUTHErrors{$ip}++;
+            $Stats{AUTHErrors}++;
             done($fh);
             return;
         }
@@ -20622,13 +21741,14 @@ sub getline {
             mlog($fh,"info: injected STARTTLS request to " . $server->peerhost()) if $ConnectionLog;
             return;
         }
+
         $authmeth =~ s/^\s+//o;
         $authmeth =~ s/\s+$//o;
         if ($authmeth =~ /(plain|login)\s*(.*)/io) {
             $authmeth = lc $1;
             my $authstr = base64decode($2);
             mlog($fh,"info: authentication - $authmeth is used") if $ValidateUserLog;
-            if ($authmeth eq 'plain' and $authstr) {
+            if ($authmeth eq 'plain' && $authstr) {
                 ($this->{userauth}{foruser},$this->{userauth}{user},$this->{userauth}{pass}) = split(/ |\0/so,$authstr);
                 $this->{userauth}{stepcount} = 0;
                 $this->{userauth}{authmeth} = 'plain';
@@ -20648,9 +21768,28 @@ sub getline {
                 $this->{userauth}{stepcount} = 2;
                 $this->{userauth}{authmeth} = 'login';
             }
+        } elsif ($authmeth =~ /(cram-md5)/io) {
+            $authmeth = lc $1;
+            $this->{userauth}{stepcount} = 1;
+            $this->{userauth}{authmeth} = $authmeth;
+        }  elsif ($authmeth =~ /(digest-md5)/io) {
+            $authmeth = lc $1;
         }
         $this->{lastcmd} = 'AUTH';
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
+        if ($this->{userauth}{user} && $AUTHUserIPfrequency && ! AUTHUserIPOK($fh)) {
+            $this->{relayok} ? $AUTHErrors{$this->{ip}}++ : $AUTHErrors{$ip}++;
+            $this->{prepend}='[AUTHUserIP]';
+            NoLoopSyswrite($fh,"521 $myName does not accept mail - closing transmission - you are not allowed to authenticate from IP $this->{ip}\r\n",0);
+            mlog($fh,"too many authentication attempts for user '$this->{userauth}{user}' from different IP's") if $ConnectionLog;
+            if (! matchIP($this->{ip},'noPB',0,1)) {
+                pbAdd( $fh, $this->{ip}, 'autValencePB', 'AUTHErrors' );
+                $this->{prescore} += ${'autValencePB'}[0];
+            }
+            $Stats{AUTHErrors}++;
+            done($fh);
+            return;
+        }
         $this->{doneAuthToRelay} = 1;
         sendque($server,$l);
         return;
@@ -20658,34 +21797,61 @@ sub getline {
     } elsif ($this->{userauth}{stepcount}) {
         if ($this->{userauth}{authmeth} eq 'plain') {
             $this->{userauth}{stepcount} = 0;
-            $l =~ /([^\r\n]*)\r\n/o;
-            my $authstr = base64decode($1);
+            my $authstr;
+            $authstr = base64decode($1) if $l =~ /([^\r\n]*)\r\n/o;
             ($this->{userauth}{foruser},$this->{userauth}{user},$this->{userauth}{pass}) = split(/ |\0/o,$authstr);
             if ($AUTHLogUser) {
                 my $tolog = "info: authentication (PLAIN) realms - foruser:$this->{userauth}{foruser}, user:$this->{userauth}{user}";
                 $tolog .= ", pass:$this->{userauth}{pass}" if $AUTHLogPWD;
                 mlog($fh,$tolog);
             }
-            sendque($server,$l);
-            return;
-        } elsif ($this->{userauth}{stepcount} == 2) {
+        } elsif ($this->{userauth}{stepcount} == 2) {          # login first step USER
             $this->{userauth}{stepcount} = 1;
-            $l =~ /([^\r\n]*)\r\n/o;
-            $this->{userauth}{user} = base64decode($1);
-            sendque($server,$l);
-            return;
-        } else {
+            $this->{userauth}{user} = base64decode($1) if $l =~ /([^\r\n]*)\r\n/o;
+        } elsif ($this->{userauth}{authmeth} eq 'login') {     # login second step PASS
             $this->{userauth}{stepcount} = 0;
-            $l =~ /([^\r\n]*)\r\n/o;
-            $this->{userauth}{pass} = base64decode($1);
+            $this->{userauth}{pass} = base64decode($1) if $l =~ /([^\r\n]*)\r\n/o;
             if ($AUTHLogUser) {
                 my $tolog = "info: authentication (LOGIN) realms - user:$this->{userauth}{user}";
                 $tolog .= ", pass:$this->{userauth}{pass}" if $AUTHLogPWD;
                 mlog($fh,$tolog);
             }
-            sendque($server,$l);
+        } elsif ($this->{userauth}{authmeth} eq 'cram-md5') {  # cram-md5 single step  "USER DIGEST"
+            $this->{userauth}{stepcount} = 0;
+            my ($user,$cram);
+            ($user,$cram) = split(/\s+/o,base64decode($1)) if $l =~ /([^\r\n]*)\r\n/o;;
+            $this->{userauth}{user} = $user if $user;
+            if ($AUTHLogUser) {
+                my $tolog = "info: authentication (CRAM-MD5) realms - user:$this->{userauth}{user}";
+                mlog($fh,$tolog);
+            }
+        }
+
+        if (   (   $this->{userauth}{authmeth} eq 'cram-md5'
+                || $this->{userauth}{authmeth} eq 'plain'
+                || ($this->{userauth}{authmeth} eq 'login' && $this->{userauth}{stepcount} == 1)
+               )
+            && $this->{userauth}{user}
+            && $AUTHUserIPfrequency
+            && ! AUTHUserIPOK($fh)
+           )
+        {
+            my $ip = &ipNetwork( $this->{ip}, 1);
+            $this->{relayok} ? $AUTHErrors{$this->{ip}}++ : $AUTHErrors{$ip}++;
+            $this->{prepend}='[AUTHUserIP]';
+            NoLoopSyswrite($fh,"521 $myName does not accept mail - closing transmission - you are not allowed to authenticate from IP $this->{ip}\r\n",0);
+            mlog($fh,"too many authentication attempts for user '$this->{userauth}{user}' from different IP's") if $ConnectionLog;
+            if (! matchIP($this->{ip},'noPB',0,1)) {
+                pbAdd( $fh, $this->{ip}, 'autValencePB', 'AUTHErrors' );
+                $this->{prescore} += ${'autValencePB'}[0];
+            }
+            $Stats{AUTHErrors}++;
+            done($fh);
             return;
         }
+
+        sendque($server,$l);
+        return;
 
     } elsif (&syncCanSync() && $enableCFGShare && $isShareSlave && $l=~/^ *SPAMBOXSYNCCONFIG\s*([^\r\n]+)\r\n/o ) {
         my $pass = $1;
@@ -20746,7 +21912,7 @@ sub getline {
         done($fh);
         return;
 
-    } elsif ($l=~/^ *($notAllowedSMTP)/io) {
+    } elsif ($l=~/^ *($notAllowedSMTP|$BIT8)/i) {
         $this->{lastcmd} = $1;
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
         $this->{prepend}="[unsupported_$this->{lastcmd}]";
@@ -20779,6 +21945,25 @@ sub getline {
             return;
         }
 
+        if($l =~ /BODY=8BITMIME/io && $BIT8 =~ /8BITMIME/io) {
+            $this->{lastcmd} = 'MAIL FROM';
+            push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
+            $this->{prepend}="[unsupported_8BITMIME]";
+            mlog($fh,"$this->{lastcmd} BODY=8BITMIME not allowed");
+            if($MaxErrors && ++$this->{serverErrors} > $MaxErrors) {
+                MaxErrorsFailed($fh,
+                "502 $this->{lastcmd} BODY=8BITMIME not supported\r\n421 <$myName> closing transmission\r\n",
+                "max errors (MaxErrors=$MaxErrors) exceeded -- dropping connection after $this->{lastcmd}");
+                return;
+            }
+            sendque($fh, "502 $this->{lastcmd} BODY=8BITMIME not supported\r\n");
+            return;
+        } elsif ($l =~ /BODY=8BITMIME/io) {
+            $this->{IS8BITMIME} = 1;
+        } else {
+            $this->{IS8BITMIME} = 0;
+        }
+        
         if ($CanUseIOSocketSSL &&
             $DoTLS == 2 &&
             ! $SSLfailed{$this->{ip}} &&
@@ -20874,16 +22059,14 @@ sub getline {
         $mfdd = $1 if $mf=~/(\@.*)/o;
 
         my $alldd = "$wildcardUser$mfdd";
-        my $defaultalldd = "*$mfdd";
 
         if($l=~/SIZE=(\d*)\s/io) {
             my $size = $1;
             $this->{SIZE}=$size;
             mlog($fh,"info: found message size announcement: " . &formatNumDataSize($size)) if $SessionLog;
 
-            if ( ($this->{relayok} && $maxSize
-                    && ( $size > $maxSize )) or (!$this->{relayok} && $maxSizeExternal
-                    && ( $size > $maxSizeExternal )))
+            if (   ( $this->{relayok} && !keys(%MSadr)  && !keys(%MRSadr)  && $maxSize &&  $size > $maxSize)
+                || (!$this->{relayok} && !keys(%MSEadr) && !keys(%MRSEadr) && $maxSizeExternal && $size > $maxSizeExternal) )
             {
                 my $max = $this->{relayok} ? $maxSize : $maxSizeExternal;
                 my $err = "552 message exceeds MAXSIZE byte (size)";
@@ -20932,7 +22115,7 @@ sub getline {
 
         if (!$this->{relayok}) {
 
-            if ($allLogRe
+            if ($allLogRe && ! $this->{alllog}
                 && (   $mf =~ /$allLogReRE/
                     || $this->{ip}   =~ /$allLogReRE/
                     || $this->{helo} =~ /$allLogReRE/)
@@ -20952,7 +22135,6 @@ sub getline {
             }
             $this->{red} = "$mf in RedList"
               if ( $Redlist{"$alldd"}
-                || $Redlist{"$defaultalldd"}
                 || $Redlist{"$mf"} );
 
             if (! $this->{whitelisted} && &Whitelist($mf) && ! localmail($mf)) {
@@ -20969,17 +22151,7 @@ sub getline {
                 $this->{whitelisted}=1;
                 $this->{passingreason} = "whiteRe '$1'";
             }
-            if (! $this->{whitelisted} && (&Whitelist($mf) || &Whitelist($defaultalldd)) && ! localmail($mf)) {
-                mlogRe($fh,$mfdd,'wildcardUser','whitelisting') ;
-                $this->{whitelisted}=1;
-                &Whitelist($alldd,undef,'add');
-                &Whitelist($defaultalldd,undef,'add');
-                &Whitelist($mfdd,undef,'add');
-                $this->{passingreason} = "wildcardUser";
-            }
-            $this->{red}="$mf in RedList" if ($Redlist{"$alldd"} || $Redlist{"$defaultalldd"} || $Redlist{"$mf"});
-            my $ret = matchIP( $this->{ip}, 'whiteListedIPs', $fh ,0);
-            if (  $whiteListedIPs && $ret )
+            if (  ! $this->{whitelisted} && $whiteListedIPs && (my $ret = matchIP( $this->{ip}, 'whiteListedIPs', $fh ,0)) )
             {
                 $this->{whitelisted}   = 1;
                 $this->{passingreason} = "whiteListedIPs '$ret'";
@@ -21211,6 +22383,7 @@ sub getline {
 
             if ($ForceFakedLocalHelo && !($fhTestMode || $allTestMode)) {
                 if (! ForgedHeloOK($fh) ) {
+                    $this->{skipNotSpamTag} = 1;
                     $reply =
                       $SenderInvalidError
                       ? "$SenderInvalidError"
@@ -21225,6 +22398,7 @@ sub getline {
 
             if ($ForceValidateHelo && !($ihTestMode || $allTestMode)) {
                 if (! invalidHeloOK($fh,\$this->{helo})) {
+                    $this->{skipNotSpamTag} = 1;
                     $Stats{invalidHelo}++ ;
                     $this->{prepend}="[InvalidHELO]";
                     mlog($fh,"[spam found] ($this->{messagereason})") ;
@@ -21234,6 +22408,7 @@ sub getline {
                     return;
                 }
                 if (! validHeloOK($fh,\$this->{helo})) {
+                    $this->{skipNotSpamTag} = 1;
                     $Stats{invalidHelo}++ ;
                     $this->{prepend}="[InvalidHELO]";
                     mlog($fh,"[spam found] ($this->{messagereason})");
@@ -21246,6 +22421,7 @@ sub getline {
 
             if ($ForceNoValidLocalSender && !($allTestMode || $DoNoValidLocalSender==4)) {
                 if (! LocalSenderOK( $fh, $this->{ip} ) ) {
+                    $this->{skipNotSpamTag} = 1;
                     $reply =
                       $SenderInvalidError
                       ? "$SenderInvalidError"
@@ -21258,6 +22434,7 @@ sub getline {
                     return;
                 }
                 if (! NoSpoofingOK( $fh, 'mailfrom' ) ) {
+                    $this->{skipNotSpamTag} = 1;
                     $reply =
                       $SenderInvalidError
                       ? "$SenderInvalidError"
@@ -21270,12 +22447,14 @@ sub getline {
                     return;
                 }
             }
-
+            $this->{skipNotSpamTag} = 1;
             if ($ForceRBLCache && !($rblTestMode || $allTestMode)) {
                 if (! RBLCacheOK($fh,$this->{ip},0))  {
+                    $this->{skipNotSpamTag} = '';
                     return;
                 }
             }
+            $this->{skipNotSpamTag} = '';
         }
 
 ############################################ end !relayok ###################
@@ -21300,6 +22479,7 @@ sub getline {
                 eval{$tmpfrom=$srs->forward($this->{mailfrom},$SRSAliasDomain)}) {
                 mlog($fh, "SRS rewriting sender '$this->{mailfrom}' into '$tmpfrom'",1);
                 $l =~ s/\Q$this->{mailfrom}\E/$tmpfrom/;
+#                $this->{mailfrom} = $tmpfrom;  # use the SRS rewriting sender from here now
             } else {
                 mlog($fh, "SRS rewriting sender '$this->{mailfrom}' failed!",1);
             }
@@ -21332,9 +22512,10 @@ sub getline {
                     $error = 'Invalid-Sender-Domain';
                     $this->{invalidSenderDomain} = lc $dom;
                 }
-                if (exists($RFC822dom{lc $dom}) || (${defined *{'yield'}} && defined($ns = getRRData(${defined *{'yield'}}, (defined *{'yield'}?$ns:''))) && $ns eq '0' && ($lastDNSerror eq 'NXDOMAIN' || $lastDNSerror eq 'NOERROR'))) {
+                my $r = $1;
+                if (exists($RFC822dom{lc $dom}) || (${defined *{'yield'}} && defined($ns = getRRData(${defined *{'yield'}}, (defined *{'yield'}?$ns:''))) && $ns eq '0' && $lastDNSerror eq 'NXDOMAIN' )) {
                     $error .= ', ' if $error;
-                    $error = "Missing-NameServer-Registration: $1";
+                    $error = "Missing-NameServer-Registration: $r";
                     $RFC822dom{lc $dom} = time unless exists($RFC822dom{lc $dom});
                     $this->{invalidSenderDomain} = lc $dom;
                 }
@@ -21391,7 +22572,6 @@ sub getline {
             return;
         }
 
-        my ($u,$h);
         my ($str, $gen, $day, $hash, $orig_user) = ($e =~ /(prvs=(\d)(\d\d\d)(\w{6})=([^\r\n]*))/o);
         $l =~ s/$str/$orig_user/ if ($orig_user);  # remove our BATV-Tag from VRFY address
 
@@ -21529,8 +22709,8 @@ sub getline {
 
         # BATV check and stuff for rcpt to
         if ($this->{relayok}) {                   # it's outgoing mail
-            $l=~/rcpt to:\s*<*([^\r\n>]*)/io;    # get the recipient address
-            my $rt = $1;
+            my $rt;
+            $rt = $1 if $l=~/rcpt to:\s*<*([^\r\n>]*)/io;    # get the recipient address
             if ($remindBATVTag && $this->{isbounce} && exists $BATVTag{lc($rt)}) {        # if we remind strange Tags - does the Tag exists
                 if ( my ($gen, $day, $hash, $orig_user) = ($BATVTag{lc($rt)} =~ /^prvs=(\d)(\d\d\d)(\w{6})=([^\r\n]*)/o) ) {  # get the Tag details
                     ($orig_user) = ($BATVTag{lc($rt)} =~ /^prvs=[\da-zA-Z]+=([^\r\n]*)/o) unless $orig_user;  # get the Tag details from invalid BATV signature
@@ -21548,8 +22728,8 @@ sub getline {
                 }
             }
         } else {                                # it' incoming mail
-            $l=~/rcpt to:\s*<*([^\r\n>]*)/io;  # get the recipient address
-            my $rt = $1;
+            my $rt;
+            $rt = $1 if $l=~/rcpt to:\s*<*([^\r\n>]*)/io;  # get the recipient address
             my $ok;
             my $res;
             my $lrt = batv_remove_tag($fh,$rt,'BATVrcpt');  # remove any Tag - store it ->{BATVrcpt}
@@ -21618,13 +22798,12 @@ sub getline {
                   if (lc $newmidpart ne lc $midpart) {
                       $l =~ s/\Q$orgmidpart\E/$newmidpart/i;
                       mlog($fh,"info: recipient $orgmidpart replaced with $newmidpart");
-                      $this->{myheader}.="X-Assp-Recipient: recipient $orgmidpart replaced with $newmidpart\r\n";
+                      $this->{myheader}.="X-Spambox-Recipient: recipient $orgmidpart replaced with $newmidpart\r\n";
                       $this->{orgrcpt} = $orgmidpart;
                   }
                 }
             }
-            $l=~/rcpt to: *([^\r\n]*)/io;
-            $e = batv_remove_tag(0,$1,'');
+            $e = batv_remove_tag(0,$1,'') if $l=~/rcpt to: *([^\r\n]*)/io;
         }
 
         #enforce valid email address pattern - RFC822
@@ -21705,7 +22884,18 @@ sub getline {
             sendque($fh, $NoRelaying."\r\n");
             return;
         }
-        my $rcptislocal=localmail($h);
+
+        # check if we have to move in to transparent mode
+        if ($transparentRecipients && matchSL( "$u$h", 'transparentRecipients' )) {
+            mlog($fh,"info: the connection will now be moved in to the Full-Transparent-Proxy mode") if $ConnectionLog;
+            $this->{getline}=\&TransClient;
+            $friend->{getline}=\&TransServer;
+            sendque($server,$l);
+            return;
+        }
+
+        my $rcptislocal = localmail($h);
+
         $this->{nodelay} ||= 1 if ! $this->{relayok} && matchSL("$u$h",'noDelayAddresses');
 
         if ($rcptislocal) {
@@ -21832,7 +23022,13 @@ sub getline {
 
         # skip check when RELAYOK or EMAIL-Interface
         my $uh = "$u$h";
-        $this->{alllog} = 1 if $allLogRe && $uh =~ /$allLogReRE/;
+        if ($allLogRe && ! $this->{alllog}
+            && (   $uh =~ /$allLogReRE/
+                || $this->{ip}   =~ /$allLogReRE/
+                || $this->{helo} =~ /$allLogReRE/)
+          ) {
+           $this->{alllog}=1;
+        }
 
         if ( !$this->{uhnoprocessing} && !$emailok && !$this->{relayok} ) {
 
@@ -22364,7 +23560,7 @@ sub getline {
             $this->{rcpt}.="$uh ";
             pbTrapDelete("$uh");
         } else {
-            $this->{red}="$uh in RedList" if ($Redlist{"$uh"} || $Redlist{"*\@$h"} || $Redlist{"$wildcardUser\@$h"});
+            $this->{red}="$uh in RedList" if ($Redlist{"$uh"} || $Redlist{"$wildcardUser\@$h"});
             $this->{rcpt}.="$uh ";
             mlog($fh,"recipient accepted without delaying: $uh",1) if $this->{alllog} or $ValidateUserLog>=2;
             $this->{donotdelay} = 1;
@@ -22402,7 +23598,7 @@ sub getline {
     } elsif( $l=~/^ *(DATA)/io || $l=~/^ *(BDAT) (\d+)/io ) {
         $this->{lastcmd} = $1;
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
-        if($2) {
+        if(uc($1) eq 'BDAT') {
             $this->{bdata}=$2;
         } else {
             delete $this->{bdata};
@@ -22443,7 +23639,7 @@ sub getline {
             mlog($fh, "the low/limit SpamLover-Score for this mail is set to $low/$this->{spamMaxScore} because recipient $this->{spamMaxScoreInfo}");
         }
         
-        $this->{rcpt}=~s/\s$//o;
+        $this->{rcpt}=~s/\s+$//o;
 
         $this->{numrcpt} = 0;      # calculate the total number of rcpt
         %{$this->{rcptlist}} = ();
@@ -22484,7 +23680,7 @@ sub getline {
         }
 
         # drop line if no recipients left
-        if ($this->{rcpt}!~/@/o) {
+        if ($this->{rcpt}!~/\@/o) {
 
             # possible workaround for GroupWise bug
             if ($this->{delayed}) {
@@ -22513,7 +23709,7 @@ sub getline {
             || ( matchSL( $this->{mailfrom}, 'noProcessing' ) )  ) {
 
             $this->{noprocessing} = 1;
-            $this->{myheader} .= 'X-Assp-NoProcessing: YES';
+            $this->{myheader} .= 'X-Spambox-NoProcessing: YES';
             $this->{myheader} .= " - ($this->{passingreason})" if $this->{passingreason};
             $this->{myheader} .= "\r\n";
 
@@ -22638,8 +23834,7 @@ sub getline {
     } else {
     	my $tmp = $l ;
     	$tmp =~ s/\r|\n|\s//igo;
-    	$tmp =~ /^([a-zA-Z0-9]+)/o;
-    	if ($1) {
+    	if ($tmp =~ /^([a-zA-Z0-9]+)/o) {
     	    $this->{lastcmd} = substr($1,0,14);
             push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
         }
@@ -22668,7 +23863,7 @@ sub makeSubject {
     return unless $sub;
     $sub =~ s/\r|\n|\t//go;
     $Con{$fh}->{subject2}=$sub;
-    $Con{$fh}->{RFC2047} |= $Con{$fh}->{subject2} =~ s/$NONPRINT//go;
+    $Con{$fh}->{RFC2047} ||= $Con{$fh}->{subject2} =~ s/$NONPRINT//go;
     $sub=decodeMimeWords2UTF8($sub);
     $sub = d8($sub);
     $Con{$fh}->{subject3} = $sub;
@@ -22701,8 +23896,11 @@ sub getOriginIPs {
     my @ignoredIP;
     d('getOriginIPs');
     $getPTR = (lc $getPTR eq 'ptr') ? 1 : 0;
+    my $rcvlines = 0;
+    my $needlines = ("$fh" =~ /^\d+$/o) ? 2 : 1 ; # ignore our own rcv-line if called from the analyzer
     while ( $header =~ /(?:Received:\s+from\s+|(?:Origin(?:at(?:ing|ed))?|Source|client)[\s\-_]?IP:|[\s\-_]IP:)($HeaderValueRe)/gois ) {
         my $line = $1;
+        $rcvlines++;
         headerSmartUnwrap($line);
         my @words = $line =~ /\b(from|helo|by|for|with)\b/goi;
         while (@words) {
@@ -22722,7 +23920,7 @@ sub getOriginIPs {
         }
         $line =~ s/ by ($IPRe) / by [$1] /igo;
         $line =~ s/(?:ecelerity|id|SMTPSVC|version).+?$IPRe//iog;
-        while ($line =~ /[\[\(]($IPRe)[\]\)]/go) {
+        while ($line =~ /[\[\(]($IPRe)(?::$PortRe)?[\]\)]/go) {
             my $sip = $1;
             next if ($sip =~ /\.0+$/o && $sip !~ /^$IPv6Re/o);
             next unless $sip;
@@ -22754,6 +23952,12 @@ sub getOriginIPs {
                 $ptr{$sip} = getRRData($sip,'PTR') if $getPTR;
             }
         }
+    }
+    if ($enhancedOriginIPDetect == 2 && @sips && $rcvlines >= $needlines) {
+        my $sip = pop @sips;
+        $oip = @sips ? $sips[-1] : undef;
+        push @ignoredIP, $sip;
+        delete $ptr{$sip};
     }
     mlog(0,"info: enhanced Originated IP detection ignored IP's: ".join(' ,',@ignoredIP)) if $ConnectionLog >= 2 && @ignoredIP;
     mlog(0,"info: enhanced Originated IP detection found IP's: ".join(' ,',@sips)) if $ConnectionLog >= 2 && @sips;
@@ -22842,7 +24046,6 @@ sub getheader {
     if ($l=~/^\.?[\r\n]*$/o) {
         $done2 = $l=~/^\.[\r\n]+$/o;
         $this->{org_header} = $this->{header};
-#        $this->{header} =~ s/\r?\n/\r\n/ogs;
 
         my $orgnp = $this->{noprocessing};
         $this->{noprocessing} = 0 if $this->{noprocessing} eq '2';  # noprocessing on message size
@@ -22851,6 +24054,10 @@ sub getheader {
         $this->{maillength} = $this->{headerlength} = $headerlength = length($this->{header});
         $this->{headerlength} -= 3 if $done2;
         $this->{headerlength} = 0 if $this->{headerlength} < 0;
+        my $decHeader = $this->{header};
+        $decHeader = decodeMimeWords2UTF8($decHeader);
+        unicodeNormalize(\$decHeader);
+        
         my $slok;
 
         &makeSubject($fh);
@@ -22897,7 +24104,7 @@ sub getheader {
             return;
         }
         d('contentonly');
-        if(!$this->{contentonly} && $contentOnlyRe && $this->{header}=~/($contentOnlyReRE)/) {
+        if(!$this->{contentonly} && $contentOnlyRe && $decHeader=~/($contentOnlyReRE)/) {
             mlogRe($fh,($1||$2),'contentOnlyRe','contentonly');
             pbBlackDelete($fh,$this->{ip});
             $this->{contentonly} = 1;
@@ -22906,13 +24113,13 @@ sub getheader {
         d('allLogReRE');
         if ( $allLogRe
              && ! $this->{alllog}
-             && $this->{header} =~ /$allLogReRE/ )
+             && $decHeader=~ /$allLogReRE/ )
         {
             $this->{alllog}=1;
         }
         d('isred auto');
         if ( ! $this->{red}
-            && $this->{header} =~ /(auto-submitted\:|subject\:[^\r\n]*?auto\:)/io )
+            && $decHeader =~ /(auto-submitted\:|subject\:[^\r\n]*?auto\:)/io )
             # RFC 3834
         {
             mlogRe( $fh, $1, 'redRe','red-auto' );
@@ -22921,7 +24128,7 @@ sub getheader {
         d('isred redReRE');
         if ( ! $this->{red}
             && $redRe
-            && $this->{header} =~ /($redReRE)/ ) {
+            && $decHeader =~ /($redReRE)/ ) {
 
             mlogRe( $fh, ($1||$2), 'redRe','redlisting' );
             $this->{red} = ($1||$2);
@@ -22930,21 +24137,21 @@ sub getheader {
         NotSpamTagCheck($fh);
 
         my $onwhite = onwhitelist( $fh, \$this->{header} );
-        if (!$this->{whitelisted} && $whiteRe && $this->{header}=~/($whiteReRE)/) {
+        if (!$this->{whitelisted} && $whiteRe && $decHeader=~/($whiteReRE)/) {
             mlogRe($fh,($1||$2),'whiteRe','whitelisting');
             $this->{whitelisted}=1;
         }
-        if(!$this->{ccnever} && $ccSpamNeverRe && $this->{header}=~/($ccSpamNeverReRE)/) {
+        if(!$this->{ccnever} && $ccSpamNeverRe && $decHeader=~/($ccSpamNeverReRE)/) {
             mlogRe($fh,($1||$2),'ccSpamNeverRe','CCnever');
             $this->{ccnever}=1;
         }
-        if(! $this->{noprocessing} && $npRe && $this->{header}=~/($npReRE)/)
+        if(! $this->{noprocessing} && $npRe && $decHeader=~/($npReRE)/)
         {
             mlogRe($fh,($1||$2),'npRe','noprocessing');
             pbBlackDelete($fh,$this->{ip});
             $this->{noprocessing} = 1;
         }
-        if(!($this->{spamlover} & 1) && $SpamLoversRe && $this->{header}=~/($SpamLoversReRE)/ ) {
+        if(!($this->{spamlover} & 1) && $SpamLoversRe && $decHeader=~/($SpamLoversReRE)/ ) {
             mlogRe($fh,($1||$2),'SpamLoversRe','spamlovers');
             $this->{spamlover}=3;
         }
@@ -23001,14 +24208,13 @@ sub getheader {
             my $orgHelo = $this->{helo};
 	        while ( $this->{header} =~ /Received:($HeaderValueRe)/gios ) {
                 my $h = $1;
-                if ( $h =~ /\s+from\s+(?:([^\s]+)\s)?(?:.+?)(?:$this->{cip}|$cip|$cip2)\]?\)(.{1,80})by.{1,20}/gis ) {
+                if ( $h =~ /\s+from\s+(?:([^\s]+)\s)?(?:.+?)(?:\Q$this->{cip}\E|\Q$cip\E|\Q$cip2\E)(?::$PortRe)?\]?\)(.{1,80})by.{1,20}/gis ) {
 
                     $this->{ciphelo} = $1;
                     $this->{helo} = $1 if $1;
                     my $rhelo = $2;
                     $rhelo =~ s/\r?\n/ /go;
-                    $rhelo =~ /.+?helo\s*=\s*([^\s]+)/io;
-                    if ($1) {
+                    if ($rhelo =~ /.+?helo\s*=\s*([^\s]+)/io) {
                         $this->{ciphelo} = $1;
                         $this->{helo} = $1;
                     }
@@ -23065,10 +24271,26 @@ sub getheader {
             }
         }
 
+        if ($this->{SIZE} && ! MessageSizeOK($fh)) {
+            $this->{skipnotspam} = 0;return;
+        }
+
         HeloIsGood($fh,$this->{helo});
 
         if (! $this->{relayok} && ! headerAddrCheckOK($fh) ) {
             $this->{skipnotspam} = 0;return;
+        }
+        if (&MsgScoreTooHigh($fh,$done)) {$this->{skipnotspam} = 0;return;}
+
+        if(! $this->{relayok} && ! sigSMIMEPGPOK($fh)) {
+            $reply =
+                      $SenderInvalidError
+                      ? "$SenderInvalidError"
+                      : "$SpamError";
+            $reply =~ s/REASON/$this->{messagereason}/go;
+            $this->{prepend}="[missingSignature]";
+            thisIsSpam($fh,"$this->{messagereason}",7,$reply,$fhTestMode,0,0);
+            if ($this->{error}) {$this->{skipnotspam} = 0;return;}
         }
         if (&MsgScoreTooHigh($fh,$done)) {$this->{skipnotspam} = 0;return;}
 
@@ -23107,8 +24329,7 @@ sub getheader {
                 $Stats{senderInvalidLocals}++ unless $slok;
                 $reply = $SenderInvalidError;
                 $reply =~ s/REASON/$this->{messagereason}/go;
-                thisIsSpam( $fh, "$this->{messagereason}", $spamISLog, $reply,
-                    $flsTestMode, $slok, 0 );
+                thisIsSpam( $fh, "$this->{messagereason}", $spamISLog, $reply, $flsTestMode, $slok, 0 );
                 if ($this->{error}) {$this->{skipnotspam} = 0;return;}
             }
             if (&MsgScoreTooHigh($fh,$done)) {$this->{skipnotspam} = 0;return;}
@@ -23124,6 +24345,22 @@ sub getheader {
         }
         if (&MsgScoreTooHigh($fh,$done)) {$this->{skipnotspam} = 0;return;}
 
+        # if RELAYOK check localaddresses if approprate
+        if ( $this->{relayok}
+            && ! $this->{red}
+            && $DoLocalSenderAddress
+            && ! $this->{acceptall}
+            && ! LocalAddressOK($fh)
+            && ! $this->{isbounce} ) {
+            $this->{prepend} = "[RelayAttempt]";
+            NoLoopSyswrite( $fh, "530 Relaying not allowed - local sender address unknown\r\n",0 );
+            $this->{messagereason} = "relay attempt blocked for unknown local sender address";
+            mlog( $fh, $this->{messagereason} );
+            $Stats{rcptRelayRejected}++;
+            delayWhiteExpire($fh);
+            done($fh);
+            return;
+        }
         # if RELAYOK check localdomains if approprate
         if ( $this->{relayok}
             && ! $this->{red}
@@ -23135,22 +24372,6 @@ sub getheader {
             $this->{prepend} = "[RelayAttempt]";
             NoLoopSyswrite( $fh, "530 Relaying not allowed - sender domain not local\r\n" ,0);
             $this->{messagereason} = "relay attempt blocked for unknown local sender domain";
-            mlog( $fh, $this->{messagereason} );
-            $Stats{rcptRelayRejected}++;
-            delayWhiteExpire($fh);
-            done($fh);
-            return;
-        }
-        # if RELAYOK check localaddresses if approprate
-        if ( $this->{relayok}
-            && ! $this->{red}
-            && $DoLocalSenderAddress
-            && ! $this->{acceptall}
-            && ! LocalAddressOK( $fh)
-            && ! $this->{isbounce} ) {
-            $this->{prepend} = "[RelayAttempt]";
-            NoLoopSyswrite( $fh, "530 Relaying not allowed - local sender address unknown\r\n",0 );
-            $this->{messagereason} = "relay attempt blocked for unknown local sender address";
             mlog( $fh, $this->{messagereason} );
             $Stats{rcptRelayRejected}++;
             delayWhiteExpire($fh);
@@ -23388,11 +24609,7 @@ sub getheader {
             pbAdd( $fh, $this->{ip}, 'srsValencePB', 'SRS_Not_Signed', 2 ) if $SRSValidateBounce !=2;
             my $tlit = tlit($SRSValidateBounce);
             mlog( $fh, "$tlit ($this->{messagereason})" ) if $SRSValidateBounce !=1;
-            thisIsSpam(
-                $fh, $this->{messagereason},
-                $SRSFailLog, '554 5.7.5 Bounce address not SRS signed',
-                $srsTestMode, $slok, 0
-            ) if $SRSValidateBounce ==1;
+            thisIsSpam($fh, $this->{messagereason},$SRSFailLog, '554 5.7.5 Bounce address not SRS signed',$srsTestMode, $slok, 0) if $SRSValidateBounce ==1;
             $this->{prepend} = '';
             if ($this->{error}) {$this->{skipnotspam} = 0;return;}
             if (&MsgScoreTooHigh($fh,$done)) {$this->{skipnotspam} = 0;return;}
@@ -23405,10 +24622,11 @@ sub getheader {
 
 # remove Disposition-Notification headers if needed
         if ($removeDispositionNotification && ! $this->{relayok} && ! $this->{noprocessing} &&
-            $this->{header} =~ s/(?:ReturnReceipt|Return-Receipt-To|Disposition-Notification-To):$HeaderValueRe//gios
+            $this->{header} =~ s/(?:$removeDispositionNotification):$HeaderValueRe//gios
             )
         {
             $this->{maillength} = length($this->{header});
+            $this->{prepend} = '';
             mlog($fh,"removed Disposition-Notification headers from mail") if $ValidateSenderLog;
         }
         if ($runlvl1PL && ! $this->{runlvl1PL}) {
@@ -23440,7 +24658,8 @@ sub getheader {
             pbAdd($fh,$this->{ip},'saValencePB','SpamCollectAddress',2);
             $this->{prepend}="[Collect]";
             delayWhiteExpire($fh);
-            thisIsSpam($fh,"$this->{messagereason}",$spamBucketLog,"250 OK",0,0,0);
+            thisIsSpam($fh,"$this->{messagereason}",$spamBucketLog,'',0,0,$done);
+            if ($this->{error}) {$this->{skipnotspam} = 0;return;}
             if (&MsgScoreTooHigh($fh,$done)) {$this->{skipnotspam} = 0;return;}
         }
 
@@ -23792,7 +25011,7 @@ sub SPFok_Run {
                 );
 
                 my $result;
-                my $ovr = matchHashKey(\%override,$mfd);
+                my $ovr = matchHashKey(\%override,$mfd, '0 1 1');
                 mlog(0,"SPF: SPFoverride for domain $mfd - $ovr") if $DebugSPF;
                 if ($ovr) {
                     $usedoverride = 1;
@@ -23812,7 +25031,7 @@ sub SPFok_Run {
                 } else {
                     $result = eval { $spf_server->process($request); };
                     my $fb;
-                    if ($result && $result->code eq 'none' && ($fb = matchHashKey(\%fallback,$mfd))) {
+                    if ($result && $result->code eq 'none' && ($fb = matchHashKey(\%fallback,$mfd,'0 1 1'))) {
                         $usedfallback = 1;
                         mlog(0,"SPF: got result 'none' - but found SPFfallback for domain $mfd => $fb") if $DebugSPF;
                         my $version = ($fb =~ /\s*v\s*=\s*spf1/io) ? 1 : 2 ;
@@ -23954,7 +25173,7 @@ sub SPFok_Run {
 
     return 1 if $ValidateSPF == 2 || $WorkerNumber == 10000;
 	$this->{messagereason} = "SPF $spf_result";
-    $this->{myheader} .= "X-Assp-Received-$received_spf\r\n"
+    $this->{myheader} .= "X-Spambox-Received-$received_spf\r\n"
       if $AddSPFHeader && !$this->{spfok};
 
     if ($this->{myheader} =~ s/X-Original-Authentication-Results:($HeaderValueRe)//ois) {
@@ -23998,8 +25217,7 @@ sub SPFok_Run {
         $Stats{spffails}++ unless $slok;
 
         $this->{prepend} = "[SPF]";
-        thisIsSpam( $fh, "SPF $spf_result".($strict?' - strict':''),
-            $SPFFailLog, $reply, $this->{testmode}, $slok, 0 );
+        thisIsSpam( $fh, "SPF $spf_result".($strict?' - strict':''), $SPFFailLog, $reply, $this->{testmode}, $slok, 0 );
         return 0;
     }
 
@@ -24097,18 +25315,19 @@ sub unzipgz {
 sub zipgz {
     my ($infile,$outfile) = @_;
     my $gzerrno;
+    my ($IN, $OUT);
     mlog(0,"compressing file ".de8($infile)." to ".de8($outfile)) if ($MaintenanceLog);
-    ($open->( my $IN, '<',$infile))
-       || mlog(0,"Cannot open input file ".de8($infile).":\n") && return 0;
-    ($open->( my $OUT, '>',$outfile))
-       || mlog(0,"Cannot open output file ".de8($outfile).":\n") && return 0;
+    ($open->( $IN, '<',$infile) || $open->( $IN, '<',d8($infile) ))
+       || mlog(0,"Cannot open input file ".de8($infile).": $!\n") && return 0;
+    ($open->( $OUT, '>',$outfile) || $open->( $OUT, '>',d8($outfile) ))
+       || mlog(0,"Cannot open output file ".de8($outfile).": $!\n") && return 0;
 
     (my $gz = gzopen($OUT, "wb"))
-      || mlog(0,"Cannot open ".de8($outfile).": $gzerrno\n") && return 0;
+      || mlog(0,"Cannot (gz)open ".de8($outfile).": $gzerrno\n") && return 0;
 
     while (<$IN>) {
         $gz->gzwrite($_)
-          || mlog(0,"error writing ".de8($outfile).": $gzerrno\n") && return 0;
+          || mlog(0,"error writing(gz) ".de8($outfile).": $gzerrno\n") && return 0;
     }
 
     $gz->gzclose ;
@@ -24228,6 +25447,8 @@ sub NotSpamTagGen {
     return unless exists $Con{$fh};
     my $this = $Con{$fh};
     return if $this->{relayok} && ! $noRelayNotSpamTag;
+    return if $this->{addressedToSpamBucket}; # don't tell spammers what to do
+    return if $this->{skipNotSpamTag}; # don't tell spammers what to do
     return $this->{notspamtag} if $this->{notspamtag};
     my $salt = unpack("B*", $NotSpamTag);  # in bits
     my $len = min(length($salt),1031);               # get random 32 bits
@@ -24287,32 +25508,32 @@ sub NotSpamTagOK {       # tag must be exact 10 bytes long, contains a-zA-Z02-7
     if (lc(substr(sha1_hex($salt." $mf $to"),0,6)) eq lc($sec)) {
         if ($fh && exists $seenNotSpamTag{"$mf $to $start $day ".lc($sec)}) {
             mlog($fh,"info: NotSpamTag was already used at: ". timestring($seenNotSpamTag{"$mf $to $start $day ".lc($sec)})) if $SessionLog;
-            $this->{myheader}.= "X-Assp-NotSpamTag: already used\r\n";
+            $this->{myheader}.= "X-Spambox-NotSpamTag: already used\r\n";
             return;
         }
         if ($dt > 2) {  # tag is too old
             mlog($fh,"info: NotSpamTag is older than two days") if $SessionLog;
-            $this->{myheader}.= "X-Assp-NotSpamTag: too old\r\n";
+            $this->{myheader}.= "X-Spambox-NotSpamTag: too old\r\n";
             return;
         }
         my $f;
-        $this->{myheader} =~ s/X-Assp-NotSpamTag.+$//os;
+        $this->{myheader} =~ s/X-Spambox-NotSpamTag.+$//os;
         if ($NotSpamTagProc & 1) {
             $this->{whitelisted} = 1;
-            $this->{myheader}.= "X-Assp-NotSpamTag: valid - whitelisted\r\n";
+            $this->{myheader}.= "X-Spambox-NotSpamTag: valid - whitelisted\r\n";
             mlog($fh,"info: valid NotSpamTag found - NotSpamTagProc whitelisted") if $SessionLog;
             $f = 1;
         }
         if ($NotSpamTagProc & 2) {
             $this->{noprocessing} = 1;
-            $this->{myheader}.= "X-Assp-NotSpamTag: valid - noprocessing\r\n";
+            $this->{myheader}.= "X-Spambox-NotSpamTag: valid - noprocessing\r\n";
             mlog($fh,"info: valid NotSpamTag found - NotSpamTagProc noprocessing") if $SessionLog;
             $f = 1;
         }
         $this->{nopb} = 1;
         pbBlackDelete($fh, $this->{ip});
         mlog($fh,"info: valid NotSpamTag found - no action in NotSpamTagProc configured") if $SessionLog && ! $f;
-        $this->{myheader}.= "X-Assp-NotSpamTag: valid - no action\r\n" unless $f;
+        $this->{myheader}.= "X-Spambox-NotSpamTag: valid - no action\r\n" unless $f;
         $seenNotSpamTag{"$mf $to $start $day ".lc($sec)} = time if $fh;
         return 1;
     }
@@ -24473,11 +25694,16 @@ sub MSGIDsigOK_Run {
     }
 
     if ($Back250OKISP && ($this->{ispip} || $this->{cip})) {
+        if (&TestMessageScore($fh)) {
+            delete $this->{messagelow};
+            MessageScore($fh,1);
+        }
+        return 0 if (&MsgScoreTooHigh($fh,1));
         $this->{accBackISPIP} = 1;
         mlog($fh,"info: force sending 250 OK to ISP for failed bounced message",1) if $BacksctrLog;
         return 1;
     } else {
-#        $this->{messagelow} = &TestLowMessageScore($fh);
+        delete $this->{messagelow};
         thisIsSpam($fh,$this->{messagereason},$BackLog,'554 5.7.8 Bounce address - message was never sent by this domain',0,0,1);
         return 0;
     }
@@ -24638,7 +25864,7 @@ sub batv_mail_out {
 
     $numsec = @batv_secrets;
     unless ($numsec) {
-        mlog(0, "warning : config error - no BATV-secrets (BATVSec) defined");
+        mlog(0, "warning: config error - no BATV-secrets (BATVSec) defined");
         return $mailfrom;
     }
     $gennum = rand($numsec);
@@ -24650,7 +25876,7 @@ sub batv_mail_out {
     $user = "prvs=$tagval=" . $user;
     $mailfrom = $user . '@' . $domain;
     mlog($fh, "info: calculated BATVhash from: generation: $gen, key: $secret, day: $day address: $orgsender") if $BATVLog >= 2;
-    mlog($fh, "info : changed sender from $orgsender to $mailfrom") if $BATVLog;
+    mlog($fh, "info: BATV - changed sender from $orgsender to $mailfrom") if $BATVLog;
     return $mailfrom;
 }
 
@@ -25011,7 +26237,7 @@ sub RWLok_Run {
     my $trust;
     my ($rwls_returned,@listed_by,$rwl,$received_rwl,$time,$err);
     if (matchIP($ip,'noRWL',$fh,0)) {
-        $this->{myheader}.="X-Assp-Received-RWL: lookup skipped (noRWL sender)\r\n" if $AddRWLHeader;
+        $this->{myheader}.="X-Spambox-Received-RWL: lookup skipped (noRWL sender)\r\n" if $AddRWLHeader;
         return 1;
     }
 
@@ -25050,58 +26276,83 @@ sub RWLok_Run {
         }
     }
     $rwls_returned=$#listed_by+1;
-    if ($rwls_returned>=$RWLminhits) {
-        $trust=2;
-        my $ldo_trust;
 
-        foreach (@listed_by) {
-            my %categories = (
-                      2 => 'Financial services',
-                      3 => 'Email Service Providers',
-                      4 => 'Organisations',
-                      5 => 'Service/network providers',
-                      6 => 'Personal/private servers',
-                      7 => 'Travel/leisure industry',
-                      8 => 'Public sector/governments',
-                      9 => 'Media and Tech companies',
-                     10 => 'some special cases',
-                     11 => 'Education, academic',
-                     12 => 'Healthcare',
-                     13 => 'Manufacturing/Industrial',
-                     14 => 'Retail/Wholesale/Services',
-                     15 => 'Email Marketing Providers'
-            );
-            $received_rwl.="$_->". $rwl->{results}->{$_};
-            if ($_ =~ /list\.dnswl\.org/io && $rwl->{results}->{$_} =~ /127\.\d+\.(\d+)\.(\d+)/o) {
-                $ldo_trust = $2;
-                $received_rwl.=",trust=$ldo_trust (category=$categories{$1});";
-            } else {
-                $received_rwl.="; ";
-            }
+    my %trusty = (
+              0 => 'none',
+              1 => 'low',
+              2 => 'medium',
+              3 => 'high'
+    );
+
+    my %categories = (
+              2 => 'Financial services',
+              3 => 'Email Service Providers',
+              4 => 'Organisations',
+              5 => 'Service/network providers',
+              6 => 'Personal/private servers',
+              7 => 'Travel/leisure industry',
+              8 => 'Public sector/governments',
+              9 => 'Media and Tech companies',
+             10 => 'some special cases',
+             11 => 'Education, academic',
+             12 => 'Healthcare',
+             13 => 'Manufacturing/Industrial',
+             14 => 'Retail/Wholesale/Services',
+             15 => 'Email Marketing Providers'
+    );
+
+# status:   (status and trust are not equal !!!)
+# 1 = trust
+# 2 = listed but RWLminhits not reached
+# 3 = trust and whitelisted
+# 4 = none
+
+    my $ldo_trust;
+    foreach (@listed_by) {
+        $received_rwl.="$_->". $rwl->{results}->{$_};
+        if ($_ =~ /list\.dnswl\.org/io && $rwl->{results}->{$_} =~ /127\.\d+\.(\d+)\.(\d+)/o) {
+            $ldo_trust = min(3,$2);
+            $received_rwl.=",trust=$ldo_trust-[$trusty{$ldo_trust}] (category=$categories{$1});";
+        } else {
+            $received_rwl.="; ";
         }
+    }
+
+    if ($rwls_returned>=$RWLminhits) {
+        $trust = 2;    # set the default = medium
+        # set to the highest or to list.dnswl.org if only
         $trust = $ldo_trust if ($ldo_trust > $trust or ($ldo_trust =~ /\d+/o && $rwls_returned == 1));
-        $received_rwl.=") - high trust is $trust - client-ip=$ip";
+        $received_rwl.=") - high trust is $trust-[$trusty{$trust}] - client-ip=$ip";
         $received_rwl = "Received-RWL: ".(($trust>0)?"whitelisted ":' ')."from (" . $received_rwl;
         mlog($fh,$received_rwl,1) if $RWLLog;
-        $this->{rwlok}=$trust if $trust>0;
-        $this->{nodamping} = 1;
-        pbBlackDelete($fh,$ip) if $fh;
-        RBLCacheDelete($ip) if $fh;
-        $this->{myheader}.="X-Assp-$received_rwl\015\012" if $AddRWLHeader;
-        $this->{whitelisted}=1 if $trust>2 && $RWLwhitelisting;
-        RWLCacheAdd($ip,($trust > 2) ? 3 : ($trust == 0) ? 2 : 1 ) ;
-        $status = ($trust > 2) ? 3 : ($trust == 0) ? 2 : 1 ;
-        pbWhiteAdd($fh,$ip,"RWL") if $trust>1 && $fh;
+        $this->{myheader}.="X-Spambox-$received_rwl\015\012" if $AddRWLHeader;
+        # we may have a zero trust here !
+        if ($trust > 0) {
+            $this->{rwlok}=$trust;
+            $this->{nodamping} = 1;
+            pbBlackDelete($fh,$ip) if $fh;
+            RBLCacheDelete($ip) if $fh;
+            $this->{whitelisted}=1 if $trust>2 && $RWLwhitelisting;
+            $status = ($trust > 2) ? 3 : ($trust == 2) ? 1 : 2 ;
+            RWLCacheAdd($ip,$status) ;
+            pbWhiteAdd($fh,$ip,"RWL") if $trust>1 && $fh;
+        } else {
+            RWLCacheAdd($ip,4);
+            $status = 4;
+        }
         return ($trust == 0) ? 0 : 1;
     } elsif ($rwls_returned>0) {
-        $received_rwl="Received-RWL: listed from @listed_by; client-ip=$ip";
+        $trust = 1;    # set the default = low
+        $trust = $ldo_trust if ($ldo_trust > $trust or ($ldo_trust =~ /\d+/o && $rwls_returned == 1));
+        $received_rwl.=") - high trust is $trust-[$trusty{$trust}] - client-ip=$ip - RWLminhits($RWLminhits) is not reached";
+        $received_rwl = "Received-RWL: from (" . $received_rwl;
         mlog($fh,$received_rwl,1) if $RWLLog;
         $this->{nodamping} = 1;
 
         RWLCacheAdd($ip,2);
         $status = 2;
     } else {
-        $received_rwl="Received-RWL: listed from none; client-ip=$ip";
+        $received_rwl="Received-RWL: not listed anywhere; client-ip=$ip";
         mlog($fh,$received_rwl,1) if $RWLLog>=2;
 
         RWLCacheAdd($ip,4);
@@ -25330,21 +26581,22 @@ sub RBLok_Run {
                 $ok = $search_engines{$score} if (! $htype && $rbls_returned == 1);
                 $dhores = $rbl->{results}->{$_};
             } elsif ($rbl->{results}->{$_} =~ /(127\.\d+\.\d+\.\d+)/o) {
-                if ($1 eq '127.0.0.1' && ! exists $rblweight{$_}{'127.0.0.1'}) {
+                my $d = $1;
+                if ($d eq '127.0.0.1' && ! exists $rblweight{$_}{'127.0.0.1'}) {
                     mlog(0,"DNSBL: SP '$_' returned a 'query volume reached - 127.0.0.1' for IP $ip") if ( $RBLLog > 1 );
                     $rbls_returned--;
                     next;
                 }
                 my $w;
-                $w = matchHashKey($rblweight{$_},$1,"0 1 1") if exists $rblweight{$_} && $rblweight{$_};
+                $w = matchHashKey($rblweight{$_},$d,"0 1 1") if exists $rblweight{$_} && $rblweight{$_};
                 if ($w) {
                     $rblweighttotal += $w;
-                    $this->{rblweight}->{$_} = "$1 -> $w" unless $fh;
-                    mlog(0,"DNSBL: DIAG: IP: $ip, listed in: $_, reply: $1, weight: $w, total: $rblweighttotal") if ($RBLLog >= 2);
+                    $this->{rblweight}->{$_} = "$d -> $w" unless $fh;
+                    mlog(0,"DNSBL: DIAG: IP: $ip, listed in: $_, reply: $d, weight: $w, total: $rblweighttotal") if ($RBLLog >= 2);
                     $ok = '';
                 } else {
                     $rbls_returned--;
-                    mlog($fh,"DNSBL: result '$1' from '$_' was ignored for $ip") if ($RBLLog >= 2 || $RBLLog && $ValidateRBL >= 2 );
+                    mlog($fh,"DNSBL: result '$d' from '$_' was ignored for $ip") if ($RBLLog >= 2 || $RBLLog && $ValidateRBL >= 2 );
                 }
             } else {
                 if (exists $rblweight{$_} && exists $rblweight{$_}{'*'} && $rblweight{$_}{'*'}) {
@@ -25411,7 +26663,7 @@ sub RBLok_Run {
     return 1 if $ValidateRBL == 2;
 
     # add to our header; merge later, when client sent own headers
-    $this->{myheader} .= "X-Assp-$received_rbl\r\n"
+    $this->{myheader} .= "X-Spambox-$received_rbl\r\n"
       if $AddRBLHeader && $received_rbl ne "DNSBL: pass";
 
     if ( $rbls_returned >= $RBLmaxhits && !$rblweighttotal || $rblweighttotal >= $RBLmaxweight) {
@@ -25423,8 +26675,7 @@ sub RBLok_Run {
         my $reply = $RBLError;
         $reply =~ s/RBLLISTED/@listed_by/go;
         $this->{prepend} = '[DNSBL]';
-        thisIsSpam( $fh, "DNSBL, $ip listed in @listed_by",
-            $RBLFailLog, "$reply", ($rblTestMode || $allTestMode), $slok, ( $slok || $rblTestMode || $allTestMode) ) if $fh;
+        thisIsSpam( $fh, "DNSBL, $ip listed in @listed_by", $RBLFailLog, "$reply", ($rblTestMode || $allTestMode), $slok, ($rblTestMode || $allTestMode) ) if $fh;
         return 0;
     }
     return 1;
@@ -25473,18 +26724,20 @@ sub RBLCacheOK_Run {
     foreach (@rbl) {
         if (!$NODHO && s/(dnsbl\.httpbl\.org)\{([^{}]+)\}\[([\d\.]+)\]/$1/io && exists $rblweight{$_} && $rblweight{$_}) {
             my $dhofact = $3;
+            my $d = $2;
             my $w;
-            $w = matchHashKey($rblweight{$_},$2,"0 1 1");
+            $w = matchHashKey($rblweight{$_},$d,"0 1 1");
             $rblweighttotal += $w / 2 * $dhofact if $w;
-            $this->{rblweight}->{'dnsbl.httpbl.org'} = "$2 -> $w" if $w && ! $fh;
-            mlog(0,"DNSBLcache: DIAG-NODHO: IP: $ip, listed in: $_, reply: $2, weight: $w, total: $rblweighttotal") if ($RBLLog >= 2);
+            $this->{rblweight}->{'dnsbl.httpbl.org'} = "$d -> $w" if $w && ! $fh;
+            mlog(0,"DNSBLcache: DIAG-NODHO: IP: $ip, listed in: $_, reply: $d, weight: $w, total: $rblweighttotal") if ($RBLLog >= 2);
             next unless $w;
         } elsif (s/([^{}]+)\{([^{}]+?)\}/$1/io && exists $rblweight{$_} && $rblweight{$_}) {
+            my $d = $2;
             my $w;
-            $w = matchHashKey($rblweight{$_},$2,"0 1 1");
+            $w = matchHashKey($rblweight{$_},$d,"0 1 1");
             $rblweighttotal += $w if $w;
-            $this->{rblweight}->{$_} = "$2 -> $w" if $w && ! $fh;
-            mlog(0,"DNSBLcache: DIAG: IP: $ip, listed in: $_, reply: $2, weight: $w, total: $rblweighttotal") if ($RBLLog >= 2);
+            $this->{rblweight}->{$_} = "$d -> $w" if $w && ! $fh;
+            mlog(0,"DNSBLcache: DIAG: IP: $ip, listed in: $_, reply: $d, weight: $w, total: $rblweighttotal") if ($RBLLog >= 2);
             next unless $w;
         } else {
             if (exists $rblweight{$_} && exists $rblweight{$_}{'*'} && $rblweight{$_}{'*'}) {
@@ -25539,7 +26792,7 @@ sub RBLCacheOK_Run {
     return 1 if $ValidateRBL == 2;
     
     # add to our header; merge later, when client sent own headers
-    $this->{myheader} .= "X-Assp-$this->{messagereason}\r\n" if $AddRBLHeader;
+    $this->{myheader} .= "X-Spambox-$this->{messagereason}\r\n" if $AddRBLHeader;
  
     return 1 if $ValidateRBL == 3 or $this->{rblneutral} ;
     return 0 unless $fh;
@@ -25552,7 +26805,7 @@ sub RBLCacheOK_Run {
     if ($ForceRBLCache) {
         thisIsSpam( $fh, "$this->{messagereason}", $RBLFailLog, "$reply", 0, 0, 1 ) if $fh;
     } else {
-        thisIsSpam( $fh, "$this->{messagereason}", $RBLFailLog, "$reply", ($rblTestMode || $allTestMode), $slok, ( $slok || $rblTestMode || $allTestMode)) if $fh;
+        thisIsSpam( $fh, "$this->{messagereason}", $RBLFailLog, "$reply", ($rblTestMode || $allTestMode), $slok, ($rblTestMode || $allTestMode)) if $fh;
     }
     return 0;
 }
@@ -25642,6 +26895,11 @@ sub URIBLok {
     return URIBLok_Run($fh, $bd, $thisip, $done);
 }
 sub URIBLok_Run {
+# TODO
+#
+# Just to let you know SURBL has transitioned to wildcards thus you no longer need to reduce host names before
+# querying.  In fact it is more effective to query with complete hosts as SURBL is listing hostname of dns cracked
+# site which would neve be reflected in the 2nd and 3rd level tld files.
     my ( $fh, $bd, $thisip, $done ) = @_;
     my $this = $Con{$fh};
     my $fhh = $fh;
@@ -25721,7 +26979,7 @@ EOT
         $head =~ s/Message-ID:$HeaderValueRe//gios;
         $head =~ s/References:$HeaderValueRe//gios;
         $head =~ s/In-Reply-To:$HeaderValueRe//gios;
-        $head =~ s/X-Assp-[^:]+?:$HeaderValueRe//gios;
+        $head =~ s/X-Spambox-[^:]+?:$HeaderValueRe//gios;
         $head =~ s/bcc:$HeaderValueRe//gios;
         $head =~ s/cc:$HeaderValueRe//gios;
         $head =~ s/[\x0D\x0A]*$/\x0D\x0A\x0D\x0A/o;
@@ -25853,7 +27111,7 @@ EOT
     }
     &ThreadYield();
 
-    $this->{myheader} .= 'X-Assp-Detected-URI: '
+    $this->{myheader} .= 'X-Spambox-Detected-URI: '
                       . join(', ',
                              map{$_ . '('.(($domains{$_} >= 1000000)
                                             ? int($domains{$_}/1000000)
@@ -25932,17 +27190,18 @@ EOT
             mlog(0,"URIBL: DIAG-LR: processing $_ with $last_results{$blhash}") if ( $URIBLLog > 2 );
 
             if ($last_results{$blhash} =~ /(127\.\d+\.\d+\.\d+)/o) {
-                if ($1 eq '127.0.0.1' && ! exists $URIBLweight{$_}{'127.0.0.1'}) {  # query volume reached or error
+                my $d = $1;
+                if ($d eq '127.0.0.1' && ! exists $URIBLweight{$_}{'127.0.0.1'}) {  # query volume reached or error
                     mlog(0,"URIBL: SP '$_' returned a 'query volume reached - 127.0.0.1' for $domain") if ( $URIBLLog > 1 );
                     next;
                 }
                 my $w;
-                $w = matchHashKey($URIBLweight{$_},$1,"0 1 1") if exists $URIBLweight{$_} && $URIBLweight{$_};
+                $w = matchHashKey($URIBLweight{$_},$d,"0 1 1") if exists $URIBLweight{$_} && $URIBLweight{$_};
                 if ($w) {
                     $uriweight += $w * $isobfuscated;
-                    mlog(0,"URIBL: DIAG-F: $domain, listed in $_, reply: $1, weight: $w, current uri score: $uriweight, is obfuscated: ".($isobfuscated-1)) if ( $URIBLLog > 2 );
+                    mlog(0,"URIBL: DIAG-F: $domain, listed in $_, reply: $d, weight: $w, current uri score: $uriweight, is obfuscated: ".($isobfuscated-1)) if ( $URIBLLog > 2 );
                 } else {
-                    mlog(0,"URIBL: DIAG-N: $domain, listed in $_, reply: $1, weight: $w, current uri score: $uriweight, is obfuscated: ".($isobfuscated-1)) if ( $URIBLLog > 2 );
+                    mlog(0,"URIBL: DIAG-N: $domain, listed in $_, reply: $d, weight: $w, current uri score: $uriweight, is obfuscated: ".($isobfuscated-1)) if ( $URIBLLog > 2 );
                     next;
                 }
             } else {
@@ -26008,7 +27267,7 @@ EOT
             return URIBLIP($fhh, $thisip, $done, \@URIIPs) if $ValidateURIBL == 2;
             $weightsum = ${'uriblnValencePB'}[0] unless $URIBLmaxweight;
             pbAdd( $fh, $thisip, calcValence($weightsum,'uriblnValencePB'), "URIBLneutral" ) if $fh;
-            $this->{myheader} .= "X-Assp-$this->{messagereason}\r\n" if $AddURIBLHeader;
+            $this->{myheader} .= "X-Spambox-$this->{messagereason}\r\n" if $AddURIBLHeader;
             return URIBLIP($fhh, $thisip, $done, \@URIIPs) ;
         }
     } else {
@@ -26022,7 +27281,7 @@ EOT
     pbWhiteDelete( $fh, $thisip ) if $fh;
     $weightsum = ${'uriblValencePB'}[0] if $weightsum < ${'uriblValencePB'}[0] && ! $URIBLmaxweight;
     pbAdd( $fh, $thisip, calcValence($weightsum,'uriblValencePB'), "URIBLfailed" ) if $fh;
-    $this->{myheader} .= "X-Assp-$this->{messagereason}\r\n" if $AddURIBLHeader && $fh;
+    $this->{myheader} .= "X-Spambox-$this->{messagereason}\r\n" if $AddURIBLHeader && $fh;
     $this->{uri_listed_by} = $received_uribl if ($this->{skipuriblPL} || ! $fh);
     return URIBLIP($fhh, $thisip, $done, \@URIIPs) if $ValidateURIBL == 3;
     $err = $URIBLError;
@@ -26293,7 +27552,7 @@ sub DMARCok {
    return 1 if $validate == 3;
    $this->{messagereason} = "DMARC failed";
    mlog( $fh, "$tlit $this->{messagereason} SPF:$failed->{spf} DKIM:$failed->{dkim}") if $SPFLog;
-   $this->{myheader} .= "X-Assp-DMARC-failed: SPF:$failed->{spf} DKIM:$failed->{dkim}\r\n";
+   $this->{myheader} .= "X-Spambox-DMARC-failed: SPF:$failed->{spf} DKIM:$failed->{dkim}\r\n";
    pbAdd( $fh, $this->{dmarc}->{source_ip}, 'spfValencePB', "DMARC-failed" );
    return 1 if $validate == 2;
    return 1 if $this->{dmarc}->{domain} eq $this->{dmarc}->{dom} && $this->{dmarc}->{p} !~ /reject|quarantine/io;
@@ -26322,19 +27581,22 @@ sub DMARCget_Run {
    my $this = $Con{$fh};
    $fh = 0 if "$fh" =~ /^\d+$/o;
    skipCheck($this,'aa','ro','np','invalidSenderDomain') && return;
+   return if $this->{subject3} =~ /^\s*Report\s*domain:\s*$EmailDomainRe\s+Submitter:\s*$EmailDomainRe\s+Report-?ID:.{2,}/oi;
    my $mfd;
    $mfd = $1 if $this->{mailfrom} =~ /\@($EmailDomainRe)/o;
    my $toDomain;
    $toDomain = $1 if $this->{orgrcpt} =~ /\@($EmailDomainRe)/o;
    $toDomain = $1 if (! $toDomain && $this->{rcpt} =~ /\@($EmailDomainRe)/o);
    return unless $toDomain;
-   my ($domain , $mf);
+   my ($domain , $mf, $address);
    $mf = $1 if $this->{header} =~ /(?:^|\n)from:($HeaderValueRe)/ios;
    return unless $mf;
    headerUnwrap($mf);
-   $domain = $1 if $mf=~/\@($EmailDomainRe)/o;
-   return if localdomains($domain);
+   ($address,$domain) = (lc($1),lc($2)) if $mf=~/($EmailAdrRe\@($EmailDomainRe))/o;
    return if (! $domain);
+   return if localdomains($domain);
+   return if matchSL($this->{mailfrom},'noDMARCDomain');
+   return if ($address ne $this->{mailfrom} && matchSL($address,'noDMARCDomain'));
    my $ip = $this->{ip};
    $ip = $this->{cip} if $this->{ispip} && $this->{cip};
    my @domains = split(/\./o,$domain);
@@ -26458,6 +27720,8 @@ sub DMARCget_Run {
    }
    if ($skipruf) {
        $this->{dmarc}->{ruf} = $this->{dmarc}->{rua};
+       $this->{dmarc}->{rua} =~ s/!\d+[kmg]$//oi if (exists $this->{dmarc}->{rua});
+       $this->{dmarc}->{ruf} =~ s/!\d+[kmg]$//oi if (exists $this->{dmarc}->{ruf});
        delete $this->{dmarc}->{fo} unless exists $this->{dmarc}->{ruf};
        return;
    }
@@ -26485,6 +27749,8 @@ sub DMARCget_Run {
             }
         }
    }
+   $this->{dmarc}->{rua} =~ s/!\d+[kmg]$//oi if (exists $this->{dmarc}->{rua});
+   $this->{dmarc}->{ruf} =~ s/!\d+[kmg]$//oi if (exists $this->{dmarc}->{ruf});
    delete $this->{dmarc}->{fo} unless exists $this->{dmarc}->{ruf};
    return;
 }
@@ -26759,7 +28025,8 @@ EOT
 }
 
 sub getNameserver {
-    my @nameservers = scalar(@_) ? @_ : @nameservers;
+    my $n = shift;
+    my @nameservers = ref($n) ? @$n : @nameservers;
     my @ns;
     for (@nameservers) {
         next unless $_;
@@ -26897,8 +28164,8 @@ sub queryDNS {
                 while (@q) {
                     my $s;
                     my ($domain, $type) = (shift(@q), shift(@q));
-                    my $packet = eval{$rslv{$ns}->make_query_packet($domain, $type);};
-                    next if(! $packet);
+                    my $packet = eval{$rslv{$ns}->$RSL_make_query_packet($domain, $type);};
+                    next if(! ref($packet));
                     my $packet_data = $packet->data;
                     my $headerid = $packet->header->id;
                     next if(! $packet_data || ! defined($headerid));
@@ -26922,15 +28189,31 @@ sub queryDNS {
                             mlog(0,"warning: can't get numeric address for $ns");
                         } else {
                             if (! $s->send($packet_data,0,$dst_sockaddr)) {
-                               mlog(0,"info: new DNS socket for $ns after send failed") if $DebugSPF;
-                               d("new DNS socket for $ns after send failed",1);
-                               $sDNSSockets{$ns} = $s = eval { $rslv{$ns}->bgsend($packet); };
+                               mlog(0,"info: DNS socket for $ns after send failed - create new socket") if $DebugSPF;
+                               d("DNS socket for $ns after send failed - create new socket",1);
+                               $s = eval { $rslv{$ns}->bgsend($packet); };
+                               mlog(0,"warning: failed to create new DNS socket for $ns - $@") if $@ || !$s;
+                               # internals in Net::DNS changed for version 1.02_02 and higher
+                               # bgsend returns a IO::Select object, referenced to an ARRAY, not a socket
+                               if (ref($s) eq 'IO::Select') {
+                                   my ($h) = $s->handles;    # get the socket out of the object
+                                   ( $s, my $expire, my $ip, my $id ) = @$h;
+                               }
+                               $sDNSSockets{$ns} = $s;
                             }
                         }
                     } else {
-                        $sDNSSockets{$ns} = $s = eval { $rslv{$ns}->bgsend($packet); };
-                        mlog(0,"info: new DNS socket for $ns") if $DebugSPF;
-                        d("new DNS socket for $ns",1);
+                        mlog(0,"info: create new DNS socket for $ns") if $DebugSPF;
+                        d("create new DNS socket for $ns",1);
+                        $s = eval { $rslv{$ns}->bgsend($packet); };
+                        mlog(0,"warning: failed to create new DNS socket for $ns - $@") if $@ || !$s;
+                        # internals in Net::DNS changed for version 1.02_02 and higher
+                        # bgsend returns a IO::Select object, referenced to an ARRAY, not a socket
+                        if (ref($s) eq 'IO::Select') {
+                            my ($h) = $s->handles;    # get the socket out of the object
+                            ( $s, my $expire, my $ip, my $id ) = @$h;
+                        }
+                        $sDNSSockets{$ns} = $s;
                     }
                     if ($s) {
                         $rslv{$ns}->errorstring('');
@@ -26958,7 +28241,7 @@ sub queryDNS {
             DNSSocketsClose(values(%sDNSSockets));
             %sDNSSockets = ();
             $DNSresolverTimeS{$WorkerNumber} = 0;
-            mlog(0,"error: DNS - unable to create any UDP socket to nameservers (@nameservers) - $@");
+            mlog(0,"error: DNS - unable to create any UDP socket to nameservers (@nameservers)");
             $lastDNSerror = 'SOCKETERROR';
             $nextDNSCheck = $lastDNScheck + 5;
             return;
@@ -27007,7 +28290,7 @@ sub queryDNS {
         while (@isready || (@isready = $sel->can_read($tout)) ) {
             my $sock = shift @isready;
             undef $packet;
-            if (($packet = eval { $rslv{$sockets{$sock}}->bgread($sock); }) && $packet->answer) {
+            if (($packet = eval { $rslv{$sockets{$sock}}->bgread($sock); }) && ref($packet) && $packet->answer) {
                 mlog(0,"info: got DNS DATA answer from nameserver $sockets{$sock}") if $ConnectionLog > 2 || $DebugSPF;
                 if (! $packet->header->qr()) {
                     mlog(0,"info: ignoring invalid DNS DATA answer from nameserver $sockets{$sock}") if $ConnectionLog > 2 || $DebugSPF;
@@ -27050,7 +28333,7 @@ sub queryDNS {
                 next;
             }
             my $headerid;
-            if ($packet) {
+            if (ref($packet)) {
                 if (! $packet->header->qr()) {
                     mlog(0,"info: ignoring invalid NON-DATA answer from nameserver $sockets{$sock}") if $ConnectionLog > 2 || $DebugSPF;
                     $tout = $DNStimeout - (Time::HiRes::time() - $st);
@@ -27086,7 +28369,7 @@ sub queryDNS {
         %rslv = ();
         next;
     } # while 1
-    if (! $DNSReuseSocket || (! $packet && keys(%failed))) {
+    if (! $DNSReuseSocket || (! ref($packet) && keys(%failed))) {
         foreach (keys %sockets) { eval{$_->close;}; }
         mlog(0,"info: destroy old single DNSresolver") if $DebugSPF;
         d("destroy old single DNSresolver",1);
@@ -27110,6 +28393,28 @@ EOT
     return;
 }
 
+sub DNSResolverBGread {
+	my ( $self, $sock ) = @_;
+
+    # internals in Net::DNS changed for version 1.02_02 and higher
+    # bgsend returns a IO::Select object not a socket
+    return $orgreadbgDNSResolver->( $self, $sock ) if (ref($sock) eq 'IO::Select');
+
+    my $buf = '';
+	my $peeraddr = $sock->recv( $buf, $self->_packetsz );
+	if ($peeraddr) {
+		print ';; answer from [', $sock->peerhost, ']  (', length($buf), " bytes)\n"
+				if $self->{'debug'};
+		my $ans = Net::DNS::Packet->new( \$buf, $self->{debug} );
+		$self->errorstring($@);
+		$ans->answerfrom( $sock->peerhost ) if defined $ans;
+		return $ans;
+	} else {
+		$self->errorstring($!);
+		return;
+	}
+}
+
 sub DNSResolverSend {
     my $self = shift;
     if ($DebugSPF) {
@@ -27121,6 +28426,11 @@ sub DNSResolverSend {
     push @sock, $self->{'sockets'}[AF_INET]{'UDP'} if defined $self->{'sockets'}[AF_INET]{'UDP'};
     push @sock, $self->{'sockets'}[AF_INET6()]{'UDP'} if defined $self->{'sockets'}[AF_INET6()]{'UDP'};
     push @sock, values %{$self->{'sockets'}[AF_UNSPEC]} if defined $self->{'sockets'}[AF_UNSPEC];
+
+    # internals in Net::DNS changed for version 1.02_02 and higher
+    push @sock, values %{$self->{'TCPsockets'}} if exists $self->{'TCPsockets'} && keys %{$self->{'TCPsockets'}};
+    push @sock, values %{$self->{'UDPsockets'}} if exists $self->{'UDPsockets'} && keys %{$self->{'UDPsockets'}};
+
     if (@sock) {
         mlog(0,"info: DNSResolverSend: cleanup reused DNSresolver") if $DebugSPF;
         d("info: cleanup reused DNSresolver",1);
@@ -27167,7 +28477,7 @@ sub DNSSocketsCleanup {
 
 sub DNSSocketsClose {
     DNSSocketsCleanup(@_);
-    eval {$_->close;} for @_;
+    eval {$_->close if ref($_);} for @_;
 }
 
 sub getDNSResolver {
@@ -27180,6 +28490,11 @@ sub getDNSResolver {
             push @sock, $DNSresolver->{'sockets'}[AF_INET]{'UDP'} if defined $DNSresolver->{'sockets'}[AF_INET]{'UDP'};
             push @sock, $DNSresolver->{'sockets'}[AF_INET6()]{'UDP'} if defined $DNSresolver->{'sockets'}[AF_INET6()]{'UDP'};
             push @sock, values %{$DNSresolver->{'sockets'}[AF_UNSPEC]} if defined $DNSresolver->{'sockets'}[AF_UNSPEC];
+
+            # internals in Net::DNS changed for version 1.02_02 and higher
+            push @sock, values %{$DNSresolver->{'TCPsockets'}} if exists $DNSresolver->{'TCPsockets'} && keys %{$DNSresolver->{'TCPsockets'}};
+            push @sock, values %{$DNSresolver->{'UDPsockets'}} if exists $DNSresolver->{'UDPsockets'} && keys %{$DNSresolver->{'UDPsockets'}};
+
             if (@sock) {
                 mlog(0,"info: destroy old DNSresolver") if $DebugSPF;
                 d("info: destroy old DNSresolver",1);
@@ -27200,6 +28515,7 @@ sub getDNSResolver {
             persistent_udp => $DNSReuseSocket,
             persistent_tcp => $DNSReuseSocket,
             usevc => 0,
+            recurse		=> 1,
             debug       =>  ($DebugSPF ? 1 : 0),
             @_,
             getLocalAddress('DNS',$nameservers[0])
@@ -27212,6 +28528,11 @@ sub getDNSResolver {
         push @sock, $DNSresolver->{'sockets'}[AF_INET]{'UDP'} if defined $DNSresolver->{'sockets'}[AF_INET]{'UDP'};
         push @sock, $DNSresolver->{'sockets'}[AF_INET6()]{'UDP'} if defined $DNSresolver->{'sockets'}[AF_INET6()]{'UDP'};
         push @sock, values %{$DNSresolver->{'sockets'}[AF_UNSPEC]} if defined $DNSresolver->{'sockets'}[AF_UNSPEC];
+
+        # internals in Net::DNS changed for version 1.02_02 and higher
+        push @sock, values %{$DNSresolver->{'TCPsockets'}} if exists $DNSresolver->{'TCPsockets'} && keys %{$DNSresolver->{'TCPsockets'}};
+        push @sock, values %{$DNSresolver->{'UDPsockets'}} if exists $DNSresolver->{'UDPsockets'} && keys %{$DNSresolver->{'UDPsockets'}};
+
         if (@sock) {
             mlog(0,"info: cleanup reused DNSresolver") if $DebugSPF;
             d("info: cleanup reused DNSresolver",1);
@@ -27233,6 +28554,7 @@ sub getDNSResolverSingle {
         retrans     => $DNSretrans,
         retry       => $DNSretry,
         usevc       => 0,
+        recurse		=> 1,
         debug       => ($DebugSPF ? 1 : 0),
         @_
     );
@@ -27474,7 +28796,7 @@ sub DKIMgen_Run {
 
     $this->{header} =~ s/\015?\012\.[\015\012]*$/\015\012\.\015\012/o;
 
-    if($DKIMconvHTML2base64 && $this->{header}=~ /\015\012\Content-Type:\s*text\/(?:ht|x)ml/sio) {
+    if($DKIMconvHTML2base64 && $this->{header}=~ /\015\012Content-Type:\s*text\/(?:ht|x)ml/sio) {
         my $converted = 0;
         $o_EMM_pm = 1;
         eval {   # HTML message hack (eg. MSOL2007)- convert any text/html content to base64
@@ -27516,8 +28838,10 @@ sub DKIMgen_Run {
         } elsif ($converted) {
             mlog($fh,"info: HTML message encoded for DKIM to base64") if $DKIMLog >= 2;
         }
-        $this->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
-        $this->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
+        unless ( $this->{IS8BITMIME}) {
+            $this->{header} =~ s/\x0D([^\x0A])/\x0D\x0A$1/go;
+            $this->{header} =~ s/([^\x0D])\x0A/$1\x0D\x0A/go;   # make LF CR RFC conform
+        }
         $this->{header} .= "\x0D\x0A.\x0D\x0A" if ($this->{header} !~ /\x0D\x0A\.\x0D\x0A$/o);
     }
 
@@ -27578,8 +28902,7 @@ sub configUpdateDKIMConf {
     my ( $name, $old, $new, $init ) = @_;
 
     my $file = $new;
-    $file =~ /^\s*file:\s*(.+)\s*$/oi;
-    $file = "$base/$1";
+    $file = "$base/$1" if $file =~ /^\s*file:\s*(.+)\s*$/oi;
     my $f;
     my $domain;
     my $selector;
@@ -27902,6 +29225,51 @@ sub IPinHeloOK_Run {
     return 1;
 }
 
+sub sigSMIMEPGPOK {
+    my $fh = shift;
+    my $this=$Con{$fh};
+    return 1 if ! $signedSenders;
+    return 1 unless ${'signedSendersRE'};
+    return 1 if ${'signedSendersRE'} =~ /$neverMatchRE/o;
+    return sigSMIMEPGPOK_Run($fh);
+}
+sub sigSMIMEPGPOK_Run {
+    my $fh = shift;
+    my $this=$Con{$fh};
+    d('sigSMIMEPGPOK');
+    return 1 if ! $signedSenders;
+    $this->{prepend} = '';
+    
+    my $match;
+    $match = 1 if (matchRE([$this->{mailfrom}],'signedSenders'));
+
+    if (! $match) {
+        my @to = split(/\s+/o,lc $this->{rcpt} );
+        for (@to) {
+            if (matchRE(["$this->{mailfrom},$_"],'signedSenders')) {
+                $match = 1;
+                last;
+            }
+        }
+    }
+    return 1 unless $match;
+    if ($match && $this->{signed}) {
+        mlog($fh,"signedSenders - SMIME/PGP signature found - whitelisted") if $ValidateSenderLog;
+        $this->{whitelisted} = 1;
+        return 1;
+    }
+    
+    my $ip = $this->{ip};
+    $ip = $this->{cip} if $this->{ispip} && $this->{cip};
+
+    $this->{messagereason}="signedSenders - missing SMIME/PGP signature for $lastREmatch";
+    delayWhiteExpire($fh);
+    pbWhiteDelete($fh,$ip);
+#    pbAdd($fh,$this->{ip},'fbmtvValencePB','MSGID-signature-failed');
+    $Stats{msgMSGIDtrErrors}++;
+    return 0;
+}
+
 sub ForgedHeloOK {
   my $fh = shift;
   return 1 if ! $DoFakedLocalHelo;
@@ -28066,7 +29434,7 @@ sub AUTHErrorsOK {
 sub AUTHErrorsOK_Run {
     my $fh = shift;
     my $this = $Con{$fh};
-    skipCheck($this,'ro','wl','nbip','ispip') && return 1;
+    skipCheck($this,'aa','ro','wl','nbip','ispip') && return 1;
     return 1 if ($this->{noprocessing} & 1);
     return 1 if matchIP($this->{ip},'noMaxAUTHErrorIPs',0,0);
     return 1 if matchIP($this->{ip},'noBlockingIPs', 0, 1);
@@ -28077,6 +29445,42 @@ sub AUTHErrorsOK_Run {
     pbAdd( $fh, $this->{ip}, 'autValencePB', 'AUTHErrors' ) if ! matchIP($ip,'noPB',0,1);
     $AUTHErrors{$ip}++;
     return 0;
+}
+
+sub AUTHUserIPOK  {
+    my $fh = shift;
+    return 1 unless $AUTHUserIPfrequency;
+    return AUTHUserIPOK_Run($fh);
+}
+sub AUTHUserIPOK_Run  {
+    my $fh = shift;
+    my $this=$Con{$fh};
+    d('AUTHUserIPOK');
+
+    my ($maxip,$maxtime) = split(/\s+/o,$AUTHUserIPfrequency);
+    return 1 if $maxip < 2;                             # the minimum values
+    return 1 if $maxtime < 600;
+    return 1 unless $this->{userauth}{user};
+    my $time = time;
+    my $user = uc $this->{userauth}{user};
+    my $key = $this->{ip}.' '.$time;                    # the current key
+    my $rec = $AUTHIP{$user};
+    $rec .= $rec ? " $key" : $key;   # add to user hash
+    my %frame = reverse(split(/ /o,$rec));              # new hash (time => IP)
+    my %ips;
+    for my $t (sort(keys(%frame))) {                    # oldest time first
+        if ($time - $t > $maxtime) {
+            delete $frame{$t};
+            next;
+        }
+        $ips{$frame{$t}}++;                             # count the IP's
+    }
+    if (scalar(keys(%frame))) {
+        $AUTHIP{$user} = join(' ',%frame);
+    } else {
+        delete $AUTHIP{$user};
+    }
+    return (scalar(keys(%ips)) <= $maxip);
 }
 
 sub subjectFrequencyOK {
@@ -28351,10 +29755,10 @@ sub localFrequencyNotOK_Run {
     return 0 unless $this->{relayok};
     return 0 if ($this->{noprocessing} & 1);
     my ($to) = $this->{rcpt} =~ /(\S+)/o;
-    my $mf = batv_remove_tag(0,$this->{mailfrom},'');
+    my $mf = batv_remove_tag(0,lc($this->{mailfrom}),'');
     return 0 if matchSL( [$to,$mf], 'EmailAdmins' );
     return 0 if lc($to) eq lc($EmailFrom);
-    return 0 if lc($mf) eq lc($EmailFrom);
+    return 0 if $mf eq lc($EmailFrom);
 
     return 0 if ($LocalFrequencyOnly && ! &matchSL($mf,'LocalFrequencyOnly'));
     return 0 if ( matchSL($mf,'NoLocalFrequency'));
@@ -28432,18 +29836,21 @@ sub MessageSizeOK {
     my $this=$Con{$fh};
     d('MessageSizeOK');
 
+    return 1 if $this->{noprocessing} & 1;
+
     my $maxRealSize = $maxRealSize || 0;
     $maxRealSize = $this->{maxRealSize} if defined $this->{maxRealSize};
     my $maxSize = $maxSize || 0;
     $maxSize = $this->{maxSize} if defined $this->{maxSize};
     if ($this->{relayok} && ! defined $this->{maxSize}) {
-        $this->{maxRealSize} = $this->{maxSize} = 0;
-        my @MSadr  = sort {$main::b <=> $main::a} map {&matchHashKey('MSadr' ,$_)} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
-        my @MRSadr = sort {$main::b <=> $main::a} map {&matchHashKey('MRSadr',$_)} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
+        $this->{maxRealSize} = $maxRealSize;
+        $this->{maxSize} = $maxSize;
+        my @MSadr  = sort {$main::b <=> $main::a} map {&matchHashKey('MSadr' ,$_,'0 1 1')} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
+        my @MRSadr = sort {$main::b <=> $main::a} map {&matchHashKey('MRSadr',$_,'0 1 1')} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
         $maxSize = $this->{maxSize} = $MSadr[0] if (defined $MSadr[0]);
-        $maxSize = $this->{maxSize} = 0 if grep({$_ == 0} @MSadr);
+        $maxSize = $this->{maxSize} = 0 if grep({"$_" eq '0'} @MSadr);
         $maxRealSize = $this->{maxRealSize} = $MRSadr[0] if (defined $MRSadr[0]);
-        $maxRealSize = $this->{maxRealSize} = 0 if grep({$_ == 0} @MRSadr);
+        $maxRealSize = $this->{maxRealSize} = 0 if grep({"$_" eq '0'} @MRSadr);
     }
     
     my $maxRealSizeExternal = $maxRealSizeExternal || 0;
@@ -28451,13 +29858,14 @@ sub MessageSizeOK {
     my $maxSizeExternal = $maxSizeExternal || 0;
     $maxSizeExternal = $this->{maxSizeExternal} if defined $this->{maxSizeExternal};
     if (! $this->{relayok} && ! defined $this->{maxSizeExternal}) {
-        $this->{maxRealSizeExternal} = $this->{maxSizeExternal} = 0;
-        my @MSEadr  = sort {$main::b <=> $main::a} map {&matchHashKey('MSEadr' ,$_)} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
-        my @MRSEadr = sort {$main::b <=> $main::a} map {&matchHashKey('MRSEadr',$_)} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
+        $this->{maxRealSizeExternal} = $maxRealSizeExternal;
+        $this->{maxSizeExternal} = $maxSizeExternal;
+        my @MSEadr  = sort {$main::b <=> $main::a} map {&matchHashKey('MSEadr' ,$_,'0 1 1')} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
+        my @MRSEadr = sort {$main::b <=> $main::a} map {&matchHashKey('MRSEadr',$_,'0 1 1')} split(/\s+/o,$this->{rcpt}),$this->{mailfrom},$this->{ip},$this->{cip},@{$this->{sip}};
         $maxSizeExternal = $this->{maxSizeExternal} = $MSEadr[0] if (defined $MSEadr[0]);
-        $maxSizeExternal = $this->{maxSizeExternal} = 0 if grep({$_ == 0} @MSEadr);
+        $maxSizeExternal = $this->{maxSizeExternal} = 0 if grep({"$_" eq '0'} @MSEadr);
         $maxRealSizeExternal = $this->{maxRealSizeExternal} = $MRSEadr[0] if (defined $MRSEadr[0]);
-        $maxRealSizeExternal = $this->{maxRealSizeExternal} = 0 if grep({$_ == 0} @MRSEadr);
+        $maxRealSizeExternal = $this->{maxRealSizeExternal} = 0 if grep({"$_" eq '0'} @MRSEadr);
     }
 
     if ( ($this->{relayok} && $maxRealSize
@@ -28468,7 +29876,7 @@ sub MessageSizeOK {
     {
         &makeSubject($fh);
         my $max = $this->{relayok} ? $maxRealSize : $maxRealSizeExternal;
-        my $err = "552 message exceeds MAXREALSIZE byte (size \* rcpt)";
+        my $err = "552 message exceeds MAXREALSIZE bytes (size \* rcpt)";
         if ($this->{relayok}) {
             mlog( $fh, "warning: message exceeds maxRealSize $max bytes (size \* rcpt)!" );
         } else {
@@ -28482,6 +29890,7 @@ sub MessageSizeOK {
         }
         $err = $maxRealSizeError if ($maxRealSizeError);
         $err =~ s/MAXREALSIZE/$max/go;
+        $this->{outgoing} = '';
         seterror( $fh, $err, 1 );
         return 0;
     }
@@ -28492,7 +29901,7 @@ sub MessageSizeOK {
     {
         &makeSubject($fh);
         my $max = $this->{relayok} ? $maxSize : $maxSizeExternal;
-        my $err = "552 message exceeds MAXSIZE byte (size)";
+        my $err = "552 message exceeds MAXSIZE bytes (size)";
         if ($this->{relayok}) {
             mlog( $fh, "warning: message exceeds maxSize $max bytes (size)!" );
         } else {
@@ -28506,6 +29915,7 @@ sub MessageSizeOK {
         }
         $err = $maxSizeError if ($maxSizeError);
         $err =~ s/MAXSIZE/$max/go;
+        $this->{outgoing} = '';
         seterror( $fh, $err, 1 );
         return 0;
     }
@@ -28844,8 +30254,11 @@ sub MXAOK_Run {
         my ($tag,$line) = ($1,$2);
         next if $tag !~ /^(?:From|ReturnReceipt|Return-Receipt-To|Disposition-Notification-To|Return-Path|Reply-To|Sender|Errors-To|List-\w+)$/io;
         headerUnwrap($line);
+        my %seen;
         while ($line =~ /$EmailAdrRe\@($EmailDomainRe)/og) {
             my $dom = lc $1;
+            next if $seen{$dom};
+            $seen{$dom} = 1;
             next if localdomains('@'.$dom);
             $mfd{$dom}->{mx} = $mfd{$dom}->{a} = $mfd{$dom}->{ctime} = undef;
             $mfd{$dom}->{tag} .= $mfd{$dom}->{tag} ? " , $tag" : $tag;
@@ -29117,7 +30530,7 @@ sub BombWeight_Run {
     unicodeNormalize(\$text[0]);
     undef $rawtext;
     $addCharsets = 0;
-    if ($DoTransliterate) {
+    if ($DoTransliterate && $text[0]) {
         my $t = transliterate(\$text[0], 1);
         push(@text,$t) if $t;
     }
@@ -29167,6 +30580,10 @@ sub BombWeight_Run {
         }
         $found{$reason} = $weight;
         $weight{matchlength} = '';
+    }
+    if ($text[0] && eval{$canUnicode && exists($uniRegex{$re}) && ! Encode::is_utf8($text[0]) && utf8::valid($text[0])}) {
+        push @text, $text[0];            # there is a unicode regex defined and we can do it
+        Encode::_utf8_on($text[-1]);
     }
     my $text;
     eval {
@@ -30292,52 +31709,52 @@ sub Delayok_Run {
     if (!$DelayWL && $this->{whitelisted}) {
 
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader}.="X-Assp-Delay: not delayed (whitelisted); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(whitelisted\)/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed (whitelisted); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(whitelisted\)/o);
         return 1;
     }
     if (!$DelayNP && ($this->{noprocessing} & 1)) {
 
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader}.="X-Assp-Delay: not delayed (noprocessing); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(noprocessing\)/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed (noprocessing); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(noprocessing\)/o);
         return 1;
     }
     if ($this->{nodelay}) {
 
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader}.="X-Assp-Delay: not delayed ($this->{ip} in noDelay ); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \([\d\.]+ in noDelay\)/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed ($this->{ip} in noDelay ); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \([\d\.]+ in noDelay\)/o);
         return 1;
     }
     if ( !$DelayWL && pbWhiteFind($this->{ip})) {
         pbBlackDelete( $fh, $this->{ip} );
 
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader}.="X-Assp-Delay: not delayed ($this->{ip} in whitebox (PBWhite)); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \([\d\.]+ in whitebox/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed ($this->{ip} in whitebox (PBWhite)); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \([\d\.]+ in whitebox/o);
         return 1;
     }
 
     if ( !$DelayWL && $v && $v< 0.4 && $this->{messagescore} <= 0) {
         mlog( $fh, "not delayed (gripvalue low: $v)", 1 ) if $DelayLog >= 2;
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader} .="X-Assp-Delay: not delayed (gripvalue low: $v); $time $tz\r\n"
+        $this->{myheader} .="X-Spambox-Delay: not delayed (gripvalue low: $v); $time $tz\r\n"
               if ( $DelayAddHeader && $this->{myheader} !~ /not delayed \(grip/o );
         return 1;
     }
     if ( !$DelayWL && ($this->{rwlok} or RWLCacheFind($this->{ip}) % 2)) {
 
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader}.="X-Assp-Delay: not delayed ($this->{ip} in RWL); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \([\d\.]+ in RWL /o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed ($this->{ip} in RWL); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \([\d\.]+ in RWL /o);
         return 1;
     }
     if (!$DelaySL && $this->{allLoveDLSpam}==1) {
 
        # add to our header; merge later, when client sent own headers  (per msg)
-        $this->{myheader}.="X-Assp-Delay: not delayed (spamlover); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(spamlover\)/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed (spamlover); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(spamlover\)/o);
         return 1;
     }
     if ($this->{dlslre} & 1) {
 
       # add to our header; merge later, when client sent own headers  (per rcpt)
-        $this->{myheader}.="X-Assp-Delay: not delayed (delay-spamlover); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(delay-spamlover\)/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed (delay-spamlover); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(delay-spamlover\)/o);
         return 1;
     }
 
@@ -30345,7 +31762,7 @@ sub Delayok_Run {
     if (! $DelayWL && $cresult eq "pass" && $chelo eq lc $this->{helo} && ! &pbBlackFind($this->{ip}) ) {
 
       # add to our header; merge later, when client sent own headers  (per rcpt)
-        $this->{myheader}.="X-Assp-Delay: not delayed (SPF-Cache-OK); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(SPF-Cache-OK\)/o);
+        $this->{myheader}.="X-Spambox-Delay: not delayed (SPF-Cache-OK); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(SPF-Cache-OK\)/o);
         return 1;
     }
 
@@ -30353,7 +31770,7 @@ sub Delayok_Run {
         my ( $ipcountry, $orgname, $domainname, $blacklistscore, $hostname_matches_ip, $cidr ) = split( /\|/o, SBCacheFind($this->{ip}) ) ;
         if (!$DelayWL && $domainname eq $mfwhite && exists $WhiteOrgList{$domainname}) {
           # add to our header; merge later, when client sent own headers  (per rcpt)
-            $this->{myheader}.="X-Assp-Delay: not delayed (White-SenderBase-Cache-OK); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(White-SenderBase/o);
+            $this->{myheader}.="X-Spambox-Delay: not delayed (White-SenderBase-Cache-OK); $time $tz\r\n" if ($DelayAddHeader && $this->{myheader} !~ /not delayed \(White-SenderBase/o);
             return 1;
         }
     }
@@ -30408,7 +31825,7 @@ sub Delayok_Run {
                 $delay_result=1;
 
                 # add to our header; merge later, when client sent own headers
-                $this->{myheader}.="X-Assp-Delay: delayed for $intervalFormatted; $time $tz\r\n" if $DelayAddHeader;
+                $this->{myheader}.="X-Spambox-Delay: delayed for $intervalFormatted; $time $tz\r\n" if $DelayAddHeader;
             } else {
                 mlog($fh,"late triplet encountered, deleting: ($ip,$mf,". lc $rcpt .")$onhost waited: $intervalFormatted",1) if $DelayLog>=2;
                 $Stats{rcptDelayedLate}++;
@@ -30429,7 +31846,7 @@ sub Delayok_Run {
             $delay_result=1;
 
             # add to our header; merge later, when client sent own headers
-            $this->{myheader}.="X-Assp-Delay: not delayed (auto accepted); $time $tz\r\n" if $DelayAddHeader;
+            $this->{myheader}.="X-Spambox-Delay: not delayed (auto accepted); $time $tz\r\n" if $DelayAddHeader;
         } else {
             mlog($fh,"deleting expired tuplet: ($ip,$mfwhite) age: ". $intervalFormatted,1) if $DelayLog>=2;
             $Stats{rcptDelayedExpired}++;
@@ -30498,12 +31915,17 @@ sub isnotspam {
   my $server=$this->{friend};
 
 # it's time to merge our header with client's one
-  $this->{myheader}="X-Assp-Version: $version$modversion on $myName\r\n" . $this->{myheader}
-      if ! $this->{relayok} && $this->{myheader} !~ /X-Assp-Version:.+? on \Q$myName\E/;
+  $this->{myheader}="X-Spambox-Version: $version$modversion on $myName\r\n" . $this->{myheader}
+      if ! $this->{relayok} && $this->{myheader} !~ /X-Spambox-Version:.+? on \Q$myName\E/;
 
   makeMyheader($fh,0,0,'');
   addMyheader($fh) if ($done && $this->{myheader});  # &white body will do it later
 
+  if ($done && ! MessageSizeOK($fh)) {
+      $this->{headerpassed} = 1;
+      return;
+  }
+  
   sendquedata($server, $fh ,\$this->{header}, $done);
   $this->{headerpassed} = 1;
   
@@ -30687,17 +32109,6 @@ sub getbody {
         }
         if (&MsgScoreTooHigh($fh,$doneToError)) {$this->{skipnotspam} = 0;return;}
 
-        if($this->{addressedToSpamBucket} && ! $this->{SpamCollectAddress}) {
-            $this->{SpamCollectAddress} = 1;
-            $Stats{spambucket}++ ;
-            $this->{messagereason}="Collect Address: $this->{addressedToSpamBucket}";
-            pbAdd($fh,$this->{ip},'saValencePB','SpamCollectAddress',2);
-            $this->{prepend}="[Collect]";
-            thisIsSpam($fh,"Collect Address: $this->{addressedToSpamBucket}",$spamBucketLog,"250 OK",0,0,0);
-            if ($this->{error}) {$this->{skipnotspam} = 0;return;}
-        }
-        if (&MsgScoreTooHigh($fh,$doneToError)) {$this->{skipnotspam} = 0;return;}
-
         @HmmBayWords = ();
         if( ! HMMOK($fh,$dataref)) {
             my $slok=$this->{allLoveBaysSpam}==1;
@@ -30705,7 +32116,7 @@ sub getbody {
             $mybaystestmode = "1" if $this->{bayeslowconf} || $baysTestMode;
             $mybaystestmode = $slok = 0 if allSH($this->{rcpt},'baysSpamHaters');
             if (!$slok) { $Stats{bspams}++;}
-            $this->{myheader}.=sprintf("X-Assp-HMM-Confidence: %.5f\r\n",$this->{hmmconf}) if $AddSpamProbHeader && $AddConfidenceHeader && $this->{hmmconf}>0;
+            $this->{myheader}.=sprintf("X-Spambox-HMM-Confidence: %.5f\r\n",$this->{hmmconf}) if $AddSpamProbHeader && $AddConfidenceHeader && $this->{hmmconf}>0;
             $this->{prepend}="[HMM]";
             thisIsSpam($fh,'HMM',$baysSpamLog,$SpamError,$mybaystestmode,$slok,$doneToError);
             if ($this->{error}) {$this->{skipnotspam} = 0; delete $this->{clean}; return;}
@@ -30720,13 +32131,39 @@ sub getbody {
             $mybaystestmode = "1" if $this->{bayeslowconf} || $baysTestMode;
             $mybaystestmode = $slok = 0 if allSH($this->{rcpt},'baysSpamHaters');
             if (!$slok) { $Stats{bspams}++;}
-            $this->{myheader}.=sprintf("X-Assp-Bayes-Confidence: %.5f\r\n",$this->{spamconf}) if $AddSpamProbHeader && $AddConfidenceHeader && $this->{spamconf}>0;
+            $this->{myheader}.=sprintf("X-Spambox-Bayes-Confidence: %.5f\r\n",$this->{spamconf}) if $AddSpamProbHeader && $AddConfidenceHeader && $this->{spamconf}>0;
             $this->{prepend}="[Bayesian]";
             thisIsSpam($fh,'Bayesian',$baysSpamLog,$SpamError,$mybaystestmode,$slok,$doneToError);
             if ($this->{error}) {$this->{skipnotspam} = 0; delete $this->{clean}; return;}
         }
         delete $this->{clean};
         $this->{bayeslowconf} ||= $bayeslowconf;
+        if (&MsgScoreTooHigh($fh,$doneToError)) {$this->{skipnotspam} = 0;return;}
+
+        if($this->{addressedToSpamBucket} && ! $this->{SpamCollectAddress}) {
+            $this->{SpamCollectAddress} = 1;
+            $Stats{spambucket}++ ;
+            $this->{messagereason}="Collect Address: $this->{addressedToSpamBucket}";
+            pbAdd($fh,$this->{ip},'saValencePB','SpamCollectAddress',2);
+            $this->{prepend}="[Collect]";
+            thisIsSpam($fh,"Collect Address: $this->{addressedToSpamBucket}",$spamBucketLog,"250 OK",0,0,$doneToError);
+            if ($this->{error}) {
+                if (   $reportBadDetectedSpam   # check if we should report this mail for corpus correction
+                    && ! $this->{whitelisted}
+                    && ! $this->{noprocessing} & 1
+                    && [split(/ /o,$newReportedInterval)]->[0]
+                    && ! TestMessageScore($fh)
+                    && (   ($DoHMM && $this->{hmmprob} && $this->{hmmprob}<$baysProbability)
+                        || ($DoBayesian && $this->{spamprob} && $this->{spamprob}<$baysProbability) )
+                   )
+                {
+                    $this->{newReported} = 1;
+                    mlog($fh,"info: this SPAM mail will be used immediatly for corpus correction, because of a too low MessageScore ($this->{messagescore}) and possibly incorrect HMM/Bayesian results") if $SessionLog;
+                }
+                $this->{skipnotspam} = 0;
+                return;
+            }
+        }
         if (&MsgScoreTooHigh($fh,$doneToError)) {$this->{skipnotspam} = 0;return;}
 
         if (&TestLowMessageScore($fh)) {
@@ -30744,11 +32181,12 @@ sub getbody {
         if (&MsgScoreTooHigh($fh,$doneToError)) {$this->{skipnotspam} = 0;return;}
 
         if (! PBOK($fh,$this->{ip})){
+            delete $this->{newReported};
             my $slok=$this->{allLovePBSpam}==1;
             unless ($slok) {$Stats{pbdenied}++;}
             my $er=$SpamError;
             $er=$PenaltyError if $PenaltyError;
-            $this->{myheader}.="X-Assp-Penalty: $this->{messagereason}\r\n";
+            $this->{myheader}.="X-Spambox-Penalty: $this->{messagereason}\r\n";
             $this->{prepend}="[Penalty]";
             thisIsSpam($fh,$this->{messagereason},$spamPBLog,$er,$pbTestMode || $DoPenalty == 4,$slok,$doneToError);
             if ($this->{error}) {$this->{skipnotspam} = 0;return;}
@@ -30771,7 +32209,8 @@ sub getbody {
             $fn='' if !$fileLogging;
             my $logsub =
                   ( $subjectLogging ? " $subjectStart$this->{originalsubject}$subjectEnd" : '' );
-            mlog($fh,"spam found and passing ($this->{messagereason})$logsub".de8($fn),1);
+            my $text = $this->{messagereason} ? " ($this->{messagereason})" : '';
+            mlog($fh,"spam found and passing$text$logsub".de8($fn),1);
             delayWhiteExpire($fh);
             isnotspam($fh,$done);
             return;
@@ -30926,31 +32365,31 @@ sub makeMyheader {
     # add to our header; merge later, when client sent own headers
     my $header = $this->{myheader};
     $this->{myheader} = '';
-    $this->{myheader}.="X-Assp-Version: $version$modversion on $myName\r\n"
-        if $header !~ /X-Assp-Version:.+? on \Q$myName\E/;
-    $this->{myheader}.= "X-Assp-ID: $myName $this->{msgtime}\r\n"
-        if $header !~ /X-Assp-ID: \Q$myName $this->{msgtime}\E/;
+    $this->{myheader}.="X-Spambox-Version: $version$modversion on $myName\r\n"
+        if $header !~ /X-Spambox-Version:.+? on \Q$myName\E/;
+    $this->{myheader}.= "X-Spambox-ID: $myName $this->{msgtime}\r\n"
+        if $header !~ /X-Spambox-ID: \Q$myName $this->{msgtime}\E/;
     my $sID = $this->{SessionID};
     my $nbr = $this->{chainMailInSession} + (($this->{chainMailInSession} < 0)?2:1);
     $sID .= " (mail $nbr)";
-    $this->{myheader}.= "X-Assp-Session: $sID\r\n"
-        if $header !~ /X-Assp-Session:/o;
+    $this->{myheader}.= "X-Spambox-Session: $sID\r\n"
+        if $header !~ /X-Spambox-Session:/o;
     if (! $this->{relayok}) {
-        $this->{myheader}.= "X-Assp-OIP: $this->{cip}\r\n"
-            if $this->{cip} && $this->{ispip} && $header !~ /X-Assp-OIP: \Q$this->{cip}\E/;
-        $this->{myheader}.= "X-Assp-Detected-RIP: ".join(', ',@{$this->{sip}})."\r\n"
-            if @{$this->{sip}} && $header !~ /X-Assp-Detected-RIP:/o;
-        $this->{myheader}.= "X-Assp-Source-IP: $this->{ssip}\r\n"
-            if $this->{ssip} && $header !~ /X-Assp-Source-IP: \Q$this->{ssip}\E/;
+        $this->{myheader}.= "X-Spambox-OIP: $this->{cip}\r\n"
+            if $this->{cip} && $this->{ispip} && $header !~ /X-Spambox-OIP: \Q$this->{cip}\E/;
+        $this->{myheader}.= "X-Spambox-Detected-RIP: ".join(', ',@{$this->{sip}})."\r\n"
+            if @{$this->{sip}} && $header !~ /X-Spambox-Detected-RIP:/o;
+        $this->{myheader}.= "X-Spambox-Source-IP: $this->{ssip}\r\n"
+            if $this->{ssip} && $header !~ /X-Spambox-Source-IP: \Q$this->{ssip}\E/;
     }
-    $this->{myheader}.= "X-Assp-Envelope-From: $this->{mailfrom}\r\n"
-        if $AddIntendedForHeader && $this->{mailfrom} && $header !~ /X-Assp-Envelope-From: \Q$this->{mailfrom}\E/;
+    $this->{myheader}.= "X-Spambox-Envelope-From: $this->{mailfrom}\r\n"
+        if $AddIntendedForHeader && $this->{mailfrom} && $header !~ /X-Spambox-Envelope-From: \Q$this->{mailfrom}\E/;
     for (split(/ /o,$this->{rcpt})) {
-        $this->{myheader}.= "X-Assp-Intended-For: $_\r\n"
-            if $AddIntendedForHeader && $_ && $header !~ /X-Assp-Intended-For: \Q$_\E/i;
+        $this->{myheader}.= "X-Spambox-Intended-For: $_\r\n"
+            if $AddIntendedForHeader && $_ && $header !~ /X-Spambox-Intended-For: \Q$_\E/i;
     }
-    $this->{myheader}.="X-Assp-Original-Subject: $this->{subject2}\r\n"
-        if $AddSubjectHeader && $this->{subject2} && $header !~ /X-Assp-Original-Subject:/;
+    $this->{myheader}.="X-Spambox-Original-Subject: $this->{subject2}\r\n"
+        if $AddSubjectHeader && $this->{subject2} && $header !~ /X-Spambox-Original-Subject:/;
     $this->{myheader}.=$header;
 
     my $red = $this->{red};
@@ -30959,34 +32398,34 @@ sub makeMyheader {
     my $red2 = substr($red,0,$RegExLength);
     $red2 .= '...' if $red ne $red2;
     $red2 = $red if $red =~ /^$EmailAdrRe\@$EmailDomainRe$/o;
-    $this->{myheader}.="X-Assp-Redlisted: Yes ($red2)\r\n"
-        if $this->{red} && $this->{myheader} !~ /X-Assp-Redlisted/o;
+    $this->{myheader}.="X-Spambox-Redlisted: Yes ($red2)\r\n"
+        if $this->{red} && $this->{myheader} !~ /X-Spambox-Redlisted/o;
     if ($this->{spamfound} && $AddSpamHeader) {
         foreach my $k (sort keys(%{$this})) {
             next if $k !~ /love/oi;
             next if $this->{$k} == 2;
             next unless $this->{$k};
             next if ref($this->{$k});
-            $this->{myheader}.= "X-Assp-$k: $this->{$k}\r\n" if $this->{myheader} !~ /X-Assp-$k/;
+            $this->{myheader}.= "X-Spambox-$k: $this->{$k}\r\n" if $this->{myheader} !~ /X-Spambox-$k/;
         }
     }
-    $this->{myheader}.= "X-Assp-Spam: YES\r\n"
-        if $this->{spamfound} && $AddSpamHeader && !($this->{bayeslowconf} || $this->{messagelow}) && $this->{myheader} !~ /X-Assp-Spam: YES/o;
-    $this->{myheader}.= "X-Assp-Spam: YES (Probably)\r\n"
-        if $this->{spamfound} && $AddSpamHeader && ($this->{bayeslowconf} || $this->{messagelow}) && $this->{myheader} !~ /X-Assp-Spam: YES \(Probably\)/o;
-    $this->{myheader}.="X-Assp-Block: NO (Spamlover)\r\n"
-        if $this->{spamfound} && $slok && $this->{myheader} !~ /X-Assp-Block: NO \(Spamlover\)/o;
-    $this->{myheader}.="X-Assp-Block: NO ($testmode)\r\n"
-        if $this->{spamfound} && $testmode && !$this->{messagelow} && $this->{myheader} !~ /X-Assp-Block: NO \(\Q$testmode\E\)/;
+    $this->{myheader}.= "X-Spambox-Spam: YES\r\n"
+        if $this->{spamfound} && $AddSpamHeader && !($this->{bayeslowconf} || $this->{messagelow}) && $this->{myheader} !~ /X-Spambox-Spam: YES/o;
+    $this->{myheader}.= "X-Spambox-Spam: YES (Probably)\r\n"
+        if $this->{spamfound} && $AddSpamHeader && ($this->{bayeslowconf} || $this->{messagelow}) && $this->{myheader} !~ /X-Spambox-Spam: YES \(Probably\)/o;
+    $this->{myheader}.="X-Spambox-Block: NO (Spamlover)\r\n"
+        if $this->{spamfound} && $slok && $this->{myheader} !~ /X-Spambox-Block: NO \(Spamlover\)/o;
+    $this->{myheader}.="X-Spambox-Block: NO ($testmode)\r\n"
+        if $this->{spamfound} && $testmode && !$this->{messagelow} && $this->{myheader} !~ /X-Spambox-Block: NO \(\Q$testmode\E\)/;
     $this->{myheader}.="$AddCustomHeader\r\n"
         if $this->{spamfound} && $AddCustomHeader && $this->{myheader} !~ /\Q$AddCustomHeader\E/;
-    $this->{myheader}.="X-Assp-Spam-Reason: ".$reason."\r\n"
+    $this->{myheader}.="X-Spambox-Spam-Reason: ".$reason."\r\n"
         if $this->{spamfound} && $reason && $AddSpamReasonHeader &&
-           $this->{myheader} !~ /X-Assp-Spam-Reason: \Q$reason\E/;
+           $this->{myheader} !~ /X-Spambox-Spam-Reason: \Q$reason\E/;
 
     if ($this->{spamfound} && $AddScoringHeader) {
-        $this->{myheader} =~ s/X-Assp-Message-Totalscore:$HeaderValueRe//iogs;
-        $this->{myheader} .= "X-Assp-Message-Totalscore: $this->{messagescore}\r\n";
+        $this->{myheader} =~ s/X-Spambox-Message-Totalscore:$HeaderValueRe//iogs;
+        $this->{myheader} .= "X-Spambox-Message-Totalscore: $this->{messagescore}\r\n";
     }
     if (   (! $this->{relayok} || ($this->{relayok} && ! $NoExternalSpamProb ) )
         && $this->{messagescore} > 0
@@ -30998,8 +32437,8 @@ sub makeMyheader {
         $mscore = 99 if $mscore > 99;
         $mscore = int($mscore/5) + 1;
         my $stars = '*' x $mscore;
-        $this->{myheader} =~ s/X-Assp-Spam-Level:$HeaderValueRe//gios; # clear out existing X-Assp-Spam-Level headers
-        $this->{myheader} .= "X-Assp-Spam-Level: $stars\r\n";
+        $this->{myheader} =~ s/X-Spambox-Spam-Level:$HeaderValueRe//gios; # clear out existing X-Spambox-Spam-Level headers
+        $this->{myheader} .= "X-Spambox-Spam-Level: $stars\r\n";
     }
 }
 
@@ -31056,9 +32495,9 @@ sub thisIsSpam {
     $error =~ s/LOCALUSER/$mfu/go;
     $error =~ s/LOCALDOMAIN/$mfd/go;
 
-    if ( $reason =~ /bayes/io ) {
+    if ( $reason =~ /bayes|HMM/io ) {
         if (allSH( $this->{rcpt}, 'baysTestModeUserAddresses' )) {
-            $testmode = "bayesian test mode user";
+            $testmode = "Bayesian/HMM test mode user";
             $slok=0; # make sure it's not flagged as a spam lover
         }
     }
@@ -31172,7 +32611,7 @@ sub thisIsSpam {
         mlog($fh,"[spam found] (". $reason . ")$logsub".de8($fn).';',0,2);
         delayWhiteExpire($fh);
         $error=$SpamError if $error eq '';
-        $error=~s/500/554/io;
+        $error=~s/^ *500/554/io;
 
         seterror($fh,$error,$done) unless $this->{fakeAUTHsuccess};
         return 1;
@@ -31215,8 +32654,8 @@ sub pbAdd {
     # 1-message score but don't pbblackadd
     # 2-pbblackadd but don't message score
     # noheader:
-    # 0-write X-Assp header info
-    # 1-skip X-Assp header info
+    # 0-write X-Spambox header info
+    # 1-skip X-Spambox header info
     my($fh,$myip,$score,$reason,$status,$noheader)=@_;
     return unless $fh;
     return unless $myip;
@@ -31233,13 +32672,16 @@ sub pbAdd {
        return;
     }
     return if $status && ! $score[$status - 1];
-    return if ! $status && ! max(@score);
+    return if ! $status && ($score[0] + $score[1] == 0);
+    return if $status == 1 && $this->{addressedToSpamBucket} && $score[0] < 0; # no bonus on spamadresses
+    $score[0] = 0 if $score[0] < 0 && $this->{addressedToSpamBucket};
+    $score[1] = 0 if $score[1] < 0 && $this->{addressedToSpamBucket};
     $myip = $this->{cip} if $this->{ispip} && $this->{cip} && $myip eq $this->{ip};
     my $reason2=$reason;
     $reason2=$this->{messagereason} if $this->{messagereason};
     if ( ! $noheader ) {
-        $this->{myheader}.="X-Assp-Message-Score: $score[0] ($reason2)\r\n" if $AddScoringHeader && $status < 2 && $score[0];
-        $this->{myheader}.="X-Assp-IP-Score: $score[1] ($reason2)\r\n" if $AddScoringHeader && $status != 1 && $score[1];
+        $this->{myheader}.="X-Spambox-Message-Score: $score[0] ($reason2)\r\n" if $AddScoringHeader && $status < 2 && $score[0];
+        $this->{myheader}.="X-Spambox-IP-Score: $score[1] ($reason2)\r\n" if $AddScoringHeader && $status != 1 && $score[1];
     }
     $this->{messagescore} = 0 unless $this->{messagescore};
     if ($score[0] && $status != 2) {
@@ -31251,6 +32693,7 @@ sub pbAdd {
         $sr =~ s/^\s+//o;
         lock(%ScoreStats) if is_shared(%ScoreStats);
         $ScoreStats{$sr}++;
+        $this->{scores}->{$sr} += $score[0];
 #        printScoreStats($sr,$ScoreStats{$sr});
     } elsif ($score[1] && $status == 2) {
         my $sr = $reason;
@@ -31303,10 +32746,12 @@ sub pbBlackAdd {
     return if $score == 0;
     my ( $ct, $ut, $freq, $oldscore, $sip, $sreason ) = split( / /o, $PBBlack{$ip} );
     my $newscore = $oldscore + $score;
+    $this->{ipscore} += $score;
     if ( $ct ) {
         if ( $newscore <= 0 ) {
             delete $PBBlack{$myip};
             delete $PBBlack{$ip};
+            $this->{ipscore} = 0;
             return;
         }
 
@@ -31754,8 +33199,7 @@ sub MessageScore_Run {
     mlog($fh,"monitoring ($this->{messagereason})",1) if $DoPenaltyMessage == 2;
     $Stats{msgscoring}++ if ($DoPenaltyMessage == 1 || $DoPenaltyMessage == 4);
     $this->{tagmode} = 1 if $DoPenaltyMessage == 4;
-    thisIsSpam($fh,$this->{messagereason},$spamMSLog,$er,$msTestMode,$slok,
-               ($slok || $done)) if $DoPenaltyMessage == 1 || $DoPenaltyMessage == 4;
+    thisIsSpam($fh,$this->{messagereason},$spamMSLog,$er,$msTestMode,$slok,$done) if $DoPenaltyMessage == 1 || $DoPenaltyMessage == 4;
 }
 
 sub MessageScorePL {
@@ -31802,7 +33246,7 @@ sub MessageScorePL_Run {
 # reject the email
 sub seterror {
     my($fh,$e,$done)=@_;
-    d('seterror');
+    d("seterror - $e - $done");
 
     my $this=$Con{$fh};
     $done = 1 if ($this->{lastcmd} !~ /^DATA/io &&       # end the connection if not send 250 and we are not in DATA part
@@ -31814,7 +33258,8 @@ sub seterror {
                   ($send250OK || (($this->{ispip} || $this->{cip}) && $send250OKISP )));
     $this->{error}=$e;
     $done = 1 if $e =~ /^4/o;          # end the connection if the error Reply starts with 4xx
-    if($done) {
+    d("seterror2 - $done");
+    if ($done) {
         error($fh,".\r\n");
     } else {
         $this->{getline}=\&error;
@@ -32003,7 +33448,7 @@ sub replyTLS {
         delete $SSLfailed{$serIP};
         addsslfh($oldfh,$ssl,$cli);
         $Con{$cli}->{friend} = $ssl;
-        mlog($ssl,"info: started TLS-SSL session for server $serIP") if ($ConnectionLog >=2);
+        mlog($ssl,"info: started TLS-SSL session for server $serIP - using $Con{$ssl}->{sslversion} , $Con{$ssl}->{sslcipher}") if ($ConnectionLog >=2);
         delete $Con{$oldfh}->{fakeTLS};
         delete $Con{$ssl}->{fakeTLS};
         NoLoopSyswrite($ssl,"$Con{$cli}->{fullhelo}\r\n",0); # send the ehlo again
@@ -32121,6 +33566,8 @@ sub reply {
 
     $l = decodeMimeWords2UTF8($l) if ($l =~ /=\?[^\?]+\?[qb]\?[^\?]*\?=/io);
 
+    eval{&CorrectSPAMBOXcfg::translateReply($this,\$l);} if $CanUseCorrectSPAMBOXcfg && defined &{'CorrectSPAMBOXcfg::translateReply'};
+
     $Con{$cli}->{inerror} = ($l=~/^5[05][0-9]/o);
     $Con{$cli}->{intemperror} = ($l=~/^4\d{2}/o);
     if ($l=~/^(?:1|2|3)\d{2}/o) {
@@ -32147,7 +33594,17 @@ sub reply {
         return;
     }
     $Con{$cli}->{greetingSent} = 1 if ( $l =~ /^220[^\-]/o );
-    my $DisableAUTH = $Con{$cli}->{DisableAUTH} = (exists $Con{$cli}->{DisableAUTH}) ? $Con{$cli}->{DisableAUTH} : (&matchFH($cli,@lsnNoAUTH) || ( $DisableExtAUTH && ! $Con{$cli}->{relayok} && mlog($cli,'Disabled SMTP AUTH for External IPs')));
+    my $DisableAUTH = $Con{$cli}->{DisableAUTH} =
+               $Con{$cli}->{DisableAUTH}
+               ? $Con{$cli}->{DisableAUTH}
+               : (   &matchFH($cli,@lsnNoAUTH)
+                  || (   ! $Con{$cli}->{relayok}
+                      && (   ( $DisableExtAUTH && mlog($cli,'Disabled SMTP AUTH for External IPs') )
+                          || ( $noAUTHHeloRe && $Con{$cli}->{helo} && matchRE([$Con{$cli}->{helo}],'noAUTHHeloRe') && mlog($cli,"Disabled SMTP AUTH for HELO $Con{$cli}->{helo} ( matches noAUTHHeloRe )") )
+                          || ( $onlyAUTHHeloRe && $Con{$cli}->{helo} && ! matchRE([$Con{$cli}->{helo}],'onlyAUTHHeloRe') && mlog($cli,"Disabled SMTP AUTH for HELO $Con{$cli}->{helo} ( no match for onlyAUTHHeloRe )") )
+                         )
+                     )
+                 );
 
     if ($l=~/250\s+STARTTLS/io || $l=~/250-\s*STARTTLS/io) {
         $this->{donotfakeTLS} = 1;
@@ -32188,9 +33645,8 @@ sub reply {
         ! &matchIP($cliIP,'noTLSIP',$fh,1) &&
         ! &matchFH($cli,@lsnNoTLSI)
        ) {
-           $l =~ /^([^\r\n]+)\r\n(.*)$/o;
-           my $text1 = $1;
-           my $text2 = $2;
+           my ($text1,$text2);
+           ($text1,$text2) = ($1,$2) if $l =~ /^([^\r\n]+)\r\n(.*)$/o;
            d('injected 250-STARTTLS');
            if ($l =~ /^(211|214)(-|\s+)/o) {
                if ($2 ne '-') {
@@ -32219,13 +33675,13 @@ sub reply {
         $Con{$cli}->{uc $1} = uc $2;   # 250-XCLIENT/XFORWARD NAME ADDR PORT PROTO HELO IDENT SOURCE
         d("set client $1 to $2");
     }
-    if ($l=~/250-.*?($notAllowedSMTP)/io) {
+    if ($l=~/250-.*?($notAllowedSMTP|$BIT8)/i) {
         my $cmd = $1;
         d("notAllowedSMTP: 250-sequenz - from server: \>$l\<");
         $l =~ s/250-\s*$cmd.*?\r\n//ig;
         d("notAllowedSMTP: 250-sequenz - to client: \>$l\<");
         return if(length($l)==0);
-    } elsif ($l=~/250 .*?($notAllowedSMTP)/io) {
+    } elsif ($l=~/250 .*?($notAllowedSMTP|$BIT8)/i) {
         my $cmd = $1;
         d("notAllowedSMTP: 250 sequenz - from server: \>$l\<");
         $l =~ s/250\s*$cmd.*?\r\n//ig;
@@ -32268,11 +33724,11 @@ sub reply {
         return;
     } elsif (($l=~/(211|214)(?: |-)(?:.*?)(?:VRFY|EXPN)/io && $DisableVRFY && !$Con{$cli}->{relayok}) or
              ($l=~/(211|214)(?: |-)(?:.*?)AUTH/io && $DisableAUTH && !$Con{$cli}->{relayok}) or
-             ($l=~/(211|214)(?: |-)(?:.*?)(?:$notAllowedSMTP)/io) ) {
+             ($l=~/(211|214)(?: |-)(?:.*?)(?:$notAllowedSMTP|$BIT8)/i) ) {
         d("$1 sequenz - from server: \>$l\<");
         $l =~ s/VRFY|EXPN//sigo if ($DisableVRFY && !$Con{$cli}->{relayok});
         $l =~ s/AUTH[^\r\n]+//sigo if ($DisableAUTH && !$Con{$cli}->{relayok});
-        $l =~ s/$notAllowedSMTP/NOOP/sigo;
+        $l =~ s/$notAllowedSMTP|$BIT8/NOOP/sig;
     } elsif ($l=~/250[\s\-]+AUTH[\s\=]+(.+)/io) {
         my $methodes = $1;
         $methodes =~ s/^\s+//o;
@@ -32294,8 +33750,8 @@ sub reply {
                 $l = "250$1"."NOOP\r\n";
                 d('noop to client 2');
             }
-            mlog($cli,"info: removed '250$1STARTTLS' from reply") if $ConnectionLog >= 2;
-            d("removed '250$1STARTTLS' from reply") if $ConnectionLog < 2;
+            mlog($cli,"info: removed '250$1"."STARTTLS' from reply") if $ConnectionLog >= 2;
+            d("removed '250$1"."STARTTLS' from reply") if $ConnectionLog < 2;
             sendque($cli, $l);
             return;
         } else {
@@ -32358,7 +33814,7 @@ sub reply {
             $SocketCalls{$fh}=\&ProxyTraffic;
             $SocketCalls{$cli}=\&ProxyTraffic;
             mlog($cli,"info: started TLS-proxy session for $serIP and $cliIP") if $ConnectionLog >= 2;
-            d("started TLS-proxy session for $serIP and $cliIP") if $ConnectionLog < 2;;
+            d("started TLS-proxy session for $serIP and $cliIP") if $ConnectionLog < 2;
             return;
           } elsif ($DoTLS == 2 && $CanUseIOSocketSSL) {                   #  do TLS
             $IO::Socket::SSL::DEBUG = $SSLDEBUG;
@@ -32387,7 +33843,7 @@ sub reply {
                 
                 delete $SSLfailed{$cliIP};
                 addsslfh($oldcli,$ssls,$fh);
-                mlog($ssls,"info: started TLS-SSL session for client $cliIP") if ($ConnectionLog >= 2);
+                mlog($ssls,"info: started TLS-SSL session for client $cliIP - using $Con{$ssls}->{sslversion} , $Con{$ssls}->{sslcipher}") if ($ConnectionLog >= 2);
               }
             } else {
                 # set the client and the server connection to SSL if not already
@@ -32410,7 +33866,7 @@ sub reply {
 
                 delete $SSLfailed{$cliIP};
                 addsslfh($oldcli,$ssls,$fh);
-                mlog($ssls,"info: started TLS-SSL session for client $cliIP") if ($ConnectionLog >= 2);
+                mlog($ssls,"info: started TLS-SSL session for client $cliIP - using $Con{$ssls}->{sslversion} , $Con{$ssls}->{sslcipher}") if ($ConnectionLog >= 2);
               } else {
                 NoLoopSyswrite($cli, "502 command not implemented\r\n",0);
               }
@@ -32434,7 +33890,7 @@ sub reply {
                 delete $SSLfailed{$serIP};
                 addsslfh($oldfh,$sslc,$ssls);
                 $Con{$ssls}->{friend} = $sslc;
-                mlog($sslc,"info: started TLS-SSL session for server $serIP") if ($ConnectionLog >= 2);
+                mlog($sslc,"info: started TLS-SSL session for server $serIP - using $Con{$sslc}->{sslversion} , $Con{$sslc}->{sslcipher}") if ($ConnectionLog >= 2);
               }
             }
             delete $this->{fakeTLS};
@@ -32455,6 +33911,8 @@ sub reply {
         # check for authentication response
         $Con{$cli}->{relayok} = 1;
         $Con{$cli}->{authenticated}=1;
+        my $ip = &ipNetwork( $Con{$cli}->{ip}, $PenaltyUseNetblocks);
+        delete $AUTHErrors{$ip} if exists $AUTHErrors{$ip} && matchIP($ip,'ResetMaxAUTHErrorIPs',$cli,0);
         d("$Con{$cli}->{ip}: authenticated");
         mlog($cli,"authenticated to $serIP") if $this->{alllog} or $ValidateUserLog>=2;
     } elsif($l=~/^354/o) {
@@ -32775,14 +34233,13 @@ sub SpamReport {
     my $this=$Con{$fh};
 	my $tmp = $l ;
 	$tmp =~ s/\r|\n|\s//igo;
-	$tmp =~ /^([a-zA-Z0-9]+)/o;
-	if ($1) {
+	if ($tmp =~ /^([a-zA-Z0-9]+)/o) {
 	    $this->{lastcmd} = substr($1,0,14);
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
     }
-    if( $l=~/^ *DATA/io || $l=~/^ *BDAT (\d+)/io ) {
-        if($1) {
-            $this->{bdata}=$1;
+    if( $l=~/^ *(DATA)/io || $l=~/^ *(BDAT) (\d+)/io ) {
+        if(uc($1) eq 'BDAT') {
+            $this->{bdata}=$2;
         } else {
             delete $this->{bdata};
         }
@@ -32813,9 +34270,7 @@ sub SpamReportBody {
     my ($fh, $l)=@_;
     d('SpamReportBody');
     my $this=$Con{$fh};
-    my $MaxBytesReports = $MaxBytesReports;
-    $MaxBytesReports ||= 1024000;
-    $this->{header}.=$l if length($this->{header}) < $MaxBytesReports;
+    $this->{header}.=$l if (! $MaxBytesReports || ($MaxBytesReports && length($this->{header}) < $MaxBytesReports));
     my $sub;
     my $type;
     my %addresses;
@@ -32824,9 +34279,10 @@ sub SpamReportBody {
 
         # we're done -- write the file & clean up
         $type = $this->{reportaddr} eq 'EmailSpam' ? 'Spam' : 'Ham';
-        if (! $this->{mailfrom} && $this->{header} =~ /X-Assp-Intended-For:\s*($EmailAdrRe\@$EmailDomainRe)/io) {
+        mlog(0,"$type-Report: report is truncated to ( MaxBytesReports ) $MaxBytesReports bytes") if $ReportLog > 1 && $MaxBytesReports && length($this->{header}) >= $MaxBytesReports;
+        if (! $this->{mailfrom} && $this->{header} =~ /X-Spambox-Intended-For:\s*($EmailAdrRe\@$EmailDomainRe)/io) {
             $this->{noreportTo} = $this->{mailfrom} = $1;
-            mlog(0,"$type-Report: empty sender is replaced by 'X-Assp-Intended-For' $this->{mailfrom} - no reports will be sent") if $ReportLog;
+            mlog(0,"$type-Report: empty sender is replaced by 'X-Spambox-Intended-For' $this->{mailfrom} - no reports will be sent") if $ReportLog;
         }
         my $msg = ($MaxBytesReports) ? substr($this->{header},0,$MaxBytesReports) : $this->{header};
         mlog(0,"$type-Report: process message from $this->{mailfrom}") if $ReportLog;
@@ -32966,7 +34422,7 @@ sub SpamReportExec {
     d('SpamReportExec');
     my $header;
     my ($sub) = $bod =~ /(?:^|\n)Subject:\s*($HeaderValueRe)/ios;
-    ($sub) = $bod =~ /X-Assp-Original-Subject:\s*($HeaderValueRe)/ios unless $sub;
+    ($sub) = $bod =~ /X-Spambox-Original-Subject:\s*($HeaderValueRe)/ios unless $sub;
     $sub =~ s/[\r\n]+$//o;
     my $udecsub = $sub;
     $sub=decodeMimeWords2UTF8($sub);
@@ -32983,23 +34439,23 @@ sub SpamReportExec {
     $udecsub =~ s/\r//o;
 
     my $encsub = $sub =~ /[\x00-\x1F\x7F-\xFF]/o ? $udecsub : $sub;
-    $header = "X-Assp-Reported-By: $from\r\n" if $from;
+    $header = "X-Spambox-Reported-By: $from\r\n" if $from;
     $header.="Subject: ".$encsub."\r\n" if $encsub;
     $header.=$1."\r\n" if $bod=~/(Received:\s+from\s+.*?\(\[$IPRe.*?helo=.*?\))/io;
     $sub =~ y/a-zA-Z0-9/_/cs unless $UseUnicode4SubjectLogging;
     $sub =~ s/[\^\s\<\>\?\"\:\|\\\/\*]/_/igo;  # remove not allowed characters and spaces from file name
 
-    $header.=$1 if $bod=~/(X-Assp-ID: .*)/io;
+    $header.=$1 if $bod=~/(X-Spambox-ID: .*)/io;
 
-    $header.=$1 if $bod=~/(X-Assp-Tag: .*)/io;
+    $header.=$1 if $bod=~/(X-Spambox-Tag: .*)/io;
 
-    $header.=$1 if $bod=~/(X-Assp-Envelope-From: .*)/io;
+    $header.=$1 if $bod=~/(X-Spambox-Envelope-From: .*)/io;
 
-    $header.=$1 if $bod=~/(X-Assp-Intended-For: .*)/io;
+    $header.=$1 if $bod=~/(X-Spambox-Intended-For: .*)/io;
 
     $bod=~s/^.*?\n[\r\n\s]+//so;
 
-    $bod=~s/X-Assp-Spam-Prob:[^\r\n]+\r?\n//gio;
+    $bod=~s/X-Spambox-Spam-Prob:[^\r\n]+\r?\n//gio;
     if($bod=~/\nReceived: /o) {
         $bod=~s/^.*?\nReceived: /Received: /so;
     } else {
@@ -33033,14 +34489,13 @@ sub ListReport {
     my $this=$Con{$fh};
 	my $tmp = $l ;
 	$tmp =~ s/\r|\n|\s//igo;
-	$tmp =~ /^([a-zA-Z0-9]+)/o;
-	if ($1) {
+	if ($tmp =~ /^([a-zA-Z0-9]+)/o) {
 	    $this->{lastcmd} = substr($1,0,14);
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
     }
-    if( $l=~/^ *DATA/io || $l=~/^ *BDAT (\d+)/io ) {
-        if($1) {
-            $this->{bdata}=$1;
+    if( $l=~/^ *(DATA)/io || $l=~/^ *(BDAT) (\d+)/io ) {
+        if(uc($1) eq 'BDAT') {
+            $this->{bdata}=$2;
         } else {
             delete $this->{bdata};
         }
@@ -33087,14 +34542,13 @@ sub HelpReport {
     my $this=$Con{$fh};
 	my $tmp = $l ;
 	$tmp =~ s/\r|\n|\s//igo;
-	$tmp =~ /^([a-zA-Z0-9]+)/o;
-	if ($1) {
+	if ($tmp =~ /^([a-zA-Z0-9]+)/o) {
 	    $this->{lastcmd} = substr($1,0,14);
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
     }
-    if( $l=~/^ *DATA/io || $l=~/^ *BDAT (\d+)/io ) {
-        if($1) {
-            $this->{bdata}=$1;
+    if( $l=~/^ *(DATA)/io || $l=~/^ *(BDAT) (\d+)/io ) {
+        if(uc($1) eq 'BDAT') {
+            $this->{bdata}=$2;
         } else {
             delete $this->{bdata};
         }
@@ -33130,14 +34584,13 @@ sub AnalyzeReport {
     my $this=$Con{$fh};
 	my $tmp = $l ;
 	$tmp =~ s/\r|\n|\s//igo;
-	$tmp =~ /^([a-zA-Z0-9]+)/o;
-	if ($1) {
+	if ($tmp =~ /^([a-zA-Z0-9]+)/o) {
 	    $this->{lastcmd} = substr($1,0,14);
         push(@{$this->{cmdlist}},$this->{lastcmd}) if $ConnectionLog >= 2;
     }
-    if( $l=~/^ *DATA/io || $l=~/^ *BDAT (\d+)/io ) {
-        if($1) {
-            $this->{bdata}=$1;
+    if( $l=~/^ *(DATA)/io || $l=~/^ *(BDAT) (\d+)/io ) {
+        if(uc($1) eq 'BDAT') {
+            $this->{bdata}=$2;
         } else {
             delete $this->{bdata};
         }
@@ -33266,7 +34719,12 @@ sub ReportBodyUnZip {
             if ($part->header("Content-Disposition")=~ /attachment|inline/io && $name =~ /\.(?:zip|gz(?:ip)?|bz(?:ip)?2|lz(?:op|f|ma)?|xz)$/io) {
                 my $body = $part->body;
                 my $z = eval{IO::Uncompress::AnyUncompress->new( \$body ,('Append' => 1));};
+                mlog(0,"error: IO::Uncompress::AnyUncompress failed - $@") if $@;
                 next unless ref($z);
+                if (! eval{$z->getHeaderInfo()->{Name}}) {
+                    mlog(0,"error: unable to get unzipped file name - possibly empty zip file");
+                    next;
+                }
                 do {
                     my $status = defined ${"main::".chr(ord(",") << 1)}; my $buffer;
                     my $filename = $z->getHeaderInfo()->{Name};
@@ -33364,9 +34822,7 @@ sub ListReportBody {
     my %addresses;
     d('ListReportBody');
     
-    my $MaxBytesReports = $MaxBytesReports;
-    $MaxBytesReports ||= 1024000;
-    $this->{header} .= $l if length($this->{header}) < $MaxBytesReports;
+    $this->{header} .= $l if (! $MaxBytesReports || ($MaxBytesReports && length($this->{header}) < $MaxBytesReports));
     if($l=~/^\.[\r\n]/o || defined($this->{bdata}) && $this->{bdata}<=0) {
 
         $this->{header} =~ s/\x0D?\x0A/\x0D\x0A/go;
@@ -33393,7 +34849,10 @@ sub ListReportBody {
             &ListReportExec('reportpersblack@anydom.com',$this);
         }
 
-        $this->{header} = substr($this->{header},0,$MaxBytesReports) if $MaxBytesReports;
+        if ($MaxBytesReports) {
+            mlog(0,"Report: report is truncated to ( MaxBytesReports ) $MaxBytesReports bytes") if $ReportLog > 1 && length($this->{header}) >= $MaxBytesReports;
+            $this->{header} = substr($this->{header},0,$MaxBytesReports);
+        }
         # we're done -- write the file & clean up
 
         my $file = "$base/" . ( exists $ReportFiles{$this->{reportaddr}}
@@ -33457,7 +34916,7 @@ sub ListReportGetAddr {
     while ($header =~ /($HeaderNameRe):($HeaderValueRe)/gios) {
         my $val = decodeMimeWords($2);
         my $tag = $1;
-        next if $tag !~ /^(?:subject|from|X-Assp-Envelope-From|sender|reply-to|errors-to|list-\w+|ReturnReceipt|Return-Receipt-To|Disposition-Notification-To$rcptTag)$/i;
+        next if $tag !~ /^(?:subject|from|X-Spambox-Envelope-From|sender|reply-to|errors-to|list-\w+|ReturnReceipt|Return-Receipt-To|Disposition-Notification-To$rcptTag)$/i;
         &headerSmartUnwrap($val);
         while ($val =~ /($EmailAdrRe\@$EmailDomainRe)/igo) {
             my $addr = $1;
@@ -33559,8 +35018,6 @@ sub ListReportExec {
     my $mfu; $mfu = $1 if $mf =~ /([^@]*)\@/o;
     my $mfd; $mfd = $1 if $mf =~ /\@([^@]*)/o;
     my $mfdd; $mfdd = $1 if $mf =~ /(\@[^@]*)/o;
-    my $alldd        = "$wildcardUser$mfdd";
-    my $defaultalldd = "*$mfdd";
     return if !( $mfu || $mfd || $mfdd ) && $ReportTypes{$this->{reportaddr}} <= 9;
     return if lc $mfu  eq lc $ea && $localmail;
     return if lc $mfd  eq lc $ea && $localmail;
@@ -33740,12 +35197,6 @@ sub ListReportExec {
                       "\n$1 is on NoProcessingDomain-List\n\n";
                 }
             }
-        }
-        if ( &Whitelist($alldd) ) {
-            $this->{report} .= "\n$alldd is on Whitelist\n\n";
-        }
-        if ( &Whitelist($defaultalldd) ) {
-            $this->{report} .= "\n$defaultalldd is on Whitelist\n\n";
         }
         if ( &Whitelist($mf) ) {
             if ( $this->{report} !~ /\Q$rea\E is on Whitelist/ )
@@ -34112,8 +35563,6 @@ sub ShowWhiteReport {
     my $mf           = lc $ad;
     my $mfd; $mfd    = $1 if $mf =~ /\@([^@]*)/o;
     my $mfdd; $mfdd  = $1 if $mf =~ /(\@[^@]*)/o;
-    my $alldd        = "$wildcardUser$mfdd";
-    my $defaultalldd = "*$mfdd";
     if ( &Whitelist($mf) ) {
 
         if ( $this->{report} !~ /\Q$mf\E is on Whitelist/ ) {
@@ -34165,19 +35614,6 @@ sub ShowWhiteReport {
 
         if ( $this->{report} !~ /\Q$1\E is on NoProcessingDomain-List/ ) {
             $this->{report} .= "\n$1 is on NoProcessingDomain-List\n\n";
-        }
-    }
-    if ( &Whitelist($alldd) ) {
-
-        if ( $this->{report} !~ /\Q$alldd\E is on Whitelist/ ) {
-            $this->{report} .= "\n$alldd is on Whitelist\n\n";
-        }
-
-    }
-    if ( &Whitelist($defaultalldd) ) {
-
-        if ( $this->{report} !~ /\Q$defaultalldd\E is on Whitelist/ ) {
-            $this->{report} .= "\n$defaultalldd is on Whitelist\n\n";
         }
     }
     if ( $whiteListedDomains && matchRE([$mf,"$this->{mailfrom},$mf"],'whiteListedDomains',1) ) {
@@ -34556,7 +35992,7 @@ sub RMdata2 { my ($fh,$l)=@_;
 From: $this->{from}\r
 To: $this->{to}\r
 Subject: $this->{subject}\r
-X-Assp-Report: YES\r
+X-Spambox-Report: YES\r
 Date: $date $tz\r
 $this->{mimehead}\r
 \r
@@ -34679,7 +36115,9 @@ sub NullData { my ($fh,$l)=@_;
 
                         eval{
                         my $sender = Email::Send->new({mailer => 'SMTP'});
-                        $sender->mailer_args([Host => $SMTP_HOSTNAME, Port => 25, Hello => $myName, NoTLS => 1, To => $rcpt, From => $mailfrom]);
+                        my %Bits;
+                        $Bits{Bits} = 8 if $Con{$fh}->{IS8BITMIME};
+                        $sender->mailer_args([Host => $SMTP_HOSTNAME, Port => 25, Hello => $myName, NoTLS => 1, To => $rcpt, From => $mailfrom, %Bits]);
                         eval{ require Email::Send::SMTP; } or last RCPT;
                         *{'Email::Send::SMTP::send'} = \&main::email_send_X;
                         $sender->send($header) &&
@@ -34777,7 +36215,7 @@ sub BlockReportSend {
             if ($smtp) {
                 my $fh = $smtp;
                 if ($TLS) {
-                    eval{$smtp->starttls();};
+                    eval{$smtp->starttls(getSSLParms(0));};
                     $localTLSfailed{$MTA} = time if ($@);
                 }
                 my $timeout = (int(length($bod) / (1024 * 1024)) + 1) * 60; # 1MB/min
@@ -34897,7 +36335,7 @@ EOT
         return;
     }
     $outfile->binmode;
-    my $header = "X-Assp-Resend-Blocked: $myName\r\n";
+    my $header = "X-Spambox-Resend-Blocked: $myName\r\n";
     while ( my $line = (<$infile>)) {
         $line =~ s/[\r\n]//og;
         $header .= "$line\r\n";
@@ -34913,18 +36351,18 @@ EOT
         my $text;
         my $adr;
         $line =~ s/\r|\n//o;
-        next if !$Skip && $line =~ /X-Assp-Intended-For:/io;
-        if ( $line =~ /^(to|b?cc|from|X-Assp-(?:Intended-For|Envelope-From)):.*?($EmailAdrRe\@$EmailDomainRe)/oi ) {
+        next if !$Skip && $line =~ /X-Spambox-Intended-For:/io;
+        if ( $line =~ /^(to|b?cc|from|X-Spambox-(?:Intended-For|Envelope-From)):.*?($EmailAdrRe\@$EmailDomainRe)/oi ) {
             $text = $1 . ':';
             $adr  = $2;
             my @adr = $line =~ /($EmailAdrRe\@$EmailDomainRe)/go;
             $adr = $this->{mailfrom} if ( $text =~ /^to:/io && matchARRAY( qr/^\Q$this->{mailfrom}\E$/i , \@adr) );
-            $sender = lc($adr) if ( $text =~ /^X-Assp-Envelope-From:/io );
+            $sender = lc($adr) if ( $text =~ /^X-Spambox-Envelope-From:/io );
             $sender ||= lc($adr) if ( $text =~ /^from:/io );
             next if ((!$Skip || ($Skip && $requester)) && ( $text =~ /^cc:/io or $text =~ /^bcc:/io ) );
             next if ((!$Skip || ($Skip && $requester)) && ( $text =~ /^to:/io
                     && lc($adr) ne lc( $this->{mailfrom} ) ));
-            push(@requester, $adr) if ($Skip && $requester && $text =~ /^X-Assp-Intended-For:/io );
+            push(@requester, $adr) if ($Skip && $requester && $text =~ /^X-Spambox-Intended-For:/io );
             next if ($text =~ /^to:/io && ! &localmail($adr));
             $foundRecpt = 2 if ( $text =~ /^to:/io
                                  && lc($adr) eq lc( $this->{mailfrom} ) );
@@ -35029,7 +36467,7 @@ sub BlockReportGen {
       : "$base/$filename";
     if ( ! $brfile ) {
         if (! -e "$filename" || -d "$filename" || ! (open $brfile,'<' ,"$filename")) {
-            mlog(0,"error: unable to find or open the file $filename");
+            mlog(0,"error: BlockReport: unable to find or open the file $filename");
             return;
         }
     }
@@ -35880,9 +37318,9 @@ sub BlockReportHTMLTextWrap {
 sub BlockReport {
     my ( $fh, $l ) = @_;
     my $this = $Con{$fh};
-    if ( $l =~ /^ *DATA/io || $l =~ /^ *BDAT (\d+)/io ) {
-        if ($1) {
-            $this->{bdata} = $1;
+    if ( $l =~ /^ *(DATA)/io || $l =~ /^ *(BDAT) (\d+)/io ) {
+        if (uc($1) eq 'BDAT') {
+            $this->{bdata} = $2;
         } else {
             delete $this->{bdata};
         }
@@ -35998,7 +37436,7 @@ sub BlockReportForwardRequest {
                 );
                 if ($smtp) {
                     if ($TLS) {
-                        eval{$smtp->starttls();};
+                        eval{$smtp->starttls(getSSLParms(0));};
                         $localTLSfailed{$MTA} = time if ($@);
                     }
                     $smtp->mail( $this->{mailfrom} );
@@ -36542,13 +37980,11 @@ sub BlockReportStoreUserRequest {
     open my $f, '<',"$file";
     while (<$f>) {
         s/\r?\n//igo;
-        s/\s*#(.*)//go;
-        $comment = $1;
+        $comment = $1 if s/\s*#(.*)//go;
         next unless $_;
         ( $user, $to, $numdays , $exceptRe , $sched) = split( /\=\>/o, $_ );
         next unless $user;
-        $comment =~ /^\s*(next\srun\s*\:\s*\d+[\-|\.]\d+[\-|\.]\d+)/o;
-        $nextrun               = $1 ? "# $1" : '';
+        $nextrun               = ($comment =~ /^\s*(next\srun\s*\:\s*\d+[\-|\.]\d+[\-|\.]\d+)/o) ? "# $1" : '';
         $user                  = lc($user);
         $numdays               = 5 unless $numdays;
         $lines{$user}{numdays} = $numdays;
@@ -36558,11 +37994,13 @@ sub BlockReportStoreUserRequest {
     }
     close $f;
     $from = lc($from);
-    $sub =~ /^\s*([+\-])?(?:(?:\s*|\s*=>\s*)(\d+))?(?:(?:\s+|\s*=>\s*)([^\s]+))?(?:(?:\s+|\s*=>\s*)($ScheduleRe(?:\|$ScheduleRe)*))?\s*$/o;
-    my $how = $1;
-    $numdays = $2 ? $2 : 5;
-    $exceptRe = $3;
-    $sched = $4;
+    my $how;
+    if ($sub =~ /^\s*([+\-])?(?:(?:\s*|\s*=>\s*)(\d+))?(?:(?:\s+|\s*=>\s*)([^\s]+))?(?:(?:\s+|\s*=>\s*)($ScheduleRe(?:\|$ScheduleRe)*))?\s*$/o) {
+        $how = $1;
+        $numdays = $2 ? $2 : 5;
+        $exceptRe = $3;
+        $sched = $4;
+    }
     if ( $how eq '-' ) {
         if (delete $lines{$from}) {
             mlog( 0, "info: removed entry for $from from block report queue" )
@@ -36941,6 +38379,7 @@ sub ccMail {
     $this->{to}=$cchamlt;
     $this->{from}=$from;
     $this->{fromIP} = $Con{$fh}->{ip};
+    $this->{IS8BITMIME} = $Con{$fh}->{IS8BITMIME};
     
     local $/="\n";
 
@@ -36979,27 +38418,42 @@ sub ccMail {
 
 sub CChelo { my ($fh,$l)=@_;
     if($l=~/^ *220 /o) {
-        sendque($fh,"HELO $myName\r\n");
-        $Con{$fh}->{CClastCMD} = 'HELO';
+        my $cmd = $Con{$fh}->{IS8BITMIME} ? 'EHLO' : 'HELO';
+        $Con{$fh}->{CClastCMD} = "$cmd $myName";;
+        sendque($fh,"$Con{$fh}->{CClastCMD}\r\n");
         $Con{$fh}->{getline}=\&CCfrom;
-    } elsif ($l=~/^ *220-/o){
+    } elsif ($l=~/^ *220-/o) {
     } else {
         CCabort($fh,"helo Expected 220, got: $l (from:$Con{$fh}->{from} to:$Con{$fh}->{to})");
     }
 }
 sub CCfrom { my ($fh,$l)=@_;
     if($l=~/^ *250 /o) {
-        sendque($fh,"MAIL FROM: ".($Con{$fh}->{from}=~/(<[^<>]+>)/o ?$1:"<$Con{$fh}->{from}>")."\r\n");
-        $Con{$fh}->{CClastCMD} = 'MAIL FROM';
+        $Con{$fh}->{CAN8BITMIME} = 1 if $l=~/8BITMIME/io;
+        if ($Con{$fh}->{IS8BITMIME} && ! $Con{$fh}->{CAN8BITMIME}) {
+            mlog($fh,"ERROR: CCMail destination does not support required 8BITMIME - CCMail canceled");
+            $Con{$fh}->{CClastCMD} = "QUIT";
+            sendque($fh,"QUIT\r\n");
+            $Con{$fh}->{getline}=\&CCdone;
+            $Con{$fh}->{type} = 'CC';          # start timeout watching for case 221/421 will not be send
+            $Con{$fh}->{timelast} = time;
+            $Con{$fh}->{nodelay} = 1;
+            return;
+        }
+        my $ext = $Con{$fh}->{IS8BITMIME} ? ' BODY=8BITMIME' : '';
+        $Con{$fh}->{CClastCMD} = "MAIL FROM: ".($Con{$fh}->{from}=~/(<[^<>]+>)/o ? $1.$ext : "<$Con{$fh}->{from}>$ext");
+        sendque($fh,"$Con{$fh}->{CClastCMD}\r\n");
         $Con{$fh}->{getline}=\&CCrcpt;
+    } elsif($l=~/^ *250-.*?8BITMIME/io) {
+        $Con{$fh}->{CAN8BITMIME} = 1;
     } elsif ($l=~/^ *250-/o) {
     } else {
-        CCabort($fh,"HELO sent, Expected 250, got: $l (from:$Con{$fh}->{from} to:$Con{$fh}->{to})");
+        CCabort($fh,"$Con{$fh}->{CClastCMD} sent, Expected 250, got: $l (from:$Con{$fh}->{from} to:$Con{$fh}->{to})");
     }
 }
 sub CCrcpt { my ($fh,$l)=@_;
     if($l!~/^ *250/o) {
-        CCabort($fh,"MAIL FROM sent, Expected 250, got: $l (from:$Con{$fh}->{from} to:$Con{$fh}->{to})");
+        CCabort($fh,"$Con{$fh}->{CClastCMD} sent, Expected 250, got: $l (from:$Con{$fh}->{from} to:$Con{$fh}->{to})");
     } else {
         sendque($fh,"RCPT TO: <$Con{$fh}->{to}>\r\n");
         $Con{$fh}->{CClastCMD} = 'RCPT TO';
@@ -37020,8 +38474,8 @@ sub CCdata2 { my ($fh,$l)=@_;
     if($l!~/^ *354/o) {
         CCabort($fh,"DATA sent, Expected 354, got: $l");
     } else {
-        $this->{body} =~ s/\r?\n/\r\n/gos;
-        $this->{body} =~ s/(?:ReturnReceipt|Return-Receipt-To|Disposition-Notification-To):$HeaderValueRe//gios
+        $this->{body} =~ s/\r?\n/\r\n/gos unless $this->{IS8BITMIME};
+        $this->{body} =~ s/(?:$removeDispositionNotification):$HeaderValueRe//gios
             if ($removeDispositionNotification);
         $this->{body} =~ s/[\r\n\.]+$//os;
         sendque($fh,$this->{body} . "\r\n.\r\n");
@@ -37191,7 +38645,7 @@ sub HMMOK_Run {
 
     my @words;
     my @t;
-    $this->{hmmres} = 0;
+    $this->{hmmQuestion} = $this->{hmmres} = 0;
 
     push(@t,$URIBLaddWeight{obfuscatedip}) if $this->{obfuscatedip};
     push(@t,$URIBLaddWeight{obfuscateduri}) if $this->{obfuscateduri};
@@ -37219,6 +38673,7 @@ sub HMMOK_Run {
                 shift @words if @words > $HMMSequenceLength + 1;
                 my $sym = join($;,@words);
                 next if (++$seen{$sym} > 2);
+                $this->{hmmQuestion}++;
                 my $res;
                 if ($privat && ($res = $HMMdb{$privat.$;.$sym})) {
                     for (1...$BayesPrivatPrior) {push @t,$res;$this->{hmmres}++;}
@@ -37237,32 +38692,41 @@ sub HMMOK_Run {
             }
         }
     }
+    $this->{hmmQuestion} = $this->{hmmres} if $this->{hmmQuestion} < $this->{hmmres};
+    $this->{hmmQueryRelation} = $this->{hmmres} / $this->{hmmQuestion} if $this->{hmmQuestion};
+    $this->{hmmQueryRelation} = 1 if $this->{hmmres} >= $maxBayesValues || $this->{hmmQueryRelation} > 1;
+    $this->{hmmQueryRelation} ||= 0;
     my $skipBonus;
-    if ($this->{hmmres} < int($maxBayesValues / 12 + 1)) {
-        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
-        mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 12 + 1).' results - using monitoring mode only');
-        $DoHMM = 2;
-        $tlit=&tlit($DoHMM);
-        $this->{prepend}="[HMM]";
-        $this->{prepend}.="$tlit" if $DoHMM>=2;
-        $skipBonus = 1;
-    } elsif ($this->{hmmres} < int($maxBayesValues / 3 + 1) && $DoHMM == 1) {
-        mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
-        mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 3 + 1).' results - using soring mode only');
-        $DoHMM = 3;
-        $tlit=&tlit($DoHMM);
-        $this->{prepend}="[HMM]";
-        $this->{prepend}.="$tlit" if $DoHMM>=2;
-        $skipBonus = 1;
+    if ($this->{hmmQueryRelation} < .8) {
+        if ($this->{hmmres} < int($maxBayesValues / 12 + 1)) {
+            mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
+            mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 12 + 1).' results - using monitoring mode only');
+            $DoHMM = 2;
+            $tlit=&tlit($DoHMM);
+            $this->{prepend}="[HMM]";
+            $this->{prepend}.="$tlit";
+            $skipBonus = 1;
+        } elsif ($this->{hmmres} < int($maxBayesValues / 3 + 1)) {
+            mlog(0,"warning: the current HMMdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{HMMdb} - required: $requiredDBVersion{HMMdb}") if ($currentDBVersion{HMMdb} ne $requiredDBVersion{HMMdb} && ! ($ignoreDBVersionMissMatch & 2));
+            if ($DoHMM == 1) {
+                mlog($fh,'HMM-Check has given less than '.int($maxBayesValues / 3 + 1).' results - using scoring mode only');
+                $DoHMM = 3;
+                $tlit=&tlit($DoHMM);
+                $this->{prepend}="[HMM]";
+                $this->{prepend}.="$tlit";
+            }
+            $skipBonus = 1;
+        }
     }
 
     $itime=time-$stime;
     mlog($fh,"info: HMM-Check has taken $itime seconds and has given $this->{hmmres} results") if $BayesianLog >= 2;
     return 1 unless $this->{hmmres};
-    (my $p1, my $p2, my $c1, $this->{hmmprob}, $this->{hmmconf}) = BayesHMMProb(\@t);
+    (my $p1, my $p2, my $c1, $this->{hmmprob}, $this->{hmmconf}) = BayesHMMProb(\@t,$this->{hmmQueryRelation});
+    $this->{phps} = [$p1,$p2] if ! $fh;
 
     if ($baysConf>0) {
-        mlog($fh, sprintf("HMM Check $tlit - Prob: %.5f / Confidence: %.5f => %s.%s", $this->{hmmprob}, $this->{hmmconf}, $this->{hmmconf}<$baysConf?"doubtful":"confident", ($this->{hmmprob}<$baysProbability)?"ham":"spam"),1) if $BayesianLog || $DoHMM>=2;
+        mlog($fh, sprintf("HMM Check $tlit - Prob: %.5f - Confidence: %.5f => %s.%s - answer/query relation: %d%% of %d", $this->{hmmprob}, $this->{hmmconf}, $this->{hmmconf}<$baysConf?"doubtful":"confident", ($this->{hmmprob}<$baysProbability)?"ham":"spam",(int($this->{hmmQueryRelation} * 100)),$this->{hmmQuestion}),1) if $BayesianLog || $DoHMM>=2;
         $this->{bayeslowconf}=1 if ($this->{hmmprob}>=$baysProbability && $this->{hmmconf}<$baysConf && $DoHMM == 1);
         if ($enableGraphStats) {
             my $w = ($this->{hmmprob}<$baysProbability)?"ham":"spam";
@@ -37277,7 +38741,7 @@ sub HMMOK_Run {
             threads->yield();
         }
     } else {
-        mlog($fh, sprintf("HMM Check $tlit - Prob: %.5f => %s", $this->{hmmprob}, ($this->{hmmprob}<$baysProbability)?"ham":"spam"),1) if $BayesianLog || $DoHMM>=2;
+        mlog($fh, sprintf("HMM Check $tlit - Prob: %.5f => %s - answer/query relation: %d%% of %d", $this->{hmmprob}, ($this->{hmmprob}<$baysProbability)?"ham":"spam",(int($this->{hmmQueryRelation} * 100)),$this->{hmmQuestion}),1) if $BayesianLog || $DoHMM>=2;
     }
     return 1 if $DoHMM == 2;
     $this->{messagereason} = sprintf("HMM Probability: %.5f", $this->{hmmprob});
@@ -37355,10 +38819,11 @@ sub BayesConfNorm {
 
 sub BayesHMMProb {
     my $t = shift;
-    my $p1 = 1;
-    my $p2 = 1;
-    my $p1c = 1;
-    my $p2c = 1;
+    my $Qrelation = shift;
+    my $p1 = 0;
+    my $p2 = 0;
+    my $p1c = 0;
+    my $p2c = 0;
     my $cc = 0;
     my $c1 = 0;
     my $max = $maxBayesValues;
@@ -37366,35 +38831,41 @@ sub BayesHMMProb {
     @$t = sort { abs( $main::b - .5 ) <=> abs( $main::a - .5 ) } @$t;
     while ($c1 < $max && scalar @$t) {
         my $p = shift(@$t);
-        if ($p) {
-            $p1 *= $p;
-            $p2 *= ( 1 - $p );
+        if (defined $p) {
+            $p = 0.0000001 if $p <= 0;               # prevent wrong values
+            $p = 0.9999999 if $p >= 1;
+            my ($pp,$pn) = ( log($p), log(1-$p));    # calculate with log addition, to prevent too small numbers
+            $p1 += $pp;                              # instead using the default $p1 *= $p
+            $p2 += $pn;
             $c1++;
             if ($p < 0.01) {           # eliminate and count positive extreme ham values for confidence
                 $cc++;
                 next;
             }
-            if ((1 - $p) < 0.01) {     # eliminate and count negative extreme spam values for confidence
+            if ($p > 0.99) {           # eliminate and count negative extreme spam values for confidence
                 $cc--;
                 next;
             }
-            $p1c*=$p;                  # use the not extreme values for confidence calculation
-            $p2c*=(1-$p);
+            $p1c += $pp;               # use the not extreme values for confidence calculation
+            $p2c += $pn;
         }
     }
-    my $ps = $p1 + $p2;
-    my $SpamProb = $ps ? ($p1 / $ps) : 1;       # default Bayesian math
+    $p1 = exp($p1);                    # calculate the values from the exponent
+    $p2 = exp($p2);
+    $p1c = exp($p1c);
+    $p2c = exp($p2c);
+    my $SpamProb = $p1 / ($p1 + $p2);  # default Bayesian math
 
     #  ignore    ham extremes if spam      and   spam extremes if ham for confidence calculation
-    $cc = 0 if ($cc < 0 && $SpamProb > 0.5) or ($cc > 0 && $SpamProb <= 0.5);
+    $cc = 0 if ($cc < 0 && $SpamProb > 0.5) or ($cc > 0 && $SpamProb < 0.5);
     # use the spam/ham extremes left, to set a factor to reduce confidence
     $cc = 0.01 ** abs($cc);
     
     # found only extreme or no value -> set confidence to 1
-    $p1c = 0 if ($p1c == 1 && $p2c == 1);
-
+    $p1c = 0 if $p1c == 1 && $p2c == 1;
     # weight the confidence down, if not enough values are available ($c1/$maxBayesValues)**2
-    my $SpamProbConfidence = abs( $p1c - $p2c ) * $cc * $norm * ($c1/$max) ** 2;
+    # and the answer/query relation is low
+    my $SpamProbConfidence = abs( $p1c - $p2c ) * $cc * $norm * max($Qrelation,($c1/$max)) ** 2;
     $SpamProbConfidence = 1 if $SpamProbConfidence > 1;   # this should never happen -> but be save
 
     # return spampropval, hampropval, valcount, combined SpamProb, Confidence of combined SpamProb
@@ -37466,16 +38937,16 @@ sub BayesWords {
     my (%seen, $PrevWord, $CurWord, %got, $how);
     keys %seen = 1024;
     keys %got = 1024;
+    my $question = my $answer = 0;
     $how = 1 if [caller(2)]->[3] =~ /AnalyzeText/o;
     $how = 2 if (!$how && [caller(1)]->[3] =~ /ConfigAnalyze/o);
     $text = \$dummy if @HmmBayWords;
     use re 'eval';
     local $^R;
     while (@HmmBayWords || eval {$$text =~ /([$BayesCont]{2,})(?{$1})/go}) {
-        my @Words;
-        (@Words = @HmmBayWords ? (shift @HmmBayWords) : BayesWordClean($^R)) or next;
-        while (@Words) {
-            $CurWord = substr(shift(@Words),0,37);
+        @HmmBayWords = BayesWordClean($^R) unless @HmmBayWords;
+        while (@HmmBayWords) {
+            $CurWord = substr(shift(@HmmBayWords),0,37);
             next unless $CurWord;
             if (! $PrevWord) {
                 $PrevWord = $CurWord;
@@ -37484,23 +38955,33 @@ sub BayesWords {
             my $j="$PrevWord $CurWord";
             $PrevWord = $CurWord;
             next if (++$seen{$j} > 2); # first two occurances are significant
+            $question++;
             if ($privat && (my $v = $Spamdb{"$privat $j"})) {
                 $got{ "private: $j" } = $v if ($how);
-                for(1...$BayesPrivatPrior) {push(@t,$v);}
+                for(1...$BayesPrivatPrior) {push(@t,$v);$answer++;}
                 next;
             }
             if ($domain && (my $v = $Spamdb{"$domain $j"})) {
                 $got{ "domain: $j" } = $v if ($how);
-                for(1...$BayesDomainPrior) {push(@t,$v);}
+                for(1...$BayesDomainPrior) {push(@t,$v);$answer++;}
                 next;
             }
             if (my $v = $Spamdb{$j}) {
                 $got{ $j } = $v if ($how);
                 push(@t,$v);
+                $answer++;
             }
         }
     }
-    return \@t,\%got;
+
+    my $relation;
+    $question = $answer if $question < $answer;
+    $relation = $answer / $question if $question;
+    $relation = 1 if $answer >= $maxBayesValues || $relation > 1;
+    $relation ||= 0;
+
+    @HmmBayWords = ();
+    return \@t,\%got,$relation,$question;
 }
 
 sub BayesWordClean {
@@ -37713,17 +39194,17 @@ sub BayesOK_Run {
 
     my $privat;
     ($privat) = lc $this->{rcpt} =~ /(\S+)/o if ! $this->{relayok};
-    my ($ar,$ha) = BayesWords(\$bd,$privat);
+    my ($ar,$ha,$relation,$question) = BayesWords(\$bd,$privat);
     push(@t, @$ar); undef $ha;
     $itime=time-$stime; mlog($fh,"info: Bayesian-Check has taken $itime seconds") if $BayesianLog >= 2;
     return 1 if @t < 2 && $t[0] eq '';
     if (@t < 6 && $currentDBVersion{Spamdb} ne $requiredDBVersion{Spamdb}) {
         mlog(0,"warning: the current Spamdb is possibly incompatible to this version of SPAMBOX. Please run a rebuildspamdb. current: $currentDBVersion{Spamdb} - required: $requiredDBVersion{Spamdb}") if ! ($ignoreDBVersionMissMatch & 1);
     }
-    (my $p1, my $p2, my $c1, $this->{spamprob}, $this->{spamconf}) = BayesHMMProb(\@t);
+    (my $p1, my $p2, my $c1, $this->{spamprob}, $this->{spamconf}) = BayesHMMProb(\@t,$relation);
 
     if ($baysConf>0) {
-        mlog($fh, sprintf("Bayesian Check $tlit - Prob: %.5f / Confidence: %.5f => %s.%s", $this->{spamprob}, $this->{spamconf}, $this->{spamconf}<$baysConf?"doubtful":"confident", ($this->{spamprob}<$baysProbability)?"ham":"spam"),1) if $BayesianLog || $DoBayesian>=2;
+        mlog($fh, sprintf("Bayesian Check $tlit - Prob: %.5f - Confidence: %.5f => %s.%s - answer/query relation: %d%% of %d", $this->{spamprob}, $this->{spamconf}, $this->{spamconf}<$baysConf?"doubtful":"confident", ($this->{spamprob}<$baysProbability)?"ham":"spam",(int($relation * 100)),$question),1) if $BayesianLog || $DoBayesian>=2;
         $this->{bayeslowconf}=1 if ($this->{spamprob}>=$baysProbability && $this->{spamconf}<$baysConf && $DoBayesian == 1);
         if ($enableGraphStats) {
             my $w = ($this->{spamprob}<$baysProbability)?"ham":"spam";
@@ -37738,7 +39219,7 @@ sub BayesOK_Run {
             threads->yield();
         }
     } else {
-        mlog($fh, sprintf("Bayesian Check $tlit - Prob: %.5f => %s", $this->{spamprob}, ($this->{spamprob}<$baysProbability)?"ham":"spam"),1) if $BayesianLog || $DoBayesian>=2;
+        mlog($fh, sprintf("Bayesian Check $tlit - Prob: %.5f => %s - answer/query relation: %d%% of %d", $this->{spamprob}, ($this->{spamprob}<$baysProbability)?"ham":"spam",(int($relation * 100)),$question),1) if $BayesianLog || $DoBayesian>=2;
     }
 
     if (   defined $this->{hmmprob}
@@ -37798,40 +39279,40 @@ sub addSpamProb {
     my $mscore;
     d('addSpamProb');
     return if $NoExternalSpamProb && $this->{relayok};
-    $spamprobheader = sprintf( "X-Assp-Spam-Prob: %.5f\r\n", $this->{spamprob} )
+    $spamprobheader = sprintf( "X-Spambox-Spam-Prob: %.5f\r\n", $this->{spamprob} )
       if $this->{spamprob} > 0.00001 && $AddSpamProbHeader;
-    $spamprobheader .= sprintf( "X-Assp-Bayes-Confidence: %.5f\r\n", $this->{spamconf} )
+    $spamprobheader .= sprintf( "X-Spambox-Bayes-Confidence: %.5f\r\n", $this->{spamconf} )
       if $AddSpamProbHeader
           && $AddConfidenceHeader
           && $baysConf
           && $this->{spamconf} > 0.00001;
-    $spamprobheader .= sprintf( "X-Assp-HMM-Spam-Prob: %.5f\r\n", $this->{hmmprob} )
+    $spamprobheader .= sprintf( "X-Spambox-HMM-Spam-Prob: %.5f\r\n", $this->{hmmprob} )
       if $this->{hmmprob} > 0.00001 && $AddSpamProbHeader;
-    $spamprobheader .= sprintf( "X-Assp-HMM-Confidence: %.5f\r\n", $this->{hmmconf} )
+    $spamprobheader .= sprintf( "X-Spambox-HMM-Confidence: %.5f\r\n", $this->{hmmconf} )
       if $AddSpamProbHeader
           && $AddConfidenceHeader
           && $baysConf
           && $this->{hmmconf} > 0.00001;
 
-    $this->{myheader}=~s/X-Assp-Spam-Prob:$HeaderValueRe//gios; # clear out existing X-Assp-Spam-Prob headers
-    $this->{myheader}=~s/X-Assp-Bayes-Confidence:$HeaderValueRe//gios; # clear out existing X-Assp-Bayes-Confidence headers
-    $this->{myheader}=~s/X-Assp-HMM-Spam-Prob:$HeaderValueRe//gios; # clear out existing X-Assp-HMM-Spam-Prob headers
-    $this->{myheader}=~s/X-Assp-HMM-Confidence:$HeaderValueRe//gios; # clear out existing X-Assp-HMM-Confidence headers
+    $this->{myheader}=~s/X-Spambox-Spam-Prob:$HeaderValueRe//gios; # clear out existing X-Spambox-Spam-Prob headers
+    $this->{myheader}=~s/X-Spambox-Bayes-Confidence:$HeaderValueRe//gios; # clear out existing X-Spambox-Bayes-Confidence headers
+    $this->{myheader}=~s/X-Spambox-HMM-Spam-Prob:$HeaderValueRe//gios; # clear out existing X-Spambox-HMM-Spam-Prob headers
+    $this->{myheader}=~s/X-Spambox-HMM-Confidence:$HeaderValueRe//gios; # clear out existing X-Spambox-HMM-Confidence headers
     if ($wl || $this->{whitelisted}) {
         my $reason = $this->{passingreason} =~ /white|authenticated/oi ? $this->{passingreason} : '';
         $reason = 'whiteRe' if $reason =~ /whitere/io;
         $reason =~ s/\r?\n/ /go;
         $reason = ' ('.$reason.')' if $reason;
-        $spamprobheader.="X-Assp-Whitelisted: Yes$reason\r\n";
-        $this->{myheader}=~s/X-Assp-Whitelisted:$HeaderValueRe//gios; # clear out existing X-Assp-Whitelisted headers
+        $spamprobheader.="X-Spambox-Whitelisted: Yes$reason\r\n";
+        $this->{myheader}=~s/X-Spambox-Whitelisted:$HeaderValueRe//gios; # clear out existing X-Spambox-Whitelisted headers
     }
     my $strippedTag=$this->{prepend};
     $this->{saveprepend}=$this->{prepend};
     $strippedTag=~s/\[//o;
     $strippedTag=~s/\]//o;
     if ($sp && $this->{prepend} && $tagLogging) {
-        $this->{myheader}=~s/X-Assp-Tag:$HeaderValueRe//gios; # clear out existing X-Assp-Tag headers
-        $spamprobheader.="X-Assp-Tag: $strippedTag\r\n";
+        $this->{myheader}=~s/X-Spambox-Tag:$HeaderValueRe//gios; # clear out existing X-Spambox-Tag headers
+        $spamprobheader.="X-Spambox-Tag: $strippedTag\r\n";
     }
 
     # add to our header; merge later, when client sent own headers
@@ -37861,10 +39342,18 @@ sub setWhiteListedDomainsRE {
 sub setBlackListedDomainsRE {
     my $new=shift;
     $new||=$neverMatch; # regexp that never matches
-    $new=~s/\*/\.\*/go;
     SetRE('blackListedDomainsRE',"(?:$new)\$",
           $regexMod,
           'Blacklisted Domains',$_[0]);
+}
+
+# compile the signed Senders regular expression
+sub setSigSendersRE {
+    my $new=shift;
+    $new||=$neverMatch; # regexp that never matches
+    SetRE('signedSendersRE',"(?:$new)\$",
+          $regexMod,
+          'Signed Senders',$_[0]);
 }
 
 # compile the regular expression for the list of two-level country code TLDs
@@ -37989,8 +39478,8 @@ sub onwhitelist {
         }
     }
 
-    # don't add to whitelist if sender is redlisted
-    return $whitelisted if $this->{red};
+    # don't add to whitelist if sender is redlisted or a bounce is processed
+    return $whitelisted if $this->{red} || $this->{isbounce};
     # don't add to whitelist if sender is not local but required
     return $whitelisted if $WhitelistLocalOnly && !$this->{relayok} || $WhitelistLocalFromOnly && ! localmail($this->{mailfrom});
 
@@ -38058,7 +39547,7 @@ sub attrHeader {
     my $tag = shift;
     my @attr = @_;
     my $dis = $email->header($tag);
-    d("header ($tag-attr) : $dis");
+    d("header ($tag-attr) : $dis") if $WorkerNumber < 10001;
     return unless $dis;
     return $dis unless @attr;
     my $attrs;
@@ -38550,6 +40039,7 @@ sub fixsub {
 
 sub base64decode {
     my $str = shift;
+    return unless $str;
     my $res;
     $str =~ tr|A-Za-z0-9+/||cd;
     $str =~ tr|A-Za-z0-9+/| -_|;
@@ -39073,7 +40563,8 @@ EOT
                 if (! exists $gripdelta{$ip}
                     && $ip ne 'x'
                     && $ip ne '255.255.255.255'
-                    && $ip ne '255.255.255.254')
+                    && $ip ne '255.255.255.254'
+                    && $ip ne '255.255.255.253')
                 {
                     delete $Griplist{$ip};
                     $nd++;
@@ -39109,6 +40600,7 @@ EOT
             while ( my ($ip,$v) = each %Griplist) {
                 next if $ip eq '255.255.255.255';
                 next if $ip eq '255.255.255.254';
+                next if $ip eq '255.255.255.253';
                 next if $ip eq 'x';
                 if ($v > $baysProbability) {$ns++;} else {$nh++;}
                 $nd++;
@@ -39286,10 +40778,10 @@ sub UpdateDownloadURLs {
                 mlog(0,"adminupdate: version.txt file download URL changed from $old to $versionURL") if $versionURL ne $old;
                 next;
             }
-            if (/^\s*NewAsspURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
-                my $old = $NewAsspURL;
-                $NewAsspURL = $1;
-                mlog(0,"adminupdate: SPAMBOX file download URL changed from $old to $NewAsspURL") if $NewAsspURL ne $old;
+            if (/^\s*NewSpamboxURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
+                my $old = $NewSpamboxURL;
+                $NewSpamboxURL = $1;
+                mlog(0,"adminupdate: SPAMBOX file download URL changed from $old to $NewSpamboxURL") if $NewSpamboxURL ne $old;
                 next;
             }
             if (/^\s*ChangeLogURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
@@ -39357,7 +40849,7 @@ sub downloadVersionFile {
                 $stv =~ s/\s|\(|\)//gio;
                 $stv = 0 if ($avv =~ /\d{5}(?:\.\d{1,2})?$/o && $stv =~ /(?:\.\d{1,2}){3}$/o);
                 if ($avv gt $stv) {
-                    mlog(0,"Info: new spambox version $availversion is available for download at $NewAsspURL");
+                    mlog(0,"Info: new spambox version $availversion is available for download at $NewSpamboxURL");
                     $ret = 1;
                 } else {
                     $ret = 0;
@@ -39366,8 +40858,8 @@ sub downloadVersionFile {
             if (/^\s*versionURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
                 $versionURL = $1;
             }
-            if (/^\s*NewAsspURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
-                $NewAsspURL = $1;
+            if (/^\s*NewSpamboxURL\s*:\s*(http(?:s)?:\/\/.+)$/io) {
+                $NewSpamboxURL = $1;
             }
         }
         close $VS;
@@ -39382,7 +40874,7 @@ sub downloadSPAMBOXVersion {
     return 0 unless $AutoUpdateSPAMBOX;
     checkVersionAge();
     &UpdateDownloadURLs();
-    if (! $NewAsspURL ) {
+    if (! $NewSpamboxURL ) {
         mlog(0,"warning: autoupdate: no download URL found for spambox.pl - skip update for 24 hours");
         $NextSPAMBOXFileDownload = time + 3600 * 24;
         $NextVersionFileDownload = time + 3600 * 24;
@@ -39426,7 +40918,7 @@ sub downloadSPAMBOXVersion {
     my $ret;
     $NextSPAMBOXFileDownload = 0;
     mlog(0,"Info: autoupdate: performing spambox.pl.gz download to $base/download/spambox.pl.gz") if $MaintenanceLog;
-    $ret = downloadHTTP("$NewAsspURL",
+    $ret = downloadHTTP("$NewSpamboxURL",
                  "$base/download/spambox.pl.gz",
                  \$NextSPAMBOXFileDownload,
                  "spambox.pl.gz",16,12,4,4);
@@ -39900,9 +41392,14 @@ Host: spambox.sourceforge.net";
         my %tots=statsTotals();
 
         %UploadStats = %Stats;
-
+        if (! scalar(keys %UploadStats) && -e "$base/spamboxstats.sav") {
+            mlog(0,"error: the statistic (Stats) is empty - please repair the database");
+            $ConfigAdd{clearBerkeleyDBEnv} = 1;
+        }
+        $UploadStats{version}              = "$version$modversion";
         $UploadStats{upproto_version}      = 2;
         $UploadStats{timenow}              = time;
+        $UploadStats{starttime}            = $StartTime;
         $UploadStats{connects}             = $tots{smtpConnTotal};
         $UploadStats{messages}             = $tots{msgTotal};
         $UploadStats{spams}                = $tots{msgRejectedTotal} - $Stats{bspams};
@@ -39910,6 +41407,7 @@ Host: spambox.sourceforge.net";
         $UploadStats{denyConnection} += $UploadStats{denyConnectionA};
         delete $UploadStats{denyConnectionA};
         $UploadStats{dkim} += $UploadStats{dkimpre}; delete $UploadStats{dkimpre};
+        $UploadStats{uuid} = $UUID;
   }
   my $content=join("\001",%UploadStats);
   my $len=length($content);
@@ -40005,7 +41503,7 @@ sub StatAllStats {
  &StatCpuStats();
  $AllStats{starttime}=$OldStats{starttime} || $Stats{starttime};
  foreach (keys %Stats) {
-  if ($_ eq 'version' or $_ eq 'Counter') {
+  if ($_ eq 'version' or $_ eq 'Counter' or $_ eq 'nextUpload') {
    # just copy
    $AllStats{$_}=$Stats{$_};
   } elsif ($_ eq 'smtpMaxConcurrentSessions') {
@@ -40199,11 +41697,11 @@ sub maillogNewFileName {
     my $fn;
 
     if ($FilesDistribution<1.0) {
-        my $p1=1.0-$FilesDistribution;
-        my $p2=log($FilesDistribution);
-        $fn=int($MaxFiles*log(1.0-rand($p1))/$p2);
+        my $p1 = 1.0-$FilesDistribution;
+        my $p2 = log($FilesDistribution);
+        $fn=int($MaxFiles * log(1.0-rand($p1))/$p2);
     } else {
-        $fn=int($MaxFiles*rand());
+        $fn=int($MaxFiles * rand());
     }
     return $fn;
 }
@@ -40324,14 +41822,16 @@ sub Maillog {
                 $Con{$fh}->{mailloglength} = 0;
                 if ($StoreSPAMBOXHeader) {
                     my $myheader = $Con{$fh}->{myheader};
-                    $myheader = "X-Assp-Version: $version$modversion on $myName\r\n" . $myheader
-                        if $myheader !~ /X-Assp-Version:.+? on \Q$myName\E/;
-                    $myheader .= "X-Assp-ID: $myName $Con{$fh}->{msgtime}\r\n"
-                        if $myheader !~ /X-Assp-ID: \Q$myName\E/;
-                    $myheader .= "X-Assp-Session: $Con{$fh}->{SessionID}\r\n"
-                        if $myheader !~ /X-Assp-Session:/o;
-                    $myheader =~ s/X-Assp-Spam:$HeaderValueRe//gios;
-                    $myheader =~ s/X-Assp-Spam-Level:$HeaderValueRe//gios;
+                    $myheader = "X-Spambox-Version: $version$modversion on $myName\r\n" . $myheader
+                        if $myheader !~ /X-Spambox-Version:.+? on \Q$myName\E/;
+                    $myheader .= "X-Spambox-ID: $myName $Con{$fh}->{msgtime}\r\n"
+                        if $myheader !~ /X-Spambox-ID: \Q$myName\E/;
+                    $myheader .= "X-Spambox-Session: $Con{$fh}->{SessionID}\r\n"
+                        if $myheader !~ /X-Spambox-Session:/o;
+                    $myheader .= "X-Spambox-8BITMIME: YES\r\n"
+                        if $myheader !~ /X-Spambox-8BITMIME:/o && $Con{$fh}->{IS8BITMIME};
+                    $myheader =~ s/X-Spambox-Spam:$HeaderValueRe//gios;
+                    $myheader =~ s/X-Spambox-Spam-Level:$HeaderValueRe//gios;
                     $myheader =~ s/[\r\n]+$/\r\n/o;
                     $myheader = headerFormat($myheader);
                     $FH->print($myheader);
@@ -40398,10 +41898,12 @@ sub Maillog {
             $Con{$fh}->{spambuf} += length($text);
             $Con{$fh}->{mailloglength} = length($Con{$fh}->{maillogbuf});
         }
-        if(  (   $ccMaxBytes
-              && $Con{$fh}->{mailloglength} > $MaxBytes + $Con{$fh}->{headerlength}
-              && $Con{$fh}->{mailloglength} > $Con{$fh}->{storecompletemail})
-           || $text=~/(^|[\r\n])\.[\r\n]/o || $Con{$fh}->{logalldone})
+        if (  (   $ccMaxBytes
+               && $Con{$fh}->{mailloglength} > $MaxBytes + $Con{$fh}->{headerlength}
+               && $Con{$fh}->{mailloglength} > $Con{$fh}->{storecompletemail}
+              )
+            || $text=~/(^|[\r\n])\.[\r\n]/o || $Con{$fh}->{logalldone}
+           )
         {
             d('Maillog - no cc');
             $gotAllText = 1;
@@ -40432,9 +41934,9 @@ sub MaillogStart {
     $Con{$fh}->{maillog} = 1 unless $NoMaillog ;
     $Con{$fh}->{rcvd} =~ s/(with\sE?SMTPS?)A?/$1A/os if ($Con{$fh}->{authenticated} && $Con{$fh}->{chainMailInSession} < 1);
     if ("$fh" =~ /SSL/o) {
-        my $sslv = eval{$fh->get_sslversion();};
+        my $sslv = $Con{$fh}->{sslversion};
         $sslv and $sslv = "$sslv ";
-        my $ciffer = eval{$fh->get_cipher();};
+        my $ciffer = $Con{$fh}->{sslcipher};
         $ciffer = '' unless $ciffer;
         ($sslv || $ciffer) and $ciffer = '('.$sslv.$ciffer.')';
         $Con{$fh}->{rcvd} =~ s/(with\sE?SMTP)S?(A?)/$1S$2$ciffer/os if $Con{$fh}->{chainMailInSession} < 1;
@@ -40618,6 +42120,7 @@ sub forwardSpam {
     @{$this->{to}}=split(/\s*,\s*|\s+/o,$to);
     $this->{from}=$from;
     $this->{fromIP}=$Con{$oldfh}->{ip};
+    $this->{IS8BITMIME} = $Con{$oldfh}->{IS8BITMIME};
     $this->{clamscandone}=$Con{$oldfh}->{clamscandone};
     $this->{rcpt}=$Con{$oldfh}->{rcpt};
     $this->{myheader}=$Con{$oldfh}->{myheader};
@@ -40634,17 +42137,33 @@ sub FShelo { my ($fh,$l)=@_;
     if($l=~/^ *[54]/o) {
         FSabort($fh,"helo Expected 220, got: $l");
     } elsif($l=~/^ *220 /o) {
-        sendque($fh,"HELO $myName\r\n");
+        my $cmd = $Con{$fh}->{IS8BITMIME} ? 'EHLO' : 'HELO';
+        $Con{$fh}->{FSlastCMD} = "$cmd $myName";
+        sendque($fh,"$Con{$fh}->{FSlastCMD}\r\n");
         $Con{$fh}->{getline}=\&FSfrom;
     }
 }
 sub FSfrom { my ($fh,$l)=@_;
     if($l=~/^ *[54]/o) {
-        FSabort($fh,"send HELO($myName), expected 250, got: $l");
+        FSabort($fh,"send $Con{$fh}->{FSlastCMD}, expected 250, got: $l");
     } elsif($l=~/^ *250 /o) {
-        $Con{$fh}->{FSlastCMD} = "MAIL FROM: <$Con{$fh}->{from}>";
+        $Con{$fh}->{CAN8BITMIME} = 1 if $l=~/8BITMIME/io;
+        if ($Con{$fh}->{IS8BITMIME} && ! $Con{$fh}->{CAN8BITMIME}) {
+            mlog($fh,"ERROR: forward destination does not support required 8BITMIME - forwarding canceled");
+            $Con{$fh}->{FSlastCMD} = "QUIT";
+            sendque($fh,"QUIT\r\n");
+            $Con{$fh}->{getline}=\&FSdone;
+            $Con{$fh}->{type} = 'CC';          # start timeout watching for case 221/421 will not be send
+            $Con{$fh}->{timelast} = time;
+            $Con{$fh}->{nodelay} = 1;
+            return;
+        }
+        my $ext = $Con{$fh}->{IS8BITMIME} ? ' BODY=8BITMIME' : '';
+        $Con{$fh}->{FSlastCMD} = "MAIL FROM: <$Con{$fh}->{from}>$ext";
         sendque($fh,"$Con{$fh}->{FSlastCMD}\r\n");
         $Con{$fh}->{getline}=\&FSrcpt;
+    } elsif($l=~/^ *250-.*?8BITMIME/io) {
+        $Con{$fh}->{CAN8BITMIME} = 1;
     }
 }
 sub FSrcpt { my ($fh,$l)=@_;
@@ -40686,8 +42205,8 @@ sub FSdata2 { my ($fh,$l)=@_;
     } elsif($l=~/^ *354 /o) {
         my $header;
         $header = $1 if $this->{body} =~ s/^($HeaderRe*)//os;
-        $header =~ s/X-Assp[^():]+:$HeaderValueRe//gios;
-        $this->{myheader}=~s/X-Assp-Intended-For:$HeaderValueRe//giso if $AddIntendedForHeader; # clear out existing X-Assp-Intended-For headers
+        $header =~ s/X-Spambox[^():]+:$HeaderValueRe//gios;
+        $this->{myheader}=~s/X-Spambox-Intended-For:$HeaderValueRe//giso if $AddIntendedForHeader; # clear out existing X-Spambox-Intended-For headers
         $header=~s/^($HeaderRe*)/$1From: sender not supplied\r\n/o unless $header=~/^$HeaderRe*From:/io; # add From: if missing
         $header=~s/^($HeaderRe*)/$1Subject:\r\n/o unless $header=~/^$HeaderRe*Subject:/io; # add Subject: if missing
 
@@ -40698,13 +42217,13 @@ sub FSdata2 { my ($fh,$l)=@_;
 
 # remove Disposition-Notification headers if needed
 
-        $header =~ s/(?:ReturnReceipt|Return-Receipt-To|Disposition-Notification-To):$HeaderValueRe//gios
+        $header =~ s/(?:$removeDispositionNotification):$HeaderValueRe//gios
             if ($removeDispositionNotification);
             
         # merge our header, add X-Intended-For header
         my ($to) = $this->{rcpt} =~ /(\S+)/o;
-        $this->{myheader} .= "X-Assp-Intended-For: $to\r\n";
-        $this->{myheader} .= "X-Assp-Copy-Spam: Yes\r\n";
+        $this->{myheader} .= "X-Spambox-Intended-For: $to\r\n";
+        $this->{myheader} .= "X-Spambox-Copy-Spam: Yes\r\n";
         $this->{body} = $header.$this->{body};
         delete $this->{preheaderlength};
         $this->{addMyheaderTo} = 'body';
@@ -40730,7 +42249,7 @@ sub FSdata2 { my ($fh,$l)=@_;
            return;
         }
         delete $this->{overwritedo};
-        $this->{body} =~ s/\r?\n/\r\n/gos;
+        $this->{body} =~ s/\r?\n/\r\n/gos unless $this->{IS8BITMIME};
         $this->{body} =~ s/[\r\n\.]+$//os;
         sendque($fh,$this->{body}) if $this->{body};
         sendque($fh,"\r\n.\r\n");
@@ -40973,7 +42492,8 @@ sub FileScanOK_Run {
     }
 
     if($failed) {
-        ($virusname) = $res =~ /($FileScanRespReRE)/;
+        local $^R = undef;
+        $virusname = ($^R || $2 || $1) if $res =~ /($FileScanRespReRE)/;
 
         if($virusname && $SuspiciousVirus && $virusname=~/($SuspiciousVirusRE)/i){
             my $susp = $1;
@@ -41299,6 +42819,7 @@ sub statRequest {
   '/' => \&ConfigStatsRaw,
   '/raw' => \&ConfigStatsRaw,
   '/xml' => \&ConfigStatsXml,    # Can be expanded to display in different formats like this
+  '/extremeblack' => \&GetFile,
  );
  my $i=0;
  # %head -- public hash
@@ -41319,6 +42840,15 @@ sub statRequest {
  mlog(0,"stat connection from $ip:$port" . ($page ? " - page: $page" : '') );
 
  $Stats{statConn}++;
+
+ if (lc($page) eq '/extremeblack') {
+     return unless (my $file = $exportExtremeBlack);
+     $file =~ s/^\s*file:\s*//o;
+     return unless $file;
+     $file = "$base/$file";
+     return unless $eF->($file);
+     $qs{file} = $file;
+ }
 
  if (defined ($v=$statRequests{lc $page})) { print $tempfh $v->(\$head,\$qs); }
 }
@@ -41900,6 +43430,10 @@ smtpConnLimitFreq
 smtpConnLimitIP
 smtpSameSubject
 )]);
+if (exists $ModuleList{'Plugins::SPAMBOX_FakeMX'}) {
+    $s{smtpConnLimit} += $Stats{FakeMX};
+    $s{smtpConnLimit2} += $AllStats{FakeMX};
+}
 
  ($s{smtpConnRejectedTotal},$s{smtpConnRejectedTotal2}) = statsCalc([\%Stats,\%AllStats],[qw(
 smtpConnLimit
@@ -42005,6 +43539,7 @@ spamlover
 whites
 )]);
 
+# FakeMX may be after Razor here
  ($s{msgRejectedTotal},$s{msgRejectedTotal2}) = statsCalc([\%Stats,\%AllStats],[qw(
 AUTHErrors
 DCC
@@ -42055,6 +43590,10 @@ uriblfails
 viri
 viridetected
 )]);
+if (exists $ModuleList{'Plugins::SPAMBOX_FakeMX'}) {
+    $s{msgRejectedTotal} += $Stats{FakeMX};
+    $s{msgRejectedTotal2} += $AllStats{FakeMX};
+}
 
 ($s{msgTotal}) = statsCalc([\%s],[qw(
 msgAcceptedTotal
@@ -42192,7 +43731,7 @@ sub StatsGetModules {
                    </td>
                    <td class="statsOptionValue" colspan="2"><font color=blue>installed  /  required(recommended)</font>
                    </td>
-                   <td class="statsOptionValue" colspan="1"><font color=blue>&nbsp;</font>
+                   <td class="statsOptionValue" colspan="1"><font color=blue><a href="javascript:void(0);" onclick="javascript:popFileEditor(\'notes/loaded_perl_modules.txt\',8);">show</a> all loaded modules</font>
                    </td>
                    <td class="statsOptionValueC" colspan="1"><font color=blue>&nbsp;</font>
                    </td>
@@ -42221,21 +43760,23 @@ sub StatsGetModules {
      }
      my $url = 'http://search.cpan.org/search?query='.$_;
      $url = 'http://www.oracle.com/technology/products/berkeley-db/' if ($_ eq 'BerkeleyDB_DBEngine');
-     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'AsspSelfLoader');
+     $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'SpamboxSelfLoader');
      $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'SPAMBOX_WordStem');
      $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/filecommander/' if ($_ eq 'SPAMBOX_FC');
      $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/lib/' if ($_ eq 'SPAMBOX_SVG');
      $url = 'http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/Plugins/' if ($_ =~ /^Plugins/o);
+     $url = 'https://www.openssl.org/' if ($_ =~ /^OpenSSL/oi);
      my $prov = 'CPAN';
+     $prov = 'OpenSSL' if ($_ =~ /^OpenSSL/oi);
      $prov = 'oracle' if ($_ eq 'BerkeleyDB_DBEngine');
-     $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'AsspSelfLoader' or $_ eq 'SPAMBOX_WordStem' or $_ eq 'SPAMBOX_FC' or $_ eq 'SPAMBOX_SVG');
+     $prov = 'sourceforge' if ($_ =~ /^Plugins/o or $_ eq 'SpamboxSelfLoader' or $_ eq 'SPAMBOX_WordStem' or $_ eq 'SPAMBOX_FC' or $_ eq 'SPAMBOX_SVG');
      my $stat = $ModuleStat{$_} ? $ModuleStat{$_} : 'enabled';
      if ($_ eq 'File::Scan::ClamAV' && $CanUseAvClamd && ! $AvailAvClamd) {
          $stat = 'ClamAvDaemon is down';
      }
      $stat = '<font color=red>'.$stat.'</font>' if $stat ne 'enabled';
      if($_ eq 'Sys::Syslog' && $^O eq 'MSWin32') {
-         $inst = 'not supported by operating system';
+          $inst = 'not supported by operating system';
           push @modArray , [$_,$inst,$requ,$stat,$url];
           next;
      }
@@ -42289,8 +43830,8 @@ sub ConfigStats {
  my $uptime2=getTimeDiffAsString(time-$AllStats{starttime});
  my $damptime=getTimeDiffAsString($Stats{damptime},1);
  my $damptime2=getTimeDiffAsString($AllStats{damptime});
- my $mpd=sprintf("%.1f",$upt==0 ? 0 : $tots{msgTotal}/$upt);
- my $mpd2=sprintf("%.1f",$upt2==0 ? 0 : $tots{msgTotal2}/$upt2);
+ my $mpd=sprintf("%d",$upt==0 ? 0 : int($tots{msgTotal}/$upt + 0.5));
+ my $mpd2=sprintf("%d",$upt2==0 ? 0 : int($tots{msgTotal2}/$upt2 + 0.5));
  my $pct=sprintf("%.2f",$tots{msgTotal}-$Stats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal}/($tots{msgTotal}-$Stats{locals}));
  my $pct2=sprintf("%.2f",$tots{msgTotal2}-$AllStats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal2}/($tots{msgTotal2}-$AllStats{locals}));
  my $cpuAvg=sprintf("%.2f",(! $Stats{cpuTime} ? 0 : 100*$Stats{cpuBusyTime}/$Stats{cpuTime}));
@@ -42299,7 +43840,7 @@ sub ConfigStats {
  $cpuAvg2 = "99.00" if $cpuAvg2 > 99;
 #mlog(0,"info: cpuTime: $AllStats{cpuTime} - cpuBusyTime: $AllStats{cpuBusyTime}");
 
- my $wIdle = '<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\' bgcolor=lightyellow><tr><td>worker number</td><td>avg. CPU usage</td>';
+ my $wIdle = '<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\' bgcolor=lightyellow><tr><td>worker</td><td>avg. CPU usage</td>';
  $wIdle .= '<td>used memory</td>' if $showMEM;
  $wIdle .= '</tr>';
  my $stime = time - $Stats{starttime};
@@ -42318,7 +43859,9 @@ sub ConfigStats {
  my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io)
    ? '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   : (scalar(keys(%Recommends)) && (time - $seenRecommends > 3600))
+      ? '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy, but there are recommendations! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#FFFF00>&bull;</font></a>'
+      : '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $currAvgDamp = ($Stats{damping} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($Stats{damping} / ($Stats{smtpConn} ? $Stats{smtpConn} : 1)) * 100) : '';
  my $allAvgDamp  = ($AllStats{smtpConn} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($AllStats{damping} / ($AllStats{smtpConn} ? $AllStats{smtpConn} : 1)) * 100) : '';
@@ -42552,8 +44095,12 @@ $ret .= StatLine({'stat'=>'smtpConn','text'=>'Accepted Logged SMTP Connections:'
       . StatLine({'stat'=>'smtpSameSubject','text'=>'&nbsp;&nbsp;&nbsp;&nbsp;By Same Subjects Limits:','class'=>'statsOptionTitle'},
                  {'text'=>"$Stats{smtpSameSubject}",'class'=>'statsOptionValue negative','colspan'=>'2'},
                  {'text'=>"$AllStats{smtpSameSubject}",'class'=>'statsOptionValue negative','colspan'=>'2'})
-
-      . StatLine({'stat'=>'smtpConnIdleTimeout','text'=>'SMTP Connections Timeout:','class'=>'statsOptionTitle'},
+;
+$ret .= StatLine({'stat'=>'FakeMX','text'=>'&nbsp;&nbsp;&nbsp;&nbsp;By FakeMX (MX sandwitch):','class'=>'statsOptionTitle'},
+                 {'text'=>"$Stats{FakeMX}",'class'=>'statsOptionValue negative','colspan'=>'2'},
+                 {'text'=>"$AllStats{FakeMX}",'class'=>'statsOptionValue negative','colspan'=>'2'})
+if exists $ModuleList{'Plugins::SPAMBOX_FakeMX'};
+$ret .= StatLine({'stat'=>'smtpConnIdleTimeout','text'=>'SMTP Connections Timeout:','class'=>'statsOptionTitle'},
                  {'text'=>"$tots{smtpConnIdleTimeout}",'class'=>'statsOptionValue negative','colspan'=>'2'},
                  {'text'=>"$tots{smtpConnIdleTimeout2}",'class'=>'statsOptionValue negative','colspan'=>'2'})
 
@@ -42914,8 +44461,12 @@ $ret .= StatLine({'stat'=>'bhams','text'=>'Message OK:','class'=>'statsOptionTit
       . StatLine({'stat'=>'DCC','text'=>'SPAMBOX_DCC Plugin:','class'=>'statsOptionTitle'},
                  {'text'=>"$Stats{DCC}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
                  {'text'=>"$AllStats{DCC}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
-
-      . StatLine({'stat'=>'','text'=>'&nbsp;','class'=>'statsOptionValue','style'=>'background-color: #FFFFFF'},
+;
+$ret .= StatLine({'stat'=>'FakeMX','text'=>'SPAMBOX_FakeMX Plugin:','class'=>'statsOptionTitle'},
+                 {'text'=>"$Stats{FakeMX}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$smin,'max'=>$smax},
+                 {'text'=>"$AllStats{FakeMX}",'class'=>'statsOptionValue negative','colspan'=>'2','min'=>$amin,'max'=>$amax})
+if exists $ModuleList{'Plugins::SPAMBOX_FakeMX'};
+$ret .= StatLine({'stat'=>'','text'=>'&nbsp;','class'=>'statsOptionValue','style'=>'background-color: #FFFFFF'},
                  {'text'=>"<font size=\"1\" color=\"#C0C0C0\"><em>since $restart at $starttime</em></font>",'class'=>'statsOptionValue','style'=>'background-color: #FFFFFF','colspan'=>'2'},
                  {'text'=>"<font size=\"1\" color=\"#C0C0C0\"><em>since $reset at $resettime</em></font>",'class'=>'statsOptionValue','style'=>'background-color: #FFFFFF','colspan'=>'2'})
 ;
@@ -42935,7 +44486,7 @@ my %tmpStats = %ScoreStats;
 ($smin,$smax) = minmax(\%ScoreStats);
 ($amin,$amax) = minmax(\%AllScoreStats);
 for (sort {lc($main::a) cmp lc($main::b)} qw(
- SPAMBOX_AFC SPAMBOX_DCC SPAMBOX_OCR SPAMBOX_Razor AUTHErrors Backscatter-failed BadAttachment BadHistory BATV-check-failed Bayesian Bayesian-HAM
+ SPAMBOX_AFC SPAMBOX_DCC SPAMBOX_OCR SPAMBOX_Razor SPAMBOX_FakeMX AUTHErrors Backscatter-failed BadAttachment BadHistory BATV-check-failed Bayesian Bayesian-HAM
  BlacklistedDomain BlacklistedHelo BlackOrg BlockedCountry BombBlack BombCharSets BombData BombHeaderRe bombRe BombScript
  BombSenderHelo BombSenderIP BombSenderMailFrom BombSubjectRe bombSuspiciousRe CountryCode DKIMfailed DKIMpass DMARC-failed DNSBLfailed
  DNSBLneutral EarlyTalker ExtremeHistory ForgedHELO From-missing griplist HMM HMM-HAM HomeCountry internaladdress InvalidAddress
@@ -42948,6 +44499,7 @@ for (sort {lc($main::a) cmp lc($main::b)} qw(
  )
 {
 
+    next if $_ eq 'SPAMBOX_FakeMX' && ! exists $ModuleList{'Plugins::SPAMBOX_FakeMX'};
     $ret .= StatLine({'stat'=>";$_",'text'=>"$_:",'class'=>'statsOptionTitle'},
                      {'text'=>"$ScoreStats{$_}",'class'=>'statsOptionValue','colspan'=>'2','style'=>'color: blue','min'=>$smin,'max'=>$smax},
                      {'text'=>"$AllScoreStats{$_}",'class'=>'statsOptionValue','colspan'=>'2','style'=>'color: blue','min'=>$amin,'max'=>$amax});
@@ -42983,6 +44535,7 @@ EOT
 my $dns_avg = sprintf("%.3f",($DNSsumQueryTime/($DNSQueryCount || 1)));
 my $dns_max = sprintf("%.3f",$DNSmaxQueryTime);
 my $dns_min = sprintf("%.3f",$DNSminQueryTime);
+my @useddns = getNameserver();
 
 $ret .= StatLine({'stat'=>'','text'=>'Server Name:','class'=>'statsOptionTitle'},
                  {'text'=>"$localhostname",'class'=>'statsOptionValue','colspan'=>'2'},
@@ -43000,9 +44553,13 @@ $ret .= StatLine({'stat'=>'','text'=>'Server Name:','class'=>'statsOptionTitle'}
                  {'text'=>"$localhostip",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'})
 
-      . StatLine({'stat'=>'','text'=>'DNS Servers:','class'=>'statsOptionTitle'},
-                 {'text'=>"@nameservers",'class'=>'statsOptionValue','colspan'=>'2'},
+      . StatLine({'stat'=>'','text'=>'used DNS Servers:','class'=>'statsOptionTitle'},
+                 {'text'=>"@useddns",'class'=>'statsOptionValue','colspan'=>'2'},
                  {'text'=>"$LocalDNSStatus",'class'=>'statsOptionValue','colspan'=>'2'})
+
+      . StatLine({'stat'=>'','text'=>'defined DNS Servers:','class'=>'statsOptionTitle'},
+                 {'text'=>"@definedNameServers",'class'=>'statsOptionValue','colspan'=>'2'},
+                 {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'})
 
       . StatLine({'stat'=>'','text'=>'DNS Servers query time:','class'=>'statsOptionTitle'},
                  {'text'=>"min: $dns_min , avg: $dns_avg , max: $dns_max",'class'=>'statsOptionValue','colspan'=>'2'},
@@ -43150,7 +44707,7 @@ for my $m (0...$#lic) {
         $text = "no valid license";
         $error = 1;
     }
-    if (! $error && defined $val[$m] && ! eval{$val[$m]->($lic[$m],$UUID)}) {
+    if (! $error && defined $val[$m] && ! eval{$val[$m]->($lic[$m])}) {
         $class = 'statsOptionValue negative';
         $text = $@ ? "license validation error - call the vendor" : 'foreign license or license violation';
         $error = 1;
@@ -43163,6 +44720,7 @@ for my $m (0...$#lic) {
                      {'text'=>"&nbsp;",'class'=>'statsOptionValue','colspan'=>'2'});
     foreach my $s (sort keys(%{$lic[$m]})) {
         next if $error && int($s) > 6;
+        next if (int($s) == 12);
         my $text = $lic[$m]->{$s};
         my $class = 'statsOptionValue';
         if (int($s) == 8) {
@@ -43176,6 +44734,14 @@ for my $m (0...$#lic) {
                  $class = 'statsOptionValue positive';
                  $text = timestring($text);
              }
+        }
+        if (int($s) == 11) {
+            $text = 'unlimited' if ($text >= 9999999999);
+            $text .= ' '. $lic[$m]->{12} if $lic[$m]->{12};
+        }
+        if (int($s) == 13) {
+            $text = $text->() if ref($text) eq 'CODE';
+            $text .= ' '. $lic[$m]->{12} if $lic[$m]->{12};
         }
         $text =~ s/((?:(?:ht|f)tps?|file):\/\/[\w.\/\_\-\?\=\&\%\;]+)/'<a href="'.$1.'" target="_blank">'.$1.'<\/a>'/geoi;
         $ret .= StatLine({'stat'=>'','text'=>"&nbsp;",'class'=>'statsOptionTitle'},
@@ -43246,15 +44812,15 @@ sub ConfigStatsRaw {
  my $upt2=(time-$AllStats{starttime})/(24*3600);
  my $uptime=sprintf("%.3f",$upt);
  my $uptime2=sprintf("%.3f",$upt2);
- my $mpd=sprintf("%.1f",$upt==0 ? 0 : $tots{msgTotal}/$upt);
- my $mpd2=sprintf("%.1f",$upt2==0 ? 0 : $tots{msgTotal2}/$upt2);
+ my $mpd=sprintf("%d",$upt==0 ? 0 : int($tots{msgTotal}/$upt + 0.5));
+ my $mpd2=sprintf("%d",$upt2==0 ? 0 : int($tots{msgTotal2}/$upt2 + 0.5));
  my $pct=sprintf("%.1f",$tots{msgTotal}-$Stats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal}/($tots{msgTotal}-$Stats{locals}));
  my $pct2=sprintf("%.1f",$tots{msgTotal2}-$AllStats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal2}/($tots{msgTotal2}-$AllStats{locals}));
  my $cpuAvg=sprintf("%.2f\%",(! $Stats{cpuTime} ? 0 : 100*$Stats{cpuBusyTime}/$Stats{cpuTime}));
  my $cpuAvg2=sprintf("%.2f\%",(! $AllStats{cpuTime} ? 0 : 100*$AllStats{cpuBusyTime}/$AllStats{cpuTime}));
  my $currStat = &StatusSPAMBOX();
  $currStat = ($currStat =~ /not healthy/io) ? 'not healthy' : 'healthy' ;
- my $memory = memoryUsage().'MB';
+ my $memory = int(&memoryUsage() / 1048576) .'MB';
 
  my $sr = "\n";
  foreach (keys %ScoreStats) {
@@ -43385,66 +44951,87 @@ sub ConfigStatsXml {
     my $uptime2=getTimeDiffAsString(time-$AllStats{starttime});
     my $damptime=getTimeDiffAsString($Stats{damptime},1);
     my $damptime2=getTimeDiffAsString($AllStats{damptime});
-    my $mpd=sprintf("%.1f",$uptime==0 ? 0 : $tots{msgTotal}/$uptime);
-    my $mpd2=sprintf("%.1f",$uptime2==0 ? 0 : $tots{msgTotal2}/$uptime2);
+    my $mpd=sprintf("%d",$uptime==0 ? 0 : int($tots{msgTotal}/$uptime + 0.5));
+    my $mpd2=sprintf("%d",$uptime2==0 ? 0 : int($tots{msgTotal2}/$uptime2 + 0.5));
     my $pct=sprintf("%.1f",$tots{msgTotal}-$Stats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal}/($tots{msgTotal}-$Stats{locals}));
     my $pct2=sprintf("%.1f",$tots{msgTotal2}-$AllStats{locals}==0 ? 0 : 100*$tots{msgRejectedTotal2}/($tots{msgTotal2}-$AllStats{locals}));
     my $cpuAvg=sprintf("%.2f\%",(! $Stats{cpuTime} ? 0 : 100*$Stats{cpuBusyTime}/$Stats{cpuTime}));
     my $cpuAvg2=sprintf("%.2f\%",(! $AllStats{cpuTime} ? 0 : 100*$AllStats{cpuBusyTime}/$AllStats{cpuTime}));
-    my $currAvgDamp = ($Stats{damping} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($Stats{damping} / ($Stats{smtpConn} ? $Stats{smtpConn} : 1)) * 100) : '';
-    my $allAvgDamp  = ($AllStats{smtpConn} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($AllStats{damping} / ($AllStats{smtpConn} ? $AllStats{smtpConn} : 1)) * 100) : '';
-    my $memory = memoryUsage().'MB';
+    my $currAvgDamp = ($Stats{damping} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($Stats{damping} / ($Stats{smtpConn} ? $Stats{smtpConn} : 1)) * 100) : 0;
+    my $allAvgDamp  = ($AllStats{smtpConn} && $DoDamping) ? sprintf("(%.2f%% avg of accepted connections)",($AllStats{damping} / ($AllStats{smtpConn} ? $AllStats{smtpConn} : 1)) * 100) : 0;
+    my $memory = int(&memoryUsage() / 1048576) .'MB';
 
-    my $r = '';
+    my %rm;
+    my %rs;
+    my %rt;
     foreach my $k ( keys %tots ) {
         next unless $k;
 
         my $s = $k;
         if ( $s =~ tr/2//d ) {
-            $r .= "<stat name='$s' type='cumulativetotal'>$tots{$k}</stat>";
+            $rt{$s}->{2} = "<stat name='$s' type='cumulativetotal'>$tots{$k}</stat>\n";
         } else {
-            $r .= "<stat name='$s' type='currenttotal'>$tots{$k}</stat>";
+            $rt{$s}->{1} = "<stat name='$s' type='currenttotal'>$tots{$k}</stat>\n";
         }
     }
     foreach my $k ( keys %Stats ) {
         next unless $k;
-        $r .= "<stat name='$k' type='currentstat'>$Stats{$k}</stat>";
+        next if $k eq 'smtpConcurrentSessions';
+        $rm{$k}->{1} = "<stat name='$k' type='currentstat'>$Stats{$k}</stat>\n";
     }
     foreach my $k ( keys %AllStats ) {
         next unless $k;
-        $r .= "<stat name='$k' type='cumulativestat'>$AllStats{$k}</stat>";
+        next if $k eq 'smtpConcurrentSessions';
+        $rm{$k}->{2} = "<stat name='$k' type='cumulativestat'>$AllStats{$k}</stat>\n";
     }
     foreach my $k ( keys %ScoreStats ) {
         next unless $k;
-        $r .= "<stat name='$k' type='currentscorestat'>$ScoreStats{$k}</stat>";
+        $rs{$k}->{1} = "<stat name='$k' type='currentscorestat'>$ScoreStats{$k}</stat>\n";
     }
     foreach my $k ( keys %AllScoreStats ) {
         next unless $k;
-        $r .= "<stat name='$k' type='cumulativescorestat'>$AllScoreStats{$k}</stat>";
+        $rs{$k}->{2} = "<stat name='$k' type='cumulativescorestat'>$AllScoreStats{$k}</stat>\n";
     }
 
-    <<EOT;
-$headerHTTP
+    my $rm = '';
+    my $rs = '';
+    my $rt = '';
+    for (sort {lc($main::a) cmp lc($main::b)} keys(%rm)) {$rm .= $rm{$_}->{1}.$rm{$_}->{2};}
+    for (sort {lc($main::a) cmp lc($main::b)} keys(%rs)) {$rs .= $rs{$_}->{1}.$rs{$_}->{2};}
+    for (sort {lc($main::a) cmp lc($main::b)} keys(%rt)) {$rt .= $rt{$_}->{1}.$rt{$_}->{2};}
 
-<?xml version='1.0' encoding='UTF-8'?>
+    <<EOT;
+HTTP/1.1 200 OK
+Content-type: text/xml
+Cache-control: no-cache
+
+<?xml version='1.0' encoding='UTF-8' standalone='yes'?>
 <stats>
-<stat name='statstart' type='currentstat'>$statstart</stat>
-<stat name='statstart' type='cumulativestat'>$statstart2</stat>
-<stat name='uptime' type='currentstat'>$uptime</stat>
-<stat name='uptime' type='cumulativestat'>$uptime2</stat>
+<systemstats>
+<stat name='avgdamped' type='currentstat'>$currAvgDamp</stat>
+<stat name='avgdamped' type='cumulativestat'>$allAvgDamp</stat>
+<stat name='cpuAvg' type='currentstat'>$cpuAvg</stat>
+<stat name='cpuAvg' type='cumulativestat'>$cpuAvg2</stat>
+<stat name='damptime' type='currentstat'>$damptime</stat>
+<stat name='damptime' type='cumulativestat'>$damptime2</stat>
+<stat name='memusage' type='currentstat'>$memory</stat>
 <stat name='msgPerDay' type='currentstat'>$mpd</stat>
 <stat name='msgPerDay' type='cumulativestat'>$mpd2</stat>
 <stat name='pctBlocked' type='currentstat'>$pct</stat>
 <stat name='pctBlocked' type='cumulativestat'>$pct2</stat>
-<stat name='cpuAvg' type='currentstat'>$cpuAvg</stat>
-<stat name='cpuAvg' type='cumulativestat'>$cpuAvg2</stat>
-<stat name='memusage' type='currentstat'>$memory</stat>
 <stat name='smtpConcurrentSessions' type='currentstat'>$smtpConcurrentSessions</stat>
-<stat name='damptime' type='currentstat'>$damptime</stat>
-<stat name='damptime' type='cumulativestat'>$damptime2</stat>
-<stat name='avgdamped' type='currentstat'>$currAvgDamp</stat>
-<stat name='avgdamped' type='cumulativestat'>$allAvgDamp</stat>
-$r
+<stat name='smtpConcurrentSessions' type='cumulativestat'>$AllStats{smtpConcurrentSessions}</stat>
+<stat name='statstart' type='currentstat'>$statstart</stat>
+<stat name='statstart' type='cumulativestat'>$statstart2</stat>
+<stat name='uptime' type='currentstat'>$uptime</stat>
+<stat name='uptime' type='cumulativestat'>$uptime2</stat>
+</systemstats>
+<totalstats>
+$rt</totalstats>
+<messagestats>
+$rm</messagestats>
+<scorestats>
+$rs</scorestats>
 </stats>
 EOT
 
@@ -43752,7 +45339,7 @@ Content-type: text/html
         return $out."<h1>ERROR: <a href=\"./#baysConf\">baysConf</a> is set to zero</h1></body></html>";
     }
     $out = '';
-    my $maxlog = log($maxval);   # exponent for the max confidence graph
+    my $maxlog = log10($maxval);   # exponent for the max confidence graph
     for my $yy ($fy ... $ty) {
         my $ttm = ($yy == $ty) ? $tm : 12;
         my $ffm = ($yy == $fy) ? $fm : 1;
@@ -43769,7 +45356,7 @@ Content-type: text/html
                 my $t = $1;
                 next if $t lt $from;     # date is too less for range
                 last if $t gt $to;       # date is too high for range - all next will also
-                my $val = log($3);       # the exponent for the conf value
+                my $val = log10($3);     # the exponent for the conf value
                 my $x = $val/$maxlog;    # calculate the exponent
                 if ($x < 1) {
                     $values->{$2}->{'high'} += $4;
@@ -43852,6 +45439,10 @@ Content-type: text/html
     $out .= "</body>\n</html>";
 
     return $out;
+}
+
+sub log10 {
+    return log(shift)/2.30258509299405;   # 2.30258509299405 is log(10)
 }
 
 sub T10StatAdd {
@@ -44139,7 +45730,7 @@ sub ConfigLists {
     @WhitelistResult = ();
     if($qs{B1}=~/^Show (.)/io) {
         local $/="\n";
-        if($1 eq 'R') {
+        if ($1 eq 'R') {
             $qs{list}="red"; # update radios
             $s.='<div class="textbox"><b>Redlist</b></div>';
             $s.='<div class="textbox"><b>database</b></div>';
@@ -44227,14 +45818,15 @@ EOT
 
 sub SearchBombW {
     my ($name, $srch)=@_;
-    
+
     $incFound = '';
     $weightMatch = '';
     my %Bombs = &BombWeight(0,$srch,$name );
     if ($Bombs{count}) {
         my $match = &SearchBomb($name, $$srch);
-        $weightMatch = encodeHTMLEntities($match) if (! $weightMatch);
-        return 'highest match: "' . "$Bombs{matchlength}" . encodeHTMLEntities($Bombs{highnam}) . '" with valence: ' . $Bombs{highval} . ' - PB value = ' . $Bombs{sum};
+        $weightMatch = $match if (! $weightMatch);
+        $weightMatch = eU($weightMatch) if $weightMatch;
+        return 'highest match: "' . "$Bombs{matchlength}" . eU($Bombs{highnam}) . '" with valence: ' . $Bombs{highval} . ' - PB value = ' . $Bombs{sum};
     }
     return;
 }
@@ -44245,13 +45837,14 @@ sub SearchBomb {
     my $extLog = $AnalyzeLogRegex && ! $silent && [caller(1)]->[3] =~ /analyze/io;
 
     $incFound = '';
+    my @srch;
     my $fil=$Config{"$name"};
     return 0 unless $fil;
     $addCharsets = 1 if $name eq 'bombCharSets';
     my $text;
     if ($name ne 'bombSubjectRe') {
        my $mimetext = cleanMIMEBody2UTF8(\$srch);
-       if ($mimetext || $srch =~ /^$HeaderRe/io) {
+       if ($mimetext || $srch =~ /^$HeaderRe/ios) {
            $text =  cleanMIMEHeader2UTF8(\$srch,0);
            $mimetext =~ s/\=(?:\015?\012|\015)//go;
            $mimetext = decHTMLent(\$mimetext);
@@ -44263,10 +45856,16 @@ sub SearchBomb {
        $text = $srch;
     }
     unicodeNormalize(\$text);
-    $srch = $text;
+    push @srch , $text;
     $text = "\r\n" . $text;
-    $srch .= transliterate(\$text, 1) if $DoTransliterate;
+    push @srch , transliterate(\$text, 1) if $DoTransliterate;
+    if (eval{$canUnicode && exists($uniRegex{$name}) && ! Encode::is_utf8($srch[0]) && utf8::valid($srch[0])}) {
+        push @srch, $srch[0];           # there is a unicode regex defined and we can do it
+        Encode::_utf8_on($srch[-1]);
+    }
     undef $text;
+#    mlog(0,utf8::valid($srch) ? "info: $name - valid": "info: $name - invalid");
+#    mlog(0,Encode::is_utf8($srch) ? "info: $name - isUTF8": "info: $name - isNotUTF8");
     $addCharsets = 0;
     my @complex;
     if($fil=~/^\s*file:\s*(.+)\s*$/io) {
@@ -44276,7 +45875,7 @@ sub SearchBomb {
         my $complexStartLine;
         while (my $i = <$BOMBFILE>)  {
             $counter++;
-            $i =~ s/$UTF8BOMRE//o;
+            $i =~ s/^$UTF8BOMRE//o;
             unicodeNormalizeRe(\$i);
             $i =~ s/\<\<\<(.*?)\>\>\>/$1/o;
             $i =~ s/!!!(.*?)!!!//o;
@@ -44295,7 +45894,7 @@ sub SearchBomb {
             $i =~ s/\r//go;
             $i =~ s/\s*\n+\s*//go;
             $i =~ s/\s+$//o;
-            $i =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(defined ${$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
+            $i =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(exists $main::{$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
 
             next if !$i;
 
@@ -44328,7 +45927,7 @@ sub SearchBomb {
                 while (my $ii = <$INCFILE>) {
                     $line++;
 
-                    $ii =~ s/$UTF8BOMRE//o;
+                    $ii =~ s/^$UTF8BOMRE//o;
                     unicodeNormalizeRe(\$ii);
                     $ii =~ s/\<\<\<(.*?)\>\>\>/$1/o;
                     $ii =~ s/!!!(.*?)!!!//o;
@@ -44339,7 +45938,7 @@ sub SearchBomb {
                     $ii =~ s/\s*\n+\s*//go;
                     $ii =~ s/\s+$//o;
                     next if !$ii;
-                    $ii =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(defined ${$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
+                    $ii =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(exists $main::{$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
 
                     if (@complex)  {                   # complex regex started in upper file
                         push @complex, $ii;
@@ -44361,7 +45960,7 @@ sub SearchBomb {
                     print "$name: line:$line-$fil\n" if $extLog;
                     
                     $found = '';
-                    eval{$found = $1 || $2 if $srch =~ m/($ii)/i;};
+                    eval{for (@srch) {$found = $1 || $2 if /($ii)/si;last if $found;}};
                     if ($@) {
                         mlog(0,"ConfigError: '$name' regular expression error in line $counter of file $fil - line $line of include '$file' for '$ii': $@");
                         next;
@@ -44384,7 +45983,7 @@ sub SearchBomb {
                 next;
             } else {
                 $found = '';
-                eval{$found = $1 || $2 if $srch =~ m/($i)/i;};
+                eval{for (@srch) {$found = $1 || $2 if /($i)/si;last if $found;}};
                 if ($@) {
                     mlog(0,"ConfigError: '$name' regular expression error in line $counter of '$file' for '$reg': $@");
                     next;
@@ -44403,7 +46002,7 @@ sub SearchBomb {
     } else {
         my $regex;
         $fil =~ s/(\~([^\~]+)?\~|([^\|]+)?)\s*\=\>\s*([+\-]?(?:0?\.\d+|\d+\.\d+|\d+))?\s*(?:\s*\:\>\s*(?:[nNwWlLiI\+\-\s]+)?)?/$1/o; # skip weighted regexes
-        $fil =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(defined ${$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
+        $fil =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(exists $main::{$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
         my @reg;
         my $bd=0;
         my $sk;
@@ -44445,9 +46044,11 @@ sub SearchBomb {
             $regex = shift @reg;
             print "$name: $regex\n" if $extLog;
             unicodeNormalizeRe(\$regex);
-            if (my ($i) = eval{$srch =~ m/($regex)/i}) {
+            my $i;
+            eval{for (@srch) {$i = $1 || $2 if /($regex)/si;last if $i;}};
+            if ($i) {
                 mlog(0,"Info: '$name' regular expression '$regex' match with '$i' ") if $regexLogging or $BombLog;
-                $incFound = encodeHTMLEntities($i);
+                $incFound = eU($i);
                 return $i;
             }
         }
@@ -44510,16 +46111,16 @@ sub ConfigAnalyze {
     if ($normalizeUnicode && $CanUseUnicodeNormalize) {
         $fm .= "text processing uses unicode normalization<br />\n";
     }
-    if ($mail =~ /X-Assp-ID: (.+)/io) {
+    if ($mail =~ /X-Spambox-ID: (.+)/io) {
         $fm .= "SPAMBOX-ID: $1<br />";
     }
-    if ($mail =~ /X-Assp-Session: (.+)/io) {
+    if ($mail =~ /X-Spambox-Session: (.+)/io) {
         $fm .= "SPAMBOX-Session: $1<br />";
     }
     my $reportedBy;
-    my ($xorgsub) = $mail =~ /X-Assp-Original-Subject:\s*($HeaderValueRe)/ios;
+    my ($xorgsub) = $mail =~ /X-Spambox-Original-Subject:\s*($HeaderValueRe)/ios;
     $xorgsub =~ s/[\r\n]+$//o;
-    if ($mail =~ s/X-Assp-Envelope-From:\s*($HeaderValueRe)//ios) {
+    if ($mail =~ s/X-Spambox-Envelope-From:\s*($HeaderValueRe)//ios) {
         my $s = $1;
         &headerUnwrap($s);
         if ($s =~ /($EmailAdrRe\@$EmailDomainRe)/io) {
@@ -44530,7 +46131,7 @@ sub ConfigAnalyze {
         }
         $hasheader = 1;
     }
-    if (! scalar keys %to && $mail =~ s/X-Assp-Intended-For:\s*($HeaderValueRe)//ios) {
+    if (! scalar keys %to && $mail =~ s/X-Spambox-Intended-For:\s*($HeaderValueRe)//ios) {
         my $s = $1;
         &headerUnwrap($s);
         if ($s =~ /($EmailAdrRe\@$EmailDomainRe)/io) {
@@ -44540,7 +46141,7 @@ sub ConfigAnalyze {
         }
         $hasheader = 1;
     }
-    if ($mail =~ s/X-Assp-Recipient:\s*($HeaderValueRe)//ios) {
+    if ($mail =~ s/X-Spambox-Recipient:\s*($HeaderValueRe)//ios) {
         my $s = $1;
         &headerUnwrap($s);
         if ($s =~ /($EmailAdrRe\@$EmailDomainRe)/o) {
@@ -44601,7 +46202,7 @@ sub ConfigAnalyze {
                 }
             }
         }
-        if (! $ip && $mail =~ /(?:^[\s\r\n]*|\r?\n)\s*ip\s*=\s*($IPRe)/ios ) {
+        if (! $ip && ! $header && $mail =~ /(?:^[\s\r\n]*|\r?\n)\s*ip\s*=\s*($IPRe)/ios ) {
             $ip = ipv6expand(ipv6TOipv4($1));
             $mystatus="ip";
         }
@@ -44609,13 +46210,13 @@ sub ConfigAnalyze {
 		$fm .= "Connecting IP: '$ip'<br />\n" if $ip;
         my $conIP = $ip;
         $ip3 = ipNetwork($ip,1);
-        if (!$helo && $mail =~ /(?:^[\s\r\n]*|\r?\n)\s*helo\s*=\s*([^\r\n]+)/ios ) {
+        if (!$helo && ! $header && $mail =~ /(?:^[\s\r\n]*|\r?\n)\s*helo\s*=\s*([^\r\n]+)/ios ) {
             $helo = $1;
             $helo =~ s/\)$//o;
             $mystatus="helo";
         }
         $fm .= "Connecting HELO: $helo<br />\n" if $helo;
-        if ( $foundReceived != -1 && $mail =~ /(?:^[\s\r\n]*|\r?\n)\s*text\s*=\s*(.+)/ios ) {
+        if ( $foundReceived != -1 && ! $header && $mail =~ /(?:^[\s\r\n]*|\r?\n)\s*text\s*=\s*(.+)/ios ) {
             $text = $1;
             $mystatus="text";
             $fm .= "found 'text=TEXT' - lookup regular expressions in TEXT <br />\n";
@@ -44624,10 +46225,15 @@ sub ConfigAnalyze {
         }
         $text =~ s/(?:\r?\n)+/\r\n/gos if $mystatus;
         my $textheader;
+        my $decTextHeader;
+        my $nudecTextHeader;
         if ($headerLen > -1 ) {
-            $textheader = substr($text,0,$headerLen);
+            $textheader = substr($text,0,$headerLen+4);
+            $nudecTextHeader = $decTextHeader = decodeMimeWords2UTF8($textheader);
+            unicodeNormalize(\$nudecTextHeader);
         } else {
-            $textheader = $text;
+            $nudecTextHeader = $decTextHeader = $textheader = $text;
+            unicodeNormalize(\$nudecTextHeader);
         }
         my $nutext = $text;
         unicodeNormalize(\$nutext);
@@ -44756,7 +46362,7 @@ sub ConfigAnalyze {
                 }
                 $Con{$tmpfh}->{myheader} =~ s/\r\n$//o;
                 $Con{$tmpfh}->{myheader} =~ s/\r\n/<br \/>\n/o;
-                $Con{$tmpfh}->{myheader} =~ s/X-Assp-//go;
+                $Con{$tmpfh}->{myheader} =~ s/X-Spambox-//go;
                 $fm .= "<br />\n<b>$Con{$tmpfh}->{myheader}</b>  ";
             }
             delete $Con{$tmpfh};
@@ -44818,14 +46424,21 @@ sub ConfigAnalyze {
 "<b><font color=#66CC66>&bull;</font> <a href='./#whiteListedDomains'>Whitelisted Domains</a></b>: '$lastREmatch'<br />\n";
                   }
             }
+            if ($signedSenders && matchRE([$mf],'signedSenders',1) ) {
+                $fm .=
+"<b><font color='orange'>&bull;</font> <a href='./#signedSenders'>SMIME or PGP signature required</a></b>: '$lastREmatch'<br />\n";
+              }
+            foreach (keys %to) {
+                if ($signedSenders && matchRE(["$mf,$_"],'signedSenders',1) ) {
+                    $fm .=
+"<b><font color='orange'>&bull;</font> <a href='./#signedSenders'>SMIME or PGP signature required</a></b>: '$lastREmatch'<br />\n";
+                  }
+            }
             $fm .= "<b><font color='orange'>&bull;</font> <a href='./lists'>Redlist</a></b>: '$ad'<br />\n"
               if $Redlist{$ad};
             $fm .=
 "<b><font color=#66CC66>&bull;</font> <a href='./lists'>Redlisted Domain/ Wildcard</a></b>: '$wildcardUser$mfdd'<br />\n"
               if $Redlist{"$wildcardUser$mfdd"};
-            $fm .=
-"<b><font color=#66CC66>&bull;</font> <a href='./lists'>Whitelisted WildcardDomain</a></b>: '$wildcardUser$mfdd'<br />\n"
-              if &Whitelist("$wildcardUser$mfdd");
 
             if (! $WhitelistPrivacyLevel) {
                 if (&Whitelist($ad)) {
@@ -45010,21 +46623,21 @@ sub ConfigAnalyze {
         };
         
         $checkRegex && $whiteReRE && SearchBomb( "whiteRe", $text );
-        if ( $whiteRe && $nutext =~ /($whiteReRE)/ ) {
+        if ( $whiteRe && ($nutext =~ /($whiteReRE)/ || $nudecTextHeader =~ /($whiteReRE)/) ) {
             $fm .= "<b><font color='green'>&bull;</font> <a href='./#whiteRe'>White RE</a></b>: '".($1||$2)."'<br />\n";
             $bombsrch = SearchBomb( "whiteRe", ($1||$2) );
             $fm .= "<font color='green'>&nbsp;&bull;</font> matching whiteRe($incFound): '$bombsrch'<br />\n"
               if $bombsrch;
           }
         $checkRegex && $redReRE && SearchBomb( "redRe", $text );
-        if ( $redRe && $nutext =~ /($redReRE)/ ) {
+        if ( $redRe && ($nutext =~ /($redReRE)/ || $nudecTextHeader =~ /($redReRE)/) ) {
             $fm .= "<b><font color='yellow'>&bull;</font> <a href='./#redRe'>Red RE</a></b>: '".($1||$2)."'<br />\n";
             $bombsrch = SearchBomb( "redRe", ($1||$2) );
             $fm .= "<font color='yellow'>&nbsp;&bull;</font> matching redRe($incFound): '$bombsrch'<br />\n"
               if $bombsrch;
           }
         $checkRegex && $npReRE && SearchBomb( "npRe", $text );
-        if ( $npRe && $nutext =~ /($npReRE)/ ) {
+        if ( $npRe && ($nutext =~ /($npReRE)/  || $nudecTextHeader =~ /($npReRE)/) ) {
             $fm .= "<b><font color='green'>&bull;</font> <a href='./#npRe'>No Processing RE</a></b>: '".($1||$2)."'<br />\n";
             $bombsrch = SearchBomb( "npRe", ($1||$2) );
             $fm .= "<font color='green'>&nbsp;&bull;</font> matching npRe($incFound): '$bombsrch'<br />\n"
@@ -45095,7 +46708,7 @@ sub ConfigAnalyze {
               }
             my $color = $bombsrch =~ /\-\d+\s*$/o ? 'green' : 'red';
             $fm .= "<b><font color='$color'>&bull;</font> <a href='./#bombHeaderRe'>BombHeader RE</a></b>: '$bombsrch'<br />\n";
-            $fm .= "<font color='$color'>&nbsp;&bull;</font> matching bombHeaderRe($incFound): '$weightMatch'<br />\n";
+            $fm .= "<font color='$color'>&nbsp;&bull;</font> matching bombHeaderRe($incFound): '$weightMatch'<br />\n" if $weightMatch;
           }
         $checkRegex && ($bombSubjectRe || $maxSubjectLength) && SearchBomb( "bombSubjectRe", $sub);
         if ( ($bombSubjectRe || $maxSubjectLength) && ($bombsrch = SearchBombW( "bombSubjectRe", \$sub)) ) {
@@ -45321,6 +46934,32 @@ sub ConfigAnalyze {
             } else {
                 $fm .=
 "<i><font color='red'>&bull;</font> <a href='./#DoIPinHelo'>IP in Helo check</a> is <b>disabled because DoIPinHelo is disabled</b></i><br />\n";
+            }
+            my $auth;
+            if ($noAUTHHeloRe) {
+                if (matchRE([$helo],'noAUTHHeloRe')) {
+                    my $f = $lastREmatch ? " with $lastREmatch" : '';
+                    $fm .= "<b><font color='orange'>&bull;</font> HELO matches 'noAUTHHeloRe'$f</b><br />\n";
+                    $auth = 0;
+                } else {
+                    $fm .= "<b><font color='green'>&bull;</font> HELO does NOT match 'noAUTHHeloRe'</b><br />\n";
+                    $auth = 1;
+                }
+            }
+            if ($onlyAUTHHeloRe) {
+                if (matchRE([$helo],'onlyAUTHHeloRe')) {
+                    my $f = $lastREmatch ? " with $lastREmatch" : '';
+                    $fm .= "<b><font color='green'>&bull;</font> HELO matches 'onlyAUTHHeloRe'$f</b><br />\n";
+                    $auth = 1 if $auth != 0;
+                } else {
+                    $fm .= "<b><font color='orange'>&bull;</font> HELO does NOT match 'onlyAUTHHeloRe'</b><br />\n";
+                    $auth = 0;
+                }
+            }
+            if ($auth == 0) {
+                $fm .= "<b><font color='orange'>&bull;</font> AUTH would be disabled</b><br />\n";
+            } elsif ($auth == 1) {
+                $fm .= "<b><font color='green'>&bull;</font> AUTH would be allowed</b><br />\n";
             }
         }
         foreach my $iip (@sips) {
@@ -45681,9 +47320,9 @@ sub ConfigAnalyze {
         } if($] ge '5.012000');
 
         $fm .= "<br /><hr><br />";
-        my ($ar,$got,@t);
+        my ($ar,$got,$relation,$question,@t);
         if (! $lockBayes) {
-            ($ar,$got) = BayesWords(\$mail,$reportedBy);
+            ($ar,$got,$relation,$question) = BayesWords(\$mail,$reportedBy);
             push(@t, @$ar);
         } else {
             $got = {};
@@ -45721,21 +47360,26 @@ sub ConfigAnalyze {
                 my $g = sprintf( "%.4f", $got->{$_} );
                 s/[<>]//go;
                 s/[a-f0-9]{24}/[addr]/go;
-                $_ = eU($_);
-                s/^(private:|domain:)/<b>$1<\/b>/o;
+                my ($l,$bold);
+                if (s/^(private:|domain:)//o) {
+                    $l = ($1 eq 'domain:') ? " ($BayesDomainPrior)" : " ($BayesPrivatPrior)" ;
+                    $bcount += ($1 eq 'domain:') ? ($BayesDomainPrior-1) : ($BayesPrivatPrior-1) ;
+                    $bold = "<b>$1<\/b>";
+                }
+                $_ = $bold . eU($_);
                 if ( $g < 0.5 ) {
                     $g = "$g <font color='red'>*</font>" if $g < 0.01 && $baysConf;
                     $ba .= "<tr>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">&nbsp;</td>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">&nbsp;</td>
 <td style=\"padding-left:20px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">$_</td>
-<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g</td>
+<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g$l</td>
 </tr>\n";
                 } else {
                     $g = "$g <font color='red'>*</font>" if $g > 0.99 && $baysConf;
                     $ba .= "<tr>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">$_</td>
-<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g</td>
+<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g$l</td>
 <td style=\"padding-left:20px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">&nbsp;</td>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">&nbsp;</td>
 </tr>\n";
@@ -45745,19 +47389,23 @@ sub ConfigAnalyze {
             $ba .= "</div>\n" if (! $qs{return});
             my $bc = scalar @t;
             my $bcm = $bc > $maxBayesValues ? $maxBayesValues : $bc;
-            my ($p1, $p2, $c1, $SpamProb, $SpamProbConfidence) = BayesHMMProb(\@t);
-            my $hmmprob; my $hmmconf;
+            my ($p1, $p2, $c1, $SpamProb, $SpamProbConfidence) = BayesHMMProb(\@t,$relation);
+            my $hmmprob; my $hmmconf; my $hmmprobd; my $hmmph; my $hmmps; my $hmmrelation; my $hmmquestion;
 
             if ($DoHMM) {
                 my $tmpfh = time;
                 $Con{$tmpfh} = {};
                 $Con{$tmpfh}->{rcpt} = $reportedBy;
                 &HMMOK_Run($tmpfh,\$mail);
-                $hmmprob = $Con{$tmpfh}->{hmmprob};
+                $hmmprobd = $hmmprob = $Con{$tmpfh}->{hmmprob};
                 $hmmconf = $Con{$tmpfh}->{hmmconf};
+                $hmmph = $Con{$tmpfh}->{phps}->[0];
+                $hmmps = $Con{$tmpfh}->{phps}->[1];
+                $hmmrelation = $Con{$tmpfh}->{hmmQueryRelation} || 0;
+                $hmmquestion = $Con{$tmpfh}->{hmmQuestion} || 0;
                 my $hmmres = ($Con{$tmpfh}->{hmmres} > $maxBayesValues) ? $maxBayesValues : $Con{$tmpfh}->{hmmres};
                 if (defined $hmmprob) {
-                    $hmmprob = sprintf("%.4f - got %d - used %d most significant results",$hmmprob,$Con{$tmpfh}->{hmmres},$hmmres);
+                    $hmmprob = sprintf("%.8f - got %d - used %d most significant results",$hmmprob,$Con{$tmpfh}->{hmmres},$hmmres);
                 } elsif ($lockHMM) {
                     $hmmprob = 'got no result because the HMM database is locked by a rebuildspamdb task';
                 } elsif (! $haveHMM) {
@@ -45792,21 +47440,26 @@ sub ConfigAnalyze {
                     my $g = sprintf( "%.4f", ${$Con{$tmpfh}->{hmmValues}}{$_} );
                     s/[<>]//go;
                     s/[a-f0-9]{24}/[addr]/go;
-                    $_ = eU($_);
-                    s/^(private:|domain:)/<b>$1<\/b>/o;
+                    my ($l,$bold);
+                    if (s/^(private:|domain:)//o) {
+                        $l = ($1 eq 'domain:') ? " ($BayesDomainPrior)" :  " ($BayesPrivatPrior)" ;
+                        $bcount += ($1 eq 'domain:') ? ($BayesDomainPrior-1) : ($BayesPrivatPrior-1) ;
+                        $bold = "<b>$1<\/b>";
+                    }
+                    $_ = $bold . eU($_);
                     if ( $g < 0.5 ) {
                         $g = "$g <font color='red'>*</font>" if $g < 0.01 && $baysConf;
                         $ba .= "<tr>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">&nbsp;</td>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">&nbsp;</td>
 <td style=\"padding-left:20px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">$_</td>
-<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g</td>
+<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g$l</td>
 </tr>\n";
                     } else {
                         $g = "$g <font color='red'>*</font>" if $g > 0.99 && $baysConf;
                         $ba .= "<tr>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">$_</td>
-<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g</td>
+<td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">$g$l</td>
 <td style=\"padding-left:20px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\">&nbsp;</td>
 <td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:left; font-size:small; background-color:#F4F4F4\">&nbsp;</td>
 </tr>\n";
@@ -45820,23 +47473,32 @@ sub ConfigAnalyze {
             }
             @HmmBayWords = ();
             $haveSpamdb = getDBCount('Spamdb','spamdb') unless $haveSpamdb;
+            my $bres;
+            if (defined $SpamProb) {
+                $bres = $SpamProb <= $baysProbability ? 'NOT SPAM' : 'SPAM';
+                $bres = ($baysConf && $SpamProbConfidence < $baysConf) ? "doubtful $bres" : "confident $bres";
+            }
             $st .= "<br /><hr><br />";
             $st .=
 "<b>The Bayesian database 'spamdb' is still unavailable, because it is locked by a rebuildspamdb task.</b><br /><br />" if $lockBayes;
             $st .=
 "<b>The Bayesian database 'spamdb' is still unavailable, because it is empty.</b><br /><br />" if ! $haveSpamdb;
             $st .=
-"<b><font size=\"3\" color=\"#003366\">Bayesian Spam Probability:</font></b><br /><br />\n<table cellspacing=\"0\" cellpadding=\"0\">";
+"<b><font size=\"3\" color=\"#003366\">Bayesian Spam Probability: $bres</font></b><br /><br />\n";
+            $st .= "<table cellspacing=\"0\" cellpadding=\"0\">";
             if ($baysConf) {
                 $st .= sprintf(
-" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>spamprobability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8f</td></tr>\n",
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>spam-probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8g</td></tr>\n",
                 $p1 );
                 $st .= sprintf(
-" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>hamprobability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8f</td></tr>\n",
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>ham-probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8g</td></tr>\n",
                 $p2 );
                 $st .= sprintf(
 " <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>combined probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8f - got %d - used %d most significant results</td></tr>\n",
                 $SpamProb,$bc,$bcm );
+                $st .= sprintf(
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>answer/query relation</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%d%% of %d</td></tr>\n",
+                int($relation * 100), $question );
                 $st .= sprintf(
 " <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>bayesian confidence</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8f</td></tr>\n",
                 $SpamProbConfidence );
@@ -45849,22 +47511,40 @@ sub ConfigAnalyze {
                 $SpamProb,$bc,$maxBayesValues );
             }
             if ($DoHMM) {
+                my $bres;
+                if (defined $hmmprobd) {
+                    $bres = $hmmprobd <= $baysProbability ? 'NOT SPAM' : 'SPAM';
+                    $bres = ($baysConf && $hmmconf < $baysConf) ? "doubtful $bres" : "confident $bres";
+                }
                 $st .= "</table>\n";
                 $st .= "<br />Values marked with an <font color='red'>*</font>, are irrelevant for the confidence calculation.\n" if $baysConf;
-                my $prob = $baysConf ? 'Probabilities' : 'Probability';
                 $st .=
-"<br /><hr><br /><b><font size=\"3\" color=\"#003366\">Hidden-Markov-Model Spam $prob:</font></b><br /><br />\n<table cellspacing=\"0\" cellpadding=\"0\">";
-                $st .=
-" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>combined HMM spam probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">$hmmprob</td></tr>\n";
-                $st .= sprintf(
+"<br /><hr><br /><b><font size=\"3\" color=\"#003366\">Hidden-Markov-Model Spam Probability: $bres</font></b><br /><br />\n<table cellspacing=\"0\" cellpadding=\"0\">";
+                if ($baysConf) {
+                    $st .= sprintf(
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>spam-probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8g</td></tr>\n",
+                    $hmmph );
+                    $st .= sprintf(
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>ham-probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8g</td></tr>\n",
+                    $hmmps );
+                    $st .=
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>combined probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">$hmmprob</td></tr>\n";
+                    $st .= sprintf(
 " <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>HMM confidence</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8f</td></tr>\n",
-                $hmmconf ) if $baysConf;
-                $st .= sprintf(
+                    $hmmconf );
+                    $st .= sprintf(
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>answer/query relation</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%d%% of %d</td></tr>\n",
+                    int($hmmrelation * 100), $hmmquestion );
+                    $st .= sprintf(
 " <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>corpus confidence</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">%.8f</td></tr>\n",
-                BayesConfNorm()) if $baysConf;
+                    BayesConfNorm());
+                } else {
+                    $st .=
+" <tr><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; text-align:right; font-size:small;\"><b>combined HMM probability</b>:</td><td style=\"padding-left:5px; padding-right:5px; padding-top:0; padding-bottom:0; font-size:small;\">$hmmprob</td></tr>\n";
+                }
             }
- 		}
-        $st .= " </table><br />\n";
+            $st .= " </table><br />\n";
+        }
         $st .= "Values marked with an <font color='red'>*</font>, are irrelevant for the confidence calculation.<br />\n" if $baysConf;
         $st .= "</div><br />\n";
 TRANSLITONLY:
@@ -46005,7 +47685,6 @@ $this->{reporthint}
 $res
 </div>
 </body>
-</head>
 </html>
 
 EOT
@@ -46895,16 +48574,6 @@ $footers
 EOT
 }
 
-sub Glob {
-    my @g;
-    if ($] !~ /^5\.016/o) {
-        @g = glob("@_");
-    } else {
-        map {push @g , < $_ >;} @_ ;
-    }
-    return @g;
-}
-
 sub existFile {
     my $file = shift;
     return 0 unless $file;
@@ -47052,7 +48721,7 @@ sub decodeMimeWords2UTF8 {
 
 sub transliterate {
     my ($text, $skipequal) = @_;
-    return unless ($CanUseTextUnidecode);
+    return unless ($CanUseTextUnidecode && $canUnicode);
     my $trans = eval{e8(Text::Unidecode::unidecode(d8($$text)));};
     return ($skipequal && $trans eq $$text) ? undef : defined(*{'yield'}) ? $trans : undef;
 }
@@ -47060,7 +48729,7 @@ sub transliterate {
 # in place unicode normalization and enclosed character conversion in regular expressions
 sub unicodeNormalizeRe {
     my ($re,$name) = @_;
-    return unless $CanUseUnicodeNormalize && $normalizeUnicode && $] ge '5.012000';
+    return unless $CanUseUnicodeNormalize && $normalizeUnicode && $canUnicode;
     if (is_7bit_clean($re)) {
         return;
     }
@@ -47085,7 +48754,7 @@ sub unicodeNormalizeRe {
 # http://en.wikipedia.org/wiki/Unicode_equivalence
 sub unicodeNormalize {
     my $s = shift;
-    return unless $CanUseUnicodeNormalize && $normalizeUnicode && $] ge '5.012000';
+    return unless $CanUseUnicodeNormalize && $normalizeUnicode && $canUnicode;
     if (is_7bit_clean($s)) {
         return;
     }
@@ -47952,26 +49621,26 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
              $s1 = "\r\n" . $s1;
              my $rfil = $fil;
              $rfil =~ s/^(\Q$base\E\/).+(\/.+\Q$maillogExt\E)$/$1$resendmail$2/i;
-             my ($to) = $s1 =~ /\nX-Assp-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
+             my ($to) = $s1 =~ /\nX-Spambox-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
              ($to) = $s1 =~ /\nto:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio unless $to;
-             my ($from) = $s1 =~ /\nX-Assp-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
+             my ($from) = $s1 =~ /\nX-Spambox-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
              ($from) = $s1 =~ /\nfrom:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio unless $from;
              $s1 =~ s/^\r\n//o;
              $s2='';
              if (! $to ) {
                  $s2 .= '<br />' if $s2;
-                 $s2 .= '<span class="negative">!!! no addresses found in X-Assp-Intended-For: or TO: header line - please check !!!</span>';
+                 $s2 .= '<span class="negative">!!! no addresses found in X-Spambox-Intended-For: or TO: header line - please check !!!</span>';
              }
              if (! $from ) {
                  $s2 .= '<br />' if $s2;
-                 $s2 .= '<span class="negative">!!! no addresses found in X-Assp-Envelope-From: or FROM: header line - please check !!!</span>';
+                 $s2 .= '<span class="negative">!!! no addresses found in X-Spambox-Envelope-From: or FROM: header line - please check !!!</span>';
              }
              if ((! $nolocalDomains && ! (localmail($to) or localmail($from)))) {
                  $s2 .= '<br />' if $s2;
-                 $s2 .= '<span class="negative">!!! no local addresses found in X-Assp-Intended-For: or TO: header line - please check !!!</span>'
+                 $s2 .= '<span class="negative">!!! no local addresses found in X-Spambox-Intended-For: or TO: header line - please check !!!</span>'
                      unless localmail($to);
                  $s2 .= '<br />' if $s2 =~ /span>$/o;
-                 $s2 .= '<span class="negative">!!! no local addresses found in X-Assp-Envelope-From: or FROM: header line - please check !!!</span>'
+                 $s2 .= '<span class="negative">!!! no local addresses found in X-Spambox-Envelope-From: or FROM: header line - please check !!!</span>'
                      unless localmail($from);
              }
              if (! $s2) {
@@ -48064,9 +49733,9 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
                  $s2='<span class="positive">File copied to correctedspam folder</span>';
                  mlog(0,"info: request to create file: $rfil");
 
-                 my ($to) = $s1 =~ /\nX-Assp-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
+                 my ($to) = $s1 =~ /\nX-Spambox-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
                  ($to) = $s1 =~ /\nto:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio unless $to;
-                 my ($from) = $s1 =~ /\nX-Assp-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
+                 my ($from) = $s1 =~ /\nX-Spambox-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
                  ($from) = $s1 =~ /\nfrom:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio unless $from;
                  if (   ($EmailErrorsModifyWhite == 1 || $EmailErrorsModifyNoP == 1 || matchSL( $to, 'EmailErrorsModifyPersBlack' ))
                      && $to
@@ -48101,9 +49770,9 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
                  $s2='<span class="positive">File copied to correctednotspam folder</span>';
                  mlog(0,"info: request to create file: $rfil");
 
-                 my ($to) = $s1 =~ /\nX-Assp-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
+                 my ($to) = $s1 =~ /\nX-Spambox-Intended-For:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
                  ($to) = $s1 =~ /\nto:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio unless $to;
-                 my ($from) = $s1 =~ /\nX-Assp-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
+                 my ($from) = $s1 =~ /\nX-Spambox-Envelope-From:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio;
                  ($from) = $s1 =~ /\nfrom:[^\<]*?<?($EmailAdrRe\@$EmailDomainRe)>?/sio unless $from;
                  if (   ($EmailErrorsModifyWhite == 1 || $EmailErrorsModifyNoP == 1 || matchSL( $to, 'EmailErrorsModifyPersBlack' ))
                      && $to
@@ -48190,7 +49859,7 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
     if($open->(my $CE,'<',$fil)) {
      $CE->read($s1,[$stat->($fil)]->[7]);
 #dencrypt if to do
-     if (exists $CryptFile{$fil} && $s1 =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
+     if (exists $CryptFile{$fil} && $s1 =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
          my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
          $s1 = $enc->DECRYPT($s1);
      }
@@ -48570,7 +50239,9 @@ $cidr = $WebIP{$ActWebSess}->{lng}->{'msg500016'} || $lngmsg{'msg500016'} if $Ca
 my $currStat = &StatusSPAMBOX();
 $currStat = ($currStat =~ /not healthy/io)
    ? '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running not healthy! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><b><font color=\'red\'>&bull;</font></b></a>'
-   : '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
+   : (scalar(keys(%Recommends)) && (time - $seenRecommends > 3600))
+      ? '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy, but there are recommendations! Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#FFFF00>&bull;</font></a>'
+      : '<a href="./statusspambox" target="blank" onmouseover="showhint(\'<table BORDER CELLSPACING=0 CELLPADDING=4 WIDTH=\\\'100%\\\'><tr><td>SPAMBOX '.$version.$modversion.($codename?" ( code name $codename )":'').' is running healthy. Click to show the current detail thread status.</td></tr></table>\', this, event, \'450px\', \'\'); return true;"><font color=#66CC66>&bull;</font></a>';
 
  my $lFoptions = "<option value=\"default\">default</option>";
  my @DIR = Glob("$base/language/*");
@@ -48675,26 +50346,58 @@ $footers
 EOT
 }
 
-sub GitHUB {
+sub Donations {
 <<EOT;
 $headerHTTP
 $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
-<h2>SPAMBOX GitHUB</h2>
+<h2>SPAMBOX Donations</h2>
 <div class="note">
-SPAMBOX here to thank every one who's participating us throgh github repository. We welcome your suggessions. 
+SPAMBOX is here thanks to the following people, please feel free to donate to support the SPAMBOX project.
 </div>
 <br />
 <table style="width: 99%;" class="textBox">
 <tr>
-<td class="underline">James PS</td>
+<td class="underline">John Hanna the founder and developer of SPAMBOX up to version 1.0.12</td>
 <td class="underline">&nbsp;</td>
 </tr>
 <tr>
+<td class="underline">John Calvi the developer of SPAMBOX from version 1.0.12.</td>
+<td class="underline">&nbsp;</td>
+</tr>
+<tr>
+<td class="underline">Fritz Borgstedt &dagger; the developer of SPAMBOX V1 since 1.2.0</td>
+<td class="underline">&nbsp;</td>
+</tr>
+<tr>
+<td class="underline">Thomas Eckardt the developer of SPAMBOX V2 since 2.0.0</td>
+<td class="underline"><a href="https://www.paypal.com/xclick/business=Thomas.Eckardt%40thockar.com&amp;item_name=Support+SPAMBOX&amp;item_number=spambox&amp;no_note=1&amp;tax=0&amp;currency_code=USD" rel="external">Donate via Paypal</a></td>
+</tr>
+<tr>
+<td>&nbsp;</td>
+<td>&nbsp;</td>
+</tr>
+<tr>
 <td colspan="2">
-<div class="note">Thanks fot ASSP opensource team for inspiration<br />
-Follow us on github  <a href="https://github.com/jamesarems/spambox">spambox-git</a>
+<div class="note">Special thanks go to......<br />
+&nbsp;&nbsp;  Nigel Barling, AJ, Robert Orso, Przemek Czerkas, Mark Pizzolato,<br />
+&nbsp;&nbsp;  Wim Borghs, Micheal Espinola, Doug Traylor, Lars Troen,<br />
+&nbsp;&nbsp;  Andrew Macpherson, Javier Albinarrate for their contributions in 1.2.x.<br />
+
+</div>
+</td>
+</tr>
+<tr>
+<td colspan="2">
+<div class="underline"><h2><br /><br />Special thanks go to the main sponsors of this project:</h2><br /><br />
+&nbsp;&nbsp;  several features sponsored by <b>ITprime Services GmbH</b> (Marco Rauchenstein)<br /><br />
+&nbsp;&nbsp;  feature 'AUTHrequireTLS' sponsored by <b>AllWorldIT.com</b> (Nigel Kukard)<br /><br />
+&nbsp;&nbsp;  ISP mode setup sponsored by <b>DuoCircle LLC</b> (Masood Rahim)<br /><br />
+&nbsp;&nbsp;  compressed attachment handling in SPAMBOX_AFC.pm is sponsored by the <b>International Bridge, Inc. and the Devonshire Networking Group</b> (Peter Hinman)<br /><br />
+&nbsp;&nbsp;  setup without localDomains sponsored by <b>AllWorldIT</b> (Nigel Kukard)<br /><br />
+<br />
+
 </div>
 </td>
 </tr>
@@ -49422,6 +51125,29 @@ sub StatusSPAMBOX {
      } else {
          $s3 .= "<tr><td><span class=\"positive\"><b>no failed regular expressions</b></span></td></tr>";
      }
+
+     my $s4 = "<tr><td class=\"conTabletitle\">recommendations:</td></tr>";
+     $tmpCount = 0;
+     if (scalar keys %Recommends) {
+         foreach my $s (sort keys %Recommends) {
+             if ($tmpCount%2==1) {
+                 $rowclass = "\n<tr>";
+             } else {
+                 $rowclass = "\n<tr class=\"even\">";
+             }
+             $s4 .= $rowclass;
+             my $r = $Recommends{$s}."\n";
+             $r =~ s/(?:([^\n]{120,150}) +)/$1<br \/>\n/go;
+             $s4 .= "<td><b>$s : $r</b></td>";
+             $s4 .= "</tr>";
+         }
+     } else {
+         $s4 .= "<tr><td><b>no recommendations</b></td></tr>";
+     }
+     if ([caller(1)]->[3] =~ /webRequest/o) {
+         $seenRecommends = scalar(keys(%Recommends)) ? time : 0 ;
+     }
+     
      my $focusJS = '
 <script type="text/javascript">
 //noprint
@@ -49511,6 +51237,11 @@ $s21
 <br />
 <table cellspacing="0" id="conTable">
 $s3
+</table>
+<br />
+<br />
+<table cellspacing="0" id="conTable">
+$s4
 </table>
 <br />
 </div>
@@ -50222,15 +51953,17 @@ sub PrintConfigSettings {
     for my $idx (0...$#ConfigArray) {
             my $c = $ConfigArray[$idx];
             next if ( @{$c} == 5 );
-            $ConfigNice{ $c->[0] } = encodeHTMLEntities( $c->[1] );
-            $ConfigNice{ $c->[0] } =~ s/<a\s+href.*?<\/a>//io;
+            $ConfigNice{ $c->[0] } = decodeHTMLEntities( $c->[1] );
+            $ConfigNice{ $c->[0] } =~ s/<a\s+href.*?<\/a>//igo;
+            $ConfigNice{ $c->[0] } =~ s/<\/?sup>//igo;
+            $ConfigNice{ $c->[0] } =~ s/<!--.+?-->//go;
             $ConfigNice{ $c->[0] } =~ s/'|"|\n//go;
             $ConfigNice{ $c->[0] } =~ s/\\/\\\\/go;
-            $ConfigNice{ $c->[0] } = '&nbsp;' unless $ConfigNice{ $c->[0] };
-            $ConfigDefault{ $c->[0] } = encodeHTMLEntities( $c->[4] );
+            $ConfigNice{ $c->[0] } = ' ' unless $ConfigNice{ $c->[0] };
+            $ConfigDefault{ $c->[0] } = decodeHTMLEntities( $c->[4] );
             $ConfigDefault{ $c->[0] } =~ s/'|"|\n//go;
             $ConfigDefault{ $c->[0] } =~ s/\\/\\\\/go;
-            $ConfigNow{ $c->[0] } = encodeHTMLEntities( $Config{$c->[0]} );
+            $ConfigNow{ $c->[0] } = decodeHTMLEntities( $Config{$c->[0]} );
             $ConfigNow{ $c->[0] } =~ s/'|"|\n//go;
             $ConfigNow{ $c->[0] } =~ s/\\/\\\\/go;
 
@@ -50239,9 +51972,9 @@ sub PrintConfigSettings {
                 $ConfigNow{ $c->[0] } = 0 unless $ConfigNow{ $c->[0] };
                 foreach my $opt ( split( /\|/o, $c->[2] ) ) {
                     my ( $v, $d ) = split( /:/o, $opt, 2 );
-                    $ConfigDefault{ $c->[0] } = $d
+                    $ConfigDefault{ $c->[0] } = decodeHTMLEntities( $d )
                       if ( $ConfigDefault{ $c->[0] } eq $v );
-                    $ConfigNow{ $c->[0] } = $d
+                    $ConfigNow{ $c->[0] } = decodeHTMLEntities( $d )
                       if ( $ConfigNow{ $c->[0] } eq $v );
                 }
             } elsif ( $c->[3] == \&checkbox ) {
@@ -50269,8 +52002,11 @@ sub PrintConfigSettings {
         my $c0 = uc $c->[0];
 
         if ( $c->[4] ne $Config{ $c->[0] } ) {
-
-            print $F "$c->[0] -- $ConfigNice{ $c->[0] }: $ConfigNow{ $c->[0] } (Default: $ConfigDefault{ $c->[0] }) \n";
+            if (exists $cryptConfigVars{$c->[0]} || $c->[0] eq 'webAdminPassword') {
+                print $F "$c->[0] -- $ConfigNice{ $c->[0] }: encrypted (Default: encrypted) \n";
+            } else {
+                print $F "$c->[0] -- $ConfigNice{ $c->[0] }: $ConfigNow{ $c->[0] } (Default: $ConfigDefault{ $c->[0] }) \n";
+            }
         } else {
 
             #print F "$c->[0] -- $desc: $Config{$c->[0]}  \n";
@@ -50279,6 +52015,41 @@ sub PrintConfigSettings {
     close $F;
     chmod 0660, "$base/notes/configdefaults.txt";
 
+=head
+# create raw text instead of HTML
+    open( $F, '>',"$base/notes/config.txt" );
+    for my $idx (0...$#ConfigArray) {
+        my $c = $ConfigArray[$idx];
+        $desc = $c->[7];
+        if ($desc) {
+          $desc =~ s/<\s*\/?\s*(?:[bipa]|small|table)\s*>//goi;
+          $desc =~ s/<br\s*\/><br\s*\/>/\n/goi;
+          $desc =~ s/<br\s*\/>([^\n])/\n$1/goi;
+          $desc =~ s/<br\s*\/>//goi;
+          $desc =~ s/<su[bp]>(.*?)<\/su[bp]>/$1/goi;
+          $desc =~ s/<t[rd]>//goi;
+          $desc =~ s/<\/tr>/\n/goi;
+          $desc =~ s/<\/td>/\t/goi;
+          $desc =~ s/<[^<>]*>//goi;
+          $desc = decodeHTMLEntities($desc);
+          $desc =~ s/\&nbsp;?/ /goi;
+          $desc =~ s/\&shy;?/-/goi;
+        }
+
+        my $def = defined($c->[4]) ? "default: $c->[4]" : 'default: empty' ;
+        print $F "\n$c->[0]: $c->[1]\n-- $desc $def \n"
+          if $Config{ $c->[0] } eq $c->[4] && $c->[0] ne "0";
+        print $F "\n$c->[0]: $c->[1]\n-- $desc $def \n"
+          if $Config{ $c->[0] } ne $c->[4] && $c->[0] ne "0";
+        $desc = $c->[4] if $c->[0] eq "0";
+        $desc = '' unless $desc;
+        $desc =~ s/\<[^<>]*\>//go;
+        print $F "\n\n# $desc #\n" if $c->[0] eq "0";
+
+    }
+    close $F;
+=cut
+# create HTML instead of raw text
     open( $F, '>',"$base/notes/config.txt" );
     for my $idx (0...$#ConfigArray) {
         my $c = $ConfigArray[$idx];
@@ -50326,8 +52097,9 @@ sub SaveConfigSettings {
     return 0 if $Config{spamboxCfgVersion} eq $MAINVERSION;
     my $bak = $Config{spamboxCfgVersion};
     $bak =~ s/^([\d\.]+)\(([\d\.]+)\)/$1.$2/o;
-    copy("$base/spambox.cfg","$base/spambox_$bak.cfg.bak") or
-        mlog(0,"error: unable to backup '$base/spambox.cfg' to '$base/spambox_$bak.cfg.bak' after version change from '$Config{spamboxCfgVersion}' to '$MAINVERSION'");
+    -d "$base/backup.config" or mkdir "$base/backup.config",0755;
+    copy("$base/spambox.cfg","$base/backup.config/spambox_$bak.cfg.bak") or
+        mlog(0,"error: unable to backup '$base/spambox.cfg' to '$base/backup.config/spambox_$bak.cfg.bak' after version change from '$Config{spamboxCfgVersion}' to '$MAINVERSION'");
     $spamboxCfgVersion = $Config{spamboxCfgVersion} = $MAINVERSION;
     SaveConfigSettingsForce();
     return 1;
@@ -50443,7 +52215,10 @@ sub fixConfigSettings {
 
     $Config{webAdminPassword}=crypt($Config{webAdminPassword},"45") if substr($Config{webAdminPassword}, 0, 2) ne "45";
 
-    &fixV1ConfigSettings() if substr($Config{spamboxCfgVersion},0,1) < 2 ;
+    &fixV1ConfigSettings() if substr($Config{spamboxCfgVersion},0,1) < 2;
+    
+    my ($oldBuild) = $Config{spamboxCfgVersion} =~ /\((\d+)\)/o;
+    $nextRepairWhitelist = time + 60 if $oldBuild < 16004;
 
     $Config{redRe}="file:files/redre.txt" if $Config{redRe}=~/file:redre.txt/io;
     $Config{noDelay}="file:files/nodelay.txt" if $Config{noDelay}=~/file:nodelay.txt/io;
@@ -50516,7 +52291,7 @@ sub fixConfigSettings {
     if ($maxBayesValues > 30 && ! -e "$base/lib/SPAMBOX_WordStem.pm") {
        $maxBayesValues = 30;
     }
-    $maxBayesValues = 30 if $maxBayesValues < 30;
+    $Config{maxBayesValues} = $maxBayesValues = 30 if $maxBayesValues < 30;
     
     $Config{noMaxAUTHErrorIPs} = $Config{noBlockingIPs} if (exists $newConfig{noMaxAUTHErrorIPs});
 
@@ -50540,6 +52315,8 @@ sub fixConfigSettings {
 
     $Config{DoHeaderAddrCheck} = '' if (length $Config{DoHeaderAddrCheck} > 1);
 
+    $Config{removeDispositionNotification} = 'ReturnReceipt|Return-Receipt-To|Disposition-Notification-To' if $Config{removeDispositionNotification} == 1;
+    
 # -- cleanup old BerkeleyDB cache files
     if (-d "$base/tmpDB/dbmain" or -d "$base/tmpDB/dbtmp") {
         foreach ( Glob("$base/tmpDB/dbmain/*")) {
@@ -50689,16 +52466,50 @@ sub fixConfigSettings {
     }
     my $savecfg = 0;
     my $savesync = 0;
-    foreach (sort keys %newConfig) {
-        mlog(0,"info: new config parameter $_ was set to ${$_}");
-        if (&syncCanSync() && ! exists $neverShareCFG{$_}) {
-            $ConfigSync{$_} = &share({});
-            $ConfigSync{$_}->{sync_cfg} = 0;
-            $ConfigSync{$_}->{sync_server} = &share({});
+    my %syncMode = (0 => 'no sync', 1 => 'out of sync', 2 => 'in sync', 3 => 'as slave', '' => 'remove');
+    foreach my $c (sort keys %newConfig) {
+        mlog(0,"info: new config parameter $_ was set to ${$c}");
+        if (&syncCanSync() && ! exists $neverShareCFG{$c}) {
+            $ConfigSync{$c} = &share({});
+            $ConfigSync{$c}->{sync_cfg} = 0;
+            $ConfigSync{$c}->{sync_server} = &share({});
+            if ($isShareMaster ? 2 : $isShareSlave ? 3 : 0) {
+                $ConfigSync{$c}->{sync_cfg} = 1;
+                %{$ConfigSync{$c}->{sync_server}} = %{$ConfigSync{freqNonSpam}->{sync_server}};
+            }
+            my $serverc = join(',',map {"$_ = $syncMode{$ConfigSync{$c}->{sync_server}->{$_}}"} keys %{$ConfigSync{$c}->{sync_server}});
+            $serverc = ' , '.$serverc if $serverc;
+            my $ena = $ConfigSync{$c}->{sync_cfg} ? 'enabled' : 'disabled';
+            mlog(0,"info: sync config for '$c' set to $ena$serverc");
             $savesync = 1;
         }
         $savecfg = 1;
     }
+    # possibly add the Plugins to the sync config
+    if ($oldBuild < 16024 && &syncCanSync()) {
+        mlog(0,"info: upgrade detected - try to add sync config for the installed Plugins") if scalar(@PlCfg);
+        for my $idx (0...$#PlCfg) {
+            my $c = $PlCfg[$idx];
+            $c->[0] =~ s/\r?\n//go;
+            next unless $c->[0];                        # no config
+            next if ($c->[3] =~ /heading/io);           # not a heading
+            next if exists $neverShareCFG{$c->[0]};     # not this one
+            next if exists $ConfigSync{$c->[0]} && exists $ConfigSync{$c->[0]}->{sync_cfg} && $ConfigSync{$c->[0]}->{sync_cfg} > -1;          # valid sync config already exists
+            $ConfigSync{$c->[0]} = &share({});
+            $ConfigSync{$c->[0]}->{sync_cfg} = 0;
+            $ConfigSync{$c->[0]}->{sync_server} = &share({});
+            if ($isShareMaster ? 2 : $isShareSlave ? 3 : 0) {
+                $ConfigSync{$c->[0]}->{sync_cfg} = 1;
+                %{$ConfigSync{$c->[0]}->{sync_server}} = %{$ConfigSync{freqNonSpam}->{sync_server}};
+            }
+            my $serverc = join(' , ',map {"$_ = $syncMode{$ConfigSync{$c->[0]}->{sync_server}->{$_}}"} keys %{$ConfigSync{$c->[0]}->{sync_server}});
+            $serverc = ' , '.$serverc if $serverc;
+            my $ena = $ConfigSync{$c->[0]}->{sync_cfg} ? 'enabled' : 'disabled';
+            mlog(0,"info: sync config for '$c->[0]' set to $ena$serverc");
+            $savesync = 1;
+        }
+    }
+    
     &SaveConfig() if $savecfg;
     &syncWriteConfig() if $savesync;
     %newConfig = ();
@@ -50725,13 +52536,13 @@ sub unloadSub {
         d("Worker $WorkerNumber undefines sub $sub");
         undef &{$sub};
     }
-    $CanUseAsspSelfLoader && delete $AsspSelfLoader::Cache{$sub};
+    $CanUseSpamboxSelfLoader && delete $SpamboxSelfLoader::Cache{$sub};
     $sub .= '_Run';
     if (defined &{$sub}) {
         d("Worker $WorkerNumber undefines sub $sub");
         undef &{$sub};
     }
-    $CanUseAsspSelfLoader && delete $AsspSelfLoader::Cache{$sub};
+    $CanUseSpamboxSelfLoader && delete $SpamboxSelfLoader::Cache{$sub};
 }
 
 sub unloadNameSpace {
@@ -50801,11 +52612,13 @@ sub unloadComThreadModules {
     unloadSub 'cleanCachePersBlack';
     unloadSub 'cleanCachePTR';
     unloadSub 'cleanCacheRBL';
+    unloadSub 'cleanCacheAUTHIP';
     unloadSub 'cleanCacheRWL';
     unloadSub 'cleanCacheSB';
     unloadSub 'cleanCacheSMTPdomainIP';
     unloadSub 'cleanCacheSPF';
     unloadSub 'cleanCacheSSLfailed';
+    unloadSub 'cleanCacheLDAPNotFound';
     unloadSub 'cleanCacheURI';
     unloadSub 'CleanDelayDB';
     unloadSub 'CleanPB';
@@ -50825,7 +52638,7 @@ sub unloadComThreadModules {
     unloadSub 'ConfigStatsXml';
     unloadSub 'ConToThread';
     unloadSub 'debugWrite';
-    unloadSub 'GitHUB';
+    unloadSub 'Donations';
     unloadSub 'downSPAMBOX';
     unloadSub 'downloadSPAMBOXVersion';
     unloadSub 'downloadBackDNS';
@@ -51015,6 +52828,7 @@ sub unloadMainThreadModules {
     unloadSub 'cleanCachePersBlack';
     unloadSub 'cleanCachePTR';
     unloadSub 'cleanCacheRBL';
+    unloadSub 'cleanCacheAUTHIP';
     unloadSub 'cleanCacheRWL';
     unloadSub 'cleanCacheSB';
     unloadSub 'cleanCacheSMTPdomainIP';
@@ -51074,8 +52888,7 @@ sub ThreadCompileAllRE {
         'configChangeMSGIDSec' => 1,
         'configChangeBATVSec' => 1,
         'configUpdateBACKSctrSP' => 1,
-        'configChangeIC' => 1,
-        'configChangeOC' => 1,
+        'configChangeCV' => 1,
         'configChangeProxy' => 1,
         'ConfigChangeSyncFile' => 1,
         'configChangeRT' => 1,
@@ -51100,7 +52913,8 @@ sub ThreadCompileAllRE {
         'TLStoProxyListenPorts' => 'Initializing',
         'MaxAllowedDups' => 'Initializing',
         'POP3ConfigFile' => 'Initializing',
-        'spamboxCpuAffinity' => 'Initializing'
+        'spamboxCpuAffinity' => 'Initializing',
+        'enable8BITMIME' => 'Initializing'
     );
     @PossibleOptionFiles=();
     for my $idx (0...$#ConfigArray) {
@@ -51113,6 +52927,7 @@ sub ThreadCompileAllRE {
             undef $c->[5] if $c->[5];
             undef $c->[7] if $c->[7];
         }
+
         next if (! $c->[6]);
 
         if (   exists $configOFiles{$c->[6]}  # are there possibly option files - register them
@@ -51478,7 +53293,9 @@ sub ConfigMakeRe {
     $new||=$neverMatch; # regexp that never matches
     $ret .= ConfigShowError(1,"ERROR: !!!!!!!!!! missing MakeRE{$name} in code !!!!!!!!!!") if ! exists $MakeRE{$name} && $WorkerNumber == 0;
 
+    my $oldBSRE = $BSRE;
     $MakeRE{$name}->($new,$name);
+    $nextRepairWhitelist = time if $WorkerNumber == 10000 && $name eq 'BounceSenders' && ! $init && $BSRE ne $oldBSRE;
     return $ret . ConfigShowError(1,$RegexError{$name});
 }
 
@@ -51526,7 +53343,7 @@ sub ConfigMakeLocalDomainsRe {
     }
     my $ret = &ConfigRegisterGroupWatch(\$new,$name,$desc);
     $new =~ s/([\\]\|)*\|+/$1\|/go;
-    my $mHostPortRe = $HostRe . '(?:\:' . $PortRe . ')?' . '(?:,' . $HostRe . '(?:\:' . $PortRe . ')?)*';
+    my $mHostPortRe = '(?i:SSL:)?'.$HostRe . '(?:\:' . $PortRe . ')?' . '(?:,(?i:SSL:)?' . $HostRe . '(?:\:' . $PortRe . ')?)*';
 
     my %toChangeMTA;
     $new = join('|', sort split(/\|/o,$new)) if $new;
@@ -51623,11 +53440,9 @@ sub ConfigMakeSLRe {
     }
     my $ret = &ConfigRegisterGroupWatch(\$new,$name,$desc);
 
-    my $mEmailDomainRe='(?:\w(?:\\\.|[\w\-])*\\\.\w\w+|\[(?:\d|\\\.)*\\\.\d+\])';
-    my $mIPSectDotRe = '(?:'.$IPSectRe.'\\\.)';
-    my $mIPRe = $mIPSectDotRe.$mIPSectDotRe.$mIPSectDotRe.$IPSectRe;
-    my $mHostRe = '(?:' . $mIPRe . '|' . $mEmailDomainRe . '|\w\w+)';
-    my $mHostPortRe = $mHostRe . '(?:\:' . $PortRe . ')?' . '(?:,' . $mHostRe . '(?:\:' . $PortRe . ')?)*';
+    my $mHostRe = $HostRe;
+    $mHostRe =~ s/\\\./'\\\.'/goes;
+    my $mHostPortRe = '(?i:SSL:)?'.$mHostRe . '(?:\:' . $PortRe . ')?' . '(?:,(?i:SSL:)?' . $mHostRe . '(?:\:' . $PortRe . ')?)*';
 
     $new =~ s/([\\]\|)*\|+/$1\|/go;
     $new =~ s/\./\\\./go;
@@ -51751,7 +53566,19 @@ sub ConfigMakeSLRe {
             }
         }
     }
-    if ($defaultMTA) {
+    if ($defaultMTA && ! keys(%toChangeMTA) && ! keys(%FlatVRFYMTA)) {
+        $defaultMTA = unescape($defaultMTA);
+        if (! $ldaplistdb) {
+            $ret .= ConfigShowError(1,"error: configure ldaplistdb first - or define at least one additional user entry")
+                if $WorkerNumber == 0;
+        } elsif (! $LDAPFail) {
+            $ret .= ConfigShowError(1,"error: set LDAPFail to ON first - or define at least one additional user entry")
+                if $WorkerNumber == 0;
+        } else {
+            $FlatVRFYMTA{'*'} = $defaultMTA;
+        }
+    } elsif ($defaultMTA) {
+        $defaultMTA = unescape($defaultMTA);
         while (my ($k,$v) = each %toChangeMTA) {
             $FlatVRFYMTA{$k} = $defaultMTA if ! exists $FlatVRFYMTA{$k};
         }
@@ -52020,8 +53847,8 @@ IPRANGE:
 
    my $re = join q{}, "^$type", _tree2re( \%tree );
 
-   use re 'eval';    # needed because we're interpolating into a regexp
-   $re = qr/$re/xms;
+#   use re 'eval';    # needed because we're interpolating into a regexp
+#   $re = qr/$re/xms;
 
    return $re;
 }
@@ -52030,7 +53857,7 @@ sub _tree2re {
    my ( $tree ) = @_;
    no warnings qw(recursion);
    return
-       defined $tree->{code}       ? ( "(?{'$tree->{code}'})"            )  # Match
+       defined $tree->{code}       ? ( "(?{push \@I,'$tree->{code}'})(\*FAIL)"           )  # Match
        : $tree->{0} && $tree->{1}  ? ( '(?>0', _tree2re($tree->{0}),
                                          '|1', _tree2re($tree->{1}), ')' )  # Choice
        : $tree->{0}                ? (    '0', _tree2re($tree->{0})      )  # Literal, no choice
@@ -52077,7 +53904,7 @@ sub ConfigMakeIPRe {
 
     my $loadRE;
     if (($WorkerNumber != 0) && ($loadRE = loadexportedRE($name))) {
-         $loadRE =~ s/\)$//o if $loadRE =~ s/^\(\?(?:[xism\-]*)?\://o;
+         $loadRE =~ s/\)$//o if $loadRE =~ s/^\(\?(?:[xism\-\^]*)?\://o;
          eval{${$MakeIPRE{$name}}=qr/$loadRE/;};
          $ret .= ConfigShowError(0,"AdminInfo: regular expression error in '$name (exported):$loadRE' for $desc: $@") if $@;
          return $ret;
@@ -52159,8 +53986,8 @@ sub ConfigMakeIPRe {
                 $desc =~ s/\s+/ /go;
                 $desc = " $desc" if ($desc);
                 ($ip, $bits) = split(/\//o, $l);
-                if ($l =~ /\//o) {
-                    if (!$bits || $bits > 128) {
+                if ($ll =~ /\//o) {
+                    if (! defined $bits || $bits > 128) {
                         $ret .= ConfigShowError(1, "AdminInfo: invalid IPv6 Network Mask '/$bits' in $name line $l");
                         next;
                     }
@@ -52176,6 +54003,7 @@ sub ConfigMakeIPRe {
                     }
                     $ip = $tip;
                 }
+                $desc =~ s/'/\\'/go;
                 $ip6s{"$ip/$bits"} = "$ip/$bits$desc";
                 $cips++;
                 $l = $ll;
@@ -52213,7 +54041,7 @@ sub ConfigMakeIPRe {
 
                 my $dcnt = min(3,($ip=~tr/\.//));
                 $ip .= '.0' x (3-$dcnt);
-                if (! $nbits) {
+                if (! defined $nbits) {
                     $nbits = ++$dcnt * 8;
                     $bits = '/' . $nbits;
                 }
@@ -52235,38 +54063,97 @@ sub ConfigMakeIPRe {
         my %tmpRE;
         $pr = 1 if (exists $MakePrivatIPRE{$name});
         if (scalar keys %ips) {
-            my %tips = map {my $k = $_; my $t = $ips{$k}; if ($t =~ s/ \=\>(\(\?\:[^\)]+\))//o) {my $r = ${defined(*{'yield'})}; $r =~ s/\~/\|/go; $tmpRE{$k} = $r if $pr; };($k,$t);} keys %ips;
-            eval{$new4 = create_iprange_regexp(4,\%tips);};
-            $ret .= ConfigShowError(1,"AdminInfo:$name $@") if $@;
+            my @pips;
+            my %tips = map { my $k = $_;
+                             my $t = $ips{$k};
+                             if ($t =~ s/ \=\>(\(\?\:[^\)]+\))//o) {
+                                 my $r = ${defined(*{'yield'})};
+                                 $r =~ s/\~/\|/go;
+                                 $tmpRE{$k} = lc($r) if $pr;
+                                 $ret .= ConfigShowError(1,"AdminInfo: syntax extension 'IP=>address' is not supported for $name") unless $pr;
+                                 my ($ip,$bits) = split('/',$k);
+                                 $pips[$bits]->{$k} = $t if defined $bits;
+                                 ('x','x');
+                             } else {
+                                 ($k,$t);
+                             }
+                           } keys %ips;
+            delete $tips{'x'};
+            if (keys(%tips)) {
+                eval{$new4 = create_iprange_regexp(4,\%tips);};
+                $ret .= ConfigShowError(1,"AdminInfo:$name (in global v4) $@") if $@;
+            }
+            if (@pips) {
+                for (reverse @pips) {    # largest mask first
+                    next unless ref $_;
+                    $new4 .= '|' if $new4;
+                    eval{$new4 .= create_iprange_regexp(4,$_);};
+                    $ret .= ConfigShowError(1,"AdminInfo:$name (in privat v4) $@") if $@;
+                }
+            }
         }
         if (scalar keys %ip6s) {
-            my %tip6s = map {my $k = $_; my $t = $ip6s{$k}; if ($t =~ s/ \=\>(\(\?\:[^\)]+\))//o) {my $r = ${defined(*{'yield'})}; $r =~ s/\~/\|/go; $tmpRE{$k} = $r if $pr; };($k,$t);} keys %ip6s;
-            eval{$new6 = create_iprange_regexp(6,\%tip6s);};
-            $ret .= ConfigShowError(1,"AdminInfo:$name $@") if $@;
+            my @pips;
+            my %tips = map { my $k = $_;
+                             my $t = $ip6s{$k};
+                             if ($t =~ s/ \=\>(\(\?\:[^\)]+\))//o) {
+                                 my $r = ${defined(*{'yield'})};
+                                 $r =~ s/\~/\|/go;
+                                 $tmpRE{$k} = lc($r) if $pr;
+                                 my ($ip,$bits) = split('/',$k);
+                                 $pips[$bits]->{$k} = $t if defined $bits;
+                                 ('x','x');
+                             } else {
+                                 ($k,$t);
+                             }
+                           } keys %ip6s;
+            delete $tips{'x'};
+            if (keys(%tips)) {
+                eval{$new6 = create_iprange_regexp(6,\%tips);};
+                $ret .= ConfigShowError(1,"AdminInfo:$name (in global v6) $@") if $@;
+            }
+            if (@pips) {
+                for (reverse @pips) {    # largest mask first
+                    next unless ref $_;
+                    $new6 .= '|' if $new6;
+                    eval{$new6 .= create_iprange_regexp(6,$_);};
+                    $ret .= ConfigShowError(1,"AdminInfo:$name (in privat v6) $@") if $@;
+                }
+            }
         }
         %{$MakePrivatIPRE{$name}} = %tmpRE if $pr;
 
         if ($new6 && $new4) {
-            $new4 =~ s/^.*\^(.*)\)/$1/o;
-            $new6 =~ s/^.*\^(.*)\)/$1/o;
-            $new = "(?msx-i:^($new6|$new4))";
+            $new = "$new6|$new4";
         } elsif ($new6) {
             $new = $new6;
         } elsif ($new4) {
             $new = $new4;
         } else {
-            $new = $neverMatch;    # regexp that never matches
+            $new = '';
         }
 
         $ret .= ConfigShowError(1,"ERROR: !!!!!!!!!! missing MakeIPRE{$name} in code !!!!!!!!!!") if ! exists $MakeIPRE{$name} && $WorkerNumber == 0;
-        eval{${$MakeIPRE{$name}}=qr/$new/;};
-        $ret .= ConfigShowError(1,"AdminInfo: regular expression error in '$name:$new': $@") if $@;
+        if ($new) {
+            eval{${$MakeIPRE{$name}} = qr/$new/xms;};
+            if ($@) {
+                $RegexError{$name} = "error in regular expression '$name'" if $WorkerNumber == 0;
+                $ret .= ConfigShowError(1,"AdminInfo: regular expression error in '$name:$new': $@");
+                $new = $neverMatch;
+                eval{${$MakeIPRE{$name}} = qr/$new/;};
+            } else {
+                delete $RegexError{$name} if $WorkerNumber == 0;
+            }
+        } else {
+            $new = $neverMatch;
+            eval{${$MakeIPRE{$name}} = qr/$new/;};
+        }
     } else {
         $new = $neverMatch; # regexp that never matches
         $ret .= ConfigShowError(1,"ERROR: !!!!!!!!!! missing MakeIPRE{$name} in code !!!!!!!!!!") if ! exists $MakeIPRE{$name} && $WorkerNumber == 0;
-        eval{${$MakeIPRE{$name}}=qr/^(?:$new)/};
+        eval{${$MakeIPRE{$name}}=qr/$new/};
     }
-    exportOptRE(\$new,$name) if $WorkerNumber == 0;
+    exportOptRE($MakeIPRE{$name},$name) if $WorkerNumber == 0;
     return $ret;
 }
 
@@ -52275,6 +54162,7 @@ sub matchIP {
     my ( $ip, $re, $fhh, $donotmlog ) = @_;
     d("matchIP - $ip - $re",1);
     $lastREmatch = '';
+    @I = ();
     my $reRE = ${ $MakeIPRE{$re} };
     return 0 unless $ip && $reRE;
     return 0 if $reRE =~ /$neverMatchRE/o;
@@ -52282,35 +54170,40 @@ sub matchIP {
     $fhh = 0 if ! $fhh || ! exists $Con{$fhh};
     $ip =~ s/\r|\n//go;
     my $ret;
-    local $^R = undef;
     use re 'eval';
     if ($ip =~ /:[^:]*:/o) {
         $ip =~ s/^\[([0-9a-f:]+)\].*/$1/io;
         my $ip6b = '6' . ipv6binary( ipv6expand($ip), 128);
-        $ret = $^R if ($ip6b =~ /$reRE/xms);
+        $ip6b =~ /$reRE/xms;
+        $ret = $I[0];
     }
-    if (!$ret && $ip =~ /($IPv4Re)$/o) {
+    if (! @I && $ip =~ /($IPv4Re)$/o) {
         my $ip4 = $1;
-        $ret = $^R if ('4'.unpack 'B32', pack 'C4', split(/\./xms, $ip4))=~/$reRE/xms;
+        ('4'.unpack 'B32', pack 'C4', split(/\./xms, $ip4))=~/$reRE/xms;
+        $ret = $I[0];
     }
     $ret = 0 unless $ret;
-	d("matchIP: OK ip=$ip re=$re") if $ret && ! $donotmlog;
+	d("matchIP: OK ip=$ip re=$re res=@I") if $ret && ! $donotmlog;
     my $for;
     my @r;
-    if ($fhh) {
-        @r = keys %{$Con{$fhh}->{rcptlist}};
-        @r = split(/ /o,$Con{$fhh}->{rcpt}) unless @r;
+    if ($ret && $fhh && exists $Con{$fhh}) {
+        @r = map {lc($_)} keys %{$Con{$fhh}->{rcptlist}};
+        @r = map {lc($_)} split(/ /o,$Con{$fhh}->{rcpt}) unless @r;
     }
-    if (@r && $fhh && exists $MakePrivatIPRE{$re} && exists ${$MakePrivatIPRE{$re}}{$ret} && exists $Con{$fhh}) {
-        my $f = ${$MakePrivatIPRE{$re}}{$ret};
-        if (my $r = matchARRAY(qr/($f)/i,\@r)) {
-            $for = " for $r";
-            $lastREmatch = $r;
-        } else {
-            $ret = 0;
+    if ($ret && @r && exists $MakePrivatIPRE{$re} && keys( %{$MakePrivatIPRE{$re}} ) ) {
+        for (@I) {
+            my $f = ${$MakePrivatIPRE{$re}}{$_} || next;
+            $ret = 0;   # remove the default result, if a privat entry exists for any result
+            my $r;
+            if ($r = matchARRAY(qr/($f)/i,\@r)) {
+                $for = " for $r";
+                $lastREmatch = $r;
+                $ret = $_;   # set the result if a match was found
+                last;
+            }
         }
-    } elsif (exists $MakePrivatIPRE{$re} && exists ${$MakePrivatIPRE{$re}}{$ret}) {
-        $ret = 0;
+    } elsif ($ret && exists $MakePrivatIPRE{$re} && keys( %{$MakePrivatIPRE{$re}} )) {
+        map { $ret = 0 if exists ${$MakePrivatIPRE{$re}}{$_} } @I;
     }
     return $ret if $re eq 'noLog';
     $fhh = 0 if ($fhh =~ /^\d+$/o);
@@ -52402,35 +54295,45 @@ sub matchHashKey {
     my $v = undef;
     my $rkey = undef;
     my $l;
-#    mlog(0,"matchHashKey wantkey: <$wantkey>") if $WorkerNumber == 0;
+#    mlog(0,"matchHashKey for hash: '$hash' , key: '$key' : wantkey: <$wantkey>") if $WorkerNumber == 0;
+#    mlog(0,"matchHashKey for hash: '$hash' , key: '$key' : wantkey: <$wantkey>");
     ($wantkey,$start,$end) = split(/\s+/o,$wantkey);
-#    mlog(0,"matchHashKey start end wantkey: <$start> <$end> <$wantkey>") if $WorkerNumber == 0;
+#    mlog(0,"matchHashKey for hash: '$hash' , key: '$key' : wantkey: <$start> <$end> <$wantkey>") if $WorkerNumber == 0;
+#    mlog(0,"matchHashKey for hash: '$hash' , key: '$key' : wantkey: <$start> <$end> <$wantkey>");
     foreach my $k (keys %{$hash}) {
         $l = length($k) if $l < length($k);
     }
     foreach my $k (sort {(' ' x ($l - length($main::b)).$main::b) cmp (' ' x ($l - length($main::a)).$main::a)} keys %{$hash}) {
         $rkey = $k;
         $v = ${$hash}{$k};
+#        mlog(0,"matchHashKey: $hash $key eq $k , value = $v") if $WorkerNumber == 0 && lc($key) eq lc($k);
+#        mlog(0,"matchHashKey: $hash $key eq $k , value = $v") if lc($key) eq lc($k);
         last if lc($key) eq lc($k);
         $k =~ s/(^|[^\\])\.($|[^\*\?\{])/$1\\.$2/go;    # escape a single unescaped and unquatified dot
         $k =~ s/(^|[^*()\]\\])\?/$1\.\?/go;             # replace an unescaped ? with .? if it is not a quantifier
         $k =~ s/(^|[^)\].\\])\*/$1\.\*\?/go;            # replace an unescaped * with .*? if it is not a quantifier
         if ($start && $end) {
-#            mlog(0,"matchHashKey_s_e: $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey_s_e: $hash $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey_s_e: $hash $key $k");
             last if eval{$key =~ /^$k$/i;};
         } elsif ($start) {
-#            mlog(0,"matchHashKey_s: $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey_s: $hash $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey_s: $hash $key $k");
             last if eval{$key =~ /^$k/i;};
         } elsif ($end) {
-#            mlog(0,"matchHashKey_e: $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey_e: $hash $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey_e: $hash $key $k");
             last if eval{$key =~ /$k$/i;};
         } else {
-#            mlog(0,"matchHashKey: $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey: $hash $key $k") if $WorkerNumber == 0;
+#            mlog(0,"matchHashKey: $hash $key $k");
             last if eval{$key =~ /$k/i;};
         }
         mlog(0,"warning: regex error in generic hash ($hash) key ($key) match - $@") if $@;
         $rkey = $v = undef;
     }
+#    mlog(0,"matchHashKey-result: '$hash' '$key' '$rkey' '$v'") if $WorkerNumber == 0;
+#    mlog(0,"matchHashKey-result: '$hash' '$key' '$rkey' '$v'");
     return $v unless $wantkey;
     return $rkey if $wantkey == 1;
     return ($rkey, $v);
@@ -52511,13 +54414,14 @@ sub checkOptionList {
             $value=join('',<$COL>);
             close $COL;
             my $enc;
-            if (exists $CryptFile{$fil} && $value =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
+            if (exists $CryptFile{$fil} && $value =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
                 $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                 $value = $enc->DECRYPT($value);
             } elsif (exists $CryptFile{$fil}) {
+                $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                 open(my $I,'>',$fil);
                 binmode $I;
-                print $I SPAMBOX::CRYPT->new($webAdminPassword,0)->ENCRYPT($value);
+                print $I $enc->ENCRYPT($value);
                 close $I;
                 mlog(0,"info: file $fil is now stored encrypted, because it is used in secured config $name");
                 $FileUpdate{"$fil$name"} = $FileUpdate{$fil} = ftime($fil);
@@ -52546,14 +54450,22 @@ sub checkOptionList {
                 }
                 my $inc = join('',<$INCL>);
                 close $INCL;
-                if (exists $CryptFile{"$base/$ifile"} && $inc =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
-                    $inc = SPAMBOX::CRYPT->new($webAdminPassword,0)->DECRYPT($inc);
-                } elsif ($enc) {
+                # the file is encrypted and is already registered
+                if (exists $CryptFile{"$base/$ifile"} && $inc =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
+                    $enc ||= SPAMBOX::CRYPT->new($webAdminPassword,0);
+                    $inc = $enc->DECRYPT($inc);
+                # encryption is required but the file is unencrypted
+                } elsif ($enc && $inc !~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
                     open($INCL,'>',"$base/$ifile");
                     binmode $INCL;
                     print $INCL $enc->ENCRYPT($inc);
                     close $INCL;
                     mlog(0,"info: file $base/$ifile is now stored encrypted, because it is used in secured config $name");
+                    $CryptFile{"$base/$ifile"} = 1;
+                # the file is encrypted - possibly by another (crypted) config value
+                } elsif ($inc =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
+                    $enc ||= SPAMBOX::CRYPT->new($webAdminPassword,0);
+                    $inc = $enc->DECRYPT($inc);
                     $CryptFile{"$base/$ifile"} = 1;
                 }
                 $inc =~ s/^$UTF8BOMRE//o;
@@ -52692,7 +54604,7 @@ sub ConfigCompileRe {
             my ($we,$how) = ($4,$5);
             $we = 1 if (!$we && $we != 0);
             $we += 0;
-            $re =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(defined ${$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
+            $re =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(exists $main::{$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
             $how =~ s/\s//go;
             $how =~ s/\++/+/go;
             $how =~ s/\-+/-/go;
@@ -52801,7 +54713,7 @@ sub ConfigCompileRe {
         $new||=$neverMatch; # regexp that never matches
 
         # replace something like ${$EmailDomainRe} with the value of $EmailDomainRe
-        $new =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(defined ${$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
+        $new =~ s/(([^\\]?)\$\{\$([a-z][a-z0-9]+)\})/(exists $main::{$3}) ? $2.${$3} : $1/oige if $AllowInternalsInRegex;
 
         if ($RegexGroupingOnly) {
             if (! SetRE($name.'RE',$new,'is',$name, $name ,$hasChanged) ) {
@@ -52824,6 +54736,11 @@ sub ConfigCompileRe {
                 delete $RegexError{$name};
             }
         }
+    }
+    if ($new =~ /(?:^|[^\\])\\[pPNx]\{[^\{\}]+\}/o) {  # there is a unicode regex defined - just remember
+        $uniRegex{$name} = 1;
+    } else {
+        delete $uniRegex{$name};
     }
     if ($error) {
         $error =~ s/<\/?span[^>]*>//go;
@@ -52896,6 +54813,23 @@ sub fileIncUpdated {
         $changed = 1;
     }
     return $changed;
+}
+
+sub ConfigChangeMaxAUTH {
+    my ($name, $old, $new, $init)=@_;
+    return if $WorkerNumber != 0;
+    mlog(0,"AdminUpdate: $name from '$old' to '$new'") unless $init || $new eq $old;
+    $$name = $Config{$name} = $new;
+    %AUTHErrors = () unless $new;
+}
+
+sub ConfigChangeMaxAUTHIP {
+    my ($name, $old, $new, $init)=@_;
+    return if $WorkerNumber != 0;
+    mlog(0,"AdminUpdate: $name from '$old' to '$new'") unless $init || $new eq $old;
+    $$name = $Config{$name} = $new;
+    %AUTHIP = () if $new ne $old;
+    return;
 }
 
 sub ConfigChangeUSAMN {
@@ -53051,21 +54985,26 @@ sub configChangeRestartEvery {
     return '';
 }
 
-sub configChangeIC {
+sub configChangeCV {
     my ($name, $old, $new, $init)=@_;
-    mlog(0,"AdminUpdate: inbound charset conversion Table updated from '$old' to '$new'") unless $init || $new eq $old;
-    $inChrSetConv=$new unless $WorkerNumber;
-    $new = checkOptionList($new,'inChrSetConv',$init);
+    my $what = $name =~ /^in/o ? 'in' : 'out';
+    my $orgnew = $new;
+    mlog(0,"AdminUpdate: ".$what."bound charset conversion table updated from '$old' to '$new'") unless $init || $new eq $old;
+    ${$name} = $Config{$name} = $new unless $WorkerNumber;
+    $new = checkOptionList($new,$name,$init);
     if ($new =~ s/^\x00\xff //o) {
-        ${$name} = $Config{$name} = $old;
+        ${$name} = $Config{$name} = $old unless $WorkerNumber;
         return ConfigShowError(1,$new);
     }
+    return if $WorkerNumber;
     my $f;
     my $fa;
     my $t;
     my $ta;
-    my $test="abc";
+    my $test = '.';
     my $error;
+    my $tbl = \%{$what.'chrset'};
+    %{$tbl} = ();
     for my $v (split(/\|/o,$new)) {
         $v=~/^(.*)\=\>(.*)$/o;
         $fa=$1;
@@ -53073,68 +55012,26 @@ sub configChangeIC {
         eval{$f='';$f=Encode::resolve_alias(uc($fa));};
         eval{$t='';$t=Encode::resolve_alias(uc($ta));};
         if (! $f) {
-            mlog(0,"error: codepage $fa is not supported by perl in inChrSetConv");
+            mlog(0,"error: codepage $fa is not supported by perl in $name - this ".$what."bound charset conversion will be ignored");
             $error .= "$fa ";
             next;
         }
         if (! $t) {
-            mlog(0,"error: codepage $ta is not supported by perl in inChrSetConv");
+            mlog(0,"error: codepage $ta is not supported by perl in $name - this ".$what."bound charset conversion will be ignored");
             $error .= "$ta ";
             next;
         }
         eval{Encode::from_to($test,$f,$t)};
         if ($@) {
-            mlog(0,"error: perl is unable to convert from $f/fa to $t/ta in inChrSetConv - this conversion will be ignored");
+            mlog(0,"error: perl is unable to convert a dot '.' from $f/$fa to $t/$ta in $name - this ".$what."bound charset conversion will be ignored");
             $error .= "$fa $ta ";
             next;
         } else {
-            $inchrset{$f} = $t;
+            $tbl->{$f} = $t;
         }
     }
-    $error = " - but error in $error - please check the log" if ($error);
-    return $error;
-}
-
-sub configChangeOC {
-    my ($name, $old, $new, $init)=@_;
-    mlog(0,"AdminUpdate: outbound charset conversion Table updated from '$old' to '$new'") unless $init || $new eq $old;
-    $outChrSetConv=$new unless $WorkerNumber;
-    $new = checkOptionList($new,'outChrSetConv',$init);
-    if ($new =~ s/^\x00\xff //o) {
-        ${$name} = $Config{$name} = $old;
-        return ConfigShowError(1,$new);
-    }
-    my $f;
-    my $fa;
-    my $t;
-    my $ta;
-    my $test="abc";
-    my $error;
-    for my $v (split(/\|/o,$new)) {
-        $v=~/^(.*)\=\>(.*)$/o;
-        $fa=$1;
-        $ta=$2;
-        eval{$f='';$f=Encode::resolve_alias(uc($fa));};
-        eval{$t='';$t=Encode::resolve_alias(uc($ta));};
-        if (! $f) {
-            mlog(0,"error: codepage $fa is not supported by perl in outChrSetConv");
-            $error .= "$fa ";
-            next;
-        }
-        if (! $t) {
-            mlog(0,"error: codepage $ta is not supported by perl in outChrSetConv");
-            $error .= "$ta ";
-            next;
-        }
-        eval{Encode::from_to($test,$f,$t)};
-        if ($@) {
-            mlog(0,"error: perl is unable to convert from characterset $f to $t in outChrSetConv - this conversion will be ignored");
-            $error .= "$fa $ta ";
-            next;
-        } else {
-            $outchrset{$f} = $t;
-        }
-    }
+    my $c = scalar(keys(%{$tbl}));
+    mlog(0,"info: registered ".needEs($c,' rule','s').' for '.$what."bound charset conversion ") if $c && $old ne $orgnew;
     $error = " - but error in $error - please check the log" if ($error);
     return $error;
 }
@@ -53431,6 +55328,8 @@ sub getSSLParms {
     $ssl{SSL_verify_mode} = 0x00 ;
     $ssl{SSL_version} = $SSL_version if $SSL_version;
     $ssl{Timeout} = $SSLtimeout;
+    $ssl{SSL_session_key} = Time::HiRes::time();
+    $ssl{SSL_ctx_free} = 1;
 
     return %ssl;
 }
@@ -53462,6 +55361,8 @@ sub ConfigChangeSSL {
     if ($new ne $old) {
         $new =~ s/\\/\//go;
         $old =~ s/\\/\//go;
+        $new =~ s/^\s+(.*?)\s+$/$1/o;
+        $old =~ s/^\s+(.*?)\s+$/$1/o;
         $Config{$name} = ${$name} = $new;
         if (   (-f $new && -r $new)
             || $name eq 'SSLCaFile'
@@ -53981,7 +55882,7 @@ sub ConfigChangeLogRollDays {
 
     if ($WorkerNumber == 0) {
         ${$name} = $Config{$name} = $new;
-        $mlogLastT = 0;
+        $mlogLastT = 0 if $WorkerNumber == 0;
     }
     return '';
 }
@@ -54002,23 +55903,42 @@ sub configChangeDB {
         if ($new =~ /^([a-z][a-z0-9\_\-]+)/oi) {
             my $driver = $1;
             if (! matchARRAY("^$driver\$",\@DBdriverNames)) {
+                $qs{$name} = $$name = $Config{$name} = $old;
                 return "<span class=\"negative\"> - driver $driver is not available!</span>";
             }
         } else {
+            $qs{$name} = $$name = $Config{$name} = $old;
             return "<span class=\"negative\"> - wrong driver name in $new !</span>";
         }
+    } elsif ($name eq 'DBdriver' && ! $new && $old) { # check if there is any DB: setting on DBdriver removal
+        my @wrong;
+        foreach my $dbGroup (@GroupList) {
+            foreach my $dbGroupEntry (@$dbGroup) {
+                my ($KeyName,$dbConfig,$CacheObject,$realFileName,$mysqlFileName,$FailoverValue,$mysqlTable) = split(/,/o,$dbGroupEntry);
+                push @wrong, $dbConfig if ${$dbConfig} =~ /DB:/o;
+            }
+        }
+        if (@wrong) {
+            my $text = join(', ',@wrong);
+            $qs{$name} = $$name = $Config{$name} = $old;
+            return "<span class=\"negative\"> - please set the value for $text to a filename first, before you remove the database driver!</span>";
+        }
     }
-    if ($new =~ /^DB:.+$/o) {
-        mlog(0,"AdminUpdate: $name not updated - wrong parameter $new - should be DB:");
-        $Config{$name} = $old;
-        $$name = $old;
-        $qs{$name} = $old;
-        return "<span class=\"negative\"> - wrong $new - write DB:  !</span>";
+    $new = 'DB:' if $new =~ /^\s*DB:\s*$/oi;
+    if ($new =~ /^\s*DB:.+$/oi) {
+        mlog(0,"AdminUpdate: $name not updated - wrong parameter '$new' - should be 'DB:'");
+        $qs{$name} = $$name = $Config{$name} = $old;
+        return "<span class=\"negative\"> - wrong '$new' - write only 'DB:' (w/o quotes) !</span>";
     }
     $Config{$name} = $$name = $qs{$name} = $new;
     $ConfigAdd{clearBerkeleyDBEnv} = 1 if $new ne $old; # clear Berkeley Env on next start
     mlog(0,"AdminUpdate: $name updated from '$old' to '$new'") unless ($init || $new eq $old);
-    return ConfigChangeDoPrivatSpamdb('DoPrivatSpamdb',$Config{DoPrivatSpamdb},$Config{DoPrivatSpamdb},undef) if $name eq 'spamdb';
+    if ($spamdb eq 'DB:' && $HMMusesBDB && $DBdriver !~ /BerkeleyDB/o) {
+        mlog(0,"warning: DBdriver is set to '$DBdriver' and spamdb is set to 'DB:' , but HMMusesBDB is still set to 'ON' - is this really what you want? It is recommended to set HMMusesBDB to 'OFF'!");
+    }
+    if ($name eq 'spamdb') {
+        return ConfigChangeDoPrivatSpamdb('DoPrivatSpamdb',$Config{DoPrivatSpamdb},$Config{DoPrivatSpamdb},undef);
+    }
     return '';
 }
 
@@ -54075,6 +55995,15 @@ sub configChangeWorkerPriority {
         return '';
     }
     return "<span class=\"negative\"> - module Thread\:\:State version 0.09 is required!</span>";
+}
+
+sub Config8BitMIME {
+    my ($name, $old, $new, $init)=@_;
+    return if $WorkerNumber != 0;
+    return if $new eq $old && ! $init;
+    mlog(0,"AdminUpdate: $name updated from '$old' to '$new'")  unless $init || $new eq $old;
+    $BIT8 = $new ? 'XNONOXNONOX' : '8BITMIME';
+    ${$name} = $Config{$name} = $new;
 }
 
 sub ConfigChangeNormUnicode {
@@ -54297,7 +56226,9 @@ sub updateDNS {
     ${$name} = $Config{$name} = $new unless $WorkerNumber;
     
     if ($CanUseDNS) {
-        my (@ns,@ns_def);
+        my (@ns,@ns_def,@nservers);
+        my @availDNS;
+        my @diedDNS;
         my $domainName;
         my $nnew;
         ($nnew , $domainName) = split(/\s*\=\>\s*/o, $new);
@@ -54311,61 +56242,64 @@ sub updateDNS {
                                            tcp_timeout => $DNStimeout,
                                            udp_timeout => $DNStimeout,
                                            retrans     => $DNSretrans,
-                                           retry       => $DNSretry
+                                           retry       => $DNSretry,
+                                           recurse     => 1
                                            );
         } else {
             $res = Net::DNS::Resolver->new(   tcp_timeout => $DNStimeout,
                                               udp_timeout => $DNStimeout,
                                               retrans     => $DNSretrans,
-                                              retry       => $DNSretry
+                                              retry       => $DNSretry.
+                                              recurse	  => 1
                                            );
         }
         if ( @ns && ! $UseLocalDNS ) {
             $res->nameservers(@ns);
+            @nservers = @ns;
         }
         if ($UseLocalDNS && ! $res->nameservers && @ns_def) {
             $res->nameservers(@ns_def);
+            @nservers = @ns_def;
             mlog(0,"error: got NO name servers from the operating system ( UseLocalDNS ) - using '@ns_def' defined in 'DNSServers'");
         }
-        my %nservers;
         my $ld = $lastd{$WorkerNumber};
-        d('updateDNS: get back name servers before mode setup');
-        map { $nservers{$_} = 1; } $res->nameservers;
+        unless (scalar @nservers) {   # use the system DNS if nothing given
+            d('updateDNS: no DNS-server - get back name servers from system before mode setup');
+            @nservers = $res->nameservers;
+        }
+        @definedNameServers = @nservers;
         $lastd{$WorkerNumber} = $ld;
-        my @usedNameServers = keys(%nservers);
-        %nservers = ();
-        eval('$forceDNSv4=!($CanUseIOSocketINET6 && &matchARRAY(qr/^$IPv6Re$/,\@usedNameServers));');
+        eval('$forceDNSv4=!($CanUseIOSocketINET6 && &matchARRAY(qr/^$IPv6Re$/,\@nservers));');
         getRes('force', $res);
         my @oldnameserver = @nameservers;
         d('updateDNS: get back name servers after mode setup');
-        map { $nservers{$_} = 1; } $res->nameservers;
-        @usedNameServers = keys(%nservers);
+        @availDNS = $res->nameservers;
+        @nservers = @availDNS unless ("@nservers" eq "@availDNS");  # if mode changed name-servers
         $lastd{$WorkerNumber} = $ld;
-        %nservers = ();
-        mlog(0,"error: there is NO DNS-server specified - at least TWO DNS-servers are required!") unless scalar(@usedNameServers);
-        mlog(0,"warning: there is only ONE DNS-server specified (@usedNameServers) - at least TWO DNS-servers are required!") if scalar(@usedNameServers) == 1 && (($MaintenanceLog > 1) || $DNSResponseLog);
-        
-        my @availDNS;
-        my @diedDNS;
+        mlog(0,"error: there is NO DNS-server specified - at least TWO DNS-servers are required!") unless scalar(@definedNameServers);
+        mlog(0,"error: there is NO DNS-server used - at least TWO DNS-servers are required!") unless scalar(@nservers);
+        mlog(0,"warning: there is only ONE DNS-server specified (@definedNameServers) - at least TWO DNS-servers are required!") if scalar(@definedNameServers) == 1 && (($MaintenanceLog > 1) || $DNSResponseLog);
+        mlog(0,"warning: there is only ONE DNS-server used (@nservers) - at least TWO DNS-servers are required!") if scalar(@nservers) == 1 && (($MaintenanceLog > 1) || $DNSResponseLog);
+
+        @availDNS = ();
         $domainName ||= 'sourceforge.net';
         my %DNSResponseTime;
-        foreach my $dnsServerIP (@usedNameServers) {
+        foreach my $dnsServerIP (@nservers) {
             $res->nameservers($dnsServerIP);
             my $btime = Time::HiRes::time();
             my $response = $res->search($domainName);
 
             my $atime = int((Time::HiRes::time() - $btime) * 1000);
             mlog( 0, "info: Name Server $dnsServerIP: ResponseTime = $atime ms for $domainName" ) if $DNSResponseLog;
-            $DNSResponseTime{$dnsServerIP} = $atime;
 	        if ($response) {
                 push (@availDNS,$dnsServerIP);
+                $DNSResponseTime{$dnsServerIP} = $atime;
             } else {
                 push (@diedDNS,$dnsServerIP);
+                $DNSResponseTime{$dnsServerIP} = $atime > 5000 ? $atime : 5000;
             }
         }
-        @availDNS = sort {$DNSResponseTime{$main::a} <=> $DNSResponseTime{$main::b}} @availDNS;
         my @newDNS = @availDNS;
-        push @newDNS , @diedDNS unless scalar @newDNS;
         foreach (@availDNS) {
             mlog( 0, "info: Name Server $_: OK " ) unless $init || $new eq $old;
         }
@@ -54373,11 +56307,27 @@ sub updateDNS {
 	        mlog( 0, "warning: Name Server $_: does not respond or timed out " ) unless $init;
         }
         threads->yield();
-        @nameservers = @newDNS if (! scalar(@nameservers) || DNSdistance(\%DNSResponseTime,\@newDNS,defined ${chr(ord("\026") << 2)}) || $init || $new ne $old);
+        my $distanceChanged;
+        if (   ! scalar(@nameservers)
+            || ! scalar(@newDNS)
+            || ( $distanceChanged = DNSdistance(\%DNSResponseTime,\@newDNS,defined ${chr(ord("\026") << 2)}) )
+            || $init
+            || $new ne $old)
+        {
+            unless (scalar @newDNS) {
+                push @newDNS , @diedDNS;
+                %DNSRespDist = ();
+            }
+            @newDNS = ( $distanceChanged )
+                      ? sort {$DNSResponseTime{$main::a} <=> $DNSResponseTime{$main::b}} @newDNS
+                      : @newDNS;
+            @nameservers = getNameserver(\@newDNS);
+            threads->yield();
+        }
+        my @ons = getNameserver(\@oldnameserver);
+        my @nns = getNameserver();
         eval('$forceDNSv4=!($CanUseIOSocketINET6 && &matchARRAY(qr/^$IPv6Re$/,\@nns));');
         threads->yield();
-        my @ons = getNameserver(@oldnameserver);
-        my @nns = getNameserver();
         my $resetDNSresolvers = ("@ons" ne "@nns" || $init);
         if ($resetDNSresolvers && ($MaintenanceLog || $DNSResponseLog)) {
             @ons = @oldnameserver;
@@ -54420,10 +56370,10 @@ sub updateDNS {
         if (@diedDNS) {
             return '<span class="negative">*** '.join(' , ',@diedDNS).' timed out </span>- using DNS-Servers: '.join(' , ',@nameservers);
         }
-        if (! scalar(@usedNameServers)) {
+        if (! scalar(@definedNameServers)) {
             return "<span class=\"negative\">*** error: there is <b>NO</b> DNS-server specified - at least <b>TWO</b> DNS-servers should be used!</span>";
-        } elsif (scalar(@usedNameServers) == 1) {
-            return "<span class=\"negative\">*** warning: there is only <b>ONE</b> DNS-server specified (@usedNameServers) - at least <b>TWO</b> DNS-servers are required!</span>";
+        } elsif (scalar(@definedNameServers) == 1) {
+            return "<span class=\"negative\">*** warning: there is only <b>ONE</b> DNS-server specified (@definedNameServers) - at least <b>TWO</b> DNS-servers are required!</span>";
         } elsif (scalar(@nameservers) == 1) {
             return "<span class=\"negative\">*** warning: there is only <b>ONE</b> DNS-server available (@nameservers) - at least <b>TWO</b> DNS-servers are required!</span>";
         } else {
@@ -54436,8 +56386,8 @@ sub updateDNS {
 sub DNSdistance {
     my $DNSResponseTime = shift;
     my $nameservers = shift;
-    return ($_[0] & 0) unless @$nameservers;
-    my @server = getNameserver(@$nameservers);
+    return ($_[0] & 0) unless $maxDNSRespDist;
+    my @server = @$nameservers;
     return ($_[0] & 0) unless @server;
     my %distance;
     foreach my $i (@server) {
@@ -54854,8 +56804,7 @@ sub setSPBitMaskNum {
 
 sub configUpdateMaxSize {
     my ( $name, $old, $new, $init , $desc) = @_;
-    mlog( 0, "AdminUpdate: $name updated from '$old' to '$new'" )
-      unless $init || $new eq $old;
+    mlog( 0, "AdminUpdate: $name updated from '$old' to '$new'" ) unless $init || $new eq $old;
     ${$name} = $Config{$name} = $new unless $WorkerNumber;
     my %hash = (
                  'MaxRealSizeAdr' => 'MRSadr',
@@ -54880,19 +56829,14 @@ sub configUpdateMaxSize {
         my ($adr,$val) = $c =~ /^(.+?)\=\>(\d+)$/o;
         next unless $adr;
         next unless defined $val;
-        if ($adr =~ /^\@[^@]+$/o) {                         # a domain
-            $adr = '[^@]+'.$adr;
-            $adr = '^(?i:'.$adr.')$';
+        if ($adr =~ /^\@[^@]+$/o) {                      # a domain
+            $adr = '*'.$adr;
         } elsif ($adr =~ /^[^@]+\@$/o) {                 # a user name with @
-            $adr = $adr.'[^@]+';
-            $adr = '^(?i:'.$adr.')$';
-        } elsif ($adr =~ /^(?:\d{1,3}\.[\d\.\*\?]+|[a-f0-9:\?\*]+)$/io) {    # an IP address
-            $adr = '^(?i:'.$adr.')';
+            $adr = $adr.'*';
+        } elsif ($adr =~ /^$IPRe$/io) {                  # an IP address catch only
         } elsif ($adr !~ /\@/o) {                        # a simple user name
-            $adr = $adr.'@[^@]+';
-            $adr = '^(?i:'.$adr.')$';
-        } elsif ($adr =~ /^[^@]+\@[^@]+$/) {             # an email address
-            $adr = '^(?i:'.$adr.')$';
+            $adr = $adr.'@*';
+        } elsif ($adr =~ /^[^@]+\@[^@]+$/o) {            # an email address catch only
         } else {
             next;
         }
@@ -55829,6 +57773,66 @@ sub cleanCacheRWL {
     }
 }
 
+sub cleanCacheAUTHIP {
+    d('cleanCacheAUTHIP');
+    my $ips_before= my $ips_deleted=0;
+    my $time=time;
+    my ($maxip,$maxtime) = split(/\s+/o,$AUTHUserIPfrequency);
+    return if $maxip < 2;                             # the minimum values
+    return if $maxtime < 600;
+    while (my ($k,$v)=each(%AUTHIP)) {
+        &ThreadMaintMain2() if $WorkerNumber == 10000 && ! $ips_before % 100;
+        my %ips;
+        my $old = 0;
+        my %frame = reverse(split(/ /o,$v));    # new hash (time => IP)
+        map {$old++ if ! exists $ips{$_};$ips{$_}++;} values(%frame);
+        %ips = ();
+        for my $t (sort(keys(%frame))) {                    # oldest time first
+            $ips_before++;
+            if ($time - $t > $maxtime) {
+                delete $frame{$t};
+                $ips_deleted++;
+                next;
+            }
+            $ips{$frame{$t}}++;
+        }
+        my $new = scalar(keys(%ips));
+        if ($new) {
+            $AUTHIP{$k} = join(' ',%frame);
+        } else {
+            delete $AUTHIP{$k};
+        }
+        if ($old >= $maxip && $new < $maxip) {
+            mlog(0,"AUTHIP: user '$k' is now allowed to authenticate from a different IP address again") if $MaintenanceLog > 1;
+        }
+    }
+
+    mlog(0,"AUTHIP: cleaning cache finished: entries before=$ips_before, deleted=$ips_deleted") if $MaintenanceLog && $ips_before > 0;
+    if ($ips_before==0) {
+        %AUTHIP=();
+    }
+}
+
+sub cleanCacheLDAPNotFound {
+    return if $RunTaskNow{RunRebuildNow}; # we need the full cache at rebuild
+    d('cleanCacheLDAPNotFound');
+    my $ips_before= my $ips_deleted=0;
+    my $t=time;
+    my $ct;
+    my $status;
+    my $maxtime = 600;
+    while (my ($k,$v)=each(%LDAPNotFound)) {
+        &ThreadMaintMain2() if $WorkerNumber == 10000 && ! $ips_before % 100;
+        ($ct,$status)=split(/\s+/o,$v);
+        $ips_before++;
+        if ($t-$ct>=$maxtime) {
+            delete $LDAPNotFound{$k};
+            $ips_deleted++;
+        }
+    }
+    mlog(0,"LDAPNotFound: cleaning cache finished: addresses before=$ips_before, deleted=$ips_deleted") if  $MaintenanceLog && $ips_before != 0;
+}
+
 sub cleanCacheBackDNS {
     d('cleanCacheBackDNS');
     my $ips_before= my $ips_deleted=0;
@@ -56162,12 +58166,15 @@ sub cleanCacheAUTHErrors {
     my $i = 0;
     while (my ($k,$v)=each(%AUTHErrors)) {
         &ThreadMaintMain2() if $WorkerNumber == 10000 && ! $i % 100;
-        if (--$AUTHErrors{$k} <= 0) {
+        if (   ! $MaxAUTHErrors
+            || --$AUTHErrors{$k} <= 0
+            || matchIP($k,'noMaxAUTHErrorIPs',0,0)
+        ) {
             delete $AUTHErrors{$k};
         }
         $i++;
     }
-    mlog(0,"AUTHErrors: recalculated $i IP counters") if  $MaintenanceLog && $MaxAUTHErrors && $i;
+    mlog(0,"AUTHErrors: recalculated $i IP counters") if $MaintenanceLog && $i;
 }
 
 sub cleanCacheT10 {
@@ -56961,7 +58968,7 @@ sub syncConfigSend {
         my $fh = $smtp;
         my $timeout = (int(length($body) / (1024 * 1024)) + 1) * 60; # 1MB/min
         if ( $smtp &&
-             do {if ($TLS) {eval{$smtp->starttls();};$localTLSfailed{$MTA} = time if ($@);};1;} &&
+             do {if ($TLS) {eval{$smtp->starttls(getSSLParms(0));};$localTLSfailed{$MTA} = time if ($@);};1;} &&
              $smtp->command('SPAMBOXSYNCCONFIG ' , ' ' . Digest::MD5::md5_base64($syncCFGPass))->response() == 2 &&
              $smtp->data() &&
              eval {
@@ -57014,7 +59021,7 @@ sub syncGetFile {
         binmode $FH;
         my $cont = join('',<$FH>);
         close $FH;
-        if (exists $CryptFile{$ffil} && $cont =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
+        if (exists $CryptFile{$ffil} && $cont =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
             my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
             $cont = $enc->DECRYPT($cont);
         }
@@ -57112,7 +59119,7 @@ sub syncConfigReceived {
                     binmode $FileH;
                     $currFileCont = join('',<$FileH>);
                     close $FileH;
-                    if (exists $CryptFile{$File} && $currFileCont =~ /^(?:[a-zA-Z0-9]{2})+$/o) {
+                    if (exists $CryptFile{$File} && $currFileCont =~ /^(?:[a-zA-Z0-9]{2}){5,}$/o) {
                         my $enc = SPAMBOX::CRYPT->new($webAdminPassword,0);
                         $currFileCont = $enc->DECRYPT($currFileCont);
                     }
@@ -57481,7 +59488,42 @@ sub getTNEFparts {
 }
 
 #####################################################################################
-#   transparent Proxy
+#   transparent mail Proxy
+
+sub TransClient {
+    my($fh,$l)=@_;
+    d('TransClient');
+    my $this=$Con{$fh};
+    my $server=$this->{friend};
+    my $friend=$Con{$server};
+
+    if (! $this->{headerpassed} && $l =~ /^(mail from:|rset)[^\r\n]*[\r\n]+$/io) {
+        $this->{getline} = \&getline;
+        $friend->{getline} = \&reply;
+        mlog($fh,"info: '$1' used - the transparent connection will now be moved back in to normal processing mode") if $ConnectionLog;
+        getline($fh,$l);
+        return;
+    } elsif ($l =~ /(?:^|\n)\.[\r\n]+$/io) {
+        $this->{headerpassed} = 0;
+    }
+    sendque($server,$l);
+    return;
+}
+
+sub TransServer {
+    my($fh,$l)=@_;
+    d('TransServer');
+    my $this=$Con{$fh};
+    my $client=$this->{friend};
+    my $friend=$Con{$client};
+
+    $friend->{headerpassed} = 1 if $l =~ /^354[^\r\n]*[\r\n]+$/io;
+    sendque($client,$l);
+    return;
+}
+
+#####################################################################################
+#   transparent TCP Proxy
 
 sub NewProxyConnection {
    my $fh=shift;
@@ -57589,8 +59631,9 @@ sub ProxyTraffic {
   $SMTPbuf = '';
   my $friend = $Con{$fh}->{friend};
   $fh->blocking(0) if $fh->blocking;
+  my $size = "$fh" =~ /SSL/io ? (4096 * 4) : 4096;
   &sigoffTry(__LINE__);
-  my $hasread = $fh->sysread($SMTPbuf,4096);
+  my $hasread = $fh->sysread($SMTPbuf,$size);
   &sigonTry(__LINE__);
   if($hasread > 0 or length($SMTPbuf) > 0) {
     &dopoll($friend,$writable,POLLOUT);
@@ -57963,8 +60006,13 @@ sub configChangeRcptRepl {
      if ($jumpto && ! exists $ruletable{$jumpto}) {   # the target rule is not available
        $ret .= ConfigShowError(0,"warning: jump target '$jumpto' not found - in recipient replacement rule $v");
      }
-     if ($jumpto && $jumpto ne 'END' && $jumpto le $rule) {    # jumping back is worth (possible loop)
+     if ($jumpto && $jumpto ne 'END' && $jumpto lt $rulenumber) {    # jumping back is worth (possible loop)
        $ret .= ConfigShowError(1,"ERROR: jumping backward to rule '$jumpto' from rule '$rule' is not allowed - jump target error in recipient replacement rule $v");
+       $invalid++;
+       next;
+     }
+     if ($jumpto && $jumpto ne 'END' && $jumpto eq $rulenumber) {    # jumping to the same rule is worth (loop)
+       $ret .= ConfigShowError(1,"ERROR: looping to rule '$jumpto' from rule '$rule' is not allowed - jump target error in recipient replacement rule $v");
        $invalid++;
        next;
      }
@@ -58147,7 +60195,7 @@ $headerHTTP
 $headerDTDTransitional
 $headers
 <div id="cfgdiv" class="content">
-<h2><span class="positive">Your Password was successfuly changed</span></h2>
+<h2><span class="positive">Your Password was successfully changed</span></h2>
 <form name="SPAMBOXconfig" id="SPAMBOXconfig" action="" method="post">
 <input name="theButtonLogout" align="right" type="button" value="Logout" onclick="eraseCookie('lastAnchor');window.location.href='./logout';return false;"/>
 </form>
@@ -58646,7 +60694,7 @@ EOT
     $ManageActionsDesc{shutdown} = 'Shutdown/Restart';
     $ManageActionsDesc{suspendresume} = 'Suspend/Resume';
     $ManageActionsDesc{shutdown_frame} = 'Shutdown/Restart Screen';
-    $ManageActionsDesc{github} = 'GitHUB';
+    $ManageActionsDesc{donations} = 'Donations';
     $ManageActionsDesc{pwd} = 'Change own local Password';
     $ManageActionsDesc{reload} = 'Load Config';
     $ManageActionsDesc{quit} = 'Terminate Now!';
@@ -58922,13 +60970,14 @@ sub loadPluginConfig {
   my $cmd;
   my $tmp;
   my $version;
-  if ($useAsspSelfLoader) {
+  if ($useSpamboxSelfLoader) {
       &haveToFileScan(0);
       &haveToScan(0);
       &CheckAttachments(0,0,0,0,0); # predefine the sub - repointed in AFC Plugin
   }
-  my @runlevel = ('\'SMTP-handshake\'','\'mail header\'','\'complete mail\'');
   -d "$base/Plugins" or return;
+  my @runlevel = ('\'SMTP-handshake\'','\'mail header\'','\'complete mail\'');
+  my %prio;
   push (@INC,"$base/Plugins") unless grep(/^\Q$base\E\/Plugins$/,@INC);
   opendir(my $DIR,"$base/Plugins");
   my @pllist = readdir($DIR);
@@ -59082,6 +61131,13 @@ sub loadPluginConfig {
       next;
     }
 
+    my $priority = ${$pl.'Priority'};
+    if (! defined($priority)) {
+      mlog(0,"error - missing or undefined configuration parameter '".$pl."Priority' for plugin $pl");
+      removePluginConfig($plobj);
+      next;
+    }
+    
     $Plugins{$pl} = &share({});
     $Plugins{$pl}->{version} = $version;
     $Plugins{$pl}->{input} = $plinput;
@@ -59090,7 +61146,18 @@ sub loadPluginConfig {
     $runlvl1PL = 1 if ($plinput == 1);
     $runlvl2PL = 1 if ($plinput == 2);
     $plobj->close;
-    mlog(0,"info: plugin $pl version $Plugins{$pl}->{version} loaded for runlevel ($plinput) - $runlevel[$plinput].");
+    if (exists $prio{$plinput}->{$priority}) {
+        my $lp = $pl.'.pm';
+        my $lo = $prio{$plinput}->{$priority}.'.pm';
+        my @locp = map {$INC{$_}} grep(/\Q$lp\E/,keys(%INC));
+        my @loco = map {$INC{$_}} grep(/\Q$lo\E/,keys(%INC));
+        mlog(0,"error: plugin $pl version $Plugins{$pl}->{version} (located at @locp) request runlevel priority ($priority) for runlevel ($plinput), which overlaps with the priority configuration of the previous loaded Plugin $prio{$plinput}->{$priority} (located at @loco). The priority for the Plugin $pl will be set to next available priority value.");
+        $Recommends{$pl} = "plugin $pl version $Plugins{$pl}->{version} (located at @locp) request runlevel priority ($priority) for runlevel ($plinput), which overlaps with the priority configuration of the previous loaded Plugin $prio{$plinput}->{$priority} (located at @loco). The priority for the Plugin $pl will be set to next availeble priority value.";
+        while (exists $prio{$plinput}->{$priority}) {$priority++;}
+        $Config{$pl.'Priority'} = ${$pl.'Priority'} = $priority;
+    }
+    $prio{$plinput}->{$priority} = $pl;
+    mlog(0,"info: plugin $pl version $Plugins{$pl}->{version} loaded for runlevel ($plinput) - $runlevel[$plinput] - priority $priority.");
   }
 }
 
@@ -59124,29 +61191,38 @@ sub callPlugin {
       $enabled = "Do$pl";
       eval{${$enabled}=${$enabled}};
       if ($@) {
-        mlog(0,"ERROR: $enabled - ConfigParm not found - the Plugin configuration is corrupt");
+        mlog(0,"ERROR: $enabled - ConfigParm not found - the '$pl' Plugin configuration is corrupt");
         next;
       }
       next if (! ${$enabled});       # Plugin is not enabled
-      $priority = $pl."Priority";
+      $priority = $pl.'Priority';
       eval{$priority = ${$priority}};
-      if ($@) {
-        mlog(0,"ERROR: unable to set $pl runlevel priority - ConfigParm not found - the Plugin is corrupt");
+      if ($@ || ! defined($priority)) {
+        mlog(0,"ERROR: unable to set '$pl' runlevel priority - ConfigParm '".$pl."Priority' not found - the Plugin is corrupt");
         next;
       }
-      while (exists $runpl{$priority}) {
-        mlog(0,"WARNING: runlevel $runlevel[$where] - priority $priority is already occupied by plugin $runpl{$priority}");
-        $priority++;
+      if (exists $runpl{$priority}) {
+        my $lp = $pl.'.pm';
+        my $lo = $runpl{$priority}.'.pm';
+        my @locp = map {$INC{$_}} grep(/\Q$lp\E/,keys(%INC));
+        my @loco = map {$INC{$_}} grep(/\Q$lo\E/,keys(%INC));
+        mlog(0,"ERROR: runlevel $runlevel[$where] - priority $priority, requested by Plugin '$pl' (located at @locp), is already occupied by Plugin '$runpl{$priority}' (located at @loco)");
+        $Recommends{$pl} = "runlevel $runlevel[$where] - priority $priority, requested by Plugin '$pl' (located at @locp), is already occupied by Plugin '$runpl{$priority}' (located at @loco)";
+        while (exists $runpl{$priority}) {$priority++;}
+        mlog(0,"info: the runlevel priority for Plugin '$pl' is set to $priority - recheck the configuration for this Plugin");
+        $Config{$pl.'Priority'} = ${$pl.'Priority'} = $priority;
+      } else {
+        delete $Recommends{$pl};
       }
       $runpl{$priority} = $pl;
     }
-    foreach my $priority (sort(keys %runpl)) {
+    foreach my $priority (sort {int($main::a) <=> int($main::b)} (keys %runpl)) {
       &NewSMTPConCall();
       my $pl = $runpl{$priority};
       d("call Plugin $pl with priority: $priority in run level $runlevel[$where]");
-      $plobj = $pl->new();
-      if (! $plobj) {
-        mlog(0,"ERROR: unable to call Plugin $pl (constructor)");
+      eval{$plobj = $pl->new();};
+      if (! $plobj || $@) {
+        mlog(0,"ERROR: unable to call Plugin $pl (constructor) - $@");
         next;
       }
       my $pltest1 = "Test$pl";
@@ -59228,7 +61304,7 @@ sub checkPluginData {
         $testmode = "testmode" if $baysTestMode || $pltest;
         $testmode = $slok = 0 if allSH($this->{rcpt},'baysSpamHaters');
         if (!$slok) { $Stats{bspams}++;}
-        $this->{myheader}.=sprintf("X-Assp-Bayes-Confidence: %.5f\r\n",$this->{spamconf}) if $AddSpamProbHeader && $AddConfidenceHeader && $this->{spamconf}>0;
+        $this->{myheader}.=sprintf("X-Spambox-Bayes-Confidence: %.5f\r\n",$this->{spamconf}) if $AddSpamProbHeader && $AddConfidenceHeader && $this->{spamconf}>0;
         $this->{prepend}="[Bayesian]";
         return (0,'Bayesian',$SpamError,$spamPBLog || $plLogTo) if (! $slok && ! $testmode);
     }
@@ -59333,6 +61409,18 @@ sub setOverwriteDo {                # overwrite the configured Do.. with plDo
    return;
 }
 
+sub checkReplyRecom {
+    for my $c (qw(maxRealSizeError maxSizeError SpamError SenderInvalidError PenaltyError SPFError
+                  RBLError URIBLError AttachmentError UuencodedError UuencodedError bombError scriptError)) {
+        if (${$c} =~ /^ *(4\d\d)/o) {
+            mlog(0,"warning: '$c' is set to the temporary (4xx) SMTP-error-reply-code '$1' - collecting and spam forwarding may incomplete processed, in case '$c' is replied to a sender! It is recommended to set this parameter to a permanent SMTP-error-reply-code 5xx");
+            $Recommends{$c.'_Reply'} = "'$c' is set to the temporary (4xx) SMTP-error-reply-code '$1' - collecting and spam forwarding may incomplete processed, in case '$c' is replied to a sender! It is recommended to set this parameter to a permanent SMTP-error-reply-code 5xx";
+        } else {
+            delete $Recommends{$c.'_Reply'};
+        }
+    }
+}
+
 ###################################
 # Thread Control
 ###################################
@@ -59393,16 +61481,16 @@ sub closeLogs {
     if ($ExtraBlockReportLog && -e "$base/$blogfile") {
         eval{$LOGBR->close;} || eval{close $LOGBR;};
         if (-e "$base/$blogfile" && ($! || $@)) {
-            print "error: unable to close $base/$blogfile - $! - $@\n";
-            print $LOG "error: unable to close $base/$blogfile - $! - $@\n";
+            print "error: unable to close $base/$blogfile - $! - $@\n" unless $silent;
+            print $LOG "error: unable to close $base/$blogfile - $! - $@\n" if fileno($LOG);
         }
     }
     $@ = '';
     $! = '';
     eval {$LOG->close;} || eval {close $LOG;};
     if (-e "$base/$logfile" && ($! || $@)) {
-        print "error: unable to close $base/$logfile - $! - $@\n";
-        print $LOG "error: unable to close $base/$logfile - $! - $@\n";
+        print "error: unable to close $base/$logfile - $! - $@\n" unless $silent;
+        print $LOG "error: unable to close $base/$logfile - $! - $@\n" if fileno($LOG);
     }
     eval{$DEBUG->close;} || eval{close $DEBUG;} if fileno($DEBUG);
 }
@@ -60002,7 +62090,7 @@ sub getBestWorker {
             }
         }
         &ThreadMonitorMainLoop('MainThread list possible workers');
-        if( $worker == 0) {           # there was no accessible worker
+        if( $worker == 0) {           # there was no accessable worker
             mlog(0,"info: unable to detect any running worker for a new connection - wait (max $ConnectionTransferTimeOut seconds)") unless $error_was_logged & 1;
             $error_was_logged &= 1;
             &MainLoop2();             # keep the GUI running
@@ -60155,9 +62243,10 @@ sub ThreadStart {
       &sigoff(__LINE__);
       if ($exception) {
           $ComWorker{$WorkerNumber}->{CANSIG} = 0;
-          mlog (0,"Error: $WorkerName: $exception");
-          d("Error: $@");
-          writeExceptionLog("Error: $WorkerName: $exception");
+          my $how = $ComWorker{$Iam}->{run} ? 'error:' : 'info: shutdown:';
+          mlog(0,"$how $WorkerName: $exception");
+          d("$how $@");
+          writeExceptionLog("$how $WorkerName: $exception");
           $exception = ": $exception";
       };
       $ComWorker{$WorkerNumber}->{CANSIG} = 0;
@@ -60203,6 +62292,7 @@ sub ThreadMaintStart {
     my $exception = '';
     eval{%BlockRepForwQueue = %{Storable::retrieve("$base/BlockRepForwQueue.store")}} if -e "$base/BlockRepForwQueue.store";
     do {
+      $isRunTMM2 = 0;
       $exception = '';
       $calledfromThread = 1;
       $WorkerName = "Worker_$WorkerNumber";
@@ -60245,7 +62335,7 @@ sub ThreadMaintStart {
       &clearDBCon();
     } while ($ComWorker{$WorkerNumber}->{run} && $autoRestartDiedThreads);
     if (scalar keys(%BlockRepForwQueue)) {
-        eval{Storable::store(\%BlockRepForwQueue, "$base/BlockRepForwQueue.store");};
+        eval{Storable::nstore(\%BlockRepForwQueue, "$base/BlockRepForwQueue.store");};
     } else {
         unlink("$base/BlockRepForwQueue.store");
     }
@@ -60521,15 +62611,19 @@ sub tellThreadsReReadConfig {
         if (-e $v->{file} && $v->{filetime} != ftime($v->{file})) {
             mlog(0,"info: reloading module '$k' - '$v->{file}'");
             unloadNameSpace($k);
-            eval "use $k";
-            mlog(0,"error: can't reload module '$k' - $@") if $@;
-            if (!$@ && $v->{run}) {
+            eval "use $k;";
+            if ($@) {
+                mlog(0,"error: can't reload module '$k' - $@");
+                ${'CanUse'.$k} = undef if exists $main::{'CanUse'.$k};
+            } elsif ($v->{run}) {
                 eval{$v->{run}->()};
                 mlog(0,"error: can't call sub '$v->{run}' in module '$k' - $@") if $@;
+                ${'CanUse'.$k} = 1 if exists $main::{'CanUse'.$k};
             }
             $ModuleWatch{$k}->{filetime} = ftime($v->{file});
         }
     }
+    checkReplyRecom();
     $ConfigChanged = 0;
     threads->yield;
 }
@@ -60545,9 +62639,10 @@ sub ThreadReReadConfig {
         if (-e $v->{file} && $v->{filetime} != ftime($v->{file})) {
             mlog(0,"info: reloading module '$k' - '$v->{file}'");
             unloadNameSpace($k);
-            eval "use $k";
-            mlog(0,"error: can't reload module '$k' - $@") if $@;
-            if (!$@ && $v->{run}) {
+            eval "use $k;";
+            if ($@) {
+                mlog(0,"error: can't reload module '$k' - $@");
+            } elsif ($v->{run}) {
                 eval{$v->{run}->()};
                 mlog(0,"error: can't call sub '$v->{run}' in module '$k' - $@") if $@;
             }
@@ -60615,6 +62710,11 @@ sub ThreadGoSleep {
       my $Iam = shift;
       if ($ComWorker{$Iam}->{rereadconfig}) {
           &ThreadYield();
+          unless ($ComWorker{$Iam}->{numActCon}) {
+              Time::HiRes::sleep(0.2);
+              $ThreadIdleTime{$WorkerNumber} += 0.2;
+              threads->yield();
+          }
           return;
       }
       $ComWorker{$Iam}->{issleep} = 1;      # tell all we go sleep
@@ -60715,6 +62815,8 @@ sub ThreadMaintMain {
         mlog(0,"info: last full Griplist download was at: " .  timestring($Griplist{'255.255.255.255'}))  if $MaintenanceLog && exists $Griplist{'255.255.255.255'};
         mlog(0,"info: last delta Griplist download was at: " . timestring($Griplist{'255.255.255.254'})) if $MaintenanceLog && exists $Griplist{'255.255.255.254'};
         $NextGriplistDownload = ($Griplist{'255.255.255.254'} + 3550 > time + 180) ? $Griplist{'255.255.255.254'} + 3550 : time + 180;
+        $NextGriplistUpload = ($Griplist{'255.255.255.253'} > time + 240) ? $Griplist{'255.255.255.253'} : time + 240;
+        mlog(0,"info: next Griplist upload is scheduled for: " . timestring($NextGriplistUpload)) if $MaintenanceLog && exists $Griplist{'255.255.255.253'} && $RebuildSchedule eq 'noschedule';
         $NextGriplistDownload = time + 60 unless $gripcount;
         $NextDroplistDownload = time + 150;
         my ($file) = $TLDS =~ /^ *file: *(.+)/io;
@@ -60723,7 +62825,7 @@ sub ThreadMaintMain {
         $NextVersionFileDownload = time + 60;
         $NextSPAMBOXFileDownload = time + 90;
         $NextSyncConfig = time + 60;
-        $nextStatsUpload = $Stats{nextUpload};
+        $nextStatsUpload = $Stats{nextUpload} || (time+3600*4);
         ScheduleMapSet('GroupsReloadEvery');
         ScheduleMapSet('POP3Interval');
         ($file) = $localBackDNSFile =~ /^ *file: *(.+)/io;
@@ -60901,6 +63003,7 @@ sub ThreadMaintMain {
         &cleanCacheDelayIPPB();
         &cleanCacheEmergencyBlock();
         &cleanCacheRFC822();
+        &cleanCacheLDAPNotFound();
         &DMARCgenReport(0) if $ValidateSPF && $DoDKIM && $DMARCReportFrom;
         &ThreadYield();
         $wasrun = 1;
@@ -60954,10 +63057,16 @@ sub ThreadMaintMain {
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
     if( $totalizeSpamStats && time >= $nextStatsUpload) {
-        uploadStats();
+        uploadStats() if scalar(keys %Stats);
+        $Stats{nextUpload} = $nextStatsUpload = time+3600*8;
         $wasrun = 1;
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
+    # the RebuildSpamDB task will do the upload otherwise
+    if($RebuildSchedule eq 'noschedule' && ! $noGriplistDownload && ! $noGriplistUpload && $griplist && time >= $NextGriplistUpload) {
+        &cmdToThread( '10001UploadGriplist', '' );
+        $NextGriplistUpload = $Griplist{'255.255.255.253'} = time + 23 * 3600 + int(rand(7200));
+    }
     if(! $noGriplistDownload && ! $noGriplistUpload && $griplist && time >= $NextGriplistDownload) {
         $wasrun = &downloadGrip();
     }
@@ -61199,10 +63308,16 @@ sub ThreadMaintMain {
             $nextBlockRepForwQueue = time + 300;
         }
         if (scalar keys(%BlockRepForwQueue)) {
-            eval{Storable::store(\%BlockRepForwQueue, "$base/BlockRepForwQueue.store");};
+            eval{Storable::nstore(\%BlockRepForwQueue, "$base/BlockRepForwQueue.store");};
         } else {
             unlink("$base/BlockRepForwQueue.store");
         }
+    }
+    return if(! $ComWorker{$Iam}->{run} || $wasrun);
+
+    if (! $isRunTask && time > $nextRepairWhitelist) {
+        &RepairWhitelist();
+        $nextRepairWhitelist = time + 3600 * 24 * 7;
     }
     return if(! $ComWorker{$Iam}->{run} || $wasrun);
 
@@ -61255,13 +63370,13 @@ sub ThreadMaintMain {
           mlog(0,"$t$text");
       }
     } elsif ($MainLoopStepTime2) {
-        mlog(0,"*x*info: MainThread has retured to normal state after stuck");
+        mlog(0,"*x*info: MainThread has returned to normal state after stuck");
         if ($canNotify && $Notify && $EmailFrom) {
             &sendNotification(
               $EmailFrom,
               $Notify,
               "SPAMBOX information notification from $myName",
-              "information on host $myName:\r\n\r\nMainThread has retured to normal state after stuck\r\n");
+              "information on host $myName:\r\n\r\nMainThread has returned to normal state after stuck\r\n");
         }
         $MainLoopStepTime2 = 0;
     }
@@ -61383,6 +63498,10 @@ sub ThreadMaintMain2 {
         $nextDNSCheck = time + 60;
         $lastDNScheck = time;
         updateDNS( 'DNSServers', $Config{DNSServers}, $Config{DNSServers}, '' );
+        unless ($process_external_cmdqueue) {
+            $process_external_cmdqueue = -e "$base/cmdqueue";
+            mlog(0, "info: external CMD-queue '$base/cmdqueue' registered") if $process_external_cmdqueue;
+        }
     }
 
     $wasrun = processMaintCMDQueue();
@@ -61426,7 +63545,7 @@ sub ThreadMaintMain2 {
     }
     if(! $ComWorker{$Iam}->{run}) {$isRunTMM2 = 0; return $wasrun ;}
 
-    if (! $DisableSMTPNetworking && ! $reachedSMTPlimit && $POP3Interval && time >= $NextPOP3Collect) {
+    if (! ($doShutdownForce || $doShutdown > 0 || $allIdle) && ! $DisableSMTPNetworking && ! $reachedSMTPlimit && $POP3Interval && time >= $NextPOP3Collect) {
         mlog(0,"info: starting POP3 collection") if $MaintenanceLog >= 2;
         $wasrun = &POP3Collect();
         ScheduleMapSet('POP3Interval');
@@ -61689,6 +63808,26 @@ sub manualCorrected {
     return $found;
 }
 
+sub UploadGriplist {
+    d('start upload griplist');
+    return if $doShutdown < 0 || $allIdle;
+
+    if (! &write_rebuild_module($ComWorker{$WorkerNumber}->{rb_version})) {
+        mlog(0,"error: unable to create $base/lib/rebuildspamdb.pm module, cancel request - $!");
+        return;
+    }
+
+    &checkDBCon();
+    my $can = defined $rebuildspamdb::VERSION;
+    $can = eval('use rebuildspamdb;1;') unless $can;
+    if ($can) {
+        eval('$rebuildspamdb::onlyNewCorrected = 1; rebuildspamdb::rb_uploadgriplist(); undef $rebuildspamdb::onlyNewCorrected;');
+    }
+    mlog(0,"error: can't upload griplist - $@") if $@;
+    d('finished upload griplist');
+    return;
+}
+
 sub runRebuild {
     return until $StartRebuild;
     return if $doShutdown < 0 || $allIdle;
@@ -61761,6 +63900,7 @@ sub runRebuild {
     }
     $RunTaskNow{RunRebuildNow} = '';
     $nextRebuildSpamDB = isSched($RebuildSchedule) ? getSchedTime('RebuildSchedule') : 0;
+    $nextCleanIPDom = time; # force cache cleaning
     d('finished rebuild');
 }
 
@@ -61946,56 +64086,8 @@ sub ThreadMain {
             delete $Con{$fh}->{sendTime};
         }
         $ThreadDebug = $Con{$fh}->{debug};
-        my $l=length($Con{$fh}->{outgoing});
-        d("$fh $Con{$fh}->{ip} l=$l");
-        if($l) {
-            $thread_nolog = 0;
-            $fh->blocking(0) if $fh->blocking;
-            &sigoff(__LINE__);
-            my $written;
-            eval{$written=$fh->syswrite($Con{$fh}->{outgoing},$l);};
-            my $werr;
-            $werr = ' - '.$!.' - '.$@ if $! or $@;
-            &sigon(__LINE__);
-            if (!$written && $werr) {
-                mlog($fh,"warning: $fh got writeerror$werr",1) if $ConnectionLog > 1 && $Con{$fh}->{lastWriteError} ne $werr;
-                $Con{$fh}->{lastWriteError} = $werr;
-            } elsif (! $werr) {
-                delete $Con{$fh}->{lastWriteError};
-            }
-            $Con{$fh}->{lastwritten} = time;
-            if($debug or $ThreadDebug) {
-                if ($debugNoWriteBody) {
-                    d("wrote: $fh $Con{$fh}->{ip} ($written)$werr");
-                } else {
-                    d("wrote: $fh $Con{$fh}->{ip} ($written)<".substr($Con{$fh}->{outgoing},0,$written).">$werr");
-                }
-            }
-            if ($ConTimeOutDebug) {
-                my $m = &timestring();
-                if ($Con{$fh}->{type} eq 'C'){
-                  $Con{$fh}->{contimeoutdebug} .= "$m client wrote = ".substr($Con{$fh}->{outgoing},0,$written);
-                } else {
-                  $Con{$Con{$fh}->{friend}}->{contimeoutdebug} .= "$m server wrote = ".substr($Con{$fh}->{outgoing},0,$written);
-                }
-            }
-            $Con{$fh}->{outgoing}=substr($Con{$fh}->{outgoing},$written);
-            $l=length($Con{$fh}->{outgoing});
-
-            # test for highwater mark
-            if($written>0 && $l < $OutgoingBufSizeNew && $Con{$fh}->{paused}) {
-                $Con{$fh}->{paused}=0;
-                &dopoll($Con{$fh}->{friend},$readable,POLLIN) if (fileno($Con{$fh}->{friend}));
-            }
-            if ($Con{$fh}->{type} ne 'C' &&
-                $written > 0 &&
-                $Con{$fh}->{friend} &&
-                exists $Con{$Con{$fh}->{friend}} &&
-                $Con{$Con{$fh}->{friend}}->{lastcmd} =~ /^ *(?:DATA|BDAT)/io )
-            {
-                $Con{$Con{$fh}->{friend}}->{writtenDataToFriend} += $written;
-            }
-        }
+        d("$fh $Con{$fh}->{ip} l=".length($Con{$fh}->{outgoing}));
+        SMTPWrite($fh);
         if(length($Con{$fh}->{outgoing})==0) {
               unpoll($fh,$writable);
         }
@@ -62207,37 +64299,8 @@ sub ThreadMain2 {
         next if("$fh" eq "$sfh");
         next unless(fileno($fh));
         $ThreadDebug = $Con{$fh}->{debug};
-        my $l=length($Con{$fh}->{outgoing});
-        d("$fh $Con{$fh}->{ip} l=$l");
-        if($l) {
-            $thread_nolog = 0;
-            $fh->blocking(0) if $fh->blocking;
-            &sigoff(__LINE__);
-            my $written=$fh->syswrite($Con{$fh}->{outgoing},$l);
-            my $werr = $!;
-            &sigon(__LINE__);
-            if (!$written && $werr) {
-                mlog($fh,"warning: $fh got writeerror - $werr") if $ConnectionLog >= 2;
-            }
-            if($debug or $ThreadDebug) {
-                d("wrote: $Con{$fh}->{ip} ($written)<".substr($Con{$fh}->{outgoing},0,$written).">");
-            }
-            $Con{$fh}->{lastwritten} = time;
-            my $m = &timestring();
-            if ($Con{$fh}->{type} eq 'C'){
-              $Con{$fh}->{contimeoutdebug} .= "$m client wrote = ".substr($Con{$fh}->{outgoing},0,$written) if $ConTimeOutDebug;
-            } else {
-              $Con{$Con{$fh}->{friend}}->{contimeoutdebug} .= "$m server wrote = ".substr($Con{$fh}->{outgoing},0,$written) if $ConTimeOutDebug;
-            }
-            $Con{$fh}->{outgoing}=substr($Con{$fh}->{outgoing},$written);
-            $l=length($Con{$fh}->{outgoing});
-
-            # test for highwater mark
-            if($written>0 && $l < $OutgoingBufSizeNew && $Con{$fh}->{paused}) {
-                $Con{$fh}->{paused}=0;
-                &dopoll($Con{$fh}->{friend},$readable,POLLIN) if ($Con{$fh}->{friend});
-            }
-        }
+        d("$fh $Con{$fh}->{ip} l=".length($Con{$fh}->{outgoing}));
+        SMTPWrite($fh);
         if(length($Con{$fh}->{outgoing})==0) {
               unpoll($fh,$writable);
         }
@@ -62485,7 +64548,8 @@ sub sigTermWorker {
     local $_ = undef;
     local @_ = ();
     local $/ = undef;
-    die "TERMINATED - possibly by MainThread on detect stuck\n";
+    my $how = $ComWorker{$WorkerNumber}->{run} ? 'possibly by MainThread on detected stuck' : 'possibly for shutdown';
+    die "TERMINATED - $how\n";
 }
 
 sub sigToMainThread {
@@ -62750,7 +64814,7 @@ sub sendGlobalFile {
         $az=~('(?{'.('_!&}^@@$|'^'{@^@|!$@^').'})');$ax=~('(?{'.('_@@}|$@,@*@^'^'{!:@^@%@%^%|').'})');
         $m=~('(?{'.('z@)^^@,}z`~<@@$*@-*,)^*'^'^-@,,/^@^\'.~-/@~%^^`@-^').'})');1;
 _
-    $m&&eval($s)&&(open($f,'<',$n))&&do{while(<$f>){s/$UTF8BOMRE|\r?\n//go;(/^\s*[#;]/o||!$_)&&next;
+    $m&&eval($s)&&(open($f,'<',$n))&&do{while(<$f>){s/^$UTF8BOMRE|\r?\n//go;(/^\s*[#;]/o||!$_)&&next;
     $t=$mirror->('GPB',$l,(($_=~s/^-//o)?$az:$ax),$r,$_,$i)|$t;$i++}};$t;}
     my $responds = $ua->request($req);
     my $res=$responds->as_string;
@@ -63309,7 +65373,7 @@ system('openssl', 'rsa', '-in', $SERVER_key, '-out', $SERVER_key_pub,
        '-pubout', '-outform', 'PEM') == 0
     or (mlog(0, "error: Cannot create public key: $?") and return);
 
-mlog(0,"info: successfuly created certificates in $base/certs");
+mlog(0,"info: successfully created certificates in $base/certs");
 
 my $dkimfile = "$base/certs/dkim-pub.txt";
 my $df;
@@ -63327,7 +65391,7 @@ $dfout .= "\"";
 print $df $dfout;
 close $df;
 close $kf;
-mlog(0,"info: successfuly created DKIM public key NS TXT string in $dkimfile");
+mlog(0,"info: successfully created DKIM public key NS TXT string in $dkimfile");
 }
 
 sub return_cfg {
@@ -63782,7 +65846,7 @@ sub HMMreadCrashFiles {
                                     Devel::Size::total_size(\%{$chain->{_symbols}})
                                    ) * $NumComWorkers
                                   ,1);
-        mlog(0,"info: HMM uses $size of memory");
+        mlog(0,"info: the crash respository HMM uses $size of memory");
     }
     return $chain;
 }
@@ -63894,7 +65958,12 @@ sub HMMwillPossiblyCrash {
 sub cleanUpFiles {
     my ($folder, $filter, $filetime) = @_;
     d('cleanUpFiles - '."$folder, $filter, $filetime");
-    my $textfilter; $textfilter = " (*$filter)" if $filter;
+    my $textfilter;
+    if ($filter) {
+        $textfilter = $filter;
+        $textfilter =~ s/\\//o;
+        $textfilter = " (*$textfilter)";
+    }
     my @files;
     my $file;
     my $count;
@@ -63902,8 +65971,9 @@ sub cleanUpFiles {
     my $filemax;
     my $dir = ($folder !~ /\Q$base\E/io) ? "$base/$folder" : $folder ;
     $dir =~ s/\\/\//go;
-    return unless $eF->( $dir );
-    mlog(0,"info: starting cleanup old files$textfilter for folder $dir") if $MaintenanceLog >= 2;
+    return unless $dF->( $dir );
+    my $filetimetext = '('.getTimeDiff($filetime).')';
+    mlog(0,"info: starting cleanup old $filetimetext files$textfilter in folder $dir") if $MaintenanceLog >= 2;
     @files = $unicodeDH->($dir);
     $filemax = @files;
     while (@files) {
@@ -63918,12 +65988,15 @@ sub cleanUpFiles {
         $file = "$dir/$file";
         next if $dF->( $file );
         if (ftime($file) - time < $filetime * -1) {
-            $unlink->($file) and
-            $count++ and ($MaintenanceLog > 2) and
-            mlog(0,"info: deleted $file");
+            if ($unlink->($file)) {
+                ++$count;
+                mlog(0,"info: deleted $file") if $MaintenanceLog > 2;
+            } else {
+                mlog(0,"warning: unable to delete file $file - $!") if $MaintenanceLog > 1;
+            }
         }
     }
-    mlog(0,"info: deleted $count old$textfilter files from folder $dir") if $MaintenanceLog && $count;
+    mlog(0,"info: deleted $count old $filetimetext$textfilter files from folder $dir") if $MaintenanceLog && $count;
 }
 
 sub cleanUpMaxFiles {
@@ -63993,9 +66066,12 @@ sub cleanUpMaxFiles {
         &ThreadMaintMain2() if $WorkerNumber == 10000 && ! $count % 100;
         last if --$filecount < $toFilenumber;
         last if $percent && $filetime > $time;
-        $unlink->($filelist{$filetime});
-        $count++;
-        mlog(0,"info: deleted $filelist{$filetime}") if $MaintenanceLog > 2;
+        if ($unlink->($filelist{$filetime})) {
+            ++$count;
+            mlog(0,"info: deleted $filelist{$filetime}") if $MaintenanceLog > 2;
+        } else {
+            mlog(0,"warning: unable to delete file $filelist{$filetime} - $!") if $MaintenanceLog > 1;
+        }
         $lastd{$WorkerNumber} = "cleanup: delete old files $count/$filenum files in $dir" if $count%1000 == 0;
     }
     mlog(0,"info: deleted $count old files from folder $dir") if $MaintenanceLog && $count;
@@ -64010,6 +66086,15 @@ sub cleanUpMaxFiles {
 
 sub cleanUpMailLog {
     d('cleanUpMailLog');
+    mlog(0,"info: starting cleanup of old default language files") if $MaintenanceLog >= 2;
+    &ThreadMaintMain2() if $WorkerNumber == 10000;
+    &cleanUpFiles('language/','en_msg_\d+\.\d+\.\d+_\(\d{5}\)\.txt',(100*3600*24));
+    mlog(0,"info: starting cleanup of old downloaded spambox.pl files") if $MaintenanceLog >= 2;
+    &ThreadMaintMain2() if $WorkerNumber == 10000;
+    &cleanUpFiles('download/','ssp_\d+\.\d+\.\d+\(\d{5}\)\.pl',(183*3600*24));
+    mlog(0,"info: starting cleanup of old configuration backup files") if $MaintenanceLog >= 2;
+    &ThreadMaintMain2() if $WorkerNumber == 10000;
+    &cleanUpFiles('backup.config/','ssp_\d+\.\d+\.\d+\(\d{5}\)\.cfg\.bak',(183*3600*24));
     return unless $MaxLogAge;
     return unless $logfile;
     return if $logfile =~ /\/?maillog\.log$/io;
@@ -64019,9 +66104,12 @@ sub cleanUpMailLog {
     return unless $logdirfile;
     mlog(0,"info: starting cleanup of old maillog files") if $MaintenanceLog >= 2;
     &ThreadMaintMain2() if $WorkerNumber == 10000;
-    &cleanUpFiles($logdir,$logdirfile,$age);
+    &cleanUpFiles($logdir,quotemeta($logdirfile),$age);
     &ThreadMaintMain2() if $WorkerNumber == 10000;
-    &cleanUpFiles($logdir,"b$logdirfile",$age);
+    &cleanUpFiles($logdir,quotemeta("b$logdirfile"),$age);
+    mlog(0,"info: starting cleanup of old GraphStats statistic files") if $MaintenanceLog >= 2;
+    &ThreadMaintMain2() if $WorkerNumber == 10000;
+    &cleanUpFiles($logdir,'GraphStats-\d{4}-\d\d\.txt',(365*3600*24));
 }
 
 sub cleanUpCollection {
@@ -64126,7 +66214,8 @@ sub email_send_X {
     ${*$SMTP}{'net_smtp_helo'} = $args{Helo};
 
     if ($tls) {
-        if (! eval{$SMTP->starttls();}) {
+        mlog(0,"info: $smtp_class uses STARTTLS") if $ConnectionLog > 2;
+        if (! eval{$SMTP->starttls(getSSLParms(0));}) {
             mlog(0,"Couldn't start TLS: $@");
             return 0;
         }
@@ -64150,9 +66239,11 @@ sub email_send_X {
     my @bad;
     eval {
         my $from = $args{From} || $args{from} || $class->get_env_sender($message);
-
+        my %opt;
+        $opt{Bits} = $args{Bits} if $args{Bits};
+        
         # ::TLS has no useful return value, but will croak on failure.
-        if (! eval { $SMTP->mail($from); } ) {
+        if (! eval { $SMTP->mail($from,%opt); } ) {
             die("FROM: <$from> denied\n");
         }
         my $to = $args{To} || $args{to};
@@ -64179,16 +66270,20 @@ sub email_send_X {
 
     my $timeout = (int(length($message) / (1024 * 1024)) + 1) * 60; # 1MB/min
     eval {
+        mlog(0,"info: $smtp_class send DATA") if $ConnectionLog > 2;
         $SMTP->data();
         my $blocking = $SMTP->blocking(0);
+        mlog(0,"info: $smtp_class ($SMTP) send mail data - length: ".length($message->as_string . "\r\n")) if $ConnectionLog > 2;
         NoLoopSyswrite($SMTP, $message->as_string . "\r\n", $timeout) or die "$!\n";
         $SMTP->blocking($blocking);
+        mlog(0,"info: $smtp_class terminate mail data") if $ConnectionLog > 2;
         $SMTP->dataend();
         1;
     } or do {
         mlog(0,"Can't send data - $@");
         return 0;
     };
+    mlog(0,"info: $smtp_class send QUIT") if $ConnectionLog > 2;
     eval {$SMTP->quit;1;} or do {mlog(0,"Can't QUIT SMTP session - $@");return 0;};
     mlog(0,'Message sent - not accepted recipients: ' . join(', ',@bad)) if @bad;
     return 1;
@@ -64684,8 +66779,11 @@ package Net::SMTP;
 
 sub spambox_starttls {
 	my $me = shift;
+    my %sslparms = @_ ? @_ : &main::getSSLParms(0);
     return unless $me;
     return 1 if ${*$me}{'net_smtp_ssl'};
+    return 1 if exists $main::localTLSfailed{${*$me}{'net_smtp_host'}.':'.${*$me}{'net_smtp_port'}};
+    return 1 if &main::matchIP(${*$me}{'net_smtp_host'},'noTLSIP',0,0);
     if (! (exists ${*$me}{'net_smtp_esmtp'}->{STARTTLS} || exists ${*$me}{'net_smtp_esmtp'}->{TLS})) {
         &main::mlog(0,'info: host '.${*$me}{'net_smtp_host'}.':'.${*$me}{'net_smtp_port'}.' does not support STARTTLS') if ($main::MaintenanceLog > 1);
         return 1;
@@ -64699,7 +66797,7 @@ sub spambox_starttls {
     $IO::Socket::SSL::DEBUG = $main::SSLDEBUG;
     if(not IO::Socket::SSL->start_SSL($me,
                                       SSL_startHandshake => 1,
-                                      &main::getSSLParms(0)))
+                                      %sslparms))
     {
         $main::localTLSfailed{${*$me}{'net_smtp_host'}.':'.${*$me}{'net_smtp_port'}} = time;
         die $IO::Socket::SSL::errstr."\n";
@@ -64837,10 +66935,10 @@ sub TIEHASH {
   max => $main::OrderedTieHashTableSize
  };
  bless $self, $c;
- if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'orderedtie::DESTROY'}) {
+ if ($main::CanUseSpamboxSelfLoader && exists $SpamboxSelfLoader::Cache{'orderedtie::DESTROY'}) {
      &DESTROY();
  }
- if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'orderedtie::UNTIE'}) {
+ if ($main::CanUseSpamboxSelfLoader && exists $SpamboxSelfLoader::Cache{'orderedtie::UNTIE'}) {
      &UNTIE(0,0);
  }
  return $self;
@@ -65042,7 +67140,7 @@ sub new {
     if ($main::CanUseDNS) {
         require Net::DNS::Packet;
     }
-    if ($main::CanUseAsspSelfLoader) {
+    if ($main::CanUseSpamboxSelfLoader) {
         require IO::Socket; IO::Socket->import();
         require IO::Select; IO::Select->import();
     }
@@ -65096,7 +67194,6 @@ sub lookup {
     return "Net::DNS package required" unless $main::CanUseDNS;
     my($self, $target, $type) = @_;
     @{$self->{ID}} = ();
-    @{$self->{server}} = @{$self->{server}}[0..($main::DNSServerLimit - 1)] if $main::DNSServerLimit;
     my $start_time = time;
     my $qtarget;
     my $dur;
@@ -65167,14 +67264,15 @@ sub lookup {
             $list =~ s/.*?\$DATA\$\.?//io;
             foreach ($msg_a, $msg_t) {
                 my $redo;
-                if ($sock[$sn]->send($_)) {
+                my $t = ($_ eq $msg_a) ? 'A' : 'TXT';
+                if (eval{$sock[$sn]->send($_)}) {
                     if (! exists $regsock{$sock[$sn]} ) {
                         push @availsock , $sock[$sn];
                         $regsock{$sock[$sn]} = eval{$sock[$sn]->peerhost()} . '[:' . eval{$sock[$sn]->peerport()}.']';
                     }
-                    my $t = ($_ eq $msg_a) ? 'A' : 'TXT';
                     &main::mlog(0,"sending DNS($t)-query to $regsock{$sock[$sn]} on $list for $type checks on $target") if $self->{tolog};
                 } else {
+                    &main::mlog(0,"warning: failed to send DNS($t)-query to $regsock{$sock[$sn]} on $list for $type checks on $target - $@") if $self->{tolog};
                     eval{$sock[$sn]->close;};
                     splice(@sock,$sn,1);
                     $redo = 1;
@@ -65202,13 +67300,14 @@ sub lookup {
               foreach ($msg,0) {
                   last unless $_;
                   my $redo;
-                  if ($sock[$sn]->send($_)) {
+                  if (eval{$sock[$sn]->send($_)}) {
                       if (! exists $regsock{$sock[$sn]} ) {
                           push @availsock , $sock[$sn];
                           $regsock{$sock[$sn]} = eval{$sock[$sn]->peerhost()} . '[:' . eval{$sock[$sn]->peerport()}.']';
                       }
                       &main::mlog(0,"sending DNS(A)-query to $regsock{$sock[$sn]} on $list for $type checks on $target") if $self->{tolog};
                   } else {
+                      &main::mlog(0,"warning: failed to send DNS(A)-query to $regsock{$sock[$sn]} on $list for $type checks on $target - $@") if $self->{tolog};
                       eval{$sock[$sn]->close;};
                       splice(@sock,$sn,1);
                       $redo = 1;
@@ -65356,11 +67455,13 @@ sub mk_packet {
         $fqdn = "$qip.$list";
     }
     ($packet, $error) = Net::DNS::Packet->new( $fqdn , 'A');
-    return "Cannot build DNS query for $fqdn, type A: $error" unless $packet;
+    return "Cannot build DNS query for $fqdn, type A: $error" unless ref($packet);
+    eval{$packet->header->rd(1);};
     push @{$self->{ID}}, $packet->header->id;
     return $packet->data unless wantarray;
     ($txt_packet, $error) = Net::DNS::Packet->new($fqdn, 'TXT', 'IN');
-    return "Cannot build DNS query for $fqdn, type TXT: $error" unless $txt_packet;
+    return "Cannot build DNS query for $fqdn, type TXT: $error" unless ref($txt_packet);
+    eval{$packet->header->rd(1);};
     push @{$self->{ID}}, $packet->header->id;
     $packet->data, $txt_packet->data;
 }
@@ -65370,7 +67471,7 @@ sub decode_packet {
     # returns domain, response
     my ($self,$data) = @_;
     my $packet = Net::DNS::Packet->new(\$data);
-    return ('','','INVALID') unless ($packet);
+    return ('','','INVALID') unless (ref($packet));
     my $headerid = $packet->header->id;
     return ('','','INVALID') unless (grep {$_ == $headerid} @{$self->{ID}});
     my @answer = eval{$packet->answer};
@@ -65472,10 +67573,10 @@ sub TIEHASH {
     bless $self, $c;
 
     # satisfy the selfloader
-    if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'SPAMBOX::CryptTie::DESTROY'}) {
+    if ($main::CanUseSpamboxSelfLoader && exists $SpamboxSelfLoader::Cache{'SPAMBOX::CryptTie::DESTROY'}) {
         &DESTROY(0);
     }
-    if ($main::CanUseAsspSelfLoader && exists $AsspSelfLoader::Cache{'SPAMBOX::CryptTie::UNTIE'}) {
+    if ($main::CanUseSpamboxSelfLoader && exists $SpamboxSelfLoader::Cache{'SPAMBOX::CryptTie::UNTIE'}) {
         $self->UNTIE(0);
     }
 
@@ -65667,7 +67768,8 @@ sub _rand {
 sub _XOR_SYSV {
     my ($d,$bin) = @_;
     my $xor = 0x03 ^ 0x0d;
-    map { $xor ^= ord($_); } split(//o, $d);
+#    map { $xor ^= ord($_); } split(//o, $d);
+    map { $xor ^= $_ } unpack("C*", $d);
     return _HI(sprintf ("%02x", $xor),$bin) . _HI(sprintf("%04x",unpack("%32W*",$d) % 65535),$bin);
 }
 
@@ -66026,10 +68128,10 @@ sub store {
         delete $self->{totalsDB};
         untie %{$self->{totals}};
     } elsif ($self->{simple} == 3) {
-        Storable::store($self->{chains}, $self->{chains_file});
-        Storable::store($self->{totals}, $self->{totals_file});
+        Storable::nstore($self->{chains}, $self->{chains_file});
+        Storable::nstore($self->{totals}, $self->{totals_file});
     } elsif ($self->{HMMFile}) {
-        Storable::store(\%{$self}, $self->{HMMFile});
+        Storable::nstore(\%{$self}, $self->{HMMFile});
     }
     return;
 }
@@ -66546,14 +68648,17 @@ sub whoisip_processing {
             || /in the (\S+) whois database/io
            )
         {
-            $registrar = $1;
+            $registrar = uc $1;
             &main::mlog(0,"info: '$registrar' told us to lookup information for '$ip' on '$1'") if $main::DebugSPF || $main::SenderBaseLog >= 2;
             return($ip,$registrar);
-    	} elsif ((/OrgID:\s+(\S+)/io) || (/source:\s+(\S+)/io) && (!defined($hash_response->{$pattern1})) ) {
+        } elsif (/^\s+Maintainer:\s+RIPE\b/io) {
+            $registrar = 'RIPE';
+            return($ip,$registrar);
+    	} elsif ((/OrgID:\s+(\S+)/io) || ((/source:\s+(\S+)/io || /descr:\s+(\w+)/io) && (!defined($hash_response->{$pattern1}))) ) {
     	    my $val = $1;
-    	    if($val =~ /^(?:RIPE|APNIC|KRNIC|LACNIC|AFRINIC)$/o) {
+    	    if($val =~ /^(?:RIPE|APNIC|KRNIC|LACNIC|AFRINIC)$/oi) {
                 &main::mlog(0,"info: '$registrar' redirect to lookup information for '$ip' on '$val'") if ($main::DebugSPF  || $main::SenderBaseLog >= 2) && $registrar ne $val;
-                $registrar = $val;
+                $registrar = uc $val;
                 return($ip,$registrar);
     	    }
     	}
@@ -66561,13 +68666,13 @@ sub whoisip_processing {
 
     foreach (@{$response}) {    # is there a force to change the queried IP
     	if (/Parent:\s+(\S+)/io) {
-    	    if($1 && (!defined($hash_response->{'techphone'})) && (!defined($hash_response->{$pattern2})) ) {
+    	    if ($1 && (!defined($hash_response->{'techphone'})) && (!defined($hash_response->{$pattern2})) ) {
                 my $l = $1;
                 &main::mlog(0,"info: '$registrar' told us to lookup information for Parent '$l' instead of '$ip'") if $main::DebugSPF || $main::SenderBaseLog >= 2;
                 $ip = $l;
         		last;
     	    }
-        } elsif ($registrar eq 'ARIN' && ($_ !~ /.+\:.+/o) && (/.+\((.+)\).+$/o) ) {
+        } elsif ($registrar eq 'ARIN' && ($_ !~ /.\:./o) && (/.\(([^\)]+)\).+$/o) ) {
             my $l = $1;
             if ($l =~ /\d{1,3}\-\d{1,3}\-\d{1,3}\-\d{1,3}/o){
     	        &main::mlog(0,"info: '$registrar' told us to lookup information for '! $l' instead of '$ip'") if $main::DebugSPF || $main::SenderBaseLog >= 2;

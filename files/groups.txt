@@ -89,7 +89,7 @@
 # leave the definition of 'LDAP_entry_query_filter' and 'LDAP_entry_query_attribut_to_return' empty {}{}.
 # 
 # The result of each group definition will be stored in a file in files/group_export/GROUPNAME.txt.
-# The groups are build at every start of assp and if the defined file is stored (changed file time). 
+# The groups are build at every start of spambox and if the defined file is stored (changed file time). 
 # To force a reload of all groups, open the file and click 'Save changes' or change the file time with an 
 # external shell script.
 ###############################################################################################

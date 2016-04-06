@@ -1,5 +1,5 @@
 2014-02-24
-fixed in assp 2.3.3 build 14055:
+fixed in spambox 2.3.3 build 14055:
 
 - 'EmailAdminDomains' was not working, if a restricted admin has not used the list context form of a block report 
   request (..=>..=>..), instead the admin used a single email address in a single line
@@ -15,7 +15,7 @@ to
 
 
 2014-02-14
-fixed in assp 2.3.3 build 14045:
+fixed in spambox 2.3.3 build 14045:
 
 - reverted the code related to build 14038 
   "improved unicode processing for the mail body, if the mail is longer than 'MaxBytes' "
@@ -41,16 +41,16 @@ changed:
 added:
 
 'DNSReuseSocket','Reuse DNS UDP Sockets',
-'If selected, assp will try to reuse DNS-UDP sockets as long as this is possible. 
+'If selected, spambox will try to reuse DNS-UDP sockets as long as this is possible. 
  Otherwise each DNS-query will create a new UDP socket. It is recommended to set this to 'ON' on high workload systems.
     
 
 
 2014-02-08
-fixed in assp 2.3.3 build 14038:
+fixed in spambox 2.3.3 build 14038:
 
 - if more than one mail was received in a single SMTP session, under certain conditions only the last mail
-  was archived by the ASSP_ARC.pm plugin
+  was archived by the SPAMBOX_ARC.pm plugin
   
 
 - no DMARC reports were sent, if the {rua} or {ruf} policy used a different domain, and the target domain
@@ -61,7 +61,7 @@ fixed in assp 2.3.3 build 14038:
 
 
 2014-02-06
-fixed in assp 2.3.3 build 14037:
+fixed in spambox 2.3.3 build 14037:
 
 - agregate and forensic reports were not sent, if the DMARC {p} policy for a received mail was set to 'none'
 
@@ -77,7 +77,7 @@ fixed in assp 2.3.3 build 14037:
 
 changed:
 
-- the number of new created UDP-DNS sockets is reduced to the minimum - assp now tries to use
+- the number of new created UDP-DNS sockets is reduced to the minimum - spambox now tries to use
   persistent sockets as long as possible for all DNS queries
   
 
@@ -91,7 +91,7 @@ changed:
 
 
 2014-02-04
-fixed in assp 2.3.3 build 14035:
+fixed in spambox 2.3.3 build 14035:
 
 - !!! The behavior of the internal DNSBL/RBL DNS query procedure is changed !!!
 
@@ -107,7 +107,7 @@ fixed in assp 2.3.3 build 14035:
   providers and the answer for the TXT records were received before the answer of the A records, mails were 
   wrong classified and the according caches were filled with wrong results. 
   The wrong cache entries caused wrong detection results for a long time and some more spams were delivered.
-  For this reason, assp no longer uses TXT queries - only A record queries are used.
+  For this reason, spambox no longer uses TXT queries - only A record queries are used.
   This spends DNS-query time and system resources. It also reduces the number of DNS queries sent to your 
   DNS server to the half, which hopefully will be honored by the service providers.
 
@@ -115,17 +115,17 @@ fixed in assp 2.3.3 build 14035:
 
 
 2014-02-03
-fixed in assp 2.3.3 build 14034:
+fixed in spambox 2.3.3 build 14034:
 
-- updated lib/ASSP_WordStem.pm to version 1.24
+- updated lib/SPAMBOX_WordStem.pm to version 1.24
   - better language detection
   - better unicode word detection
   - better stemming results
-!!! after an upgrade of this module and assp.pl - a rebuildspamdb is required !!!
+!!! after an upgrade of this module and spambox.pl - a rebuildspamdb is required !!!
 ONLY after a rebuildspamdb the SpamDB and HMMdb are in a compatible state
 
 
-- new ASSP_MIB file released
+- new SPAMBOX_MIB file released
 
 - better unicode support for HMM and Bayesian check
 
@@ -141,7 +141,7 @@ changed:
 
 - the config parameter 'NoTagInTestmode' is removed
 
-- assp.mod.zip and mod_inst.pl are updated to version 1.75
+- spambox.mod.zip and mod_inst.pl are updated to version 1.75
 
 
 added:
@@ -151,14 +151,14 @@ added:
 
 
 2014-02-02
-fixed in assp 2.3.3 build 14033:
+fixed in spambox 2.3.3 build 14033:
 
 - the character resolution for several Unicode Blocks (for example InGreekAndCoptic) was not correct in the analyzer
 
 
 
 2014-02-01
-fixed in assp 2.3.3 build 14032:
+fixed in spambox 2.3.3 build 14032:
 
 - some bomb regular expression were not working if 'DoTransliterate' was set to on
 
@@ -170,7 +170,7 @@ fixed in assp 2.3.3 build 14032:
 
 changed:
 
-- updated file 'ASSP-MIB'
+- updated file 'SPAMBOX-MIB'
 
 added:
 
@@ -183,18 +183,18 @@ added:
 
 
 2014-01-29
-fixed in assp 2.3.3 build 14029:
+fixed in spambox 2.3.3 build 14029:
 
 - some outputs about IP-matching-privacy were missing in the analyzer
 
 
 
 2014-01-25
-fixed in assp 2.3.3 build 14025:
+fixed in spambox 2.3.3 build 14025:
 
 
 - Reduces the memory fragmentation dramaticaly, which solves several memory leakings. After some hours of work
-  the memory usage of the Perl/assp process should stay around a stabil level.
+  the memory usage of the Perl/spambox process should stay around a stabil level.
 
   The following configuration scenarios are affected:
   
@@ -210,14 +210,14 @@ changed:
   
 
 2014-01-19
-fixed in assp 2.3.3 build 14019:
+fixed in spambox 2.3.3 build 14019:
 
 
-- fixes several warning outputs running 'perl -c -w assp.pl'
+- fixes several warning outputs running 'perl -c -w spambox.pl'
   this fix includes an upgrade of the following plugins
   
-  ASSP_ARC -> 2.05
-  ASSP_OCR -> 2.16
+  SPAMBOX_ARC -> 2.05
+  SPAMBOX_OCR -> 2.16
 
 - The resulting weight sum for the URIBL and DNSBL check were wrong calculated, if bitmask definitions were
   used and any bitmask weight was defined as divisor (<=6).
@@ -231,10 +231,10 @@ changed:
 
 
 2014-01-17
-fixed in assp 2.3.3 build 14017:
+fixed in spambox 2.3.3 build 14017:
 
 - The definition of wildcards in URIBLServiceProvider and RBLServiceProvider were some times not working.
-  In some rare cases assp has used a wrong or no weight for a reply match.
+  In some rare cases spambox has used a wrong or no weight for a reply match.
 
 - Under very rare conditions it was possible, that a 'bad' (1) URIBL cache entry was wrongly change in to a 
   good (2) state. This caused the bad URI to be undetected for the lifetime of such an cache entry.
@@ -253,7 +253,7 @@ the following sentence is added to the description of URIBLServiceProvider and R
 
 
 2014-01-16
-fixed in assp 2.3.3 build 14016:
+fixed in spambox 2.3.3 build 14016:
 
 - in some cases it was possible to request the resend of a blocked mail from the BlockReport even no
   message body was stored in the corpus, which caused the resent mail to be empty
@@ -284,7 +284,7 @@ the following text was added to the description of 'RBLServiceProvider' and 'URI
 
 
 2014-01-11
-fixed in assp 2.3.3 build 14011:
+fixed in spambox 2.3.3 build 14011:
 
 - 'newReportedInterval' was ignored, if 'RebuildSchedule' was not configured as a cron schedule
 
@@ -299,7 +299,7 @@ added:
   This is usefull, if a user gets automatic generated BlockReports (e.g via BlockReportFile ) for a group of users 
   and should be able to manage resends for them. Added here, the user is not allowed to request BlockReports 
   for other users - in this case use EmailAdmins and EmailAdminDomains instead.
-  The resend is done to the recipient stored in the X-Assp-Intended-For: ( requires AddIntendedForHeader ) header 
+  The resend is done to the recipient stored in the X-Spambox-Intended-For: ( requires AddIntendedForHeader ) header 
   field and the requester if the address was found in a TO: header filed.
   Accepts specific addresses (user@domain.com), user parts (user).  Wildcards are supported (fribo*@domain.com).
   For example: fribo*@thisdomain.com|jhanna '
@@ -307,7 +307,7 @@ added:
 
 
 2014-01-06
-fixed in assp 2.3.3 build 14006:
+fixed in spambox 2.3.3 build 14006:
 
 - speeds up the GUI load on slow HTTP - connections
 
@@ -318,22 +318,22 @@ fixed in assp 2.3.3 build 14006:
 
 
 2013-12-26
-fixed in assp 2.3.3 build 13360:
+fixed in spambox 2.3.3 build 13360:
 
 - corrects some typos
 - correct some wrong log lines for the Bayesian and HMM check in scoring mode
 
 
 2013-12-19
-fixed in assp 2.3.3 build 13353:
+fixed in spambox 2.3.3 build 13353:
 
-- changing the usage of a module in the 'Modules Setup' section caused some times an unexpected behavior of assp,
+- changing the usage of a module in the 'Modules Setup' section caused some times an unexpected behavior of spambox,
   if the required restart was not done immediately
 
 
 
 2013-12-17
-fixed in assp 2.3.3 build 13351:
+fixed in spambox 2.3.3 build 13351:
 
 - 'npRe' and 'SpamLoversRe' were processed too late in the body check, which caused unwanted block mails
 
@@ -345,18 +345,18 @@ added:
 
 
 2013-12-01
-fixed in assp 2.3.3 build 13325:
+fixed in spambox 2.3.3 build 13325:
 
 - an exception was caused on the web interface if SSLDEBUG was used and a socket error occured
 
 
 
 2013-11-24
-fixed in assp 2.3.3 build 13328:
+fixed in spambox 2.3.3 build 13328:
 
-- assp was working as open SMTP relay if STARTTLS was used 'EnforceAuth' was set and 'SMTPAuthServer' was not defined
+- spambox was working as open SMTP relay if STARTTLS was used 'EnforceAuth' was set and 'SMTPAuthServer' was not defined
 
-- ASSP_OCR.pm version 2.15 fixes a problem of unexpected SMTP commands in workers
+- SPAMBOX_OCR.pm version 2.15 fixes a problem of unexpected SMTP commands in workers
 
 
 changed:
@@ -364,7 +364,7 @@ changed:
 - the notify feature is now resticted to send not more than one message per thread, per tag 'info,warning,error'
   within 60 seconds
   This prevents a message overflow in case of the same error occurs in multiple threads very often
-  To set the behavior to the old state add any of the following lines to lib/CorrectASSPcfg.pm
+  To set the behavior to the old state add any of the following lines to lib/CorrectSPAMBOXcfg.pm
   
 $main::NotifyFreqTF{'info'} = 0;    
 $main::NotifyFreqTF{'warning'} = 0;    
@@ -375,22 +375,22 @@ $main::NotifyFreqTF{'error'} = 0;
   
 
 2013-11-15
-fixed in assp 2.3.3 build 13319:
+fixed in spambox 2.3.3 build 13319:
 
-- on several nix systems (eg. FreeBSD) it was not possible to send signals to the assp process
+- on several nix systems (eg. FreeBSD) it was not possible to send signals to the spambox process
   for example >kill -2 pid
   Those nix systems are sending signals not to the parent process (thread) like expected, instead the signals are
-  sent to the last started thread. The signal handling in assp is changed to solve this problem.
+  sent to the last started thread. The signal handling in spambox is changed to solve this problem.
 
 
 2013-11-02
-fixed in assp 2.3.3 build 13306:
+fixed in spambox 2.3.3 build 13306:
 
 added:
 
 
 'DoSameSubject','Check Same Subjects','0:disabled|1:block|2:monitor|3:score|4:testmode'
- 'If activated, assp will check the mail subjects for equality using the config parameters below. Scoring is done with
+ 'If activated, spambox will check the mail subjects for equality using the config parameters below. Scoring is done with
   'isValencePB'
 
 'subjectFrequencyInt','Subject Frequency Interval'
@@ -439,21 +439,21 @@ added:
 
 
 2013-10-30
-fixed in assp 2.3.3 build 13303:
+fixed in spambox 2.3.3 build 13303:
 
-- The graphical stats view was incomplete in several browsers. To fix the problem the updated ASSP_SVG.pm
+- The graphical stats view was incomplete in several browsers. To fix the problem the updated SPAMBOX_SVG.pm
   version 1.02 is required in addition to build 13303.
 
 
 2013-10-28
-fixed in assp 2.3.3 build 13302:
+fixed in spambox 2.3.3 build 13302:
 
 - The config definition for 'DoHeaderAddrCheck' was wrong in build 13301
 
 
 
 2013-10-28
-fixed in assp 2.3.3 build 13301:
+fixed in spambox 2.3.3 build 13301:
 
 
 changed:
@@ -468,7 +468,7 @@ changed:
 
 
 2013-10-27
-fixed in assp 2.3.3 build 13300:
+fixed in spambox 2.3.3 build 13300:
 
 - authentication to the relayhost using relayAuthUser and relayAuthPass was not working if the
   connection used STARTTLS and the first EHLO reply of the relayHost has not contained an AUTH offer
@@ -499,7 +499,7 @@ changed:
  4. a local but not valid BCC: address will be removed - scored with irValencePB
  5. a RelayAttempt will be detected if a BCC address is not local - scored with rlValencePB - mail is blocked
  The check 3 and 4 honors whitelisting , noprocessing and noBlockingIPs
- Enable this check only, if assp is configured to validate local domains and email addresses!
+ Enable this check only, if spambox is configured to validate local domains and email addresses!
  NOTICE: that removeForeignBCC take place before this check is done - step 5 will be never reached if removeForeignBCC 
  is enabled!'
    
@@ -512,14 +512,14 @@ changed:
  database queries and to prevent possible record access collisions, which could cause stucking workers on some systems
  The value defines the maximum age in seconds a record will exists untouched in the table cache.
  Be carefull, setting this value too high in a database replication envirionment could cause unexpected query results, 
- because this cache is NOT shared between multiple assp instances.
+ because this cache is NOT shared between multiple spambox instances.
  If set, a value of 10 seems to be popular in any case. An too less value, will produce overhead without any advantage.
  An too high setting could cause the described database consistency problems.'
 
 
 
 2013-10-21
-fixed in assp 2.3.3 build 13294:
+fixed in spambox 2.3.3 build 13294:
 
 changed:
 
@@ -527,15 +527,15 @@ changed:
 
 our $DoHeaderAddrCheck = 1;              # (0/1) do the header address check for TO,CC,BCC
 
-The default value for this is '1' - to disable the check add the following line to 'lib/CorrectASSPcfg.pm'
-and restart assp.
+The default value for this is '1' - to disable the check add the following line to 'lib/CorrectSPAMBOXcfg.pm'
+and restart spambox.
 
 $main::DoHeaderAddrCheck = 0;
 
 
 
 2013-10-16
-fixed in assp 2.3.3 build 13289:
+fixed in spambox 2.3.3 build 13289:
 
 - URIBL has blocked/scored on 'multi.uribl.com' if this service provider was not defined as
 
@@ -547,25 +547,25 @@ multi.uribl.com=>127.0.0.*=>1
 - the extensive regular expression usage for the country code checks is reduced
   
 
-- ASSP_OCR.pm 2.14 fixes a possible problem with spaces in filenames (attachments/includes)
+- SPAMBOX_OCR.pm 2.14 fixes a possible problem with spaces in filenames (attachments/includes)
 
 
 
 2013-10-14
-fixed in assp 2.3.3 build 13287:
+fixed in spambox 2.3.3 build 13287:
 
-- assp does not start and autoupdate fails if lib/ASSP_FC.pm is not installed
+- spambox does not start and autoupdate fails if lib/SPAMBOX_FC.pm is not installed
 
 
 2013-10-12
-fixed in assp 2.3.3 build 13285:
+fixed in spambox 2.3.3 build 13285:
 
 - SPF check throws error: Can't locate object method "authority_explanation" via package
   on some messages
 
 
 2013-10-11
-fixed in assp 2.3.3 build 13284:
+fixed in spambox 2.3.3 build 13284:
 
 - removeForeignBCC was working only for one mail per worker
 
@@ -576,7 +576,7 @@ fixed in assp 2.3.3 build 13284:
 
 
 2013-10-10
-fixed in assp 2.3.3 build 13283:
+fixed in spambox 2.3.3 build 13283:
 
 - multiple SenderBase queries in multiple threads at the same time, caused stucking workers on some systems
 
@@ -584,7 +584,7 @@ fixed in assp 2.3.3 build 13283:
 
 
 2013-10-09
-fixed in assp 2.3.3 build 13282:
+fixed in spambox 2.3.3 build 13282:
 
 - reported spam caused the addition of to,cc and bcc addresses to the personal blacklist
 
@@ -595,22 +595,22 @@ fixed in assp 2.3.3 build 13282:
 
 
 2013-10-03
-fixed in assp 2.3.3 build 13276:
+fixed in spambox 2.3.3 build 13276:
 
 - improved perl search path setting and checking
 
 
 2013-10-02
-fixed in assp 2.3.3 build 13275:
+fixed in spambox 2.3.3 build 13275:
 
-- calling a level 2 DATA-Plugin like ASSP_OCR, caused on some systems unexpected SMTP communication errors
+- calling a level 2 DATA-Plugin like SPAMBOX_OCR, caused on some systems unexpected SMTP communication errors
 
 changed/added:
 
-ASSP - File Commander version 1.02
+SPAMBOX - File Commander version 1.02
 
 - compress and uncompress support
-- upload and download files between the local machine and assp
+- upload and download files between the local machine and spambox
 - only 'root' it is allowed to access .pl, .pm, .js, .run  and .cfg files 
 , the ./certs folder and all encrypted files
 - follows the rules defined for the admin users (hid files and directories 
@@ -621,32 +621,32 @@ ASSP - File Commander version 1.02
 
 
 2013-09-28
-fixed in assp 2.3.3 build 13271:
+fixed in spambox 2.3.3 build 13271:
 
 
 added:
 
-ASSP - File Commander version 1.01
+SPAMBOX - File Commander version 1.01
 
-http://assp.cvs.sourceforge.net/viewvc/assp/assp2/filecommander
+http://spambox.cvs.sourceforge.net/viewvc/spambox/spambox2/filecommander
 
 Installation:
 
-copy the content of the zip file to your assp folder and restart assp.
+copy the content of the zip file to your spambox folder and restart spambox.
 
 
 
 How to start:
 
-use the url http[s]//your.assp:webport/fc
+use the url http[s]//your.spambox:webport/fc
 
-or use the link in the left top menu of the main assp GUI
+or use the link in the left top menu of the main spambox GUI
 
 
 
 Requirements:
 
-- assp version 2 build 13264 or higher
+- spambox version 2 build 13264 or higher
 
 
 Recommended:
@@ -671,8 +671,8 @@ Limitations:
 
 - the [view],[edit] and [analyze] actions are limited to three file at ones, even if more files are selected
 - keep in mind, that all actions [copy], [move], [rename] and [delete] are done with the permission of the user profile
-  the assp process in running with!
-- copying .eml files will not process them to change the whitelist or personal blacklist - if you want assp to do this,
+  the spambox process in running with!
+- copying .eml files will not process them to change the whitelist or personal blacklist - if you want spambox to do this,
   use the [edit] action and copy or move the file in the edit-dialog
   
  
@@ -680,7 +680,7 @@ Limitations:
 
 
 2013-09-20
-fixed in assp 2.3.3 build 13263:
+fixed in spambox 2.3.3 build 13263:
 
 - if a mail was blocked because of foreign BCC recipients, the SPAM flag was not set, which caused the deletion of 
   the collected file
@@ -694,7 +694,7 @@ changed:
 
 
 2013-09-14
-fixed in assp 2.3.3 build 13257:
+fixed in spambox 2.3.3 build 13257:
 
 - If 'removeForeignBCC' was set, the DKIM check has failed some times.
 
@@ -705,18 +705,18 @@ fixed in assp 2.3.3 build 13257:
 added:
 
 'enableGraphStats','Enable Graphical Statistics Collection'
- 'ASSP will collect statistical data in files located in the '/logs' folder (scoreGraphStats-YYYY-MM.txt , 
- statGraphStats-YYYY-MM.txt). If data are collected and the module lib/ASSP_SVG.pm is installed and the files 
+ 'SPAMBOX will collect statistical data in files located in the '/logs' folder (scoreGraphStats-YYYY-MM.txt , 
+ statGraphStats-YYYY-MM.txt). If data are collected and the module lib/SPAMBOX_SVG.pm is installed and the files 
  images/stat.gplot, images/svg_style.css, images/svg_defs.svg and images/svg.js are installed and your browser 
- supports SVG, assp will show graphical statistic data, if you click on a line in the 'Info and Stats' view.
+ supports SVG, spambox will show graphical statistic data, if you click on a line in the 'Info and Stats' view.
  It is recommended to set 'SaveStatsEvery' to a value of 5 or 10 minutes, if this option is enabled!
- Keep in mind that assp will NOT delete any of the '*GraphStats...txt'-files. If you don't need some of that 
+ Keep in mind that spambox will NOT delete any of the '*GraphStats...txt'-files. If you don't need some of that 
  files anymore, remove them manualy!'
  
 
 
 2013-09-08
-fixed in assp 2.3.3 build 13251:
+fixed in spambox 2.3.3 build 13251:
 
 - after upgrading IO::Socket::SSL and Net::SSLeay to the latest version sending blockreports, sync requests,
   notifications and resend mails using STARTTLS has been failed in some cases
@@ -729,12 +729,12 @@ changed:
 
 - the validHelo and invalidHelo checks were skipped, if the HELO was matching a valid pointer - this logic is removed
 
-- if 'addSpamHeader' is selected, a 'X-ASSP-...' header line is added for each detected spamlover option
+- if 'addSpamHeader' is selected, a 'X-SPAMBOX-...' header line is added for each detected spamlover option
 
 
 
 2013-09-05
-fixed in assp 2.3.3 build 13248:
+fixed in spambox 2.3.3 build 13248:
 
 
 - configuration files were no longer sychronized since build 13229
@@ -742,19 +742,19 @@ fixed in assp 2.3.3 build 13248:
 - the analyzer now shows the found unicode blocks and unicode scripts
   this makes it possible to detect languages by unicode regular expressions like /\p{Han}/
 
-- an updated version (2.11) of the ASSP_AFC.pm plugin prevents unwanted VB-script detection
+- an updated version (2.11) of the SPAMBOX_AFC.pm plugin prevents unwanted VB-script detection
 
 
 
 
 2013-08-24
-fixed in assp 2.3.3 build 13236:
+fixed in spambox 2.3.3 build 13236:
 
 
 added:
 
 'DoTransliterate','Transliterate non-Roman characters in to Roman'
-'If enabled, ASSP tries to transliterate non-Roman characters in an email it to Roman characters. These transliterations
+'If enabled, SPAMBOX tries to transliterate non-Roman characters in an email it to Roman characters. These transliterations
  are than additionaly used in the bomb checks.
  For example - the (character) sequence 
  '&#24180;&#20809;&#36890;&#20449;&#20135;&#19994;&#20250;&#22238;&#24402;&#39640;&#22686;&#38271;&#36712;&#36947;' 
@@ -766,7 +766,7 @@ To make this feature working, the Perl module Text::Unidecode must be installed.
 
 
 2013-08-21
-fixed in assp 2.3.3 build 13233:
+fixed in spambox 2.3.3 build 13233:
 
 
 added:
@@ -776,7 +776,7 @@ Header Part*',
   'Regular Expression to define header tags, that will be skipped for 
 bombSuspiciousRe, bombHeaderRe, bombRe and blackRe - like 
 'DKIM-Signature|Domainkey-Signature' - the always followed collon (:) is 
-added by assp. 
+added by spambox. 
 For example:
 file:files/bombskipheadertagre.txt'
 
@@ -801,7 +801,7 @@ all logins should work now
 
 
 2013-08-17
-fixed in assp 2.3.3 build 13229:
+fixed in spambox 2.3.3 build 13229:
 
 - the encryption engine has failed, if the content of a file or encrypted HASH or sync request has exceeded 64kB
 
@@ -814,29 +814,29 @@ changed:
 
 - the Bayesian/HMM engine got an improvement - the DB version string is changed from '..._13138_...' to '..._13218_...' 
 
-- an updated lib/ASSP_WordStem.pm version 1.23 is released
+- an updated lib/SPAMBOX_WordStem.pm version 1.23 is released
 
 - an updated mod_inst.pl.zip version 1.61 is released
 
-- an updated assp.mod.zip is released
+- an updated spambox.mod.zip is released
 
-- an updated assp_pop3.pl version 1.12 is released
+- an updated spambox_pop3.pl version 1.12 is released
 
-- the ASSP2 PPM-repository has got an update - Crypt::GOST 1.00 for Perl 5.12, 5.14, 5.16 is added
+- the SPAMBOX2 PPM-repository has got an update - Crypt::GOST 1.00 for Perl 5.12, 5.14, 5.16 is added
 
 - it is now possible to send spam/ham reports and analyze requests in one or multiple ZIP file attachments
 
-- assp now accepts outlook '.msg' files (also zipped) as spam/ham and analyse report - the module Email::Outlook::Message
+- spambox now accepts outlook '.msg' files (also zipped) as spam/ham and analyse report - the module Email::Outlook::Message
   is required
   
 - the automatic corpus correction in the rebuildspamdb task is improved
 
 - the DoRFC822 check was skipped for IP's in 'noDelay' - these addresses are now checked
 
-- assp now also checks the header TO:,CC: and BCC: lines for spamTrap addresses, the same way as it is done/configured
+- spambox now also checks the header TO:,CC: and BCC: lines for spamTrap addresses, the same way as it is done/configured
   for the envelope recipients
   
-- if 'removeForeignBCC' is not set, assp will block all incoming mails, that contain a foreign BCC: header address as a
+- if 'removeForeignBCC' is not set, spambox will block all incoming mails, that contain a foreign BCC: header address as a
   relay attempt
   
      
@@ -846,7 +846,7 @@ changed:
 
 
 2013-08-05
-fixed in assp 2.3.3 build 13217:
+fixed in spambox 2.3.3 build 13217:
 
 changed:
 
@@ -859,11 +859,11 @@ changed:
   For example:
   ad[ep]|asx|ba[st]|chm|cmd|com|cpl|crt|dbx|exe|exe\-bin|hlp|ht[ab]|in[fs]|isp|js|jse|lnk|md[abez]|mht|ms[cipt]|
   nch|pcd|pif|prf|ps1?|reg|sc[frt]|sh[bs]|vb|vb[es]|wms|ws[cfh]
-  If you've installed the ASSP_AFC Plugin (at least version 2.10) and 'exe-bin' is defined (on any level), 
+  If you've installed the SPAMBOX_AFC Plugin (at least version 2.10) and 'exe-bin' is defined (on any level), 
   the Plugin will detect executable files based on there binary content. Detected will be all executables, 
   libraries and scripts for DOS and Windows (except .com files), MAC-OS and linux ELF (for all processor architectures)
 
-- ASSP_AFC.pm version 2.10 is released to support the 'exe-bin' detection
+- SPAMBOX_AFC.pm version 2.10 is released to support the 'exe-bin' detection
 
 - 'UserAttach' - the 'exe-bin' definition applies also to this parameter
 
@@ -876,9 +876,9 @@ changed:
 
 
 2013-08-03
-fixed in assp 2.3.3 build 13215:
+fixed in spambox 2.3.3 build 13215:
 
-- the Lingua::Stem::Snowball module got some extensions from assp.pl to be thread safe
+- the Lingua::Stem::Snowball module got some extensions from spambox.pl to be thread safe
 
 - improved DB caching code
 
@@ -895,7 +895,7 @@ fixed in assp 2.3.3 build 13215:
 
 changed:
 
-- an new version of the ASSP_AFC.pm plugin is released (2.09)  
+- an new version of the SPAMBOX_AFC.pm plugin is released (2.09)  
   It is able to detect executable files on there content (not only the file name extension).
   It detects: DOS, Win16, Win32, Win64, any MAC-OS, any linux (ELF), any scripting executables and libraries
   for all processor architectures.
@@ -905,25 +905,25 @@ To switch off this new feature, set the internal variable '$detectBinEXE' to zer
 
 
 2013-07-29
-fixed in assp 2.3.3 build 13210:
+fixed in spambox 2.3.3 build 13210:
 
 - the 'BEAST' attack mitigation was not working for the WEB ports, even if the SSL config was right
 
 - This version tries to solve (workaround) the old problem, where multiple equal connections or mails processed by different
   threads on different CPU cores at the same time using MySQL database tables for the main hashes and lists
   causing a hard death exception in Perl.
-  ASSP now uses a short time shared cache to prevent such conditions.
+  SPAMBOX now uses a short time shared cache to prevent such conditions.
   There is a new hidden config variable 
   
   our $DBCacheMaxAge = 3;                  # (number > 0) database maximum cache age in seconds
 
   There is a small but (IMHO) acceptable disadvantage using this caching methode. If the MySQL database is synchronized
-  or shared between multiple assp installations and the same 'equal conditions' are related to different installations
+  or shared between multiple spambox installations and the same 'equal conditions' are related to different installations
   (primary + secondary MX for example), it could be possible, that the database records are not synchron for a short
   time. For example, the PBBlack value could be too less on one installation.
   
 - it was possible that a DoS attack against the SSL WEB-port or the SSL SMTP-listener caused stucking workers,
-  hanging assp or 100% CPU usage
+  hanging spambox or 100% CPU usage
 
 - disable and enable 'useDB4IntCache' again caused a unwanted reset of the STATS values
 
@@ -934,13 +934,13 @@ fixed in assp 2.3.3 build 13210:
   some 64Bit Perl installations 
   
 - if a local domain was defined in 'whitelistedDomains', mails were unwanted whitelisted - in case such a configuration is
-  not supported, assp now writes an error message to the log, if such a condition is detected and whitelisting is prevented
+  not supported, spambox now writes an error message to the log, if such a condition is detected and whitelisting is prevented
 
         
 
 
 2013-07-25
-fixed in assp 2.3.3 build 13206:
+fixed in spambox 2.3.3 build 13206:
 
 - 'maxSubjectLength' was not working like expected
 - 'maxSubjectLength' was only checked by the analyzer if 'bombSubjectRe' was defined
@@ -952,13 +952,13 @@ fixed in assp 2.3.3 build 13206:
 
 changed:
 
-- the module 'Email::Valid' is no longer required/used by assp
+- the module 'Email::Valid' is no longer required/used by spambox
 
 
 
 
 2013-07-23
-fixed in assp 2.3.3 build 13204:
+fixed in spambox 2.3.3 build 13204:
 
 - logfile rolling was not working on higher workload
 - URIBL check has some times registered too less URI's
@@ -970,10 +970,10 @@ changed:
 
 - if text attachments are found within 'MaxBytes' bytes, these attachments are processed as text for all checks
 
-- Version 2.10 of the ASSP_OCR plugin is released.
+- Version 2.10 of the SPAMBOX_OCR plugin is released.
   It contains a new parameter, which makes it possible per default to extract the text from text-part attachments.
 
-'DoSimpleTexASSP_OCR','extract text from text files',
+'DoSimpleTexSPAMBOX_OCR','extract text from text files',
  'The text components of attached text/html or similar files will be extracted!'
 
 
@@ -981,14 +981,14 @@ changed:
 
 
 2013-07-20
-fixed in assp 2.3.3 build 13201:
+fixed in spambox 2.3.3 build 13201:
 
-- if any of the SysLog functions are used by assp, blocking connections caused some times a stucking or crashing 
-  assp process
+- if any of the SysLog functions are used by spambox, blocking connections caused some times a stucking or crashing 
+  spambox process
 
 - the GUI text for 'WhitelistAuth' was missing
 
-- blocking SNMP-agent requests caused a stucking or crashing assp.pl process
+- blocking SNMP-agent requests caused a stucking or crashing spambox.pl process
 
 - BATV addresses were added to the Whitelist - the BATV-Tags are now removed in any case
 
@@ -1013,18 +1013,18 @@ added:
 changed:
 
 - the module 'Net::Syslog' is no longer required
-- all references to the module 'Email::MIME::Modifier' are changed to 'Email::MIME' (an new ASSP_AFC plugin (2.08) is released)
-- an new SNMP ASSP-MIB file is released for this version
-- an new assp-monitor.pl (1.10) script is released - it provides the monitoring of the assp.pl process with restart
+- all references to the module 'Email::MIME::Modifier' are changed to 'Email::MIME' (an new SPAMBOX_AFC plugin (2.08) is released)
+- an new SNMP SPAMBOX-MIB file is released for this version
+- an new spambox-monitor.pl (1.10) script is released - it provides the monitoring of the spambox.pl process with restart
   functions
 - the memory usage and leaking is optimized  
-- the "X-Assp-Intended-For:" header line is now added for every envelope recipient
+- the "X-Spambox-Intended-For:" header line is now added for every envelope recipient
 
 
    
 
 2013-07-06
-fixed in assp 2.3.3 build 13187:
+fixed in spambox 2.3.3 build 13187:
 
 
 - if an extension in a group definition was used , the extension was only added to the last entry in the group
@@ -1033,10 +1033,10 @@ fixed in assp 2.3.3 build 13187:
 
 
 2013-07-02
-fixed in assp 2.3.3 build 13183:
+fixed in spambox 2.3.3 build 13183:
 
-- tests with V2 on Perl 5.18.0 have shown, that the module Regex::Optimizer (shipped with the assp installation in /lib) 
-  takes a very very long time to optimize the assp regular expressions (with Perl 5.18.0 only).
+- tests with V2 on Perl 5.18.0 have shown, that the module Regex::Optimizer (shipped with the spambox installation in /lib) 
+  takes a very very long time to optimize the spambox regular expressions (with Perl 5.18.0 only).
   If Perl 5.18 is detected and 'useRegexOptimizer' is set to 'ON' - 'useRegexOptimizer' will be set 'OFF' and 
   'useRegexpOptimizer' will be set to 'ON'.
 
@@ -1046,7 +1046,7 @@ fixed in assp 2.3.3 build 13183:
 
 
 2013-06-26
-fixed in assp 2.3.3 build 13177:
+fixed in spambox 2.3.3 build 13177:
 
 - adding the windows daemon was not working correct
 
@@ -1061,7 +1061,7 @@ fixed in assp 2.3.3 build 13177:
 added:
 
 The hidden global variable 'FileScanCMDbuild_API' is added to provide an API for the modification of FileScanCMD.
-An new lib/CorrectASSPcfg.pm skeleton is released to provide an example.
+An new lib/CorrectSPAMBOXcfg.pm skeleton is released to provide an example.
 
 our $FileScanCMDbuild_API; # called if defined in FileScanOK with - $FileScanCMDbuild_API->(\$cmd,$this) 
                            #  - $cmd in place modification
@@ -1072,11 +1072,11 @@ changed:
 FileScanCMD:
 ...
   Any case sensitive literal starting and ending with an asterix (*) like '*rcpt*' or '*mailfrom*' will be replaced 
-  by the quoted runtime connection variable of Con{fh}->{literal} (this->{literal}). You need to know the assp internals!
-  If a code reference is defined for the internal variable main::FileScanCMDbuild_API in lib/CorrectASSPcfg.pm , assp 
+  by the quoted runtime connection variable of Con{fh}->{literal} (this->{literal}). You need to know the spambox internals!
+  If a code reference is defined for the internal variable main::FileScanCMDbuild_API in lib/CorrectSPAMBOXcfg.pm , spambox 
   will call '$FileScanCMDbuild_API->(\$cmd,$this)' before running the command. The first parameter, 
   the command (FileScanCMD), is submitted as a reference to a scalar, which must be modified in place. 
-  If you want assp not to scan the message, set this variable to undef. The second submitted parameter is the 
+  If you want spambox not to scan the message, set this variable to undef. The second submitted parameter is the 
   reference to the client connection parameter HASH - $Con{$fh} (eg. $this)
 ...
 
@@ -1085,7 +1085,7 @@ DNSServers:
 ...
 
   An DNS-query for the domain 'sourceforge.net' is used per default to measure the speed of the used DNS-servers. 
-  If you want assp to use another domain or hostname for this, append '=>domain.tld' at the end of the line - 
+  If you want spambox to use another domain or hostname for this, append '=>domain.tld' at the end of the line - 
   like: 208.67.222.222|208.67.220.220=>myhost.com
   To define the domain if you use the local DNS-servers 'UseLocalDNS' without defining any DNS-servers here, 
   simply write '=>myhost.com'.
@@ -1095,7 +1095,7 @@ DNSServers:
 
 
 2013-06-21
-fixed in assp 2.3.3 build 13172:
+fixed in spambox 2.3.3 build 13172:
 
 - the config sync feature was not working like expected since build 13170
 
@@ -1113,7 +1113,7 @@ changed:
 
 
 2013-06-20
-fixed in assp 2.3.3 build 13171:
+fixed in spambox 2.3.3 build 13171:
 
 - the Glob() function returned a scalar context (number of files) instead of a list context (files names) in not 
   Perl 5.16 versions
@@ -1122,7 +1122,7 @@ fixed in assp 2.3.3 build 13171:
 
 
 2013-06-19
-fixed in assp 2.3.3 build 13170:
+fixed in spambox 2.3.3 build 13170:
 
 - workaround a BUG in Perl 5.16.x , which causes an exception "double free or corruption ..." in the CORE::GLOBAL::glob
   function if a large number (>511) of file entries is read from a directory
@@ -1151,28 +1151,28 @@ changed:
 
 
 2013-06-09
-fixed in assp 2.3.3 build 13160:
+fixed in spambox 2.3.3 build 13160:
 
 - setting 'autoCorrectCorpus' to empty cause a 'division by zero' exception in the rebuildspamdb task
 
 changed:
 
-- the assp.cfg file and its backups is now only written if any configuration value was changed
+- the spambox.cfg file and its backups is now only written if any configuration value was changed
 
 
 
 2013-06-06
-fixed in assp 2.3.3 build 13157:
+fixed in spambox 2.3.3 build 13157:
 
 - the compilation of the rebuildspamdb.pm failed in build 13156
 
 
 2013-06-05
-fixed in assp 2.3.3 build 13156:
+fixed in spambox 2.3.3 build 13156:
 
 - fixes large memory leaks in the workers
 - optimized memory usage
-- DMARK report were lost on a assp restart
+- DMARK report were lost on a spambox restart
 - DKIMconvHTML2base64 was not working in last versions
 - added subject pre tags like Antwort: are now removed in spam reports
 - the forward Ham feature caused some times a '50X unknown command' reply at the MTA
@@ -1188,14 +1188,14 @@ changed:
 
 
 2013-05-29
-fixed in assp 2.3.3 build 13149:
+fixed in spambox 2.3.3 build 13149:
 
 - the rebuild task was started but not executed in build 2.3.3_13148
 
 
 
 2013-05-28
-fixed in assp 2.3.3 build 13148:
+fixed in spambox 2.3.3 build 13148:
 
 - the rebuildspamdb task no longer leaks memory - in case, the privious allocated memory is reused
 
@@ -1205,31 +1205,31 @@ changed:
 - If the there is no database used for the main hashes and list and the memory used by those hashes is too large,
   an error line is written for every related hash/list to the log - until now this was only an informational log entry!
 
-- The 'Info & Stats' screen -> Server Info - and the Connection screen are now showing the current memory usage of assp
+- The 'Info & Stats' screen -> Server Info - and the Connection screen are now showing the current memory usage of spambox
 
-- a new assp_mrtg.cfg file is released
-- a new ASSP_MIB file is released
+- a new spambox_mrtg.cfg file is released
+- a new SPAMBOX_MIB file is released
 
 
 added:
 
-'MemoryUsageLimit','Memory Limit in MB that ASSP could use'
- 'The memory limit in megabyte the assp process could use at maximum on your system. Set this to empty or zero to 
+'MemoryUsageLimit','Memory Limit in MB that SPAMBOX could use'
+ 'The memory limit in megabyte the spambox process could use at maximum on your system. Set this to empty or zero to 
  disable the feature. The check is done using the schedule defined in MemoryUsageCheckSchedule . 
- If the assp process uses more memory than the limit at a scheduled time and assp is able to restart it self - 
- a restart will be done within 15 seconds. The user running assp must have read access to /proc on nix systems 
+ If the spambox process uses more memory than the limit at a scheduled time and spambox is able to restart it self - 
+ a restart will be done within 15 seconds. The user running spambox must have read access to /proc on nix systems 
  or must have read access to the WMI provider on windows systems!'
 
 
-'MemoryUsageCheckSchedule','Schedule(s) to check the ASSP process memory usage s'
- 'The schedule(s) that is used to check the current memory usage of the assp process compared to the MemoryUsageLimit. 
+'MemoryUsageCheckSchedule','Schedule(s) to check the SPAMBOX process memory usage s'
+ 'The schedule(s) that is used to check the current memory usage of the spambox process compared to the MemoryUsageLimit. 
  Default value is (0-59/10 * * * *), which means every 10 minutes. This requires an installed Schedule::Cron module in PERL.'
 
 
 
 
 2013-05-16
-fixed in assp 2.3.3 build 13136:
+fixed in spambox 2.3.3 build 13136:
 
 - HMM check has given no results
 
@@ -1237,49 +1237,49 @@ added:
 
 'ignoreDBVersionMissMatch','Ignore a database version missmatch','0:disabled|1:Spamdb|2:HMMdb|3:Spam and HMMDB'
 
-  'The status of assp is changed to "not healthy" if the current version of any of Spamdb or HMMdb is not equal 
+  'The status of spambox is changed to "not healthy" if the current version of any of Spamdb or HMMdb is not equal 
   to the required database version. Such a missmatch is automaticaly corrected with the next successfull rebuildspamdb. 
   How ever, if you are unable to solve this problem for any reason, you should set this value to keep the status of 
-  assp "healthy".'
+  spambox "healthy".'
 
 
 
 2013-05-13
-fixed in assp 2.3.3 build 13133:
+fixed in spambox 2.3.3 build 13133:
 
 
 changed:
 
-- assp now calculates and watches the used and required versions of the Spamdb and the HMMdb.
-  If there is a missmatch found for any enabled database (DoBayesian/DoHMM), the state of assp is switched to 'not healthy'!
+- spambox now calculates and watches the used and required versions of the Spamdb and the HMMdb.
+  If there is a missmatch found for any enabled database (DoBayesian/DoHMM), the state of spambox is switched to 'not healthy'!
   An missmatch could be caused by:
 
   - a Perl upgrade
-  - an ASSP upgrade
+  - an SPAMBOX upgrade
   - enable/disable Unicode::GCString
-  - enable/disable ASSP_WordStem.pm
+  - enable/disable SPAMBOX_WordStem.pm
 
   The next rebuildspamdb will correct a missmatch.
   
   The version string contains the following - like 2_13130_5.016003_UAX#29_WordStem:
 
-  2 - the major assp version
-  13130 - the lowest assp build that uses the required text processing engine
+  2 - the major spambox version
+  13130 - the lowest spambox build that uses the required text processing engine
   5.016003 - the perl version
   UAX#29 - was the UAX#29 grapheme cluster mode used for this db (Unicode::GCString)
-  WordStem - was the 'ASSP_WordStem.pm' module used for this db
+  WordStem - was the 'SPAMBOX_WordStem.pm' module used for this db
 
 
 - the 'InfoStats' screen now contains some nice bars for the 'Message Statistcs' and the 'Message Scoring Statistcs'
 
 
 2013-05-10
-fixed in assp 2.3.3 build 13130:
+fixed in spambox 2.3.3 build 13130:
 
 - some times the copy Spam connections were running in to an undetected SMTP timeout
-- reloading the configuration in the workers could cause a deadlock -> stucking ASSP
+- reloading the configuration in the workers could cause a deadlock -> stucking SPAMBOX
 - reloading the configuration in the rebuild thread caused some times a memory acces collision -> unexpected crash
-  of assp
+  of spambox
 - the log has shown a 'TXT' DNS-query instead of the the done 'A' DNS-query for RBL and URIBL
 
 changed:
@@ -1292,12 +1292,12 @@ changed:
 
 
 2013-05-10
-fixed in assp 2.3.3 build 13130:
+fixed in spambox 2.3.3 build 13130:
 
 - some times the copy Spam connections were running in to an undetected SMTP timeout
-- reloading the configuration in the workers could cause a deadlock -> stucking ASSP
+- reloading the configuration in the workers could cause a deadlock -> stucking SPAMBOX
 - reloading the configuration in the rebuild thread caused some times a memory acces collision -> unexpected crash
-  of assp
+  of spambox
 - the log has shown a 'TXT' DNS-query instead of the the done 'A' DNS-query for RBL and URIBL
 
 changed:
@@ -1308,20 +1308,20 @@ changed:
   error counter
   
 2013-04-29
-fixed in assp 2.2.1 build 13119:
+fixed in spambox 2.2.1 build 13119:
 
 
 changed:
 
-- a new ASSP-MIB file is relased for this build
+- a new SPAMBOX-MIB file is relased for this build
 
 added:
 
 'EmailForwardReportedTo','Email Interface Forward Reports Destination'
   Host and Port to forward EmailSpam and EmailHam reports to - eg "10.0.1.3:1025".
-  If you use more than one assp instance and your users are reporting spam and ham mails to multiple or all of them, 
+  If you use more than one spambox instance and your users are reporting spam and ham mails to multiple or all of them, 
   but only one (but not this instance) is doing the rebuildspamdb and the corpus folders are not shared between 
-  the instances, define the "host:port" of the central assp (rebuild-) instance here. 
+  the instances, define the "host:port" of the central spambox (rebuild-) instance here. 
   Every report to EmailSpam and EmailHam (but only these!) will be forwarded to the defined host(s) and NO other 
   local action will be taken. If the forwarding to all defined hosts failes, the request will be processed localy. 
   To define multiple hosts for failover, separte them by pipe (|).
@@ -1329,43 +1329,43 @@ added:
 
 
 2013-04-28
-fixed in assp 2.2.1 build 13118:
+fixed in spambox 2.2.1 build 13118:
 
 - fixed a mayor memory leak (since build 13080)
 - improved memory garbage collection
 - improved database deadlock detection and prevention
 - improved shared memory access
-- newer SNMP::agent module versions caused an compilation error in assp.pl
+- newer SNMP::agent module versions caused an compilation error in spambox.pl
 
 
 changed:
 
-- assp now calculates a SMTP session ID per connection
-  - the ID is written to the (new) X-ASSP-Session: header line
+- spambox now calculates a SMTP session ID per connection
+  - the ID is written to the (new) X-SPAMBOX-Session: header line
   - usefull if more than mail is transfered per connection
 
 
 2013-04-20
-fixed in assp 2.2.1 build 13110:
+fixed in spambox 2.2.1 build 13110:
 
 - the spamlover option were not working in every case
-- using an invalid URL for the sync config dialog caused assp to die
+- using an invalid URL for the sync config dialog caused spambox to die
 - some regular expressions caused memory leaking
 
 
 2013-04-17
-fixed in assp 2.2.1 build 13107:
+fixed in spambox 2.2.1 build 13107:
 
 changed:
 
-- ASSP will delete stored .eml files for notspam messages in case the MTA behind assp drops the connection or rejects
+- SPAMBOX will delete stored .eml files for notspam messages in case the MTA behind spambox drops the connection or rejects
   the mail sending an error reply. The log line ' file ... was deleted' contains now the reason at the end.  
 
 
 2013-04-16
-fixed in assp 2.2.1 build 13106:
+fixed in spambox 2.2.1 build 13106:
 
-- the running script is now copied to 'assp.pl.run' at startup, to have a valid copy in case of an invalid downgrade
+- the running script is now copied to 'spambox.pl.run' at startup, to have a valid copy in case of an invalid downgrade
 - it was possible that the rebuildspamdb has calculated negative values for the required spam file count
 
 changed:
@@ -1374,30 +1374,30 @@ changed:
 
 
 2013-04-15
-fixed in assp 2.2.1 build 13105:
+fixed in spambox 2.2.1 build 13105:
 
-- assp some times crashes while workers are reloading the configuration
+- spambox some times crashes while workers are reloading the configuration
 - it was possible that a V2 version has validated an downgrade to V1 as valid - downgrades must now be done
   manualy 
 
 changed:
 
-- the rebuildspamdb.pm module is now also syntax checked if the assp.pl script is syntax checked,
+- the rebuildspamdb.pm module is now also syntax checked if the spambox.pl script is syntax checked,
   until now this was only done, if the module was loaded
 
 
 2013-04-08
-fixed in assp 2.2.1 build 13098:
+fixed in spambox 2.2.1 build 13098:
 
 - the message-id was in some cases also added to a list, modified by the email interface
-- in some cases the assp - received header line for the second mail in a single session was wrong
-- the TAG's  assp-do-not-optimize-regex   and    a-d-n-o-r
+- in some cases the spambox - received header line for the second mail in a single session was wrong
+- the TAG's  spambox-do-not-optimize-regex   and    a-d-n-o-r
   to disable the regular expression optimization for a file, were not working in every case
 
 
 changed:
 
-- If the CPAN module 'Regexp::Optimizer >= 1.23' is installed and the assp 'Regex::Optimizer' module is disabled in the 
+- If the CPAN module 'Regexp::Optimizer >= 1.23' is installed and the spambox 'Regex::Optimizer' module is disabled in the 
   configuration, 'Regexp::Optimizer' will be used to optimize regular expressions.
   The optimization done by 'Regexp::Optimizer' is less agressive  and called 'default'.
   The optimization done by 'Regex::Optimizer' is now called 'enhanced'.
@@ -1417,7 +1417,7 @@ info: require apx. all files (81000 words) from folder spam to get the wanted co
 
 
 2013-03-31
-fixed in assp 2.2.1 build 13090:
+fixed in spambox 2.2.1 build 13090:
 
 - some email address and domain matchings were not working like expected for some entry variants
 - denySMTPConnectionsFrom was not working
@@ -1474,9 +1474,9 @@ blackListedDomains, whiteListedDomains
 
 
 2013-02-23
-fixed in assp 2.2.1 build 13082:
+fixed in spambox 2.2.1 build 13082:
 
-- at the end of the shutdown sequence assp has tried to compact BerkeleyDB databases - which has taken too
+- at the end of the shutdown sequence spambox has tried to compact BerkeleyDB databases - which has taken too
   long in some cases - the DB->compact is now skipped at shutdown
 
 changed:
@@ -1508,7 +1508,7 @@ changed:
 
 
 2013-02-22
-fixed in assp 2.2.1 build 13081:
+fixed in spambox 2.2.1 build 13081:
 
 - the config synchronization was no longer working if both system were running build 13080
 - some more Net::DNS error conditions are solved - hope I got them all
@@ -1518,7 +1518,7 @@ error: server has closed the connection without sending a Reply - there is possi
 
 changed:
 
-an new ASSP-MIB file is released
+an new SPAMBOX-MIB file is released
 
 added:
 
@@ -1532,11 +1532,11 @@ This defaults to 1 -> bonus;
 
 
 2013-02-21
-fixed in assp 2.2.1 build 13080:
+fixed in spambox 2.2.1 build 13080:
 
 - some address/domain/ip matchings were no longer working since 13055
 - in some cases resent files contained no valid recipient - so the resend was failing
-- under crash conditions it was possible that information in the 'assp_sync.cfg' were lost
+- under crash conditions it was possible that information in the 'spambox_sync.cfg' were lost
 - the latest Net::DNS has caused exeptions in several features
 - under certain conditions it was possible that the rebuild spamdb thread caused an unexpected crash while reloading
   the configuration
@@ -1546,28 +1546,28 @@ fixed in assp 2.2.1 build 13080:
 
 changed:
 
-- if a SMTP reply condition '5xx...' was reached, assp has sent this reply, followed by a '421 transmission closed'
+- if a SMTP reply condition '5xx...' was reached, spambox has sent this reply, followed by a '421 transmission closed'
   the additional reply '421...' is no longer sent to keep the state of permanent errors
   
     
 
 
 2013-02-24
-fixed in assp 2.2.1 build 13055:
+fixed in spambox 2.2.1 build 13055:
 
 
 - If an IP-address was part of an IP-address list because of a defined hypentated- or CIDR-range, it was not possible to
   remove the IP from this list via Email-Interface or the 'work-with-IP-addresses' dialog in the GUI.
-  This is now possible. ASSP will split the related IP-ranges in two hypenated IP-ranges.
+  This is now possible. SPAMBOX will split the related IP-ranges in two hypenated IP-ranges.
   To make this working, it is required to install the perl modules NetAddr::IP and Net::IP
 
-- Mail::DKIM version 0.40 fixes an modules issue which makes some ASSP code obsolet.
+- Mail::DKIM version 0.40 fixes an modules issue which makes some SPAMBOX code obsolet.
 
-- some overhead is removed from the assp RDBM database interface
+- some overhead is removed from the spambox RDBM database interface
 
 - the BATV and the SRS check were done in a wrong order, which caused SRS failed messages if both features were used
 
-- the usage of 'local $@;' caused unexpected behavior of assp on Perl 5.12
+- the usage of 'local $@;' caused unexpected behavior of spambox on Perl 5.12
 
 - some result lines in a returned email after modifying the Whitelist via Email-Interface, were written multiple times
 
@@ -1583,24 +1583,24 @@ fixed in assp 2.2.1 build 13055:
 
 changed:
 
-- the perl module Net::IP::Match::Regexp is no longer required, the code is partly adapted in assp and is improved 
+- the perl module Net::IP::Match::Regexp is no longer required, the code is partly adapted in spambox and is improved 
   to handle also IPv6 addresses
 
-- an new ASSP-MIB file is released
+- an new SPAMBOX-MIB file is released
 
-- in case a mail was blocked, assp has sent the termination reply "451 4.7.1 Please try again later"
+- in case a mail was blocked, spambox has sent the termination reply "451 4.7.1 Please try again later"
   this is now changed in to "421 <$myName> closing transmission"
 
 - the current CPU affinity is now shown in the performance data and the stats screen
 
 - the rebuildspamdb code to reach the expected corpus norm has been improved
-  if your current corpus norm is far away from the value you expect, delete the file 'assp/normfile' and run
+  if your current corpus norm is far away from the value you expect, delete the file 'spambox/normfile' and run
   the rebuildspmdb task twice (ignor all results from the first run!) 
 
 
 added:
 
-'asspCpuAffinity','Cpu Affinity for assp',
+'spamboxCpuAffinity','Cpu Affinity for spambox',
 'Set the Cpu Affinity for all threads . Default is -1 (for use all CPU's). Possible values are comma or 
 space separated CPU numbers starting with zero (0) or -1 for all CPU's. 
 This requires installed Sys::CpuAffinity module. This feature will possibly not work on MacOS and OpenBSD and on 

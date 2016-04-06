@@ -1,1 +1,0 @@
-(?^:(?^:(?is:(?:@(?:(?:g(?:oogle(?:groups|mail)|mail)|(?:hotmai|paypa|ao)l|m(?:icrosoft|sn)|live|bbt).com|e(?:bay.(?:com|nl)|insundeins.de))|(?:veritate|rr).com))))

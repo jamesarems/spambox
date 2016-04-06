@@ -26,6 +26,6 @@
 #RDOMAIN           # the receipient domain with @
 #FDOMAIN           # the sender domain with @
 
-# A full summary of all available variables could be found in assp.pl in sub stateReset
+# A full summary of all available variables could be found in spambox.pl in sub stateReset
 
 

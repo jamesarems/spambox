@@ -1,4 +1,4 @@
-ASSP Analyze Report
+SPAMBOX Analyze Report
 Content-Type: text/html; charset=utf-8
 Content-Transfer-Encoding: Quoted-Printable
 

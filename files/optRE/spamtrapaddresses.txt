@@ -1,1 +1,0 @@
-(?^:(?^:(?i:(?:^(?:(?:(?:addresses|put))\@.*|(?:your\@penaltytrap\.com)|.*?\@(?:here\.org))$))))
